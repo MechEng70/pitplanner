@@ -25,6 +25,11 @@ try {
   r.gear = await measure(); screencap(`${out}/gear.png`);
   await p.evaluate(() => { const s = document.querySelector('.screen-body'); s.scrollTop = s.scrollHeight; }); await settle();
   screencap(`${out}/gear-end.png`);
+  await btn('Griddle', false).click(); await settle();
+  r.griddle = await measure(); screencap(`${out}/griddle.png`);
+  await p.getByRole('radio', { name: '28 in' }).click().catch(e => r.griddleErr = String(e).slice(0, 120));
+  await btn('Save griddle').click(); await settle();
+  r.griddleSaved = JSON.parse(await prefs(p, 'get', 'gear')).griddle;
   await btn('Alerts', false).click(); await settle();
   r.alerts = await measure(); screencap(`${out}/gear-alerts.png`);
   await btn('Close').click(); await settle();

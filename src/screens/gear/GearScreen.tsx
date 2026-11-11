@@ -11,15 +11,16 @@ import { allGranted, type AlarmStatus } from '../../platform/alarms.ts';
 import { AlertChecks, TestAlertButton, useAlarmStatus } from '../shared/AlertChecks.tsx';
 import { AddCooker, type CookerKind } from '../shared/AddCooker.tsx';
 import { SmokerPicker } from '../setup/SmokerPicker.tsx';
+import { GriddleSheet } from './CookerSheets.tsx';
 
 const SUPPORT_URL = 'https://buymeacoffee.com/PitPlanner';
 const KINDS: CookerKind[] = ['smoker', 'griddle', 'oven'];
 
-type Open = 'add' | 'picker' | 'alerts' | 'units' | null;
+type Open = 'add' | 'picker' | 'alerts' | 'units' | 'griddle' | null;
 
 /** Gear tab (mockup 16): cookers, cook rates, app settings, version. */
 export function GearScreen({ onDebug, onHistory, onCooker }: {
-  onDebug: () => void; onHistory: () => void; onCooker: (k: 'griddle' | 'oven') => void;
+  onDebug: () => void; onHistory: () => void; onCooker: (k: 'oven') => void;
 }) {
   const { state, setGear, setUnits } = useStore();
   const { gear, units } = state;
@@ -31,7 +32,8 @@ export function GearScreen({ onDebug, onHistory, onCooker }: {
 
   const add = (k: CookerKind) => {
     if (k === 'smoker') return setOpen('picker');
-    setGear({ ...gear, [k]: k === 'griddle' ? defaultGriddle() : defaultOven() } as Cookers);
+    if (k === 'griddle') return setOpen('griddle');
+    setGear({ ...gear, oven: defaultOven() });
     onCooker(k);
   };
   const top = rateRows(state.history, state.rates)[0];
@@ -48,7 +50,7 @@ export function GearScreen({ onDebug, onHistory, onCooker }: {
           {gear.griddle && (
             <ListRow leading={<Avatar kind="griddle" size={40} />} title="Griddle" wrap
               subtitle={gear.griddle.name !== 'Griddle' ? gear.griddle.name : `${gear.griddle.sizeIn} in, ${gear.griddle.burners} burners`}
-              onClick={() => onCooker('griddle')} />
+              onClick={() => setOpen('griddle')} />
           )}
           {gear.oven && (
             <ListRow leading={<Avatar kind="oven" size={40} />} title="Oven" wrap
@@ -101,9 +103,19 @@ export function GearScreen({ onDebug, onHistory, onCooker }: {
           </Stack>
         </Sheet>
       )}
+      {open === 'griddle' && (
+        <GriddleSheet initial={gear.griddle ?? defaultGriddle()} onClose={close}
+          onSave={griddle => setGear({ ...gear, griddle })}
+          onRemove={gear.griddle && gear.smoker ? () => setGear(without(gear, 'griddle')) : undefined} />
+      )}
       {open === 'units' && <UnitsSheet units={units} onChange={setUnits} onClose={close} />}
     </Screen>
   );
+}
+
+function without(gear: Cookers, k: CookerKind): Cookers {
+  const { [k]: _, ...rest } = gear;
+  return rest;
 }
 
 function smokerSubtitle(gear: Cookers, units: Units): string {
