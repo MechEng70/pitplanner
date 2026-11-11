@@ -1,6 +1,6 @@
 # Device tools
 
-Drive Pit Planner on Jason's phone (OnePlus CPH2583, serial 5ece07c1) over adb. The WebView is
+Drive the Pit Planner dev copy (`io.github.mecheng70.pitplanner.debug`, label "Pit Planner dev") on Jason's phone (OnePlus CPH2583, serial 5ece07c1) over adb. The WebView is
 controlled through Chrome DevTools (playwright-core `connectOverCDP`), screenshots come from
 `adb exec-out screencap`. Output goes to `out/` (git-ignored).
 

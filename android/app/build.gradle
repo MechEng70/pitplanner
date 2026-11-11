@@ -39,8 +39,16 @@ android {
         }
     }
     buildTypes {
+        // Dev copy installs next to the signed release: own app ID, own data, label "Pit Planner dev".
+        // tools/device/ drives this package only.
+        debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-dev"
+        }
         release {
             if (keystore['storeFile']) signingConfig signingConfigs.release
+            // -PdebuggableRelease: release-signed but inspectable, only to move data from a debug install.
+            debuggable project.hasProperty('debuggableRelease')
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

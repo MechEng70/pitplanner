@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- Debug builds: label the dev copy so it is not confused with the real app. -->
+<resources>
+    <string name="app_name">Pit Planner dev</string>
+    <string name="title_activity_main">Pit Planner dev</string>
+</resources>

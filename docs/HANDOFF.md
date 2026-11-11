@@ -1,4 +1,4 @@
-# Handoff (2026-11-11, second session)
+# Handoff (2026-11-11, third session)
 
 Read SPEC.md and CLAUDE.md first. This note is what a fresh session needs on top of them.
 
@@ -48,8 +48,31 @@ Kit: SetupPage, SetupActions, InputField, CheckRow, OptionCard, DashedButton, Pi
 `note`, Chips `scroll`, oven avatar glyph. `npm run device` runs `tools/device/setup.mjs` -> `out/setup.png`,
 `out/setup-b.png`; it wakes the screen and stops if the phone is locked (unlock it first).
 
-Next: Gear and history (16-20; Add cooker sheet exists), Open shared plan (11) + `.pitplan` intent
-filter, update check (GitHub Releases, MechEng70/pitplanner), signing.
+## Gear (mockups 16-20): done
+
+`src/screens/gear/`: `GearScreen` (16: cookers, Cook rates, Alerts sheet, Units sheet, support link,
+version), `CookerSheets` (Griddle 18, Oven 19; save only on Save, Remove only when another cooker
+remains), `HistoryScreen` (20: rate cards, cook list, cook sheet with Cook again / Remove). Pure helpers
+in `src/lib/historyView.ts` take `rules` as a parameter (tests can't import `rules.ts`, it imports JSON);
+tests in `engine/history.test.ts`. Records now keep `lateMin` (serve lateness); older ones show no status.
+Kit: `ListRow` href/tone/wrap, `IconAvatar`, `Tile` sub, `Tiles inset`, `Screen onBack`, `.card-col`.
+Beyond the mockups (told Jason): Units row on Gear, Remove buttons, Home Assistant row has no chevron.
+`npm run device -- --only gear` runs just `tools/device/gear.mjs`; it backs up and restores history.json.
+
+## Release signing: done
+
+`npm run release` -> `release/pitplanner-<version>.apk`, signed with `~/keys/pitplanner.jks` via
+git-ignored `android/keystore.properties` (template `.example`). Cert `CN=PitPlanner, O=PitPlanner`,
+SHA-256 `b6c32d128659d5338c4a8c92f8d3214d96ecfd2430e63e6a76c54549b0880a29`. versionName/versionCode come
+from package.json (0.1.0 -> 100): bump it before every release. `-PdebuggableRelease` builds a
+release-signed debuggable APK, used once to move Jason's data off the debug install.
+
+**Jason's phone runs the signed release (0.1.0) for real cooks.** Debug builds are a separate dev copy:
+`io.github.mecheng70.pitplanner.debug`, label "Pit Planner dev", own data. `tools/device/` (attach.sh,
+pending.sh, deploy.sh) only touches the dev copy. Never uninstall the release without backing up first.
+
+Next: Open shared plan (11) + `.pitplan` intent filter, update
+check (GitHub Releases, MechEng70/pitplanner).
 
 ## Decisions from Jason
 
@@ -68,4 +91,5 @@ filter, update check (GitHub Releases, MechEng70/pitplanner), signing.
 - Pellets can exceed the hopper with no Plan warning; refill label says "under 25%" but triggers at 10% (engine).
 - Step labels in `data/foods.json` contain F temperatures that do not convert in Celsius mode.
 - Quiet alerts holds scheduled steps but native repeats of an already-overdue step still ring.
-- Gear tab is a stand-in (Setup exists; Gear 16-20 next).
+- History entries can be removed but not edited (SPEC failure mode 14 says editable).
+- Oven `warmingDrawer` is stored but unused by the planner.
