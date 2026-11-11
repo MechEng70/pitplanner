@@ -21,6 +21,7 @@ export const Search = (p: P) => svg(<><circle cx="11" cy="11" r="7" /><path d="M
 export const ListIcon = (p: P) => svg(<path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01" />, p);
 export const Timer = (p: P) => svg(<><circle cx="12" cy="13" r="8" /><path d="M12 9v4l2.5 2.5M9 2h6" /></>, p);
 export const Sliders = (p: P) => svg(<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />, p);
+export const MoreVert = (p: P) => svg(<path d="M12 5h.01M12 12h.01M12 19h.01" />, p, 3.2);
 export const Warn = (p: P) => svg(<><path d="M12 3l10 18H2L12 3z" /><path d="M12 10v5M12 18h.01" /></>, p);
 
 /** Avatar glyph: ember flame for smoker and oven, blue griddle. */

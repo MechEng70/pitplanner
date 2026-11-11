@@ -3,6 +3,7 @@
 
 import type { Plan, PlanInput } from './types.ts';
 import { derive, type Rules } from './plan.ts';
+import { keyedEvents } from './alarms.ts';
 
 const MIN = 60_000;
 
@@ -64,4 +65,70 @@ export function pitOutage(rules: Rules, input: PlanInput, plan: Plan, downAt: nu
     it.extraHoldMin -= keepServe ? lost : 0;
   }
   return derive(rules, input, next.items, keepServe ? next.serveAt : next.serveAt + lost * MIN);
+}
+
+/**
+ * The food came off heat at doneAt (pull check answered, early or late). Its last phase ends then
+ * and the hold before serve absorbs the difference; serve time does not move.
+ */
+export function markPullDone(rules: Rules, input: PlanInput, plan: Plan, itemId: string, doneAt: number): Plan {
+  const next = clone(plan);
+  const it = next.items.find(i => i.input.id === itemId);
+  if (!it) throw new Error('Unknown item');
+  const delta = doneAt - it.finish;
+  const last = it.phases[it.phases.length - 1];
+  if (last) last.end = doneAt;
+  it.finish = doneAt;
+  it.extraHoldMin -= delta / MIN;
+  return derive(rules, input, next.items, next.serveAt);
+}
+
+/**
+ * "Not yet" at a pull check: the food stays on until max(planned off, now) + minutes.
+ * Unlike shiftRemaining this also works once every phase is nominally in the past.
+ * keepServe: the hold shrinks; otherwise serve moves by the same amount.
+ */
+export function extendCook(rules: Rules, input: PlanInput, plan: Plan, itemId: string, now: number, minutes: number, keepServe: boolean): Plan {
+  const next = clone(plan);
+  const it = next.items.find(i => i.input.id === itemId);
+  if (!it) throw new Error('Unknown item');
+  const newFinish = Math.max(it.finish, now) + minutes * MIN;
+  const d = newFinish - it.finish;
+  // Phases not started yet move whole; the one running (or last finished) stretches to meet them.
+  for (const p of it.phases) if (p.start >= now) { p.start += d; p.end += d; }
+  it.phases.forEach((p, i) => { if (p.start < now) p.end = it.phases[i + 1]?.start ?? newFinish; });
+  it.finish = newFinish;
+  if (keepServe) it.extraHoldMin -= d / MIN;
+  return derive(rules, input, next.items, keepServe ? next.serveAt : next.serveAt + d);
+}
+
+/**
+ * +15 min on a step's alert, or Adjust > Not yet. A phase step starts later (that food's later phases
+ * follow); a pull extends the cook; anything else (fire, refill, serve) just reminds again.
+ */
+export function postponeStep(rules: Rules, input: PlanInput, plan: Plan, key: string, now: number, minutes: number, keepServe: boolean): { plan: Plan; reminderAt: number | null } {
+  const ke = keyedEvents(plan).find(k => k.key === key);
+  if (!ke) throw new Error(`Unknown step ${key}`);
+  const e = ke.event;
+  const at = Math.max(e.at, now) + minutes * MIN;
+  if (e.kind === 'phase' && e.itemId && e.phaseId) return { plan: markStepDone(rules, input, plan, e.itemId, e.phaseId, at, keepServe).plan, reminderAt: null };
+  if (e.kind === 'pull' && e.itemId) return { plan: extendCook(rules, input, plan, e.itemId, now, minutes, keepServe), reminderAt: null };
+  return { plan, reminderAt: at };
+}
+
+/** Time ranges where two or more foods are on the smoker at once (lane chart highlight, shared-pit note). */
+export function smokerOverlaps(plan: Plan): { start: number; end: number; itemIds: string[]; tempsF: number[] }[] {
+  const spans = plan.items.flatMap(it => it.phases.filter(p => p.cooker === 'smoker').map(p => ({ id: it.input.id, start: p.start, end: p.end, tempF: p.tempF })));
+  const cuts = [...new Set(spans.flatMap(s => [s.start, s.end]))].sort((a, b) => a - b);
+  const out: { start: number; end: number; itemIds: string[]; tempsF: number[] }[] = [];
+  for (let i = 0; i < cuts.length - 1; i++) {
+    const a = cuts[i], b = cuts[i + 1];
+    const on = spans.filter(s => s.start <= a && s.end >= b);
+    const ids = [...new Set(on.map(s => s.id))].sort();
+    if (ids.length < 2) continue;
+    const prev = out[out.length - 1];
+    if (prev && prev.end === a && prev.itemIds.join() === ids.join()) { prev.end = b; prev.tempsF = [...new Set([...prev.tempsF, ...on.map(s => s.tempF)])]; }
+    else out.push({ start: a, end: b, itemIds: ids, tempsF: [...new Set(on.map(s => s.tempF))] });
+  }
+  return out;
 }

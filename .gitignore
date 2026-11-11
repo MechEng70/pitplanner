@@ -13,3 +13,6 @@ android/local.properties
 *.aab
 .DS_Store
 .env
+
+# device test output
+tools/device/out/

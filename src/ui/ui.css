@@ -104,6 +104,8 @@ p.t-bodyM, .lh-body { line-height: 1.45; }
 .app-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .screen { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .appbar { min-height: 64px; flex: none; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 20px; }
+.appbar-sub { padding-top: 8px; padding-bottom: 8px; gap: 8px; align-items: flex-start; }
+.appbar-sub > .row { align-items: center; min-height: 48px; }
 .screen-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 0 16px 16px; }
 
 .bottom-nav {
@@ -229,8 +231,8 @@ p.t-bodyM, .lh-body { line-height: 1.45; }
 .sheet-handle span { width: 32px; height: 4px; border-radius: 2px; background: var(--outline-2); }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 8px 8px 20px; flex: none; }
 .sheet-body { overflow-y: auto; padding: 4px 16px 20px; display: flex; flex-direction: column; gap: 16px; min-height: 0; }
-.sheet-body.flush { padding: 0 0 20px; gap: 0; }
-.sheet-foot { padding: 8px 16px 16px; flex: none; display: flex; gap: 8px; align-items: center; }
+.sheet-body.flush { padding-top: 0; padding-left: 0; padding-right: 0; gap: 0; }
+.sheet-foot { padding: 24px 16px 16px; display: flex; gap: 8px; align-items: center; --fade-to: var(--surface); }
 
 @media (prefers-reduced-motion: reduce) {
   *, .sheet, .scrim, .menu { animation-duration: 1ms !important; transition-duration: 1ms !important; }
@@ -238,16 +240,93 @@ p.t-bodyM, .lh-body { line-height: 1.45; }
 .inset { padding: 0 16px 8px; }
 
 /* Tappable headline text inside a card (the serve time). */
-.when-btn { display: block; width: 100%; min-height: 48px; border-radius: 12px; padding: 4px 0; color: var(--text); text-align: left; }
-.when-btn .t-when { line-height: 1.2; }
+.when-btn { display: block; width: 100%; border-radius: 12px; color: var(--text); text-align: left;
+  padding: 8px 0; margin: -8px 0; }  /* line-height tall in layout, 48 dp+ to the finger */
+.when-btn .t-when { line-height: 1.25; }
 /* Native picker input kept off-screen; opened with showPicker(). */
 .hidden-input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
 
 /* In a footer row a block button takes the space left beside its neighbours. */
 .sheet-foot .btn.block, .screen-foot .row .btn.block { flex: 1 1 auto; width: auto; min-width: 0; }
 /* Pinned bottom block of a screen (tiles + main action): always reachable at any font size. */
-.screen-foot { flex: none; display: flex; flex-direction: column; gap: 8px; padding: 8px 16px 12px; background: var(--bg); box-shadow: 0 -12px 12px -12px rgba(0, 0, 0, .6); }
+.screen-foot { display: flex; flex-direction: column; gap: 8px; padding: 16px 16px 12px; --fade-to: var(--bg); }
 
 /* Small chips (Plan's Ready by / Start at): 32 dp pill, the 48 dp hit box overlaps the card padding. */
-.chips-s { margin: -8px 0; }
-.chips-s .chip { min-height: 32px; padding: 0 12px; border-radius: 16px; font-size: 13px; }
+.chips-s { margin: -10px 0; }
+.chips-s .chip { min-height: 28px; padding: 0 10px; border-radius: 14px; font-size: 12px; }
+
+/* Grouped rows (mockup 03) */
+.group-card { background: var(--surface); border-radius: 20px; display: flex; flex-direction: column; flex: none; }
+.group-card > * { position: relative; }
+.group-card > * + *::before { content: ''; position: absolute; top: 0; left: 16px; right: 16px; height: 1px; background: var(--surface-3); }
+.status-row { display: flex; align-items: center; gap: 12px; min-height: 72px; padding: 12px 16px; }
+.status-ok { display: flex; align-items: center; gap: 6px; color: var(--ok); font-size: 14px; font-weight: 500; flex: none; white-space: nowrap; }
+/* Small filled action (Allow): 40 dp pill inside a 48 dp target */
+.btn-small { min-height: 48px; border: 4px solid transparent; background: var(--accent) padding-box; border-radius: 24px; color: var(--on-accent); font-size: 14px; padding: 0 16px; }
+
+/* Full-screen layer over the tabs (debug screen, later setup). */
+.overlay-screen { position: fixed; inset: 0; z-index: 5; background: var(--bg); display: flex; flex-direction: column; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); animation: scrim-in .2s ease-out; }
+
+/* ---------- Scroll area + floating action bar (Screen and Sheet) ---------- */
+.scroll-wrap { position: relative; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; --foot-h: 0px; }
+.scroll-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-bottom: calc(var(--foot-h) + 16px); scroll-padding-bottom: calc(var(--foot-h) + 8px); }
+/* Bottom fade on the scroll area: content dissolves into the bar instead of being cut by it. */
+.float-foot { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1;
+  background: linear-gradient(to bottom, transparent 0, var(--fade-to) 14px); }
+/* Without a bar the scroll area still fades at its bottom edge. */
+.scroll-wrap:not(:has(.float-foot)) > .scroll-body { mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent); }
+.icon-bleed { margin: -10px -10px -10px 0; }
+
+/* ---------- Cook ---------- */
+.t-countdown { font-size: 40px; font-weight: 500; line-height: 1.1; }
+.t-nextTitle { font-size: 28px; font-weight: 500; line-height: 1.15; }
+
+.status-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 14px; border-radius: 16px; font-size: 14px; font-weight: 500; white-space: nowrap; flex: none; }
+.status-dot { width: 8px; height: 8px; border-radius: 4px; background: currentColor; }
+.status-ok { background: #1F2A1C; color: var(--ok); }
+.status-warn { background: #2E221A; color: var(--warn); }
+.status-error { background: #3A1C18; color: var(--error); }
+
+.banner { display: flex; align-items: center; gap: 8px; border-radius: 16px; padding: 8px 8px 8px 16px; min-height: 56px; flex: none; }
+.banner-error { background: #3A1C18; color: #FFD9D2; }
+.banner-warn { background: #2E221A; color: var(--warn); }
+
+.action-row { display: flex; align-items: center; gap: 16px; width: 100%; min-height: 64px; padding: 10px 4px; color: var(--text); border-radius: 12px; }
+.action-icon { width: 32px; display: flex; justify-content: center; flex: none; color: var(--text-1); }
+.action-danger .t-bodyL, .action-danger .action-icon { color: var(--error); }
+
+.choice-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.choice { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; min-height: 64px; padding: 8px 10px; border-radius: 16px; border: 1px solid var(--outline); color: var(--text); }
+.choice-on { border: 2px solid var(--accent); background: var(--ember-soft); padding: 7px 9px; }
+
+.textarea { width: 100%; min-height: 56px; resize: vertical; border-radius: 16px; border: 1px solid var(--outline); background: var(--surface); color: var(--text); padding: 14px 16px; font-size: 16px; outline: none; }
+.textarea:focus { border-color: var(--accent); }
+.textarea::placeholder { color: var(--text-3); }
+
+/* Lane chart: label column + track; overlay and ticks share the track's coordinates. */
+.lanes { --lane-h: 46px; --label-w: 34%; position: relative; display: flex; flex-direction: column; }
+.lane { display: flex; align-items: center; height: var(--lane-h); }
+.lane-label { width: var(--label-w); flex: none; display: flex; flex-direction: column; min-width: 0; padding-right: 8px; }
+.lane-track { position: relative; flex: 1; height: 28px; border-radius: 8px; background: var(--surface-2); overflow: hidden; }
+.seg { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; overflow: hidden; }
+.seg + .seg { border-left: 1px solid rgba(0,0,0,.35); }
+.seg-label { font-size: 12px; padding: 0 6px; white-space: nowrap; color: var(--on-accent); }
+.seg-smoke { background: var(--accent); }
+.seg-smoke2 { background: #C9733F; }
+.seg-hot { background: #F2603F; }
+.seg-griddle { background: var(--griddle); border-radius: 6px; min-width: 6px; }
+.seg-oven { background: var(--outline-2); }
+.seg-hold { background: transparent; border: 1.5px dashed var(--text-3); border-radius: 6px; }
+.seg-hold .seg-label { color: var(--text-2); }
+.lane-overlay { position: absolute; left: var(--label-w); right: 0; top: 0; height: calc(var(--lane-h) * var(--lanes, 3)); pointer-events: none; }
+.lane-now { position: absolute; top: -6px; bottom: -6px; width: 2px; margin-left: -1px; background: var(--text); }
+.lane-band { position: absolute; border: 2px solid var(--on-accent-container); border-radius: 10px; background: rgba(255, 211, 181, .08); }
+.step-time { flex: none; min-width: 5.6em; }
+.band-note { display: flex; align-items: flex-start; gap: 12px; background: var(--surface-2); border-radius: 14px; padding: 12px 14px; color: var(--text-1); line-height: 1.4; }
+.band-note b { color: var(--text); }
+.band-swatch { flex: none; width: 18px; height: 18px; margin-top: 2px; border: 2px solid var(--on-accent-container); border-radius: 5px; background: rgba(255, 211, 181, .08); }
+.lane-ticks { display: flex; height: 24px; margin-top: 4px; }
+.lane-ticks > span { width: var(--label-w); flex: none; }
+.lane-tick-row { position: relative; flex: 1; }
+.lane-tick { position: absolute; top: 2px; transform: translateX(-50%); }
+.lane-tick:first-child { transform: none; }

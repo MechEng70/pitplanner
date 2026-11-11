@@ -71,11 +71,11 @@ export function PlanScreen({ onStartCook }: { onStartCook: (plan: Plan) => void 
 
   const when = (
     <Card tone="surface" pad="l">
-      <Stack gap={empty ? 8 : 0} grow>
+      <Stack gap={empty ? 8 : 4} grow>
         <Row justify="between" align="center">
           <Chips label="Plan from" small={!empty} value={draft.mode} onChange={setMode}
             options={[{ id: 'readyBy', label: 'Ready by' }, { id: 'startAt', label: 'Start at' }]} />
-          {!empty && <IconButton label="Pick date and time" onClick={openDate}><Calendar color="var(--text-2)" /></IconButton>}
+          {!empty && <IconButton bleed label="Pick date and time" onClick={openDate}><Calendar color="var(--text-2)" /></IconButton>}
         </Row>
         <button class="rp when-btn" onClick={openDate} aria-label="Change date and time">
           {/* Day and time are separate units: at big font sizes the line breaks between them, never inside one. */}
@@ -88,17 +88,7 @@ export function PlanScreen({ onStartCook }: { onStartCook: (plan: Plan) => void 
   );
 
   return (
-    <Screen title="Plan" footer={!empty && (
-      <>
-        {plan && (
-          <Tiles>
-            {summaryTiles(plan, gear.smoker, units).map(t => <Tile key={t.label} {...t} />)}
-            <Tile label="Conflicts" value={warnCount ? String(warnCount) : 'None'} tone={warnCount ? 'warn' : 'ok'} onClick={() => setLayer({ kind: 'issues' })} />
-          </Tiles>
-        )}
-        <Button block disabled={!plan} onClick={() => plan && onStartCook(plan)}>Start cook</Button>
-      </>
-    )} actions={!empty && plan &&
+    <Screen title="Plan" footer={!empty && <Button block disabled={!plan} onClick={() => plan && onStartCook(plan)}>Start cook</Button>} actions={!empty && plan &&
       <IconButton label="Share plan" onClick={() => sharePlan(toPitPlan(plan.serveAt, draft.pitTempF, draft.items))}><ShareIcon /></IconButton>}>
       {when}
 
@@ -147,6 +137,13 @@ export function PlanScreen({ onStartCook }: { onStartCook: (plan: Plan) => void 
           <Button kind="outline" tone="accent" block icon={<Plus size={18} />} onClick={() => setLayer({ kind: 'pick' })}>Add food</Button>
 
           {built.error && <Text v="label" tone="error">Could not build the plan: {built.error}</Text>}
+
+          {plan && (
+            <Tiles>
+              {summaryTiles(plan, gear.smoker, units).map(t => <Tile key={t.label} {...t} />)}
+              <Tile label="Conflicts" value={warnCount ? String(warnCount) : 'None'} tone={warnCount ? 'warn' : 'ok'} onClick={() => setLayer({ kind: 'issues' })} />
+            </Tiles>
+          )}
 
         </>
       )}

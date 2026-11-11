@@ -4,7 +4,9 @@ import { createContext, type ComponentChildren } from 'preact';
 import { useContext, useEffect, useState, useCallback } from 'preact/hooks';
 import type { CookLog, Cookers, ItemInput, PlanInput } from '../../engine/types.ts';
 import type { Units } from './format.ts';
-import { load, save } from './storage.ts';
+import { load, save, remove } from './storage.ts';
+import { normalize, type ActiveCook } from './cook.ts';
+import { loadHistory, saveHistory, logsOf, type CookRecord } from './history.ts';
 import { seedGear } from './gear.ts';
 
 export interface Draft {
@@ -19,7 +21,10 @@ export interface AppState {
   units: Units;
   draft: Draft;
   rates: Record<string, number>;   // foodId -> hr/lb at 225F set by the user
-  history: CookLog[];              // TODO: load from the history file once Cook/End cook exist
+  history: CookLog[];              // learned-from logs, derived from records
+  records: CookRecord[];           // history file
+  cook: ActiveCook | null;         // running cook, written on every change (reboot restore reads it)
+  flags: { supportShown?: boolean };
 }
 
 /** Next Saturday at 5:00 PM local, at least an hour out. Only used for a fresh draft. */
@@ -42,6 +47,9 @@ interface Store {
   setDraft: (fn: (d: Draft) => Draft) => void;
   setGear: (g: Cookers) => void;
   setUnits: (u: Units) => void;
+  setCook: (c: ActiveCook | null) => void;
+  addRecord: (r: CookRecord) => Promise<void>;
+  setFlags: (f: AppState['flags']) => void;
 }
 
 const Ctx = createContext<Store | null>(null);
@@ -51,15 +59,19 @@ export function StoreProvider({ now, children }: { now: number; children: Compon
 
   useEffect(() => {
     (async () => {
-      const [gear, units, draft, rates] = await Promise.all([
+      const [gear, units, draft, rates, cook, flags, records] = await Promise.all([
         load<Cookers>('gear'), load<Units>('settings'), load<Draft>('draft'), load<Record<string, number>>('rates'),
+        load<unknown>('activeCook'), load<AppState['flags']>('flags'), loadHistory(),
       ]);
       setState({
         gear: gear ?? seedGear(),
         units: units ?? { temp: 'F', weight: 'lb' },
         draft: draft ?? { mode: 'readyBy', at: defaultServe(now), pitTempF: 225, items: [] },
         rates: rates ?? {},
-        history: [],
+        history: logsOf(records),
+        records,
+        cook: normalize(cook),
+        flags: flags ?? {},
       });
     })();
   }, []);
@@ -72,9 +84,19 @@ export function StoreProvider({ now, children }: { now: number; children: Compon
   }), []);
   const setGear = useCallback((gear: Cookers) => setState(s => { save('gear', gear); return s && { ...s, gear }; }), []);
   const setUnits = useCallback((units: Units) => setState(s => { save('settings', units); return s && { ...s, units }; }), []);
+  const setCook = useCallback((cook: ActiveCook | null) => setState(s => {
+    if (cook) save('activeCook', cook); else remove('activeCook');
+    return s && { ...s, cook };
+  }), []);
+  const setFlags = useCallback((flags: AppState['flags']) => setState(s => { save('flags', flags); return s && { ...s, flags }; }), []);
+  const addRecord = useCallback(async (r: CookRecord) => {
+    const records = [...(await loadHistory()), r];
+    await saveHistory(records);
+    setState(s => s && { ...s, records, history: logsOf(records) });
+  }, []);
 
   if (!state) return null;
-  return <Ctx.Provider value={{ state, setDraft, setGear, setUnits }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ state, setDraft, setGear, setUnits, setCook, addRecord, setFlags }}>{children}</Ctx.Provider>;
 }
 
 export function useStore(): Store {

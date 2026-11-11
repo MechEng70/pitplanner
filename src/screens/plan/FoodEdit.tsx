@@ -2,7 +2,7 @@ import { useMemo, useState } from 'preact/hooks';
 import { buildPlan, onHeatSpan } from '../../../engine/plan.ts';
 import { lbToKg, kgToLb } from '../../../engine/units.ts';
 import type { CookerKind, ItemInput, PlanInput, TimingModel } from '../../../engine/types.ts';
-import { Button, Chips, Field, InfoBox, Num, ResultCard, Segmented, Sheet, Stepper, Text, useSheet } from '../../ui/components.tsx';
+import { Button, Chips, Field, InfoBox, KeepVisible, Num, ResultCard, Segmented, Sheet, Stepper, Text, useSheet } from '../../ui/components.tsx';
 import { rules, food, method, cookerKinds, cookerName, hasCooker, defaultOptions } from '../../lib/rules.ts';
 import { fmtDuration, fmtRate, fmtTempRange, fmtTime, type Units } from '../../lib/format.ts';
 
@@ -141,14 +141,14 @@ function Body({ base, units, it, setIt, preview }: Props & { it: ItemInput; setI
       )}
 
       {plan && span && (
-        <ResultCard overline={<>For serve at <Num>{fmtTime(plan.serveAt)}</Num></>}
+        <KeepVisible deps={[it]}><ResultCard overline={<>For serve at <Num>{fmtTime(plan.serveAt)}</Num></>}
           title={<>On <Num>{fmtTime(span.start)}</Num>, off <Num>{fmtTime(preview.item!.finish)}</Num></>}>
           <Text v="label" tone="soft">
             <Num>{fmtDuration(span.minutes)}</Num> on heat.
             {fire && <> Fire the {fire.what} at <Num>{fmtTime(fire.at)}</Num>.</>}
           </Text>
           {itemWarnings.map(w => <Text key={w.code} v="caption" tone={w.level === 'warn' ? 'warn' : 'secondary'}>{w.message}</Text>)}
-        </ResultCard>
+        </ResultCard></KeepVisible>
       )}
       {preview.error && <InfoBox>Could not plan this item: {preview.error}</InfoBox>}
       {cookerMissing && <Text v="label" tone="warn">Add a {m.cooker} in Gear to cook this.</Text>}

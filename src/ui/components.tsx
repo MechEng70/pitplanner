@@ -6,8 +6,8 @@
 
 import type { ComponentChildren, JSX } from 'preact';
 import { createContext } from 'preact';
-import { useCallback, useContext, useEffect, useRef, useState } from 'preact/hooks';
-import { ChevronRight, Close, CookerAvatarIcon, Minus, Plus, Search } from './icons.tsx';
+import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
+import { Check, ChevronRight, Close, CookerAvatarIcon, Minus, Plus, Search } from './icons.tsx';
 import { useBack } from './back.ts';
 
 type Kids = { children?: ComponentChildren };
@@ -15,7 +15,7 @@ const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).jo
 
 /* ---------- Text ---------- */
 
-export type TextVariant = 'when' | 'result' | 'headline' | 'title' | 'sheetTitle' | 'section' | 'bodyL' | 'bodyM' | 'body' | 'label' | 'caption' | 'overline' | 'value' | 'display';
+export type TextVariant = 'when' | 'result' | 'countdown' | 'nextTitle' | 'headline' | 'title' | 'sheetTitle' | 'section' | 'bodyL' | 'bodyM' | 'body' | 'label' | 'caption' | 'overline' | 'value' | 'display';
 export type Tone = 'primary' | 'secondary' | 'tertiary' | 'soft' | 'accent' | 'accentHi' | 'ok' | 'warn' | 'error' | 'griddle';
 
 export function Text({ v = 'body', tone, weight, clamp, center, as: Tag = 'span', children }: Kids & {
@@ -48,24 +48,64 @@ export const Inset = ({ children }: Kids) => <div class="inset">{children}</div>
 
 /* ---------- App structure ---------- */
 
-export function AppBar({ title, actions }: { title: string; actions?: ComponentChildren }) {
+export function AppBar({ title, subtitle, actions }: { title: string; subtitle?: ComponentChildren; actions?: ComponentChildren }) {
   return (
-    <header class="appbar">
-      <h1 class="t-title">{title}</h1>
+    <header class={cx('appbar', subtitle != null && 'appbar-sub')}>
+      {subtitle
+        ? <div class="fill stack gap-2"><h1 class="t-title">{title}</h1><span class="t-bodyM tone-secondary">{subtitle}</span></div>
+        : <h1 class="t-title">{title}</h1>}
       {actions && <div class="row gap-0">{actions}</div>}
     </header>
   );
 }
 
 /** App bar, a scrolling body with 16 dp sides, and an optional footer pinned above the nav. */
-export function Screen({ title, actions, footer, children }: Kids & { title: string; actions?: ComponentChildren; footer?: ComponentChildren }) {
+export function Screen({ title, subtitle, actions, footer, children }: Kids & { title: string; subtitle?: ComponentChildren; actions?: ComponentChildren; footer?: ComponentChildren }) {
   return (
     <div class="screen">
-      <AppBar title={title} actions={actions} />
-      <div class="screen-body">{children}</div>
-      {footer && <div class="screen-foot">{footer}</div>}
+      <AppBar title={title} subtitle={subtitle} actions={actions} />
+      <ScrollWithFooter bodyClass="screen-body" footClass="screen-foot" footer={footer}>{children}</ScrollWithFooter>
     </div>
   );
+}
+
+/**
+ * Shared rule for every pinned action bar (screens and sheets): the bar floats over the bottom of
+ * the scroll area with a fade, and the scroll area gets bottom padding and scroll padding equal to
+ * the bar's measured height, so no content can end up hidden behind it at any font size.
+ */
+function ScrollWithFooter({ bodyClass, footClass, footer, children }: Kids & { bodyClass: string; footClass: string; footer?: ComponentChildren }) {
+  const wrap = useRef<HTMLDivElement>(null);
+  const foot = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const f = foot.current, w = wrap.current;
+    if (!f || !w) { w?.style.setProperty('--foot-h', '0px'); return; }
+    const set = () => w.style.setProperty('--foot-h', `${f.offsetHeight}px`);
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(f);
+    return () => ro.disconnect();
+  }, [!!footer]);
+  return (
+    <div class="scroll-wrap" ref={wrap}>
+      <div class={cx(bodyClass, 'scroll-body')}>{children}</div>
+      {footer && <div class={cx(footClass, 'float-foot')} ref={foot}>{footer}</div>}
+    </div>
+  );
+}
+
+/**
+ * Keeps its content fully on screen: after any change in `deps`, scrolls the nearest scroll area
+ * just enough to show it (above any pinned action bar, via scroll-padding).
+ */
+export function KeepVisible({ deps, children }: Kids & { deps: unknown[] }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) { first.current = false; return; }
+    ref.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, deps);
+  return <div ref={ref}>{children}</div>;
 }
 
 export interface NavItem { id: string; label: string; icon: ComponentChildren }
@@ -129,10 +169,125 @@ export function EmptyState({ icon, title, body, children }: Kids & { icon: Compo
   );
 }
 
+/** Card of rows separated by hairlines (Setup alerts, Gear lists). */
+export function GroupCard({ children }: Kids) {
+  return <div class="group-card">{children}</div>;
+}
+
+/** Row with title, secondary line, and a trailing status or action (mockup 03). */
+export function StatusRow({ title, subtitle, ok, okLabel = 'On', action }: {
+  title: string; subtitle?: string; ok: boolean; okLabel?: string; action?: ComponentChildren;
+}) {
+  return (
+    <div class="status-row">
+      <span class="fill stack gap-2">
+        <span class="t-bodyL w-500">{title}</span>
+        {subtitle && <span class="t-label tone-secondary lh">{subtitle}</span>}
+      </span>
+      {ok ? <span class="status-ok"><Check size={18} color="var(--ok)" />{okLabel}</span> : action}
+    </div>
+  );
+}
+
+export function StatusChip({ tone, children }: Kids & { tone: 'ok' | 'warn' | 'error' }) {
+  return <span class={cx('status-chip', `status-${tone}`)}><span class="status-dot" />{children}</span>;
+}
+
+/** Full-width warning strip with an optional action (alerts off, pit out). */
+export function Banner({ tone = 'error', children, action }: Kids & { tone?: 'error' | 'warn'; action?: ComponentChildren }) {
+  return <div class={cx('banner', `banner-${tone}`)} role="alert"><span class="fill t-body">{children}</span>{action}</div>;
+}
+
+/** Icon + title + secondary line, whole row tappable (Cook options). */
+export function ActionRow({ icon, title, subtitle, onClick, tone }: {
+  icon: ComponentChildren; title: string; subtitle?: string; onClick: () => void; tone?: 'danger';
+}) {
+  return (
+    <button class={cx('action-row', 'rp', tone === 'danger' && 'action-danger')} onClick={onClick}>
+      <span class="action-icon">{icon}</span>
+      <span class="fill stack gap-2">
+        <span class="t-bodyL">{title}</span>
+        {subtitle && <span class="t-label tone-secondary lh">{subtitle}</span>}
+      </span>
+    </button>
+  );
+}
+
+export interface Choice { id: string; title: ComponentChildren; subtitle?: ComponentChildren }
+/** Two or more large outlined options, one selected (Keep serve / Move serve). */
+export function ChoiceCards({ options, value, onChange, label }: { options: Choice[]; value: string; onChange: (id: string) => void; label: string }) {
+  return (
+    <div class="choice-cards" role="radiogroup" aria-label={label}>
+      {options.map(o => (
+        <button key={o.id} role="radio" aria-checked={o.id === value} class={cx('choice', 'rp', o.id === value && 'choice-on')} onClick={() => onChange(o.id)}>
+          <span class="t-bodyM">{o.title}</span>
+          {o.subtitle && <span class="t-label tone-secondary">{o.subtitle}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** Note keyed to the lane chart's highlight band: swatch, bold lead, then the rest (mockup 12). */
+export function BandNote({ lead, children }: Kids & { lead: ComponentChildren }) {
+  return <div class="band-note"><span class="band-swatch" aria-hidden="true" /><span class="t-body"><b class="w-500">{lead}</b> {children}</span></div>;
+}
+
+export function TextArea({ value, onInput, placeholder, label }: { value: string; onInput: (v: string) => void; placeholder: string; label: string }) {
+  return <textarea class="textarea" aria-label={label} placeholder={placeholder} value={value} rows={2} onInput={e => onInput(e.currentTarget.value)} />;
+}
+
+/* ---------- Lane chart ---------- */
+
+export interface LaneSegment { start: number; end: number; label?: string; tone: 'smoke' | 'smoke2' | 'hot' | 'griddle' | 'oven' | 'hold' }
+export interface Lane { id: string; title: string; subtitle: string; segments: LaneSegment[] }
+
+/**
+ * Horizontal timeline: one lane per food, segments positioned by time, a now line, and an optional
+ * highlighted band (foods sharing the smoker). Times are epoch ms; the caller formats tick labels.
+ */
+export function Lanes({ lanes, from, to, now, band, ticks }: {
+  lanes: Lane[]; from: number; to: number; now: number; band?: { start: number; end: number; laneIds: string[] } | null;
+  ticks: { at: number; label: string }[];
+}) {
+  const pct = (t: number) => `${Math.max(0, Math.min(100, ((t - from) / (to - from)) * 100))}%`;
+  const width = (a: number, b: number) => `${Math.max(0, ((Math.min(b, to) - Math.max(a, from)) / (to - from)) * 100)}%`;
+  const bandRows = band ? lanes.map((l, i) => band.laneIds.includes(l.id) ? i : -1).filter(i => i >= 0) : [];
+  return (
+    <div class="lanes" style={{ "--lanes": String(lanes.length) }}>
+      {lanes.map(l => (
+        <div key={l.id} class="lane">
+          <div class="lane-label"><span class="t-bodyM w-500 clamp">{l.title}</span><span class="t-label tone-secondary clamp">{l.subtitle}</span></div>
+          <div class="lane-track">
+            {l.segments.filter(s => s.end > from && s.start < to).map((s, i) => (
+              <span key={i} class={cx('seg', `seg-${s.tone}`)} style={{ left: pct(s.start), width: width(s.start, s.end) }}>
+                {s.label && (Math.min(s.end, to) - Math.max(s.start, from)) / (to - from) >= 0.1 && <span class="seg-label">{s.label}</span>}
+              </span>
+            ))}
+          </div>
+        </div>
+      ))}
+      <div class="lane-overlay" aria-hidden="true">
+        {band && bandRows.length > 1 && (
+          <span class="lane-band" style={{ left: pct(band.start), width: width(band.start, band.end),
+            top: `calc(${bandRows[0]} * var(--lane-h) - 4px)`, height: `calc(${bandRows[bandRows.length - 1] - bandRows[0] + 1} * var(--lane-h) + 8px)` }} />
+        )}
+        {now >= from && now <= to && <span class="lane-now" style={{ left: pct(now) }} />}
+      </div>
+      <div class="lane-ticks">
+        <span />
+        <div class="lane-tick-row">
+          {ticks.map(t => <span key={t.at} class="t-caption tone-secondary num lane-tick" style={{ left: pct(t.at) }}>{t.label}</span>)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ---------- Buttons ---------- */
 
 export function Button({ kind = 'primary', block, icon, disabled, onClick, children, label, tone }: Kids & {
-  kind?: 'primary' | 'outline' | 'text' | 'tonal'; block?: boolean; icon?: ComponentChildren; disabled?: boolean;
+  kind?: 'primary' | 'outline' | 'text' | 'tonal' | 'small'; block?: boolean; icon?: ComponentChildren; disabled?: boolean;
   onClick?: () => void; label?: string; tone?: 'accent' | 'danger';
 }) {
   return (
@@ -142,8 +297,9 @@ export function Button({ kind = 'primary', block, icon, disabled, onClick, child
   );
 }
 
-export function IconButton({ label, onClick, children }: Kids & { label: string; onClick: () => void }) {
-  return <button class="icon-btn rp" aria-label={label} onClick={onClick}>{children}</button>;
+/** 48 dp round icon button. `bleed`: keeps the 48 dp target but takes no extra height in a tight row. */
+export function IconButton({ label, onClick, bleed, children }: Kids & { label: string; onClick: () => void; bleed?: boolean }) {
+  return <button class={cx('icon-btn', 'rp', bleed && 'icon-bleed')} aria-label={label} onClick={onClick}>{children}</button>;
 }
 
 /* ---------- Inputs ---------- */
@@ -287,8 +443,7 @@ export function Sheet({ title, onClose, footer, flush, children }: Kids & { titl
             <h2 class="t-sheetTitle">{title}</h2>
             <IconButton label="Close" onClick={() => close()}><Close /></IconButton>
           </header>
-          <div class={cx('sheet-body', flush && 'flush')}>{children}</div>
-          {footer && <div class="sheet-foot">{footer}</div>}
+          <ScrollWithFooter bodyClass={cx('sheet-body', flush && 'flush')} footClass="sheet-foot" footer={footer}>{children}</ScrollWithFooter>
         </section>
       </div>
     </SheetCtx.Provider>

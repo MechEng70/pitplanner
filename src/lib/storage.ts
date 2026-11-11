@@ -3,7 +3,7 @@
 
 import { Preferences } from '@capacitor/preferences';
 
-export type Key = 'gear' | 'settings' | 'draft' | 'rates' | 'activeCook';
+export type Key = 'gear' | 'settings' | 'draft' | 'rates' | 'activeCook' | 'flags';
 
 export async function load<T>(key: Key): Promise<T | null> {
   const { value } = await Preferences.get({ key });
@@ -13,4 +13,8 @@ export async function load<T>(key: Key): Promise<T | null> {
 
 export async function save(key: Key, value: unknown): Promise<void> {
   await Preferences.set({ key, value: JSON.stringify(value) });
+}
+
+export async function remove(key: Key): Promise<void> {
+  await Preferences.remove({ key });
 }
