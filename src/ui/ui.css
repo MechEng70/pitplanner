@@ -140,6 +140,7 @@ p.t-bodyM, .lh-body { line-height: 1.45; }
 .avatar { border-radius: 50%; background: var(--ember-soft); display: flex; align-items: center; justify-content: center; flex: none; }
 .avatar-40 { width: 40px; height: 40px; } .avatar-44 { width: 44px; height: 44px; } .avatar-72 { width: 72px; height: 72px; }
 .avatar-griddle { background: var(--griddle-container); }
+.avatar-oven { background: var(--surface-3); }
 
 .tiles { display: flex; flex-wrap: wrap; gap: 8px; flex: none; }
 .tile { flex: 1 1 0; min-width: max-content; background: var(--surface); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 4px; color: var(--text); }
@@ -335,3 +336,32 @@ p.t-bodyM, .lh-body { line-height: 1.45; }
 .lane-tick-row { position: relative; flex: 1; }
 .lane-tick { position: absolute; top: 2px; transform: translateX(-50%); }
 .lane-tick:first-child { transform: none; }
+
+/* ---------- Setup and forms ---------- */
+.setup-bar { display: flex; gap: 6px; padding: 32px 20px 20px; flex: none; }
+.setup-bar span { flex: 1; height: 4px; border-radius: 2px; background: var(--surface-3); }
+.setup-bar span.on { background: var(--accent); }
+.setup-body { padding-top: 0; padding-left: 20px; padding-right: 20px; gap: 16px; }   /* bottom padding comes from .scroll-body (clears the pinned bar) */
+.setup-body > p { margin-top: -4px; margin-bottom: 8px; }
+.setup-foot { padding: 16px 20px 16px; }
+.setup-actions { display: flex; gap: 12px; }
+.setup-back { flex: 1 1 0; min-height: 56px; border-radius: 28px; font-size: 17px; }
+.setup-next { flex: 2 1 0; min-width: 0; }
+.input { min-height: 52px; border-radius: 16px; border: 1px solid var(--outline); background: none; padding: 0 16px; font-size: 18px; width: 100%; min-width: 0; outline: none; }
+.input:focus { border: 2px solid var(--accent); padding: 0 15px; background: var(--field-open); }
+.input::placeholder { color: var(--text-3); }
+.check-row { display: flex; align-items: center; gap: 14px; min-height: 76px; padding: 12px 16px; width: 100%; color: var(--text); }
+.checkbox { flex: none; width: 28px; height: 28px; border-radius: 4px; border: 2px solid var(--outline-2); display: flex; align-items: center; justify-content: center; }
+.checkbox-on { background: var(--accent); border-color: var(--accent); }
+.option-card { border-radius: 20px; background: var(--surface); border: 2px solid transparent; flex: none; }
+.option-card-on { border-color: var(--accent); }
+.option-head { display: flex; align-items: center; gap: 14px; min-height: 72px; padding: 14px 16px; width: 100%; color: var(--text); border-radius: 18px; }
+.option-body { display: flex; flex-direction: column; gap: 16px; padding: 0 16px 16px; }
+.radio-check { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--outline-2); display: flex; align-items: center; justify-content: center; }
+.radio-check-on { background: var(--accent); border-color: var(--accent); }
+.btn-dashed { min-height: 48px; border-radius: 24px; border: 1px dashed var(--outline-2); font-size: 15px; font-weight: 400; color: var(--text-1); padding: 0 20px; }
+.pick-row { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 8px 20px; width: 100%; color: var(--text); }
+.chips-scroll { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px; padding: 0 16px; scrollbar-width: none; }
+.chips-scroll .chip-hit { flex: none; }
+.group-label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-right: 20px; }
+.group-label-row .t-caption { white-space: nowrap; }

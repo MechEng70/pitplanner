@@ -140,7 +140,7 @@ export function Card({ onClick, tone = 'surface', pad = 'm', label, children }: 
 }
 
 export function Avatar({ kind, size = 44 }: { kind: 'smoker' | 'griddle' | 'oven'; size?: 40 | 44 | 72 }) {
-  return <span class={cx('avatar', `avatar-${size}`, kind === 'griddle' && 'avatar-griddle')}><CookerAvatarIcon kind={kind} size={size === 72 ? 32 : 22} /></span>;
+  return <span class={cx('avatar', `avatar-${size}`, kind === 'griddle' && 'avatar-griddle', kind === 'oven' && 'avatar-oven')}><CookerAvatarIcon kind={kind} size={size === 72 ? 32 : 22} /></span>;
 }
 
 export function Tile({ label, value, tone, onClick }: { label: string; value: string; tone?: Tone; onClick?: () => void }) {
@@ -332,9 +332,9 @@ export function IconButton({ label, onClick, bleed, children }: Kids & { label: 
 export interface ChipOpt { id: string; label: string; disabled?: boolean; hint?: string }
 
 /** Single-select filter chips. 40 dp visible (32 dp when small), always a 48 dp touch target. */
-export function Chips({ options, value, onChange, label, small }: { options: ChipOpt[]; value: string; onChange: (id: string) => void; label: string; small?: boolean }) {
+export function Chips({ options, value, onChange, label, small, scroll }: { options: ChipOpt[]; value: string; onChange: (id: string) => void; label: string; small?: boolean; scroll?: boolean }) {
   return (
-    <div class={cx('chips', small && 'chips-s')} role="radiogroup" aria-label={label}>
+    <div class={cx('chips', small && 'chips-s', scroll && 'chips-scroll')} role="radiogroup" aria-label={label}>
       {options.map(o => (
         <button key={o.id} role="radio" aria-checked={o.id === value} disabled={o.disabled} class="chip-hit" onClick={() => onChange(o.id)}>
           <span class={cx('chip', 'rp', o.id === value && 'chip-on')}>
@@ -405,7 +405,9 @@ export function SelectField({ label, value, trailing, open, onClick, fieldRef }:
 
 /* ---------- Lists and menus ---------- */
 
-export const GroupLabel = ({ children }: Kids) => <h3 class="group-label">{children}</h3>;
+export const GroupLabel = ({ children, note }: Kids & { note?: string }) => note
+  ? <div class="group-label-row"><h3 class="group-label">{children}</h3><span class="t-caption tone-secondary">{note}</span></div>
+  : <h3 class="group-label">{children}</h3>;
 
 export function ListRow({ leading, title, subtitle, onClick, trailing }: {
   leading?: ComponentChildren; title: ComponentChildren; subtitle?: ComponentChildren; onClick: () => void; trailing?: ComponentChildren;
@@ -498,3 +500,97 @@ export function Menu({ anchor, onClose, intro, footer, children, field }: Kids &
 }
 
 export type { JSX };
+
+/* ---------- Setup and forms ---------- */
+
+/** First-launch page (mockups 01, 03): step bar, large title, intro, scroll body, pinned actions. */
+export function SetupPage({ step, steps, title, intro, footer, children }: Kids & {
+  step: number; steps: number; title: string; intro?: ComponentChildren; footer: ComponentChildren;
+}) {
+  return (
+    <div class="screen">
+      <div class="setup-bar" role="progressbar" aria-valuemin={1} aria-valuemax={steps} aria-valuenow={step} aria-label={`Step ${step} of ${steps}`}>
+        {Array.from({ length: steps }, (_, i) => <span key={i} class={cx(i < step && 'on')} />)}
+      </div>
+      <ScrollWithFooter bodyClass="screen-body setup-body" footClass="screen-foot setup-foot" footer={footer}>
+        <h1 class="t-display">{title}</h1>
+        {intro && <p class="t-bodyM tone-secondary">{intro}</p>}
+        {children}
+      </ScrollWithFooter>
+    </div>
+  );
+}
+
+/** Back + main action at the bottom of a setup page (1:2 widths). Back is left out on the first page. */
+export function SetupActions({ onBack, next, onNext, disabled }: { onBack?: () => void; next: string; onNext: () => void; disabled?: boolean }) {
+  return (
+    <div class="setup-actions">
+      {onBack && <button class="btn btn-outline setup-back rp" onClick={onBack}>Back</button>}
+      <button class="btn btn-primary setup-next rp" disabled={disabled} onClick={onNext}>{next}</button>
+    </div>
+  );
+}
+
+/** Labeled text or number box. Numbers keep the decimal keypad and tabular digits. */
+export function InputField({ label, value, onInput, numeric, placeholder, note }: {
+  label: string; value: string; onInput: (v: string) => void; numeric?: boolean; placeholder?: string; note?: ComponentChildren;
+}) {
+  return (
+    <label class="stack gap-8 fill">
+      <span class="t-label tone-secondary">{label}</span>
+      <input class={cx('input', numeric && 'num')} inputMode={numeric ? 'decimal' : 'text'} value={value} placeholder={placeholder}
+        onInput={e => onInput(e.currentTarget.value)} />
+      {note && <span class="t-caption tone-secondary lh">{note}</span>}
+    </label>
+  );
+}
+
+/** Row with a square checkbox at the end (Griddle, Oven on Setup). */
+export function CheckRow({ leading, title, subtitle, checked, onChange }: {
+  leading?: ComponentChildren; title: string; subtitle?: ComponentChildren; checked: boolean; onChange: (v: boolean) => void;
+}) {
+  return (
+    <button class="check-row rp" role="checkbox" aria-checked={checked} onClick={() => onChange(!checked)}>
+      {leading}
+      <span class="fill stack gap-2">
+        <span class="t-bodyL w-500">{title}</span>
+        {subtitle && <span class="t-label tone-secondary lh">{subtitle}</span>}
+      </span>
+      <span class={cx('checkbox', checked && 'checkbox-on')}>{checked && <Check size={22} color="var(--on-accent)" />}</span>
+    </button>
+  );
+}
+
+/** Card with a header that selects it (round check) and a body shown while selected (Setup smoker). */
+export function OptionCard({ selected, leading, title, subtitle, onToggle, children }: Kids & {
+  selected: boolean; leading?: ComponentChildren; title: string; subtitle?: ComponentChildren; onToggle: () => void;
+}) {
+  return (
+    <div class={cx('option-card', selected && 'option-card-on')}>
+      <button class="option-head rp" role="checkbox" aria-checked={selected} onClick={onToggle}>
+        {leading}
+        <span class="fill stack gap-2">
+          <span class="t-bodyL w-500">{title}</span>
+          {subtitle && <span class="t-label tone-secondary lh">{subtitle}</span>}
+        </span>
+        <span class={cx('radio-check', selected && 'radio-check-on')}>{selected && <Check size={16} color="var(--on-accent)" />}</span>
+      </button>
+      {selected && children && <div class="option-body">{children}</div>}
+    </div>
+  );
+}
+
+/** Dashed full-width button for "add" and "enter it yourself" actions. */
+export function DashedButton({ onClick, children }: Kids & { onClick: () => void }) {
+  return <button class="btn btn-dashed block rp" onClick={onClick}>{children}</button>;
+}
+
+/** Plain picker row: name, accent check and tint when selected (smoker picker). */
+export function PickRow({ label, selected, onClick }: { label: string; selected?: boolean; onClick: () => void }) {
+  return (
+    <button role="option" aria-selected={!!selected} class={cx('pick-row', 'rp', selected && 'menu-row-on')} onClick={onClick}>
+      <span class="fill t-bodyL">{label}</span>
+      {selected && <Check size={22} color="var(--accent)" />}
+    </button>
+  );
+}

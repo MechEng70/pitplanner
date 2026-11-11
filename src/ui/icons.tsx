@@ -28,7 +28,11 @@ export const Restart = (p: P) => svg(<><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><pa
 export const StopSquare = (p: P) => svg(<rect x="5" y="5" width="14" height="14" rx="2" />, p);
 export const Warn = (p: P) => svg(<><path d="M12 3l10 18H2L12 3z" /><path d="M12 10v5M12 18h.01" /></>, p);
 
-/** Avatar glyph: ember flame for smoker and oven, blue griddle. */
+export const OvenIcon = (p: P) => svg(<><rect x="4" y="5" width="16" height="14" rx="2.5" /><path d="M4 10h16M8 14h8" /></>, p);
+
+/** Avatar glyph: ember flame for smoker, blue griddle, plain oven (mockups 01, 17). */
 export function CookerAvatarIcon({ kind, size = 22 }: { kind: 'smoker' | 'griddle' | 'oven'; size?: number }) {
-  return kind === 'griddle' ? <GriddleIcon size={size} color="var(--griddle)" /> : <Flame size={size} color="var(--accent)" />;
+  if (kind === 'griddle') return <GriddleIcon size={size} color="var(--griddle)" />;
+  if (kind === 'oven') return <OvenIcon size={size} color="var(--text-1)" />;
+  return <Flame size={size} color="var(--accent)" />;
 }

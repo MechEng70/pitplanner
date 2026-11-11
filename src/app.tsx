@@ -11,6 +11,7 @@ import { PlanScreen } from './screens/plan/PlanScreen.tsx';
 import { StartCheckSheet } from './screens/plan/StartCheckSheet.tsx';
 import { DebugScreen } from './screens/debug/DebugScreen.tsx';
 import { CookScreen } from './screens/cook/CookScreen.tsx';
+import { Setup } from './screens/setup/Setup.tsx';
 import { PitAlarms, allGranted, alarmsAreNative } from './platform/alarms.ts';
 import { applyActions, newCook, syncAlarms } from './lib/cook.ts';
 
@@ -69,6 +70,7 @@ function Shell() {
     setCheckPlan(plan);
   };
 
+  if (state.firstRun) return <div class="app"><Setup /></div>;
   return (
     <div class="app">
       <main class="app-body">
@@ -87,7 +89,7 @@ function Shell() {
   );
 }
 
-/** Stand-in until the Gear and Setup screens exist: enough to exercise the Plan screen. */
+/** Stand-in until the Gear screen exists: enough to exercise the Plan screen. */
 function GearPlaceholder({ onDebug }: { onDebug: () => void }) {
   const [taps, setTaps] = useState(0);
   const { state, setGear, setUnits } = useStore();

@@ -10,6 +10,15 @@
     "electric": { "kind": "interval", "everyMin": 60, "label": "Wood chip refills" },
     "other": { "kind": "none", "label": "No fuel alerts" }
   },
+  "smokerTypes": {
+    "pellet": { "chip": "Pellet", "group": "Pellet", "title": "Pellet smoker", "note": "Hopper alerts" },
+    "kamado": { "chip": "Kamado", "group": "Kamado", "title": "Kamado", "note": "Charcoal, long burns" },
+    "drum": { "chip": "Drum", "group": "Bullet and drum", "title": "Drum smoker", "note": "Charcoal, long burns" },
+    "gravity": { "chip": "Gravity", "group": "Gravity charcoal", "title": "Gravity smoker", "note": "Hopper alerts" },
+    "offset": { "chip": "Offset", "group": "Offset", "title": "Offset smoker", "note": "Fire checks every 1-2 hr" },
+    "electric": { "chip": "Electric", "group": "Electric", "title": "Electric smoker", "note": "Wood chip refills" },
+    "other": { "chip": "Other", "group": "Other", "title": "Smoker", "note": "No fuel alerts" }
+  },
   "smokers": [
     { "id": "pitboss-820", "brand": "Pit Boss", "model": "820", "type": "pellet", "verified": true,
       "minTempF": 180, "maxTempF": 500, "tempStepF": 5, "hopperLb": 21, "mainGrateSqIn": 593, "upperRackSqIn": 256,

@@ -7,7 +7,6 @@ import type { Units } from './format.ts';
 import { load, save, remove } from './storage.ts';
 import { normalize, type ActiveCook } from './cook.ts';
 import { loadHistory, saveHistory, logsOf, type CookRecord } from './history.ts';
-import { seedGear } from './gear.ts';
 
 export interface Draft {
   mode: 'readyBy' | 'startAt';
@@ -25,6 +24,7 @@ export interface AppState {
   records: CookRecord[];           // history file
   cook: ActiveCook | null;         // running cook, written on every change (reboot restore reads it)
   flags: { supportShown?: boolean };
+  firstRun: boolean;               // no gear saved yet: show Setup
 }
 
 /** Next Saturday at 5:00 PM local, at least an hour out. Only used for a fresh draft. */
@@ -46,6 +46,7 @@ interface Store {
   state: AppState;
   setDraft: (fn: (d: Draft) => Draft) => void;
   setGear: (g: Cookers) => void;
+  finishSetup: (g: Cookers, u: Units) => void;
   setUnits: (u: Units) => void;
   setCook: (c: ActiveCook | null) => void;
   addRecord: (r: CookRecord) => Promise<void>;
@@ -64,7 +65,8 @@ export function StoreProvider({ now, children }: { now: number; children: Compon
         load<unknown>('activeCook'), load<AppState['flags']>('flags'), loadHistory(),
       ]);
       setState({
-        gear: gear ?? seedGear(),
+        gear: gear ?? {},
+        firstRun: gear == null,
         units: units ?? { temp: 'F', weight: 'lb' },
         draft: draft ?? { mode: 'readyBy', at: defaultServe(now), pitTempF: 225, items: [] },
         rates: rates ?? {},
@@ -83,6 +85,10 @@ export function StoreProvider({ now, children }: { now: number; children: Compon
     return { ...s, draft };
   }), []);
   const setGear = useCallback((gear: Cookers) => setState(s => { save('gear', gear); return s && { ...s, gear }; }), []);
+  const finishSetup = useCallback((gear: Cookers, units: Units) => setState(s => {
+    save('gear', gear); save('settings', units);
+    return s && { ...s, gear, units, firstRun: false };
+  }), []);
   const setUnits = useCallback((units: Units) => setState(s => { save('settings', units); return s && { ...s, units }; }), []);
   const setCook = useCallback((cook: ActiveCook | null) => setState(s => {
     if (cook) save('activeCook', cook); else remove('activeCook');
@@ -96,7 +102,7 @@ export function StoreProvider({ now, children }: { now: number; children: Compon
   }, []);
 
   if (!state) return null;
-  return <Ctx.Provider value={{ state, setDraft, setGear, setUnits, setCook, addRecord, setFlags }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ state, setDraft, setGear, finishSetup, setUnits, setCook, addRecord, setFlags }}>{children}</Ctx.Provider>;
 }
 
 export function useStore(): Store {
