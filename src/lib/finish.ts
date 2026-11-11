@@ -23,7 +23,7 @@ export interface FinishRow {
 
 export interface RateChange { foodName: string; before: number; after: number; cooksLogged: number; unlockAfter: number }
 
-export interface FinishSummary { date: number; served: string; rows: FinishRow[]; rates: RateChange[] }
+export interface FinishSummary { date: number; served: string; lateMin: number | null; rows: FinishRow[]; rates: RateChange[] }
 
 const find = (items: PlannedItem[], id: string) => items.find(i => i.input.id === id);
 
@@ -66,10 +66,10 @@ export function summarize(rules: Rules, c: ActiveCook, now: number): FinishSumma
     const after = rateFor(rules, it.input, smokerId, c.input.rateOverrides, [...history, r.log], model);
     rates.push({ foodName: it.name, before: before.rate, after: after.rate, cooksLogged: after.cooksLogged, unlockAfter: rules.learning.unlockAfterCooks });
   }
-  return { date: servedAt ?? c.original.serveAt, served, rows, rates };
+  return { date: servedAt ?? c.original.serveAt, served, lateMin: servedAt == null ? null : late, rows, rates };
 }
 
 export function toRecord(s: FinishSummary, c: ActiveCook, notes: string, id: string): CookRecord {
-  return { id, date: s.date, notes: notes.trim(), pitTempF: c.plan.pitTempF,
+  return { id, date: s.date, notes: notes.trim(), pitTempF: c.plan.pitTempF, lateMin: s.lateMin,
     items: s.rows.map(r => ({ name: r.name, plannedMin: r.plannedMin, actualMin: r.actualMin, log: r.log })) };
 }

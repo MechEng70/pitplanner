@@ -8,7 +8,7 @@ import { createPortal } from 'preact/compat';
 import type { ComponentChildren, JSX } from 'preact';
 import { createContext } from 'preact';
 import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
-import { Check, ChevronRight, Close, CookerAvatarIcon, Minus, Plus, Search } from './icons.tsx';
+import { Check, ChevronLeft, ChevronRight, Close, CookerAvatarIcon, Minus, Plus, Search } from './icons.tsx';
 import { useBack } from './back.ts';
 
 type Kids = { children?: ComponentChildren };
@@ -49,10 +49,11 @@ export const Inset = ({ children }: Kids) => <div class="inset">{children}</div>
 
 /* ---------- App structure ---------- */
 
-export function AppBar({ title, subtitle, overline, actions }: { title: string; subtitle?: ComponentChildren; overline?: string; actions?: ComponentChildren }) {
+export function AppBar({ title, subtitle, overline, actions, onBack }: { title: string; subtitle?: ComponentChildren; overline?: string; actions?: ComponentChildren; onBack?: () => void }) {
   const sub = subtitle != null || overline != null;
   return (
-    <header class={cx('appbar', sub && 'appbar-sub')}>
+    <header class={cx('appbar', sub && 'appbar-sub', onBack && 'appbar-back')}>
+      {onBack && <IconButton label="Back" onClick={onBack}><ChevronLeft /></IconButton>}
       {sub
         ? <div class="fill stack gap-2">
             {overline && <span class="t-overline tone-accentHi">{overline}</span>}
@@ -66,12 +67,12 @@ export function AppBar({ title, subtitle, overline, actions }: { title: string; 
 }
 
 /** App bar, a scrolling body with 16 dp sides, and an optional footer pinned above the nav. */
-export function Screen({ title, subtitle, overline, actions, footer, children }: Kids & {
-  title: string; subtitle?: ComponentChildren; overline?: string; actions?: ComponentChildren; footer?: ComponentChildren;
+export function Screen({ title, subtitle, overline, actions, footer, onBack, children }: Kids & {
+  title: string; subtitle?: ComponentChildren; overline?: string; actions?: ComponentChildren; footer?: ComponentChildren; onBack?: () => void;
 }) {
   return (
     <div class="screen">
-      <AppBar title={title} subtitle={subtitle} overline={overline} actions={actions} />
+      <AppBar title={title} subtitle={subtitle} overline={overline} actions={actions} onBack={onBack} />
       <ScrollWithFooter bodyClass="screen-body" footClass="screen-foot" footer={footer}>{children}</ScrollWithFooter>
     </div>
   );
@@ -143,12 +144,13 @@ export function Avatar({ kind, size = 44 }: { kind: 'smoker' | 'griddle' | 'oven
   return <span class={cx('avatar', `avatar-${size}`, kind === 'griddle' && 'avatar-griddle', kind === 'oven' && 'avatar-oven')}><CookerAvatarIcon kind={kind} size={size === 72 ? 32 : 22} /></span>;
 }
 
-export function Tile({ label, value, tone, onClick }: { label: string; value: string; tone?: Tone; onClick?: () => void }) {
-  const body = <><Text v="caption" tone="secondary">{label}</Text><span class={cx('t-tile', tone && `tone-${tone}`)}><Num>{value}</Num></span></>;
+export function Tile({ label, value, sub, tone, onClick }: { label: string; value: string; sub?: string; tone?: Tone; onClick?: () => void }) {
+  const body = <><Text v="caption" tone="secondary">{label}</Text><span class={cx('t-tile', tone && `tone-${tone}`)}><Num>{value}</Num></span>
+    {sub && <Text v="caption" tone="secondary">{sub}</Text>}</>;
   return onClick ? <button class="tile rp" onClick={onClick}>{body}</button> : <div class="tile">{body}</div>;
 }
 /** Tiles share a row and wrap to a second row rather than clipping a value. */
-export const Tiles = ({ children }: Kids) => <div class="tiles">{children}</div>;
+export const Tiles = ({ inset, children }: Kids & { inset?: boolean }) => <div class={cx('tiles', inset && 'tiles-inset')}>{children}</div>;
 
 export function InfoBox({ lead, children }: Kids & { lead?: ComponentChildren }) {
   return <div class="infobox">{lead && <span class="infobox-lead">{lead}</span>}<span>{children}</span></div>;

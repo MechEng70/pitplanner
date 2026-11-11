@@ -50,6 +50,7 @@ interface Store {
   setUnits: (u: Units) => void;
   setCook: (c: ActiveCook | null) => void;
   addRecord: (r: CookRecord) => Promise<void>;
+  removeRecord: (id: string) => Promise<void>;
   setFlags: (f: AppState['flags']) => void;
 }
 
@@ -101,8 +102,14 @@ export function StoreProvider({ now, children }: { now: number; children: Compon
     setState(s => s && { ...s, records, history: logsOf(records) });
   }, []);
 
+  const removeRecord = useCallback(async (id: string) => {
+    const records = (await loadHistory()).filter(r => r.id !== id);
+    await saveHistory(records);
+    setState(s => s && { ...s, records, history: logsOf(records) });
+  }, []);
+
   if (!state) return null;
-  return <Ctx.Provider value={{ state, setDraft, setGear, finishSetup, setUnits, setCook, addRecord, setFlags }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ state, setDraft, setGear, finishSetup, setUnits, setCook, addRecord, removeRecord, setFlags }}>{children}</Ctx.Provider>;
 }
 
 export function useStore(): Store {

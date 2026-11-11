@@ -115,6 +115,8 @@ test('finish: planned vs actual per food, record logs only foods that came off, 
   const rec = toRecord(s, ended, '  windy ', 'x');
   assert.equal(rec.notes, 'windy');
   assert.equal(rec.items.length, 3);
+  assert.equal(rec.lateMin, 0);
+  assert.equal(summarize(rules, c, at(12)).lateMin, null);
 });
 
 test('hold impact: a food that would come off after serve says so', () => {

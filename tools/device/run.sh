@@ -44,7 +44,7 @@ for s in 1.15 1.3; do
   ./attach.sh && node restore.mjs >/dev/null
 done
 
-python3 -I compose.py "$OUT/gear.png" "115%=$OUT/1.15/gear.png" "130%=$OUT/1.3/gear.png" "130% end=$OUT/1.3/gear-end.png" "griddle 115%=$OUT/1.15/griddle.png" "griddle 130%=$OUT/1.3/griddle.png" || true
+python3 -I compose.py "$OUT/gear.png" "115%=$OUT/1.15/gear.png" "130%=$OUT/1.3/gear.png" "130% end=$OUT/1.3/gear-end.png" "history 115%=$OUT/1.15/history.png" "130%=$OUT/1.3/history.png" "cook 115%=$OUT/1.15/history-cook.png" "130%=$OUT/1.3/history-cook.png" || true
 [ -n "$ONLY" ] && { log "images: $OUT/$ONLY.png"; exit 0; }
 python3 -I compose.py "$OUT/plan.png" "115%=$OUT/1.15/plan.png" "130%=$OUT/1.3/plan.png"
 python3 -I compose.py "$OUT/brisket.png" "115%=$OUT/1.15/brisket-after-plus.png" "130%=$OUT/1.3/brisket-after-plus.png"

@@ -12,6 +12,7 @@ import { DebugScreen } from './screens/debug/DebugScreen.tsx';
 import { CookScreen } from './screens/cook/CookScreen.tsx';
 import { Setup } from './screens/setup/Setup.tsx';
 import { GearScreen } from './screens/gear/GearScreen.tsx';
+import { HistoryScreen } from './screens/gear/HistoryScreen.tsx';
 import { PitAlarms, allGranted, alarmsAreNative } from './platform/alarms.ts';
 import { applyActions, newCook, syncAlarms } from './lib/cook.ts';
 
@@ -57,8 +58,8 @@ function Shell() {
 
   const [checkPlan, setCheckPlan] = useState<Plan | null>(null);
   const [debug, setDebug] = useState(false);
-  // Gear detail screens (mockups 18-20), opened over the Gear tab.
-  const [gearView, setGearView] = useState<'history' | 'griddle' | 'oven' | null>(null);
+  // Cook history (mockup 20), opened over the Gear tab.
+  const [gearView, setGearView] = useState<'history' | null>(null);
 
   const beginCook = async (plan: Plan) => {
     const cook = newCook(planInput(state), plan, Date.now());
@@ -75,10 +76,13 @@ function Shell() {
   if (state.firstRun) return <div class="app"><Setup /></div>;
   return (
     <div class="app">
-      <main class="app-body" data-gear-view={gearView ?? undefined}>
+      <main class="app-body">
         {tab === 'plan' && <PlanScreen onStartCook={startCook} />}
         {tab === 'cook' && <CookScreen onGoPlan={() => setTab('plan')} />}
-        {tab === 'gear' && <GearScreen onDebug={() => setDebug(true)} onHistory={() => setGearView('history')} onCooker={setGearView} />}
+        {tab === 'gear' && !gearView && <GearScreen onDebug={() => setDebug(true)} onHistory={() => setGearView('history')} />}
+        {tab === 'gear' && gearView === 'history' && (
+          <HistoryScreen onBack={() => setGearView(null)} onCookAgain={() => { setGearView(null); setTab('plan'); }} />
+        )}
       </main>
       {checkPlan && <StartCheckSheet onClose={() => setCheckPlan(null)} onStart={() => beginCook(checkPlan)} />}
       {debug && <DebugScreen onClose={() => setDebug(false)} />}

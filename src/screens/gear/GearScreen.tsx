@@ -6,22 +6,21 @@ import { Bell, Cup, HomeIcon, Plus, Thermo } from '../../ui/icons.tsx';
 import { useStore } from '../../lib/store.tsx';
 import { fmtRate, fmtTemp, type Units } from '../../lib/format.ts';
 import { defaultGriddle, defaultOven, hasHopper, smokerTypeInfo } from '../../lib/gear.ts';
-import { rateRows } from '../../lib/history.ts';
+import { rateRows } from '../../lib/historyView.ts';
+import { rules } from '../../lib/rules.ts';
 import { allGranted, type AlarmStatus } from '../../platform/alarms.ts';
 import { AlertChecks, TestAlertButton, useAlarmStatus } from '../shared/AlertChecks.tsx';
 import { AddCooker, type CookerKind } from '../shared/AddCooker.tsx';
 import { SmokerPicker } from '../setup/SmokerPicker.tsx';
-import { GriddleSheet } from './CookerSheets.tsx';
+import { GriddleSheet, OvenSheet } from './CookerSheets.tsx';
 
 const SUPPORT_URL = 'https://buymeacoffee.com/PitPlanner';
 const KINDS: CookerKind[] = ['smoker', 'griddle', 'oven'];
 
-type Open = 'add' | 'picker' | 'alerts' | 'units' | 'griddle' | null;
+type Open = 'add' | 'picker' | 'alerts' | 'units' | 'griddle' | 'oven' | null;
 
 /** Gear tab (mockup 16): cookers, cook rates, app settings, version. */
-export function GearScreen({ onDebug, onHistory, onCooker }: {
-  onDebug: () => void; onHistory: () => void; onCooker: (k: 'oven') => void;
-}) {
+export function GearScreen({ onDebug, onHistory }: { onDebug: () => void; onHistory: () => void }) {
   const { state, setGear, setUnits } = useStore();
   const { gear, units } = state;
   const [open, setOpen] = useState<Open>(null);
@@ -32,11 +31,9 @@ export function GearScreen({ onDebug, onHistory, onCooker }: {
 
   const add = (k: CookerKind) => {
     if (k === 'smoker') return setOpen('picker');
-    if (k === 'griddle') return setOpen('griddle');
-    setGear({ ...gear, oven: defaultOven() });
-    onCooker(k);
+    setOpen(k);
   };
-  const top = rateRows(state.history, state.rates)[0];
+  const top = rateRows(rules, state.history, state.rates)[0];
 
   return (
     <Screen title="Gear">
@@ -54,7 +51,7 @@ export function GearScreen({ onDebug, onHistory, onCooker }: {
           )}
           {gear.oven && (
             <ListRow leading={<Avatar kind="oven" size={40} />} title="Oven" wrap
-              subtitle={`Holding at ${fmtTemp(gear.oven.lowestTempF, units, true)}`} onClick={() => onCooker('oven')} />
+              subtitle={gear.oven.holdIn === 'cooler' ? 'Holding in a cooler' : `Holding at ${fmtTemp(gear.oven.lowestTempF, units, true)}`} onClick={() => setOpen('oven')} />
           )}
           {missing.length > 0 && (
             <ListRow leading={<span class="avatar avatar-40"><Plus color="var(--accent)" /></span>} title="Add a cooker" tone="accent"
@@ -107,6 +104,10 @@ export function GearScreen({ onDebug, onHistory, onCooker }: {
         <GriddleSheet initial={gear.griddle ?? defaultGriddle()} onClose={close}
           onSave={griddle => setGear({ ...gear, griddle })}
           onRemove={gear.griddle && gear.smoker ? () => setGear(without(gear, 'griddle')) : undefined} />
+      )}
+      {open === 'oven' && (
+        <OvenSheet initial={gear.oven ?? defaultOven()} units={units} onClose={close}
+          onSave={oven => setGear({ ...gear, oven })} onRemove={gear.oven ? () => setGear(without(gear, 'oven')) : undefined} />
       )}
       {open === 'units' && <UnitsSheet units={units} onChange={setUnits} onClose={close} />}
     </Screen>

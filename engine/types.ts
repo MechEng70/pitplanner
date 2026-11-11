@@ -21,7 +21,7 @@ export interface SmokerProfile {
 }
 
 export interface GriddleProfile { id: string; name: string; sizeIn: number; burners: number; hasDome: boolean; preheatMin: number; }
-export interface OvenProfile { id: string; lowestTempF: number; holdIn: 'oven' | 'cooler' | 'ask'; }
+export interface OvenProfile { id: string; lowestTempF: number; holdIn: 'oven' | 'cooler' | 'ask'; warmingDrawer?: boolean; }
 
 export interface Cookers { smoker?: SmokerProfile; griddle?: GriddleProfile; oven?: OvenProfile; }
 

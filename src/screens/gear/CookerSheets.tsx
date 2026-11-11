@@ -1,6 +1,8 @@
 import { useState } from 'preact/hooks';
-import type { GriddleProfile } from '../../../engine/types.ts';
-import { Button, Chips, Field, InputField, Sheet, Stack, useSheet } from '../../ui/components.tsx';
+import type { GriddleProfile, OvenProfile } from '../../../engine/types.ts';
+import { cToF, fToC, showTemp } from '../../../engine/units.ts';
+import { Button, Chips, Field, InputField, Sheet, Stack, Stepper, useSheet } from '../../ui/components.tsx';
+import type { Units } from '../../lib/format.ts';
 
 const SIZES = [17, 22, 28, 36];
 const BURNERS = [1, 2, 3, 4];
@@ -25,6 +27,40 @@ export function GriddleSheet({ initial, onSave, onRemove, onClose }: {
         </Field>
         <Field label="Dome or cover" note="Used to finish thick chicken and wings.">
           <Chips label="Dome or cover" value={g.hasDome ? 'yes' : 'no'} onChange={v => setG({ ...g, hasDome: v === 'yes' })}
+            options={[{ id: 'yes', label: 'Yes' }, { id: 'no', label: 'No' }]} />
+        </Field>
+      </Stack>
+    </Sheet>
+  );
+}
+
+const HOLD_MIN_F = 140;     // food safety floor for holding
+const TYPICAL_LOW_F = 170;  // where most ovens bottom out
+const OVEN_MAX_F = 250;
+
+/** Oven details (mockup 19). Steps 5F, or 5C in Celsius; stored in F. */
+export function OvenSheet({ initial, units, onSave, onRemove, onClose }: {
+  initial: OvenProfile; units: Units; onSave: (o: OvenProfile) => void; onRemove?: () => void; onClose: () => void;
+}) {
+  const [o, setO] = useState(initial);
+  const C = units.temp === 'C';
+  const shown = C ? Math.round(fToC(o.lowestTempF) / 5) * 5 : Math.round(o.lowestTempF / 5) * 5;
+  const toF = (v: number) => C ? cToF(v) : v;
+  const step = (d: number) => setO({ ...o, lowestTempF: Math.min(OVEN_MAX_F, Math.max(HOLD_MIN_F, toF(shown + d * 5))) });
+  return (
+    <Sheet title="Oven" onClose={onClose} footer={<Actions what="oven" onSave={() => onSave(o)} onRemove={onRemove} />}>
+      <Stack gap={16}>
+        <Field label="Lowest oven setting"
+          note={`Holding needs at least ${showTemp(HOLD_MIN_F, units.temp)}. Most ovens bottom out at ${showTemp(TYPICAL_LOW_F, units.temp, true)}.`}>
+          <Stepper label="Lowest oven setting" value={String(shown)} unit={units.temp} onDec={() => step(-1)} onInc={() => step(1)}
+            decDisabled={toF(shown - 5) < HOLD_MIN_F - 0.5} incDisabled={toF(shown + 5) > OVEN_MAX_F + 0.5} />
+        </Field>
+        <Field label="Hold food in">
+          <Chips label="Hold food in" value={o.holdIn} onChange={v => setO({ ...o, holdIn: v as OvenProfile['holdIn'] })}
+            options={[{ id: 'oven', label: 'Oven' }, { id: 'cooler', label: 'Towel-lined cooler' }, { id: 'ask', label: 'Ask each time' }]} />
+        </Field>
+        <Field label="Warming drawer">
+          <Chips label="Warming drawer" value={o.warmingDrawer ? 'yes' : 'no'} onChange={v => setO({ ...o, warmingDrawer: v === 'yes' })}
             options={[{ id: 'yes', label: 'Yes' }, { id: 'no', label: 'No' }]} />
         </Field>
       </Stack>

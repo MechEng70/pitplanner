@@ -132,6 +132,7 @@ p.t-bodyM, .lh-body { line-height: 1.45; }
 .card { border-radius: 20px; display: flex; gap: 14px; align-items: center; width: 100%; color: var(--text); flex: none; }
 .card-surface { background: var(--surface); }
 .card-result { background: var(--result); flex-direction: column; align-items: stretch; }
+.card-col { flex-direction: column; align-items: stretch; }
 .card-outline { border: 1px solid var(--outline); }
 .card-inset { background: var(--surface-2); border-radius: 14px; }
 .pad-s { padding: 12px; } .pad-m { padding: 14px 16px; } .pad-l { padding: 16px 18px; }
@@ -372,3 +373,6 @@ p.t-bodyM, .lh-body { line-height: 1.45; }
 .group-label-row .t-caption { white-space: nowrap; }
 /* Gear: version line at the bottom, tap target for the hidden test screen */
 .gear-version { margin-top: auto; padding: 24px 0 8px; min-height: 48px; display: flex; justify-content: center; }
+/* App bar with a back arrow (Cook history): the 48 dp button sits in the left padding */
+.appbar-back { justify-content: flex-start; gap: 4px; padding-left: 4px; }
+.tiles-inset .tile { background: var(--bg); }

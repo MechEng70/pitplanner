@@ -12,6 +12,7 @@ export const ShareIcon = (p: P) => svg(<><circle cx="18" cy="5" r="3" /><circle 
 export const Calendar = (p: P) => svg(<><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18" /></>, p);
 export const ChevronDown = (p: P) => svg(<path d="M6 9l6 6 6-6" />, p);
 export const ChevronUp = (p: P) => svg(<path d="M6 15l6-6 6 6" />, p);
+export const ChevronLeft = (p: P) => svg(<path d="M15 6l-6 6 6 6" />, p);
 export const ChevronRight = (p: P) => svg(<path d="M9 6l6 6-6 6" />, p);
 export const Plus = (p: P) => svg(<path d="M12 5v14M5 12h14" />, p, 2.2);
 export const Minus = (p: P) => svg(<path d="M5 12h14" />, p, 2.2);
