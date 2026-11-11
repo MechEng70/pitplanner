@@ -1,6 +1,17 @@
 apply plugin: 'com.android.application'
 apply plugin: 'org.jetbrains.kotlin.android'
 
+// Version comes from package.json: versionName "0.1.0", versionCode 0*10000 + 1*100 + 0 = 100.
+// Every release must bump package.json so the code goes up, or Android refuses the update.
+def pkg = new groovy.json.JsonSlurper().parse(rootProject.file('../package.json'))
+def (vMajor, vMinor, vPatch) = pkg.version.tokenize('.').collect { it.replaceAll(/\D.*/, '') as int }
+
+// Release signing reads android/keystore.properties (git-ignored; see keystore.properties.example).
+// Without it, release builds come out unsigned and tools/release.sh stops.
+def keystoreFile = rootProject.file('keystore.properties')
+def keystore = new Properties()
+if (keystoreFile.exists()) keystoreFile.withInputStream { keystore.load(it) }
+
 android {
     namespace = "io.github.mecheng70.pitplanner"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -8,8 +19,8 @@ android {
         applicationId "io.github.mecheng70.pitplanner"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode vMajor * 10000 + vMinor * 100 + vPatch
+        versionName pkg.version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -17,8 +28,19 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (keystore['storeFile']) {
+                storeFile file(keystore['storeFile'].replaceFirst('^~', System.getProperty('user.home')))
+                storePassword keystore['storePassword']
+                keyAlias keystore['keyAlias']
+                keyPassword keystore['keyPassword']
+            }
+        }
+    }
     buildTypes {
         release {
+            if (keystore['storeFile']) signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

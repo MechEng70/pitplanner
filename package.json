@@ -10,7 +10,8 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "sync": "npm run build && cap sync android",
-    "device": "tools/device/run.sh"
+    "device": "tools/device/run.sh",
+    "release": "tools/release.sh"
   },
   "engines": {
     "node": ">=22.18"
