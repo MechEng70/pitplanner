@@ -28,6 +28,10 @@ export const Restart = (p: P) => svg(<><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><pa
 export const StopSquare = (p: P) => svg(<rect x="5" y="5" width="14" height="14" rx="2" />, p);
 export const Warn = (p: P) => svg(<><path d="M12 3l10 18H2L12 3z" /><path d="M12 10v5M12 18h.01" /></>, p);
 
+export const Bell = (p: P) => svg(<><path d="M6 8.5a6 6 0 0 1 12 0c0 5.5 2.5 7.5 2.5 7.5h-17S6 14 6 8.5z" /><path d="M10.3 20a2 2 0 0 0 3.4 0" /></>, p);
+export const HomeIcon = (p: P) => svg(<><path d="M4 11l8-7 8 7v9H4z" /><path d="M10 20v-5h4v5" /></>, p);
+export const Cup = (p: P) => svg(<><path d="M4 10h13v4a6 6 0 0 1-6 6h-1a6 6 0 0 1-6-6z" /><path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H17M8 3v3M12 3v3" /></>, p);
+export const Thermo = (p: P) => svg(<><path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z" /><path d="M12 11v6" /></>, p);
 export const OvenIcon = (p: P) => svg(<><rect x="4" y="5" width="16" height="14" rx="2.5" /><path d="M4 10h16M8 14h8" /></>, p);
 
 /** Avatar glyph: ember flame for smoker, blue griddle, plain oven (mockups 01, 17). */

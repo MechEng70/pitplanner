@@ -4,14 +4,14 @@ import { App as CapApp } from '@capacitor/app';
 import type { Plan } from '../engine/types.ts';
 import { ListIcon, Sliders, Timer } from './ui/icons.tsx';
 import { popBack } from './ui/back.ts';
-import { BottomNav, Chips, Field, Screen, Segmented, Text } from './ui/components.tsx';
+import { BottomNav } from './ui/components.tsx';
 import { StoreProvider, useStore, planInput } from './lib/store.tsx';
-import { defaultGriddle, defaultOven } from './lib/gear.ts';
 import { PlanScreen } from './screens/plan/PlanScreen.tsx';
 import { StartCheckSheet } from './screens/plan/StartCheckSheet.tsx';
 import { DebugScreen } from './screens/debug/DebugScreen.tsx';
 import { CookScreen } from './screens/cook/CookScreen.tsx';
 import { Setup } from './screens/setup/Setup.tsx';
+import { GearScreen } from './screens/gear/GearScreen.tsx';
 import { PitAlarms, allGranted, alarmsAreNative } from './platform/alarms.ts';
 import { applyActions, newCook, syncAlarms } from './lib/cook.ts';
 
@@ -57,6 +57,8 @@ function Shell() {
 
   const [checkPlan, setCheckPlan] = useState<Plan | null>(null);
   const [debug, setDebug] = useState(false);
+  // Gear detail screens (mockups 18-20), opened over the Gear tab.
+  const [gearView, setGearView] = useState<'history' | 'griddle' | 'oven' | null>(null);
 
   const beginCook = async (plan: Plan) => {
     const cook = newCook(planInput(state), plan, Date.now());
@@ -73,10 +75,10 @@ function Shell() {
   if (state.firstRun) return <div class="app"><Setup /></div>;
   return (
     <div class="app">
-      <main class="app-body">
+      <main class="app-body" data-gear-view={gearView ?? undefined}>
         {tab === 'plan' && <PlanScreen onStartCook={startCook} />}
         {tab === 'cook' && <CookScreen onGoPlan={() => setTab('plan')} />}
-        {tab === 'gear' && <GearPlaceholder onDebug={() => setDebug(true)} />}
+        {tab === 'gear' && <GearScreen onDebug={() => setDebug(true)} onHistory={() => setGearView('history')} onCooker={setGearView} />}
       </main>
       {checkPlan && <StartCheckSheet onClose={() => setCheckPlan(null)} onStart={() => beginCook(checkPlan)} />}
       {debug && <DebugScreen onClose={() => setDebug(false)} />}
@@ -86,38 +88,5 @@ function Shell() {
         { id: 'gear', label: 'Gear', icon: <Sliders /> },
       ]} />
     </div>
-  );
-}
-
-/** Stand-in until the Gear screen exists: enough to exercise the Plan screen. */
-function GearPlaceholder({ onDebug }: { onDebug: () => void }) {
-  const [taps, setTaps] = useState(0);
-  const { state, setGear, setUnits } = useStore();
-  const { gear, units } = state;
-  const onOff = [{ id: 'on', label: 'Have one' }, { id: 'off', label: 'None' }];
-  return (
-    <Screen title="Gear">
-      <Field label="Smoker"><Text v="bodyL">{gear.smoker?.name ?? 'None set up'}</Text></Field>
-      <Field label="Griddle">
-        <Chips label="Griddle" value={gear.griddle ? 'on' : 'off'} options={onOff}
-          onChange={v => setGear({ ...gear, griddle: v === 'on' ? gear.griddle ?? defaultGriddle() : undefined })} />
-      </Field>
-      <Field label="Oven">
-        <Chips label="Oven" value={gear.oven ? 'on' : 'off'} options={onOff}
-          onChange={v => setGear({ ...gear, oven: v === 'on' ? gear.oven ?? defaultOven() : undefined })} />
-      </Field>
-      <Field label="Temperature">
-        <Segmented label="Temperature unit" value={units.temp} onChange={v => setUnits({ ...units, temp: v as 'F' | 'C' })}
-          options={[{ id: 'F', label: 'Fahrenheit' }, { id: 'C', label: 'Celsius' }]} />
-      </Field>
-      <Field label="Weight">
-        <Segmented label="Weight unit" value={units.weight} onChange={v => setUnits({ ...units, weight: v as 'lb' | 'kg' })}
-          options={[{ id: 'lb', label: 'Pounds' }, { id: 'kg', label: 'Kilograms' }]} />
-      </Field>
-      {/* Tap the version 5 times for the alarm test screen. */}
-      <button onClick={() => { if (taps + 1 >= 5) { setTaps(0); onDebug(); } else setTaps(taps + 1); }}>
-        <Text v="label" tone="secondary">Version {__APP_VERSION__}</Text>
-      </button>
-    </Screen>
   );
 }

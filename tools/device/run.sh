@@ -1,5 +1,6 @@
 #!/bin/bash
 # One unattended device pass. Usage: tools/device/run.sh [--no-build]
+# --only <script>: run just that capture (e.g. --only gear) at both scales.
 # Backs up the phone's app data, builds + installs, captures Plan and Brisket at 115% and 130% with
 # layout measurements, then restores the data and font size. Writes out/report.txt and out/*.png.
 set -e
@@ -26,19 +27,25 @@ restore() {
 }
 trap restore EXIT
 
-[ "$1" = "--no-build" ] || { log "== build + install"; ./deploy.sh | tee -a "$REPORT"; }
+ONLY=""; NOBUILD=""
+while [ $# -gt 0 ]; do case "$1" in --no-build) NOBUILD=1;; --only) ONLY="$2"; shift;; esac; shift; done
+[ -n "$NOBUILD" ] || { log "== build + install"; ./deploy.sh | tee -a "$REPORT"; }
 ./attach.sh && node backup.mjs >/dev/null && log "data backed up"
 
 for s in 1.15 1.3; do
   $A shell settings put system font_scale $s
   ./attach.sh
   log "== font scale $s"
+  if [ -n "$ONLY" ]; then node "$ONLY.mjs" "$OUT/$s" 2>&1 | tee -a "$REPORT"; ./attach.sh && node restore.mjs >/dev/null; continue; fi
   node capture.mjs "$OUT/$s" 2>&1 | tee -a "$REPORT"
   ./attach.sh && node cook.mjs "$OUT/$s" 2>&1 | tee -a "$REPORT"
   ./attach.sh && node setup.mjs "$OUT/$s" 2>&1 | tee -a "$REPORT"
+  ./attach.sh && node gear.mjs "$OUT/$s" 2>&1 | tee -a "$REPORT"
   ./attach.sh && node restore.mjs >/dev/null
 done
 
+python3 -I compose.py "$OUT/gear.png" "115%=$OUT/1.15/gear.png" "130%=$OUT/1.3/gear.png" "130% end=$OUT/1.3/gear-end.png" "alerts=$OUT/1.15/gear-alerts.png" || true
+[ -n "$ONLY" ] && { log "images: $OUT/$ONLY.png"; exit 0; }
 python3 -I compose.py "$OUT/plan.png" "115%=$OUT/1.15/plan.png" "130%=$OUT/1.3/plan.png"
 python3 -I compose.py "$OUT/brisket.png" "115%=$OUT/1.15/brisket-after-plus.png" "130%=$OUT/1.3/brisket-after-plus.png"
 python3 -I compose.py "$OUT/cook.png" "115%=$OUT/1.15/cook.png" "130%=$OUT/1.3/cook.png" "ask=$OUT/1.15/cook-ask.png" "after=$OUT/1.15/cook-after.png" || true

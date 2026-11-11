@@ -409,19 +409,28 @@ export const GroupLabel = ({ children, note }: Kids & { note?: string }) => note
   ? <div class="group-label-row"><h3 class="group-label">{children}</h3><span class="t-caption tone-secondary">{note}</span></div>
   : <h3 class="group-label">{children}</h3>;
 
-export function ListRow({ leading, title, subtitle, onClick, trailing }: {
-  leading?: ComponentChildren; title: ComponentChildren; subtitle?: ComponentChildren; onClick: () => void; trailing?: ComponentChildren;
+/** Tappable row: leading avatar, title, secondary line, chevron. `href` opens an outside page;
+ *  no `onClick` and no `href` makes it a plain row with no chevron. */
+export function ListRow({ leading, title, subtitle, onClick, href, trailing, tone, wrap }: {
+  leading?: ComponentChildren; title: ComponentChildren; subtitle?: ComponentChildren; onClick?: () => void; href?: string;
+  trailing?: ComponentChildren; tone?: 'accent'; wrap?: boolean;
 }) {
-  return (
-    <button class="list-row rp" onClick={onClick}>
-      {leading}
-      <span class="fill stack gap-2">
-        <span class="t-bodyL">{title}</span>
-        {subtitle && <span class="t-label tone-secondary clamp">{subtitle}</span>}
-      </span>
-      {trailing ?? <ChevronRight color="var(--text-2)" />}
-    </button>
-  );
+  const body = <>
+    {leading}
+    <span class="fill stack gap-2">
+      <span class={cx('t-bodyL', tone === 'accent' && 'tone-accent w-500')}>{title}</span>
+      {subtitle && <span class={cx('t-label tone-secondary', wrap ? 'lh' : 'clamp')}>{subtitle}</span>}
+    </span>
+    {trailing !== undefined ? trailing : (onClick || href) && <ChevronRight color="var(--text-2)" />}
+  </>;
+  if (href) return <a class="list-row rp" href={href} target="_blank" rel="noopener">{body}</a>;
+  if (!onClick) return <div class="list-row">{body}</div>;
+  return <button class="list-row rp" onClick={onClick}>{body}</button>;
+}
+
+/** 40 dp round icon holder for non-cooker rows (Gear: rates, alerts, support). */
+export function IconAvatar({ tone = 'plain', children }: Kids & { tone?: 'plain' | 'ok' | 'warn' | 'gold' }) {
+  return <span class={cx('avatar', 'avatar-40', `avatar-${tone}`)}>{children}</span>;
 }
 
 export function MenuRow({ selected, label, trailing, onClick, check }: {
