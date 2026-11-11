@@ -139,14 +139,22 @@ export function onHeatSpan(item: PlannedItem): { start: number; end: number; min
   return { start, end, minutes: Math.round((end - start) / MIN) };
 }
 
-/** Lay phases backward from finish. Phases flagged anchorToEnd stay at the end even if others move. */
+/** Lay phases backward from finish, starts on 5-minute steps. Phases flagged anchorToEnd stay at the end even if others move. */
 function layBackward(item: PlannedItem) {
-  let end = item.finish;
+  // Exact boundaries are laid back from finish, then each one snaps earlier onto the 5-minute
+  // grid. Snapping each boundary once (not each phase) keeps the drift under 5 min per item:
+  // the screen and the alarms show the same round times and the cook is never shorter overall.
+  let exact = item.finish, end = item.finish;
   for (let i = item.phases.length - 1; i >= 0; i--) {
     const p = item.phases[i];
-    p.end = end; p.start = end - p.minutes * MIN; end = p.start;
+    exact -= p.minutes * MIN;
+    p.end = end; p.start = floorToStep(exact); end = p.start;
   }
 }
+
+const STEP_MS = 5 * MIN;
+const SNAP_TOLERANCE_MS = 1000; // absorbs float noise like 297.00000000000006 min
+const floorToStep = (t: number) => Math.floor((t + SNAP_TOLERANCE_MS) / STEP_MS) * STEP_MS;
 
 export function buildPlan(rules: Rules, input: PlanInput): Plan {
   const draftServe = input.mode === 'readyBy' ? input.at : 0;

@@ -2,8 +2,7 @@ import { useMemo, useState } from 'preact/hooks';
 import { buildPlan, onHeatSpan } from '../../../engine/plan.ts';
 import { lbToKg, kgToLb } from '../../../engine/units.ts';
 import type { CookerKind, ItemInput, PlanInput, TimingModel } from '../../../engine/types.ts';
-import { Sheet } from '../../components/Sheet.tsx';
-import { Chips, Segmented, Stepper } from '../../components/controls.tsx';
+import { Button, Chips, Field, InfoBox, Num, ResultCard, Segmented, Sheet, Stepper, Text, useSheet } from '../../ui/components.tsx';
 import { rules, food, method, cookerKinds, cookerName, hasCooker, defaultOptions } from '../../lib/rules.ts';
 import { fmtDuration, fmtRate, fmtTempRange, fmtTime, type Units } from '../../lib/format.ts';
 
@@ -11,25 +10,51 @@ const REST_STEP = 5;
 const REST_MAX = 240;
 const KG_STEP = 0.25;
 
-/** Food details: quantity, cooker, method, options, rest, timing model, live result. */
-export function FoodEdit({ initial, isNew, base, units, onSave, onRemove, onClose }: {
+interface Props {
   initial: ItemInput; isNew: boolean; base: PlanInput; units: Units;
   onSave: (it: ItemInput) => void; onRemove: () => void; onClose: () => void;
-}) {
-  const [it, setIt] = useState<ItemInput>(initial);
+}
+
+/** Food details (mockups 08-10): quantity, cooker, method, options, rest, timing model, live result. */
+export function FoodEdit(props: Props) {
+  const [it, setIt] = useState<ItemInput>(props.initial);
+  const preview = usePreview(it, props.base, props.isNew);
+  const m = method(it.foodId, it.methodId);
+  const blocked = !hasCooker(props.base.cookers, m.cooker) || !!preview.error;
+  return (
+    <Sheet title={food(it.foodId).name} onClose={props.onClose}
+      footer={<Footer isNew={props.isNew} blocked={blocked} onSave={() => props.onSave(it)} onRemove={props.onRemove} />}>
+      <Body {...props} it={it} setIt={setIt} preview={preview} />
+    </Sheet>
+  );
+}
+
+function Footer({ isNew, blocked, onSave, onRemove }: { isNew: boolean; blocked: boolean; onSave: () => void; onRemove: () => void }) {
+  const { close } = useSheet();
+  return (
+    <>
+      {!isNew && <Button kind="text" tone="danger" onClick={() => close(onRemove)}>Remove</Button>}
+      <Button block disabled={blocked} onClick={() => close(onSave)}>{isNew ? 'Add to plan' : 'Save'}</Button>
+    </>
+  );
+}
+
+/** The whole plan with this item in it, so fire time and conflicts in the preview are real. */
+function usePreview(it: ItemInput, base: PlanInput, isNew: boolean) {
+  return useMemo(() => {
+    const items = isNew ? [...base.items, it] : base.items.map(x => x.id === it.id ? it : x);
+    try {
+      const plan = buildPlan(rules, { ...base, items });
+      return { plan, item: plan.items.find(x => x.input.id === it.id)!, error: null as string | null };
+    } catch (e) { return { plan: null, item: null, error: String(e) }; }
+  }, [it, base, isNew]);
+}
+
+function Body({ base, units, it, setIt, preview }: Props & { it: ItemInput; setIt: (i: ItemInput) => void; preview: ReturnType<typeof usePreview> }) {
   const f = food(it.foodId);
   const m = method(it.foodId, it.methodId);
   const q = f.quantity;
   const cookers = base.cookers;
-
-  // Live preview: the whole plan with this item in it, so fire time and conflicts are real.
-  const preview = useMemo(() => {
-    const items = isNew ? [...base.items, it] : base.items.map(x => x.id === it.id ? it : x);
-    try {
-      const plan = buildPlan(rules, { ...base, items });
-      return { plan, item: plan.items.find(x => x.input.id === it.id)!, error: null };
-    } catch (e) { return { plan: null, item: null, error: String(e) }; }
-  }, [it, base, isNew]);
 
   // Quantity in display units. Weights step by the rules step in lb, or 0.25 kg.
   const kg = q.kind === 'weight' && units.weight === 'kg';
@@ -42,7 +67,6 @@ export function FoodEdit({ initial, isNew, base, units, onSave, onRemove, onClos
   const qtyText = q.kind === 'weight' ? shownQty.toFixed(kg ? 2 : 1) : String(it.quantity);
   const qtyUnit = q.kind === 'weight' ? units.weight : q.unit;
 
-  const kinds = cookerKinds(f);
   const methodsHere = f.methods.filter(x => x.cooker === m.cooker);
   const pickMethod = (id: string) => {
     const nm = method(f.id, id);
@@ -65,19 +89,12 @@ export function FoodEdit({ initial, isNew, base, units, onSave, onRemove, onClos
   const span = preview.item && onHeatSpan(preview.item);
   const cookerMissing = !hasCooker(cookers, m.cooker);
   const itemWarnings = preview.plan?.warnings.filter(w => w.itemIds?.includes(it.id)) ?? [];
-  const fireLine = preview.plan && (m.cooker === 'smoker' && preview.plan.fireAt != null
-    ? ` Fire the smoker at ${fmtTime(preview.plan.fireAt)}.`
-    : m.cooker === 'griddle' && preview.plan.griddleOnAt != null ? ` Fire the griddle at ${fmtTime(preview.plan.griddleOnAt)}.` : '');
+  const plan = preview.plan;
+  const fire = plan && (m.cooker === 'smoker' && plan.fireAt != null ? { what: 'smoker', at: plan.fireAt }
+    : m.cooker === 'griddle' && plan.griddleOnAt != null ? { what: 'griddle', at: plan.griddleOnAt } : null);
 
   return (
-    <Sheet title={f.name} onClose={onClose} footer={
-      <div class="foot-row">
-        {!isNew && <button class="btn-text danger" onClick={onRemove}>Remove</button>}
-        <button class="btn-primary grow" disabled={cookerMissing || !!preview.error} onClick={() => onSave(it)}>
-          {isNew ? 'Add to plan' : 'Save'}
-        </button>
-      </div>
-    }>
+    <>
       <Field label={q.label ?? (q.kind === 'weight' ? 'Weight' : 'How many')}>
         <Stepper label={q.label ?? 'Quantity'} value={qtyText} unit={qtyUnit}
           decDisabled={it.quantity <= q.min} incDisabled={it.quantity >= q.max}
@@ -86,7 +103,7 @@ export function FoodEdit({ initial, isNew, base, units, onSave, onRemove, onClos
 
       <Field label="Cook on">
         <Chips label="Cook on" value={m.cooker} onChange={pickCooker}
-          options={kinds.map((k: CookerKind) => ({ id: k, label: cookerName(cookers, k), disabled: !hasCooker(cookers, k), hint: hasCooker(cookers, k) ? undefined : 'Add in Gear' }))} />
+          options={cookerKinds(f).map((k: CookerKind) => ({ id: k, label: cookerName(cookers, k), disabled: !hasCooker(cookers, k), hint: hasCooker(cookers, k) ? undefined : 'Add in Gear' }))} />
       </Field>
 
       {methodsHere.length > 1 && (
@@ -103,10 +120,7 @@ export function FoodEdit({ initial, isNew, base, units, onSave, onRemove, onClos
             <Chips label={opt.label} value={val} onChange={v => setIt({ ...it, options: { ...it.options, [key]: v } })}
               options={Object.entries(opt.choices).map(([id, c]) => ({ id, label: c.label }))} />
             {(choice?.pullF || choice?.note) && (
-              <div class="info-box">
-                {choice.pullF && <b>Pull at {fmtTempRange(choice.pullF, units)}. </b>}
-                {choice.note}
-              </div>
+              <InfoBox lead={choice.pullF && <>Pull at <Num>{fmtTempRange(choice.pullF, units)}</Num>.</>}>{choice.note}</InfoBox>
             )}
           </Field>
         );
@@ -120,31 +134,24 @@ export function FoodEdit({ initial, isNew, base, units, onSave, onRemove, onClos
       </Field>
 
       {m.timing.kind === 'perWeight' && info && (
-        <Field label="Timing" note={`${fmtRate(info.hrPerLbAt225, units)} ${info.source === 'learned' ? 'from your cooks' : info.source === 'override' ? '(your setting)' : '(default)'}.${sizeUnlocked ? '' : ` Size-adjusted unlocks after ${unlockAfter} ${f.name.toLowerCase()} cooks in your history.`}`}>
+        <Field label="Timing" note={<><Num>{fmtRate(info.hrPerLbAt225, units)}</Num> {info.source === 'learned' ? 'from your cooks' : info.source === 'override' ? '(your setting)' : '(default)'}.{sizeUnlocked ? '' : ` Size-adjusted unlocks after ${unlockAfter} ${f.name.toLowerCase()} cooks in your history.`}</>}>
           <Segmented label="Timing model" value={it.timingModel ?? 'perPound'} onChange={v => setIt({ ...it, timingModel: v as TimingModel })}
             options={[{ id: 'perPound', label: 'Hours per pound' }, { id: 'sizeAdjusted', label: 'Size-adjusted', disabled: !sizeUnlocked }]} />
         </Field>
       )}
 
-      {preview.plan && span && (
-        <div class="result-card">
-          <span class="overline">For serve at {fmtTime(preview.plan.serveAt)}</span>
-          <span class="result-main">On {fmtTime(span.start)}, off {fmtTime(preview.item!.finish)}</span>
-          <span class="result-sub">{fmtDuration(span.minutes)} on heat.{fireLine}</span>
-          {itemWarnings.map(w => <span key={w.code} class={`result-warn ${w.level}`}>{w.message}</span>)}
-        </div>
+      {plan && span && (
+        <ResultCard overline={<>For serve at <Num>{fmtTime(plan.serveAt)}</Num></>}
+          title={<>On <Num>{fmtTime(span.start)}</Num>, off <Num>{fmtTime(preview.item!.finish)}</Num></>}>
+          <Text v="label" tone="soft">
+            <Num>{fmtDuration(span.minutes)}</Num> on heat.
+            {fire && <> Fire the {fire.what} at <Num>{fmtTime(fire.at)}</Num>.</>}
+          </Text>
+          {itemWarnings.map(w => <Text key={w.code} v="caption" tone={w.level === 'warn' ? 'warn' : 'secondary'}>{w.message}</Text>)}
+        </ResultCard>
       )}
-      {preview.error && <div class="info-box">Could not plan this item: {preview.error}</div>}
-    </Sheet>
-  );
-}
-
-function Field({ label, note, children }: { label: string; note?: string; children: preact.ComponentChildren }) {
-  return (
-    <div class="field">
-      <span class="field-label">{label}</span>
-      {children}
-      {note && <span class="field-note">{note}</span>}
-    </div>
+      {preview.error && <InfoBox>Could not plan this item: {preview.error}</InfoBox>}
+      {cookerMissing && <Text v="label" tone="warn">Add a {m.cooker} in Gear to cook this.</Text>}
+    </>
   );
 }

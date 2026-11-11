@@ -1,10 +1,13 @@
 import { useMemo, useRef, useState } from 'preact/hooks';
 import { buildPlan, onHeatSpan } from '../../../engine/plan.ts';
 import type { ItemInput, Plan, SmokerProfile } from '../../../engine/types.ts';
-import { Calendar, ChevronDown, CookerAvatar, Flame, Plus, ShareIcon } from '../../components/icons.tsx';
+import {
+  Avatar, Button, Card, Chips, EmptyState, Fill, Fixed, IconButton, Num, Row, Screen, SelectField, Stack, Text, Tile, Tiles,
+} from '../../ui/components.tsx';
+import { Calendar, ChevronDown, Plus, ShareIcon } from '../../ui/icons.tsx';
 import { useStore, planInput } from '../../lib/store.tsx';
-import { rules, method, food, newItem, itemSummary } from '../../lib/rules.ts';
-import { fmtDayTime, fmtDuration, fmtPellets, fmtTemp, fmtTime, fmtWeight, fromLocalInput, toLocalInput, type Units } from '../../lib/format.ts';
+import { rules, method, food, newItem, itemSummary, countText } from '../../lib/rules.ts';
+import { fmtDuration, fmtPellets, fmtTemp, fmtTime, fmtWeight, fromLocalInput, toLocalInput, type Units } from '../../lib/format.ts';
 import { sharePlan, toPitPlan } from '../../lib/share.ts';
 import { FoodPick } from './FoodPick.tsx';
 import { FoodEdit } from './FoodEdit.tsx';
@@ -24,6 +27,9 @@ function firstAction(plan: Plan): number {
   return Math.min(...[plan.fireAt, plan.griddleOnAt, ...oven].filter((x): x is number => x != null));
 }
 
+const dayFmt = new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+/** Plan tab: Empty (mockup 04) and Plan (05), with the temp menu (06) and food sheets (07-08). */
 export function PlanScreen({ onStartCook }: { onStartCook: (plan: Plan) => void }) {
   const { state, setDraft } = useStore();
   const { draft, gear, units } = state;
@@ -39,146 +45,128 @@ export function PlanScreen({ onStartCook }: { onStartCook: (plan: Plan) => void 
     catch (e) { return { plan: null, error: String(e) }; }
   }, [input]);
   const plan = built.plan;
+  const empty = !draft.items.length;
 
-  const setMode = (mode: 'readyBy' | 'startAt') => {
+  const setMode = (mode: string) => {
     if (mode === draft.mode) return;
     // Keep the same schedule when flipping: start-at takes the first action, ready-by the serve time.
     const at = plan ? (mode === 'startAt' ? firstAction(plan) : plan.serveAt) : draft.at;
-    setDraft(d => ({ ...d, mode, at }));
+    setDraft(d => ({ ...d, mode: mode as 'readyBy' | 'startAt', at }));
   };
-
   const openDate = () => {
     const el = dateRef.current;
     if (!el) return;
     el.value = toLocalInput(draft.at);
     try { el.showPicker(); } catch { el.focus(); el.click(); }
   };
-
-  const saveItem = (it: ItemInput) => {
+  const openTemp = () => tempRef.current && setLayer({ kind: 'temp', anchor: tempRef.current.getBoundingClientRect() });
+  const saveItem = (it: ItemInput) =>
     setDraft(d => ({ ...d, items: d.items.some(x => x.id === it.id) ? d.items.map(x => x.id === it.id ? it : x) : [...d.items, it] }));
-    close();
-  };
-  const removeItem = (id: string) => { setDraft(d => ({ ...d, items: d.items.filter(x => x.id !== id) })); close(); };
   const editItem = (id: string) => { const it = draft.items.find(x => x.id === id); if (it) setLayer({ kind: 'edit', item: it, isNew: false }); };
-
-  const warnCount = plan?.warnings.filter(w => w.level === 'warn').length ?? 0;
   const qtyText = (it: ItemInput) => {
-    const q = food(it.foodId).quantity;
-    return q.kind === 'weight' ? fmtWeight(it.quantity, units) : `${it.quantity} ${q.unit}`;
+    const f = food(it.foodId);
+    return f.quantity.kind === 'weight' ? fmtWeight(it.quantity, units) : countText(f, it.quantity);
   };
+  const warnCount = plan?.warnings.filter(w => w.level === 'warn').length ?? 0;
 
-  const empty = !draft.items.length;
+  const when = (
+    <Card tone="surface" pad="l">
+      <Stack gap={empty ? 8 : 0} grow>
+        <Row justify="between" align="center">
+          <Chips label="Plan from" small={!empty} value={draft.mode} onChange={setMode}
+            options={[{ id: 'readyBy', label: 'Ready by' }, { id: 'startAt', label: 'Start at' }]} />
+          {!empty && <IconButton label="Pick date and time" onClick={openDate}><Calendar color="var(--text-2)" /></IconButton>}
+        </Row>
+        <button class="rp when-btn" onClick={openDate} aria-label="Change date and time">
+          {/* Day and time are separate units: at big font sizes the line breaks between them, never inside one. */}
+          <Text v="when"><Num>{dayFmt.format(draft.at)}</Num> at <Num>{fmtTime(draft.at)}</Num></Text>
+        </button>
+      </Stack>
+      <input ref={dateRef} type="datetime-local" class="hidden-input" tabIndex={-1} aria-hidden="true"
+        onChange={e => { const t = fromLocalInput(e.currentTarget.value); if (t != null) setDraft(d => ({ ...d, at: t })); }} />
+    </Card>
+  );
 
   return (
-    <div class="screen">
-      <header class="top-bar">
-        <h1>Plan</h1>
-        {!empty && plan && (
-          <button class="icon-btn" aria-label="Share plan" onClick={() => sharePlan(toPitPlan(plan.serveAt, draft.pitTempF, draft.items))}>
-            <ShareIcon />
-          </button>
+    <Screen title="Plan" footer={!empty && (
+      <>
+        {plan && (
+          <Tiles>
+            {summaryTiles(plan, gear.smoker, units).map(t => <Tile key={t.label} {...t} />)}
+            <Tile label="Conflicts" value={warnCount ? String(warnCount) : 'None'} tone={warnCount ? 'warn' : 'ok'} onClick={() => setLayer({ kind: 'issues' })} />
+          </Tiles>
         )}
-      </header>
+        <Button block disabled={!plan} onClick={() => plan && onStartCook(plan)}>Start cook</Button>
+      </>
+    )} actions={!empty && plan &&
+      <IconButton label="Share plan" onClick={() => sharePlan(toPitPlan(plan.serveAt, draft.pitTempF, draft.items))}><ShareIcon /></IconButton>}>
+      {when}
 
-      <div class="content">
-        <div class="when-card">
-          <div class="when-main">
-            <div class="mode-chips" role="radiogroup" aria-label="Plan mode">
-              <button role="radio" aria-checked={draft.mode === 'readyBy'} class={`mini-chip ${draft.mode === 'readyBy' ? 'on' : ''}`} onClick={() => setMode('readyBy')}>Ready by</button>
-              <button role="radio" aria-checked={draft.mode === 'startAt'} class={`mini-chip ${draft.mode === 'startAt' ? 'on' : ''}`} onClick={() => setMode('startAt')}>Start at</button>
-            </div>
-            <button class="when-time" onClick={openDate} aria-label={`${draft.mode === 'readyBy' ? 'Ready by' : 'Start at'} ${fmtDayTime(draft.at)}. Change`}>
-              {fmtDayTime(draft.at)}
-            </button>
-          </div>
-          {!empty && <button class="icon-btn" aria-label="Pick date and time" onClick={openDate}><Calendar color="var(--text-2)" /></button>}
-          <input ref={dateRef} type="datetime-local" class="hidden-input" tabIndex={-1} aria-hidden="true"
-            onChange={e => { const t = fromLocalInput(e.currentTarget.value); if (t != null) setDraft(d => ({ ...d, at: t })); }} />
-        </div>
+      {empty ? (
+        <EmptyState icon={<Avatar kind="smoker" size={72} />} title="What are we cooking?"
+          body="Add each food and Pit Planner works back from serve time to tell you when to fire the smoker.">
+          <Button block onClick={() => setLayer({ kind: 'pick' })}>Add food</Button>
+          {/* TODO(history): opens Cook history (mockup 20) once Gear and history exist. */}
+          <Button kind="text" block disabled={!state.history.length}>Cook a past plan again</Button>
+        </EmptyState>
+      ) : (
+        <>
+          {gear.smoker && (
+            <SelectField fieldRef={tempRef} label="Smoker temp" value={<Num>{fmtTemp(draft.pitTempF, units, true)}</Num>} onClick={openTemp}
+              trailing={<Row gap={10}>{plan?.fireAt != null && <Text v="label" tone="secondary"><Num>Fire {fmtTime(plan.fireAt)}</Num></Text>}<ChevronDown size={20} color="var(--text-1)" /></Row>} />
+          )}
 
-        {empty ? (
-          <div class="empty">
-            <span class="empty-badge"><Flame size={32} color="var(--accent)" /></span>
-            <h2>What are we cooking?</h2>
-            <p>Add each food and Pit Planner works back from serve time to tell you when to fire the smoker.</p>
-            <div class="spacer" />
-            <button class="btn-primary block" onClick={() => setLayer({ kind: 'pick' })}>Add food</button>
-            {state.history.length > 0 && <button class="btn-text">Cook a past plan again</button>}
-          </div>
-        ) : (
-          <>
-            {gear.smoker && (
-              <button ref={tempRef} class="temp-field" aria-haspopup="listbox"
-                onClick={() => tempRef.current && setLayer({ kind: 'temp', anchor: tempRef.current.getBoundingClientRect() })}>
-                <span class="tf-text"><span class="tf-label">Smoker temp</span><span class="tf-value">{fmtTemp(draft.pitTempF, units, true)}</span></span>
-                <span class="tf-right">
-                  {plan?.fireAt != null && <span class="muted">Fire {fmtTime(plan.fireAt)}</span>}
-                  <ChevronDown color="var(--text-1)" size={20} />
-                </span>
-              </button>
-            )}
+          <Row justify="between" align="baseline">
+            <Text v="section" as="h2">On the menu</Text>
+            <Text v="label" tone="secondary"><Num>{draft.items.length} {draft.items.length === 1 ? 'item' : 'items'}</Num></Text>
+          </Row>
 
-            <div class="section-head">
-              <h2>On the menu</h2>
-              <span class="muted">{draft.items.length} {draft.items.length === 1 ? 'item' : 'items'}</span>
-            </div>
+          {draft.items.map(it => {
+            const pi = plan?.items.find(x => x.input.id === it.id);
+            const span = pi && onHeatSpan(pi);
+            const m = method(it.foodId, it.methodId);
+            return (
+              <Card key={it.id} onClick={() => editItem(it.id)} label={`${food(it.foodId).name}, edit`}>
+                <Avatar kind={m.cooker} />
+                <Fill>
+                  <Stack gap={2}>
+                    <Text v="bodyL" weight={500}>{food(it.foodId).name}</Text>
+                    <Text v="label" tone="secondary" clamp>{itemSummary(it, qtyText(it))}</Text>
+                  </Stack>
+                </Fill>
+                {span && (
+                  <Fixed>
+                    <Text v="body" weight={500}><Num>{fmtTime(span.start)}</Num></Text>
+                    <Text v="caption" tone="secondary"><Num>{fmtDuration(span.minutes)}</Num>{m.timing.kind === 'perWeight' ? ' on heat' : ''}</Text>
+                  </Fixed>
+                )}
+              </Card>
+            );
+          })}
 
-            {draft.items.map(it => {
-              const pi = plan?.items.find(x => x.input.id === it.id);
-              const span = pi && onHeatSpan(pi);
-              const m = method(it.foodId, it.methodId);
-              return (
-                <button key={it.id} class="food-card" onClick={() => editItem(it.id)}>
-                  <CookerAvatar kind={m.cooker} />
-                  <span class="fc-text">
-                    <span class="t1">{food(it.foodId).name}</span>
-                    <span class="t2">{itemSummary(it, qtyText(it))}</span>
-                  </span>
-                  {span && (
-                    <span class="fc-time">
-                      <span class="t1">{fmtTime(span.start)}</span>
-                      <span class="t2">{fmtDuration(span.minutes)}{m.timing.kind === 'perWeight' ? ' on heat' : ''}</span>
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+          <Button kind="outline" tone="accent" block icon={<Plus size={18} />} onClick={() => setLayer({ kind: 'pick' })}>Add food</Button>
 
-            <button class="btn-outline block accent" onClick={() => setLayer({ kind: 'pick' })}><Plus size={18} /> Add food</button>
+          {built.error && <Text v="label" tone="error">Could not build the plan: {built.error}</Text>}
 
-            {built.error && <p class="error-text">Could not build the plan: {built.error}</p>}
-
-            {plan && (
-              <div class="tiles">
-                {summaryTiles(plan, gear.smoker, units).map(t => <Tile key={t.label} {...t} />)}
-                <Tile label="Conflicts" value={warnCount ? String(warnCount) : 'None'} tone={warnCount ? 'warn' : 'ok'}
-                  onClick={() => setLayer({ kind: 'issues' })} />
-              </div>
-            )}
-
-            <button class="btn-primary block" disabled={!plan} onClick={() => plan && onStartCook(plan)}>Start cook</button>
-          </>
-        )}
-      </div>
+        </>
+      )}
 
       {layer?.kind === 'pick' && (
         <FoodPick onClose={close} onPick={fid => setLayer({ kind: 'edit', item: newItem(fid, gear, crypto.randomUUID()), isNew: true })} />
       )}
       {layer?.kind === 'edit' && (
-        <FoodEdit initial={layer.item} isNew={layer.isNew} base={input} units={units}
-          onSave={saveItem} onRemove={() => removeItem(layer.item.id)} onClose={close} />
+        <FoodEdit initial={layer.item} isNew={layer.isNew} base={input} units={units} onClose={close}
+          onSave={saveItem} onRemove={() => setDraft(d => ({ ...d, items: d.items.filter(x => x.id !== layer.item.id) }))} />
       )}
       {layer?.kind === 'temp' && gear.smoker && (
-        <TempMenu smoker={gear.smoker} input={input} anchor={layer.anchor} units={units} onClose={close}
+        <TempMenu smoker={gear.smoker} input={input} plan={plan} anchor={layer.anchor} units={units} onClose={close}
           onPick={t => { setDraft(d => ({ ...d, pitTempF: t })); close(); }} />
       )}
       {layer?.kind === 'issues' && plan && (
-        <IssuesSheet plan={plan} items={draft.items} cookers={gear} onClose={close}
-          onMoveToGriddle={(id, methodId) => setDraft(d => ({ ...d, items: d.items.map(x => x.id === id ? { ...x, methodId, restMin: method(x.foodId, methodId).restMin.default } : x) }))}
-          onEdit={editItem}
-          onChangeTemp={() => tempRef.current && setLayer({ kind: 'temp', anchor: tempRef.current.getBoundingClientRect() })} />
+        <IssuesSheet plan={plan} items={draft.items} cookers={gear} onClose={close} onEdit={editItem} onChangeTemp={openTemp}
+          onMoveToGriddle={(id, methodId) => setDraft(d => ({ ...d, items: d.items.map(x => x.id === id ? { ...x, methodId, restMin: method(x.foodId, methodId).restMin.default } : x) }))} />
       )}
-    </div>
+    </Screen>
   );
 }
 
@@ -193,7 +181,3 @@ function summaryTiles(plan: Plan, smoker: SmokerProfile | undefined, units: Unit
   return out;
 }
 
-function Tile({ label, value, tone, onClick }: { label: string; value: string; tone?: 'ok' | 'warn'; onClick?: () => void }) {
-  const body = <><span class="tile-label">{label}</span><span class={`tile-value ${tone ?? ''}`}>{value}</span></>;
-  return onClick ? <button class="tile" onClick={onClick}>{body}</button> : <div class="tile">{body}</div>;
-}

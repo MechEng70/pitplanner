@@ -23,12 +23,7 @@ export const Timer = (p: P) => svg(<><circle cx="12" cy="13" r="8" /><path d="M1
 export const Sliders = (p: P) => svg(<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6" />, p);
 export const Warn = (p: P) => svg(<><path d="M12 3l10 18H2L12 3z" /><path d="M12 10v5M12 18h.01" /></>, p);
 
-/** Round food avatar: ember for smoker, blue for griddle. */
-export function CookerAvatar({ kind, size = 44 }: { kind: 'smoker' | 'griddle' | 'oven'; size?: number }) {
-  const g = kind === 'griddle';
-  return (
-    <span class={`avatar ${g ? 'avatar-griddle' : ''}`} style={{ width: `${size}px`, height: `${size}px` }}>
-      {g ? <GriddleIcon color="var(--griddle)" /> : <Flame color="var(--accent)" />}
-    </span>
-  );
+/** Avatar glyph: ember flame for smoker and oven, blue griddle. */
+export function CookerAvatarIcon({ kind, size = 22 }: { kind: 'smoker' | 'griddle' | 'oven'; size?: number }) {
+  return kind === 'griddle' ? <GriddleIcon size={size} color="var(--griddle)" /> : <Flame size={size} color="var(--accent)" />;
 }

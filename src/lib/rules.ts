@@ -44,7 +44,9 @@ export function method(foodId: string, methodId: string): MethodDef {
 
 export const groups = (): string[] => [...new Set(foods.map(f => f.group))];
 
-export const cookerKinds = (f: FoodDef): CookerKind[] => [...new Set(f.methods.map(m => m.cooker))];
+const KIND_ORDER: CookerKind[] = ['smoker', 'griddle', 'oven'];
+/** Cookers a food can go on, smoker first (the order chips and blurbs read in). */
+export const cookerKinds = (f: FoodDef): CookerKind[] => KIND_ORDER.filter(k => f.methods.some(m => m.cooker === k));
 
 export const hasCooker = (c: Cookers, k: CookerKind) => !!c[k];
 
@@ -73,6 +75,11 @@ export function newItem(foodId: string, cookers: Cookers, id: string): ItemInput
 
 export function defaultOptions(m: MethodDef): Record<string, string> {
   return Object.fromEntries(Object.entries(m.options ?? {}).map(([k, o]) => [k, o.default]));
+}
+
+/** "4" for 4 chicken breasts (the name already says breasts), "3 racks" otherwise. */
+export function countText(f: FoodDef, n: number): string {
+  return f.name.toLowerCase().endsWith(f.quantity.unit.toLowerCase()) ? String(n) : `${n} ${f.quantity.unit}`;
 }
 
 /** Card subtitle: "12 lb, smoker, paper wrap". Quantity is formatted by the caller (units). */

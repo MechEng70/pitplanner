@@ -2,12 +2,12 @@ import { useEffect, useState } from 'preact/hooks';
 import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import type { Plan } from '../engine/types.ts';
-import { ListIcon, Sliders, Timer } from './components/icons.tsx';
-import { popBack } from './components/back.ts';
+import { ListIcon, Sliders, Timer } from './ui/icons.tsx';
+import { popBack } from './ui/back.ts';
+import { BottomNav, Chips, Field, Screen, Segmented, Text } from './ui/components.tsx';
 import { StoreProvider, useStore, planInput } from './lib/store.tsx';
 import { save } from './lib/storage.ts';
 import { defaultGriddle, defaultOven } from './lib/gear.ts';
-import { Segmented } from './components/controls.tsx';
 import { PlanScreen } from './screens/plan/PlanScreen.tsx';
 
 type Tab = 'plan' | 'cook' | 'gear';
@@ -31,7 +31,7 @@ function Shell() {
   }, []);
 
   const startCook = async (plan: Plan) => {
-    // TODO(cook tab): schedule alarms from plan.events via the setAlarmClock plugin (SPEC section 6)
+    // TODO(alarms): schedule from plan.events via the setAlarmClock plugin (SPEC section 6)
     // and block Start cook when alert permissions are missing (failure mode 9).
     await save('activeCook', { input: planInput(state), plan, startedAt: Date.now() });
     setTab('cook');
@@ -39,36 +39,25 @@ function Shell() {
 
   return (
     <div class="app">
-      <main class="tab-body">
+      <main class="app-body">
         {tab === 'plan' && <PlanScreen onStartCook={startCook} />}
         {tab === 'cook' && <CookPlaceholder />}
         {tab === 'gear' && <GearPlaceholder />}
       </main>
-      <nav class="nav" aria-label="Main">
-        <NavItem label="Plan" on={tab === 'plan'} onClick={() => setTab('plan')} icon={<ListIcon />} />
-        <NavItem label="Cook" on={tab === 'cook'} onClick={() => setTab('cook')} icon={<Timer />} />
-        <NavItem label="Gear" on={tab === 'gear'} onClick={() => setTab('gear')} icon={<Sliders />} />
-      </nav>
+      <BottomNav value={tab} onChange={t => setTab(t as Tab)} items={[
+        { id: 'plan', label: 'Plan', icon: <ListIcon /> },
+        { id: 'cook', label: 'Cook', icon: <Timer /> },
+        { id: 'gear', label: 'Gear', icon: <Sliders /> },
+      ]} />
     </div>
-  );
-}
-
-function NavItem({ label, on, onClick, icon }: { label: string; on: boolean; onClick: () => void; icon: preact.ComponentChildren }) {
-  return (
-    <button class={`nav-item ${on ? 'on' : ''}`} aria-current={on ? 'page' : undefined} onClick={onClick}>
-      <span class="nav-pill">{icon}</span>{label}
-    </button>
   );
 }
 
 function CookPlaceholder() {
   return (
-    <div class="screen">
-      <header class="top-bar"><h1>Cook</h1></header>
-      <div class="content">
-        <p class="muted pad">The live cook screen is not built yet. No alarms are scheduled.</p>
-      </div>
-    </div>
+    <Screen title="Cook">
+      <Text v="bodyM" tone="secondary">The live cook screen is not built yet. No alarms are scheduled.</Text>
+    </Screen>
   );
 }
 
@@ -76,34 +65,27 @@ function CookPlaceholder() {
 function GearPlaceholder() {
   const { state, setGear, setUnits } = useStore();
   const { gear, units } = state;
+  const onOff = [{ id: 'on', label: 'Have one' }, { id: 'off', label: 'None' }];
   return (
-    <div class="screen">
-      <header class="top-bar"><h1>Gear</h1></header>
-      <div class="content">
-        <div class="field">
-          <span class="field-label">Smoker</span>
-          <span>{gear.smoker?.name ?? 'None set up'}</span>
-        </div>
-        <label class="switch-row">
-          <span>Griddle</span>
-          <input type="checkbox" checked={!!gear.griddle} onChange={e => setGear({ ...gear, griddle: e.currentTarget.checked ? defaultGriddle() : undefined })} />
-        </label>
-        <label class="switch-row">
-          <span>Oven</span>
-          <input type="checkbox" checked={!!gear.oven} onChange={e => setGear({ ...gear, oven: e.currentTarget.checked ? defaultOven() : undefined })} />
-        </label>
-        <div class="field">
-          <span class="field-label">Temperature</span>
-          <Segmented label="Temperature unit" value={units.temp} onChange={v => setUnits({ ...units, temp: v as 'F' | 'C' })}
-            options={[{ id: 'F', label: 'Fahrenheit' }, { id: 'C', label: 'Celsius' }]} />
-        </div>
-        <div class="field">
-          <span class="field-label">Weight</span>
-          <Segmented label="Weight unit" value={units.weight} onChange={v => setUnits({ ...units, weight: v as 'lb' | 'kg' })}
-            options={[{ id: 'lb', label: 'Pounds' }, { id: 'kg', label: 'Kilograms' }]} />
-        </div>
-        <p class="muted">Version {__APP_VERSION__}</p>
-      </div>
-    </div>
+    <Screen title="Gear">
+      <Field label="Smoker"><Text v="bodyL">{gear.smoker?.name ?? 'None set up'}</Text></Field>
+      <Field label="Griddle">
+        <Chips label="Griddle" value={gear.griddle ? 'on' : 'off'} options={onOff}
+          onChange={v => setGear({ ...gear, griddle: v === 'on' ? gear.griddle ?? defaultGriddle() : undefined })} />
+      </Field>
+      <Field label="Oven">
+        <Chips label="Oven" value={gear.oven ? 'on' : 'off'} options={onOff}
+          onChange={v => setGear({ ...gear, oven: v === 'on' ? gear.oven ?? defaultOven() : undefined })} />
+      </Field>
+      <Field label="Temperature">
+        <Segmented label="Temperature unit" value={units.temp} onChange={v => setUnits({ ...units, temp: v as 'F' | 'C' })}
+          options={[{ id: 'F', label: 'Fahrenheit' }, { id: 'C', label: 'Celsius' }]} />
+      </Field>
+      <Field label="Weight">
+        <Segmented label="Weight unit" value={units.weight} onChange={v => setUnits({ ...units, weight: v as 'lb' | 'kg' })}
+          options={[{ id: 'lb', label: 'Pounds' }, { id: 'kg', label: 'Kilograms' }]} />
+      </Field>
+      <Text v="label" tone="secondary">Version {__APP_VERSION__}</Text>
+    </Screen>
   );
 }

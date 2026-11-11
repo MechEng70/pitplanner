@@ -1,18 +1,25 @@
 import type { Cookers, ItemInput, Plan } from '../../../engine/types.ts';
-import { Sheet } from '../../components/Sheet.tsx';
-import { Warn } from '../../components/icons.tsx';
+import { Button, Card, Row, Sheet, Stack, Text, useSheet } from '../../ui/components.tsx';
+import { Warn } from '../../ui/icons.tsx';
 import { food, method } from '../../lib/rules.ts';
 
 const TEMP_CODES = new Set(['PIT_CONFLICT', 'TEMP_UNTRUSTED', 'TEMP_NOT_SETTABLE']);
 
-/** Conflicts tile: every warning, warn level first, with the fixes that apply. */
-export function IssuesSheet({ plan, items, cookers, onMoveToGriddle, onEdit, onChangeTemp, onClose }: {
+interface Props {
   plan: Plan; items: ItemInput[]; cookers: Cookers;
   onMoveToGriddle: (itemId: string, methodId: string) => void;
   onEdit: (itemId: string) => void; onChangeTemp: () => void; onClose: () => void;
-}) {
-  const list = [...plan.warnings].sort((a, b) => (a.level === b.level ? 0 : a.level === 'warn' ? -1 : 1));
+}
 
+/** Conflicts tile: every warning, warn level first, with the fixes that apply. */
+export function IssuesSheet(props: Props) {
+  return <Sheet title="Conflicts" onClose={props.onClose}><Issues {...props} /></Sheet>;
+}
+
+function Issues({ plan, items, cookers, onMoveToGriddle, onEdit, onChangeTemp }: Props) {
+  const { close } = useSheet();
+  const list = [...plan.warnings].sort((a, b) => (a.level === b.level ? 0 : a.level === 'warn' ? -1 : 1));
+  const name = (it: ItemInput) => food(it.foodId).name.toLowerCase();
   const griddleFix = (id: string) => {
     const it = items.find(x => x.id === id);
     if (!it || !cookers.griddle || method(it.foodId, it.methodId).cooker === 'griddle') return null;
@@ -20,32 +27,30 @@ export function IssuesSheet({ plan, items, cookers, onMoveToGriddle, onEdit, onC
     return gm ? { it, gm } : null;
   };
 
+  if (!list.length) return <Text v="bodyM" tone="secondary">Nothing to fix. The plan fits your cookers.</Text>;
   return (
-    <Sheet title="Conflicts" onClose={onClose}>
-      {!list.length && <p class="muted pad">Nothing to fix. The plan fits your cookers.</p>}
-      {list.map((w, i) => (
-        <div key={i} class={`issue issue-${w.level}`}>
-          <div class="issue-head">
-            <Warn size={18} color={w.level === 'warn' ? 'var(--warn)' : 'var(--text-2)'} />
-            <span>{w.message}</span>
-          </div>
-          <div class="issue-fixes">
-            {(w.itemIds ?? []).map(id => {
-              const g = griddleFix(id);
-              return g && (
-                <button key={`g${id}`} class="btn-tonal" onClick={() => onMoveToGriddle(id, g.gm.id)}>
-                  Move {food(g.it.foodId).name.toLowerCase()} to the griddle
-                </button>
-              );
-            })}
-            {TEMP_CODES.has(w.code) && <button class="btn-tonal" onClick={onChangeTemp}>Change smoker temp</button>}
-            {(w.itemIds ?? []).map(id => {
-              const it = items.find(x => x.id === id);
-              return it && <button key={`e${id}`} class="btn-outline" onClick={() => onEdit(id)}>Edit {food(it.foodId).name.toLowerCase()}</button>;
-            })}
-          </div>
-        </div>
-      ))}
-    </Sheet>
+    <>
+      {list.map((w, i) => {
+        const its = (w.itemIds ?? []).map(id => items.find(x => x.id === id)).filter((x): x is ItemInput => !!x);
+        return (
+          <Card key={i} tone="inset" pad="s">
+            <Stack gap={10}>
+              <Row gap={10} align="start">
+                <Warn size={18} color={w.level === 'warn' ? 'var(--warn)' : 'var(--text-2)'} />
+                <Text v="body" tone={w.level === 'warn' ? 'primary' : 'soft'}>{w.message}</Text>
+              </Row>
+              <Row gap={8} wrap>
+                {its.map(it => {
+                  const g = griddleFix(it.id);
+                  return g && <Button key={`g${it.id}`} kind="tonal" onClick={() => onMoveToGriddle(it.id, g.gm.id)}>Move {name(it)} to the griddle</Button>;
+                })}
+                {TEMP_CODES.has(w.code) && <Button kind="tonal" onClick={() => close(onChangeTemp)}>Change smoker temp</Button>}
+                {its.map(it => <Button key={`e${it.id}`} kind="outline" onClick={() => close(() => onEdit(it.id))}>Edit {name(it)}</Button>)}
+              </Row>
+            </Stack>
+          </Card>
+        );
+      })}
+    </>
   );
 }
