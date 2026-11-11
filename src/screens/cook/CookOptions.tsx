@@ -2,7 +2,7 @@ import { useMemo, useState } from 'preact/hooks';
 import { ActionRow, Button, Card, Divider, ChoiceCards, Num, Sheet, Stack, Stepper, Text, useSheet } from '../../ui/components.tsx';
 import { BellOff, FlameOff, Restart, StopSquare, Timer } from '../../ui/icons.tsx';
 import { fmtTime } from '../../lib/format.ts';
-import { pending, pitDown, postpone, quiet, QUIET_MIN, shift, stepText, type ActiveCook } from '../../lib/cook.ts';
+import { pending, pitDown, postpone, keepServeIfCovered, quiet, QUIET_MIN, shift, stepText, type ActiveCook } from '../../lib/cook.ts';
 import { shiftImpact } from '../../lib/cookView.ts';
 
 const STEP = 15, LIMIT = 180, NOT_YET_MIN = 30;
@@ -43,10 +43,13 @@ export function CookOptions({ cook, onChange, onStartOver, onEnd, onClose }: {
       </Card>
 
       <Stack>
-        {next?.event.checkStep && (
-          <Row icon={<Timer />} title={`Not yet, check again in ${NOT_YET_MIN} min`} subtitle={`${stepText(next.event.label).title}. Serve stays at ${serve}.`}
-            run={() => onChange(postpone(cook, next.key, Date.now(), NOT_YET_MIN, true))} />
-        )}
+        {next?.event.checkStep && (() => {
+          const later = keepServeIfCovered(keep => postpone(cook, next.key, Date.now(), NOT_YET_MIN, keep));
+          const moved = later.plan.serveAt !== cook.plan.serveAt;
+          return <Row icon={<Timer />} title={`Not yet, check again in ${NOT_YET_MIN} min`}
+            subtitle={`${stepText(next.event.label).title}. Serve ${moved ? `moves to ${fmtTime(later.plan.serveAt)}` : `stays at ${serve}`}.`}
+            run={() => onChange(later)} />;
+        })()}
         {quietNow
           ? <Row icon={<BellOff />} title="Alerts back on" subtitle={`Quiet until ${fmtTime(cook.quietUntil!)}`} run={() => onChange({ ...cook, quietUntil: null })} />
           : <Row icon={<BellOff />} title={`Quiet alerts for ${QUIET_MIN} min`} subtitle="The plan keeps running. Missed steps wait for you." run={() => onChange(quiet(cook, Date.now()))} />}

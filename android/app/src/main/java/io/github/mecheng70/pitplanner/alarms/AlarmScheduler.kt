@@ -28,6 +28,7 @@ object AlarmScheduler {
         store.alarms = tests + next
         // A step that moved back into the future is scheduled again, so stop nagging it.
         val upcoming = next.flatMap { it.keys }.toSet()
+        // Its notification stays in the shade until the user handles or swipes it.
         store.nags = store.nags.map { n -> n.copy(keys = n.keys.filterNot { it in upcoming }) }.filter { it.keys.isNotEmpty() }
         return scheduleStored(ctx, store)
     }

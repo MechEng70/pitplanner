@@ -45,6 +45,7 @@ export function holdImpact(before: Plan, after: Plan, itemId: string): string {
   const serveMoved = Math.round((after.serveAt - before.serveAt) / MIN);
   if (serveMoved) return `Serve ${fmtTime(after.serveAt)}, ${serveMoved > 0 ? 'later' : 'earlier'} by ${fmtDuration(Math.abs(serveMoved))}.`;
   const a = holdMin(before, itemId), b = holdMin(after, itemId);
+  if (b < 0) return `${name}: off heat ${fmtDuration(-b)} after serve.`;
   if (a === b) return `${name} holds ${fmtDuration(b)}, as planned.`;
   return `${name} holds ${fmtDuration(Math.max(0, b))} instead of ${fmtDuration(Math.max(0, a))}.`;
 }

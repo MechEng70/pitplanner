@@ -113,7 +113,9 @@ export function postponeStep(rules: Rules, input: PlanInput, plan: Plan, key: st
   const at = Math.max(e.at, now) + minutes * MIN;
   if (e.kind === 'phase' && e.itemId && e.phaseId) return { plan: markStepDone(rules, input, plan, e.itemId, e.phaseId, at, keepServe).plan, reminderAt: null };
   if (e.kind === 'pull' && e.itemId) return { plan: extendCook(rules, input, plan, e.itemId, now, minutes, keepServe), reminderAt: null };
-  return { plan, reminderAt: at };
+  // Fixed step (fire, refill...): ring again `minutes` from now, unless its own alarm comes later anyway.
+  const remind = now + minutes * MIN;
+  return { plan, reminderAt: remind > e.at ? remind : null };
 }
 
 /** Time ranges where two or more foods are on the smoker at once (lane chart highlight, shared-pit note). */
@@ -131,4 +133,15 @@ export function smokerOverlaps(plan: Plan): { start: number; end: number; itemId
     else out.push({ start: a, end: b, itemIds: ids, tempsF: [...new Set(on.map(s => s.tempF))] });
   }
   return out;
+}
+
+/**
+ * Keep serve only works while the hold absorbs the change: every food still gets its minimum rest
+ * (or its planned rest, if that was set lower) between coming off heat and serve.
+ */
+export function holdsCover(plan: Plan): boolean {
+  return plan.items.every(it => {
+    const hold = (plan.serveAt - it.sliceMin * MIN - it.finish) / MIN;
+    return hold >= Math.min(it.restFloorMin, it.restMin);
+  });
 }

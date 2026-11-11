@@ -116,3 +116,8 @@ test('finish: planned vs actual per food, record logs only foods that came off, 
   assert.equal(rec.notes, 'windy');
   assert.equal(rec.items.length, 3);
 });
+
+test('hold impact: a food that would come off after serve says so', () => {
+  const late = shiftRemaining(rules, input, plan, at(10), 30, true, 'w');
+  assert.match(holdImpact(plan, late, 'w'), /^Chicken wings: off heat \d+ min after serve\.$/);
+});

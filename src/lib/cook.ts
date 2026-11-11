@@ -1,7 +1,7 @@
 // The running cook: plan + what has actually happened. Every operation returns a new ActiveCook;
 // the caller saves it and calls syncAlarms (cancel all, schedule the new set). SPEC section 5.
 
-import { markStepDone, shiftRemaining, pitOutage, markPullDone, postponeStep } from '../../engine/live.ts';
+import { markStepDone, shiftRemaining, pitOutage, markPullDone, postponeStep, holdsCover } from '../../engine/live.ts';
 import { alarmsFromPlan, keyedEvents, type KeyedEvent } from '../../engine/alarms.ts';
 import type { Plan, PlanInput } from '../../engine/types.ts';
 import { rules } from './rules.ts';
@@ -114,9 +114,16 @@ export async function syncAlarms(c: ActiveCook, now: number) {
   }) });
 }
 
+/** For changes made without asking: keep serve if the holds absorb it, else move serve. */
+export function keepServeIfCovered(run: (keepServe: boolean) => ActiveCook): ActiveCook {
+  const kept = run(true);
+  return holdsCover(kept.plan) ? kept : run(false);
+}
+
 /**
- * Done and +15 tapped on a notification while the app was closed: Done keeps serve, +15 postpones.
- * Sets `notice` so the Cook tab says what changed.
+ * Done and +15 tapped on a notification while the app was closed. Keeps serve when the holds absorb
+ * the change, else moves serve (no food comes off after serve). Adds to `notice` so the Cook tab
+ * says what changed.
  */
 export function applyActions(c: ActiveCook, actions: NotificationAction[]): ActiveCook {
   let cur = c;
@@ -127,11 +134,14 @@ export function applyActions(c: ActiveCook, actions: NotificationAction[]): Acti
       const k = steps(cur).find(s => s.key === key);
       if (!k || key in cur.done) continue;
       const title = stepText(k.event.label).title;
-      if (a.type === 'done') { cur = doneStep(cur, key, a.at, true).cook; said.push(`${title}: done at ${fmtTime(a.at)} from the alert.`); }
-      else { cur = postpone(cur, key, a.at, 15, true); said.push(`${title}: reminder moved 15 min from the alert.`); }
+      const run = (keep: boolean) => a.type === 'done' ? doneStep(cur, key, a.at, keep).cook : postpone(cur, key, a.at, 15, keep);
+      const next = keepServeIfCovered(run);
+      said.push(a.type === 'done' ? `${title}: done at ${fmtTime(a.at)} from the alert.` : `${title}: moved 15 min from the alert.`);
+      if (next.plan.serveAt !== cur.plan.serveAt) said.push(`Serve moves to ${fmtTime(next.plan.serveAt)}.`);
+      cur = next;
     }
   }
-  return said.length ? { ...cur, notice: said.join(' ') } : cur;
+  return said.length ? { ...cur, notice: [cur.notice, ...said].filter(Boolean).join(' ') } : cur;
 }
 
 /** Step text for the Next up card: "Check the brisket" / "Wrap once the bark is set, about 165-170F." */

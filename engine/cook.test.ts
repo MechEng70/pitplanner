@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { buildPlan } from './plan.ts';
-import { markPullDone, extendCook, postponeStep, smokerOverlaps } from './live.ts';
+import { markPullDone, extendCook, postponeStep, smokerOverlaps, holdsCover } from './live.ts';
 import { alarmsFromPlan, keyedEvents } from './alarms.ts';
 import type { PlanInput, SmokerProfile } from './types.ts';
 
@@ -105,4 +105,21 @@ test('quiet alerts hold steps inside the window and ring once at the end with al
   assert.equal(summary.title, 'Quiet time is over');
   assert.ok(summary.body.includes('Wings on the smoker'));
   assert.equal(summary.critical, true);
+});
+
+test('holdsCover: keep serve is fine while every food keeps its minimum rest', () => {
+  const p = plan();
+  assert.equal(holdsCover(p), true);
+  // Wings have no spare hold: 15 min late with keep serve leaves them short of rest.
+  const late = postponeStep(rules, input, p, 'phase:w:smoke', item(p, 'w').phases[0].start, 15, true).plan;
+  assert.equal(holdsCover(late), false);
+  const moved = postponeStep(rules, input, p, 'phase:w:smoke', item(p, 'w').phases[0].start, 15, false).plan;
+  assert.equal(holdsCover(moved), true);
+});
+
+test('postponeStep on a fixed step that is still ahead: reminds from now, or not at all if its alarm is later', () => {
+  const p = plan();
+  const fire = keyedEvents(p).find(k => k.event.kind === 'fire')!;
+  assert.equal(postponeStep(rules, input, p, fire.key, fire.event.at - 5 * MIN, 15, true).reminderAt, fire.event.at + 10 * MIN);
+  assert.equal(postponeStep(rules, input, p, fire.key, fire.event.at - 30 * MIN, 15, true).reminderAt, null);
 });

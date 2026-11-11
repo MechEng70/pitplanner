@@ -70,7 +70,9 @@ object Notifications {
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setContentIntent(open)
-            .setAutoCancel(true)
+            // Opening the app from the alert must not clear it: Done / +15 stay until the step is handled
+            // (the app's Done acknowledges and cancels it).
+            .setAutoCancel(false)
             .setOnlyAlertOnce(false)
             .addAction(0, "Done", action(ActionReceiver.DONE))
             .addAction(0, "+15 min", action(ActionReceiver.SNOOZE))

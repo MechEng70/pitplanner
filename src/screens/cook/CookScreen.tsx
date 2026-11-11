@@ -7,6 +7,7 @@ import { useStore } from '../../lib/store.tsx';
 import { fmtDuration, fmtTemp, fmtTime } from '../../lib/format.ts';
 import { doneStep, driftMin, dueAt, pending, pitUp, stepText, steps, syncAlarms, type ActiveCook } from '../../lib/cook.ts';
 import { cookStatus, countdown, dayWord, holdImpact, holdMin, hourText, laneTicks, laneWindow, lanes, overlapNote, overline } from '../../lib/cookView.ts';
+import { holdsCover } from '../../../engine/live.ts';
 import { PitAlarms, allGranted } from '../../platform/alarms.ts';
 import { AlertChecks, useAlarmStatus } from '../shared/AlertChecks.tsx';
 import { CookOptions } from './CookOptions.tsx';
@@ -189,7 +190,8 @@ function TimelineSheet({ cook, onClose }: { cook: ActiveCook; onClose: () => voi
 
 /** Keep serve vs Move serve, with what each does to the hold or serve time. */
 function AskSheet({ ask, before, onPick, onClose }: { ask: Ask; before: ActiveCook['plan']; onPick: (c: ActiveCook) => void; onClose: () => void }) {
-  const [pick, setPick] = useState<'keep' | 'move'>('keep');
+  // Keep serve is preselected only when the holds absorb the change.
+  const [pick, setPick] = useState<'keep' | 'move'>(holdsCover(ask.keep.plan) ? 'keep' : 'move');
   // Without a food named, show the one whose hold changes most.
   const itemId = ask.itemId ?? [...before.items].sort((a, b) =>
     Math.abs(holdMin(ask.keep.plan, b.input.id) - holdMin(before, b.input.id)) - Math.abs(holdMin(ask.keep.plan, a.input.id) - holdMin(before, a.input.id)))[0]?.input.id;
