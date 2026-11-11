@@ -30,10 +30,15 @@ Built 2026-11-11 (steps 1-3, device-checked at 115/130%): `src/screens/cook/Cook
 helpers `src/lib/cookView.ts` (tests in `engine/cookview.test.ts`), `applyActions` in cook.ts, drain wired in
 app.tsx, Start cook uses `newCook`. Kit: AppBar/Screen `subtitle`, `BandNote`, `MoreVert`. `npm run device` now
 also runs `tools/device/cook.mjs` (Start cook, Done x2, Keep/Move sheet) -> `out/cook.png`.
-Cook options is a stub sheet (End cook only); serve Done opens it until Cook finished exists.
+Then (same day): Cook options `CookOptions.tsx` (13), Cook finished `FinishScreen.tsx` + pure `src/lib/finish.ts` (15),
+nag body "N min past the step." (14, native). Pit out holds step alarms and sets one 15-min "Pit back up?" reminder.
+Kit: Sheet and Menu now portal to body (fixes sheets under the bottom nav on footer-less screens), InfoRow,
+Divider, LinkButton, AppBar `overline`. Device pass covers options (incl. close + reopen), End cook, Discard.
+Not device-tested yet: Save to history, pellets link, Pit went out / Back up to temp, Quiet, Start over,
+notification Done/+15 drain, the new nag text.
 Open: times after an early Done are not rounded (Check at 6:41 PM).
 
-Original list (remaining: 4, 5, 6):
+Original list (all built):
 1. **CookScreen** (12): header "Cooking" + "Smoker 225F, serve 5:00 PM" + StatusChip from `driftMin`
    (Behind if overdue or >= 5 min late, Ahead if <= -5) + overflow button opening options.
    Next up card (ResultCard style): overline "CHECK AT 11:35 AM" for check steps, "AT ..." otherwise,
@@ -58,7 +63,7 @@ Original list (remaining: 4, 5, 6):
 6. Native nag text tweak for mockup 14: repeats read "N min past the step." before the body
    (`Notifications.show`, `repeat > 0`).
 
-Then: Setup (01-03, reuse `AlertChecks`/`TestAlertButton`), Gear and history (16-20), Open shared
+Next: Setup (01-03, reuse `AlertChecks`/`TestAlertButton`), Gear and history (16-20), Open shared
 plan (11) + `.pitplan` intent filter, update check (GitHub Releases, MechEng70/pitplanner), signing.
 
 ## Decisions from Jason

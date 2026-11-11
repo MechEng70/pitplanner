@@ -104,6 +104,11 @@ export const quiet = (c: ActiveCook, now: number): ActiveCook => ({ ...c, quietU
 export async function syncAlarms(c: ActiveCook, now: number) {
   const done = Object.keys(c.done);
   if (done.length) await PitAlarms.acknowledge({ keys: done });
+  // Pit out stops the clock: step alerts wait, one reminder asks whether it is back up.
+  if (c.pitDownAt != null) return PitAlarms.setAlarms({ alarms: [{
+    id: 'pitcheck', keys: ['pitcheck'], at: now + PIT_RECOVERY_MIN * MIN, critical: false,
+    title: 'Pit back up to temp?', body: 'Tap Back up to temp in Pit Planner so the steps re-time.',
+  }] });
   return PitAlarms.setAlarms({ alarms: alarmsFromPlan(c.plan, now, undefined, {
     done, reminders: c.reminders, quietUntil: c.quietUntil ?? undefined,
   }) });

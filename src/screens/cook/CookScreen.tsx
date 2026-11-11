@@ -9,6 +9,8 @@ import { doneStep, driftMin, dueAt, pending, pitUp, stepText, steps, syncAlarms,
 import { cookStatus, countdown, dayWord, holdImpact, holdMin, hourText, laneTicks, laneWindow, lanes, overlapNote, overline } from '../../lib/cookView.ts';
 import { PitAlarms, allGranted } from '../../platform/alarms.ts';
 import { AlertChecks, useAlarmStatus } from '../shared/AlertChecks.tsx';
+import { CookOptions } from './CookOptions.tsx';
+import { FinishScreen } from './FinishScreen.tsx';
 
 const TICK_MS = 30_000;
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -37,6 +39,7 @@ export function CookScreen({ onGoPlan }: { onGoPlan: () => void }) {
   const now = useNow();
   const [alarm, refreshAlarm] = useAlarmStatus();
   const [open, setOpen] = useState<Open>(null);
+  const [finishing, setFinishing] = useState(false);
 
   if (!cook) {
     return (
@@ -52,6 +55,9 @@ export function CookScreen({ onGoPlan }: { onGoPlan: () => void }) {
     setCook(c);
     if (c) syncAlarms(c, Date.now()); else PitAlarms.cancelAll();
   };
+  const endCook = () => { setFinishing(false); commit(null); onGoPlan(); };
+
+  if (finishing) return <FinishScreen cook={cook} onClose={endCook} />;
 
   const { plan } = cook;
   const todo = pending(cook);
@@ -66,7 +72,7 @@ export function CookScreen({ onGoPlan }: { onGoPlan: () => void }) {
     const at = Date.now();
     const r = doneStep(cook, next.key, at);
     // Serve is the last step: on to Cook finished.
-    if (next.event.kind === 'serve') { commit(r.cook); return setOpen('options'); }
+    if (next.event.kind === 'serve') { commit(r.cook); return setFinishing(true); }
     if (!r.ask) return commit(r.cook);
     const d = r.ask.deltaMin, item = plan.items.find(i => i.input.id === next.event.itemId);
     setOpen({ ask: {
@@ -156,7 +162,7 @@ export function CookScreen({ onGoPlan }: { onGoPlan: () => void }) {
           <AlertChecks status={alarm} onChange={refreshAlarm} />
         </Sheet>
       )}
-      {open === 'options' && <OptionsStub onEnd={() => commit(null)} onClose={() => setOpen(null)} />}
+      {open === 'options' && <CookOptions cook={cook} onChange={commit} onStartOver={endCook} onEnd={() => setFinishing(true)} onClose={() => setOpen(null)} />}
       {open && typeof open === 'object' && <AskSheet ask={open.ask} before={plan} onPick={commit} onClose={() => setOpen(null)} />}
     </Screen>
   );
@@ -201,18 +207,4 @@ function AskSheet({ ask, before, onPick, onClose }: { ask: Ask; before: ActiveCo
 function ApplyButton({ onApply }: { onApply: () => void }) {
   const { close } = useSheet();
   return <Button block onClick={() => close(onApply)}>Apply</Button>;
-}
-
-/** Until Cook options (mockup 13) is built: End cook only. */
-function OptionsStub({ onEnd, onClose }: { onEnd: () => void; onClose: () => void }) {
-  return (
-    <Sheet title="Cook options" onClose={onClose}>
-      <EndButton onEnd={onEnd} />
-    </Sheet>
-  );
-}
-
-function EndButton({ onEnd }: { onEnd: () => void }) {
-  const { close } = useSheet();
-  return <Button kind="outline" tone="danger" block onClick={() => close(onEnd)}>End cook</Button>;
 }

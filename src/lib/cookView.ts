@@ -140,3 +140,24 @@ export function overlapNote(plan: Plan, now: number, u: Units): OverlapNote | nu
   const rest = leaving && climbing ? `${cap(leaving.name.toLowerCase())} comes off before the pit climbs to ${fmtTemp(climbing.tempF, u)}.` : '';
   return { band: { start: o.start, end: o.end, laneIds: o.itemIds }, lead, rest };
 }
+
+/* ---------- Running behind or ahead ---------- */
+
+/**
+ * One line under Keep / Move serve (mockup 13): "Brisket hold drops from 60 to 30 min. Still OK."
+ * Names the food whose hold changes most; warns when it falls under that food's shortest rest.
+ */
+export function shiftImpact(before: Plan, after: Plan): { tone: 'ok' | 'warn'; text: string } | null {
+  const moved = Math.round((after.serveAt - before.serveAt) / MIN);
+  if (moved) return { tone: 'ok', text: `Serve moves to ${fmtTime(after.serveAt)}. Holds stay as planned.` };
+  const changes = before.items.map(it => ({ it, a: holdMin(before, it.input.id), b: holdMin(after, it.input.id) }))
+    .filter(x => x.a !== x.b).sort((x, y) => Math.abs(y.b - y.a) - Math.abs(x.b - x.a));
+  const top = changes[0];
+  if (!top) return null;
+  const name = shortName(top.it.name);
+  const b = Math.max(0, top.b);
+  const verb = b < top.a ? 'drops' : 'grows';
+  const floor = top.it.restFloorMin;
+  const short = b < floor;
+  return { tone: short ? 'warn' : 'ok', text: `${name} hold ${verb} from ${fmtDuration(top.a)} to ${fmtDuration(b)}. ${short ? `Under its ${fmtDuration(floor)} minimum rest.` : 'Still OK.'}` };
+}

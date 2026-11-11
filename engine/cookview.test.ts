@@ -4,11 +4,15 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { buildPlan } from './plan.ts';
 import type { PlanInput, SmokerProfile } from './types.ts';
-import { cookStatus, countdown, overline, holdImpact, lanes, laneTicks, laneWindow, overlapNote } from '../src/lib/cookView.ts';
+import { cookStatus, countdown, overline, holdImpact, lanes, laneTicks, laneWindow, overlapNote, shiftImpact } from '../src/lib/cookView.ts';
 import { shiftRemaining } from './live.ts';
+import { onHeatSpan } from './plan.ts';
+import { summarize, toRecord } from '../src/lib/finish.ts';
+import type { ActiveCook } from '../src/lib/cook.ts';
 
 const rules = JSON.parse(readFileSync(new URL('../data/foods.json', import.meta.url), 'utf8'));
 const SERVE = new Date(2026, 10, 14, 17, 0).getTime();
+const MIN = 60_000;
 const at = (h: number, m = 0) => new Date(2026, 10, 14, h, m).getTime();
 const units = { temp: 'F', weight: 'lb' } as const;
 const pitBoss: SmokerProfile = { id: 'pb820', name: 'Pit Boss 820', type: 'pellet', tempStepF: 5, minTempF: 180, maxTempF: 500,
@@ -80,4 +84,35 @@ test('hold impact: keep serve changes the hold, move serve says the new time', (
   const move = shiftRemaining(rules, input, plan, now, 20, false);
   assert.match(holdImpact(plan, keep, 'b'), /^Brisket holds .* instead of .*\.$/);
   assert.match(holdImpact(plan, move, 'b'), /^Serve 5:20.PM, later by 20 min\.$/);
+});
+
+test('shift impact: keep serve names the hold change, move serve names the new time', () => {
+  const keep = shiftImpact(plan, shiftRemaining(rules, input, plan, at(10), 30, true))!;
+  assert.match(keep.text, /^Brisket hold drops from 1 hr to 30 min\. (Still OK\.|Under its .* minimum rest\.)$/);
+  const move = shiftImpact(plan, shiftRemaining(rules, input, plan, at(10), 30, false))!;
+  assert.match(move.text, /^Serve moves to 5:30.PM\./);
+  assert.equal(shiftImpact(plan, plan), null);
+});
+
+test('finish: planned vs actual per food, record logs only foods that came off, rate moves', () => {
+  const c: ActiveCook = { input, original: plan, plan, startedAt: at(5), done: {}, reminders: {}, onAt: {}, offAt: {}, pitDownAt: null, quietUntil: null, notice: null };
+  const b = plan.items.find(i => i.input.id === 'b')!;
+  const span = onHeatSpan(b);
+  const ended = { ...c, onAt: { b: span.start }, offAt: { b: span.end - 25 * MIN }, done: { 'serve::': SERVE } };
+  const s = summarize(rules, ended, SERVE);
+  const row = s.rows.find(r => r.itemId === 'b')!;
+  assert.equal(row.actualMin, row.plannedMin - 25);
+  assert.deepEqual(row.verdict, { tone: 'ok', text: '25 min ahead' });
+  assert.match(s.served, /^Served at 5:00.PM, on time\.$/);
+  assert.equal(row.log.discarded, undefined);
+  const w = s.rows.find(r => r.itemId === 'w')!;
+  assert.equal(w.log.discarded, true);
+  assert.deepEqual(w.verdict, { tone: 'secondary', text: 'Not logged' });
+  assert.equal(s.rates.length, 1);
+  assert.ok(s.rates[0].after < s.rates[0].before);
+  assert.equal(s.rates[0].cooksLogged, 1);
+  assert.match(summarize(rules, c, at(12)).served, /^Ended at 12:00.PM, before serve\.$/);
+  const rec = toRecord(s, ended, '  windy ', 'x');
+  assert.equal(rec.notes, 'windy');
+  assert.equal(rec.items.length, 3);
 });

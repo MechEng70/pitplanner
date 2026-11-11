@@ -299,7 +299,7 @@ p.t-bodyM, .lh-body { line-height: 1.45; }
 .choice { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; min-height: 64px; padding: 8px 10px; border-radius: 16px; border: 1px solid var(--outline); color: var(--text); }
 .choice-on { border: 2px solid var(--accent); background: var(--ember-soft); padding: 7px 9px; }
 
-.textarea { width: 100%; min-height: 56px; resize: vertical; border-radius: 16px; border: 1px solid var(--outline); background: var(--surface); color: var(--text); padding: 14px 16px; font-size: 16px; outline: none; }
+.textarea { font-family: inherit; line-height: 1.4; width: 100%; min-height: 56px; resize: vertical; border-radius: 16px; border: 1px solid var(--outline); background: var(--surface); color: var(--text); padding: 14px 16px; font-size: 16px; outline: none; }
 .textarea:focus { border-color: var(--accent); }
 .textarea::placeholder { color: var(--text-3); }
 
@@ -321,6 +321,11 @@ p.t-bodyM, .lh-body { line-height: 1.45; }
 .lane-overlay { position: absolute; left: var(--label-w); right: 0; top: 0; height: calc(var(--lane-h) * var(--lanes, 3)); pointer-events: none; }
 .lane-now { position: absolute; top: -6px; bottom: -6px; width: 2px; margin-left: -1px; background: var(--text); }
 .lane-band { position: absolute; border: 2px solid var(--on-accent-container); border-radius: 10px; background: rgba(255, 211, 181, .08); }
+.divider { height: 1px; background: var(--surface-3); margin: 4px 0; flex: none; }
+.info-row { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; }
+.info-top { align-items: baseline; }
+.btn-link { color: var(--accent-hi); text-decoration: none; }
+.finish-links { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0 8px; }
 .step-time { flex: none; min-width: 5.6em; }
 .band-note { display: flex; align-items: flex-start; gap: 12px; background: var(--surface-2); border-radius: 14px; padding: 12px 14px; color: var(--text-1); line-height: 1.4; }
 .band-note b { color: var(--text); }

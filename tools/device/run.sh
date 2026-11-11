@@ -31,5 +31,6 @@ done
 python3 -I compose.py "$OUT/plan.png" "115%=$OUT/1.15/plan.png" "130%=$OUT/1.3/plan.png"
 python3 -I compose.py "$OUT/brisket.png" "115%=$OUT/1.15/brisket-after-plus.png" "130%=$OUT/1.3/brisket-after-plus.png"
 python3 -I compose.py "$OUT/cook.png" "115%=$OUT/1.15/cook.png" "130%=$OUT/1.3/cook.png" "ask=$OUT/1.15/cook-ask.png" "after=$OUT/1.15/cook-after.png" || true
+python3 -I compose.py "$OUT/finish.png" "options 115%=$OUT/1.15/options.png" "130%=$OUT/1.3/options.png" "finished 115%=$OUT/1.15/finish.png" "130%=$OUT/1.3/finish.png" || true
 log "== alarms registered"; ./pending.sh | tee -a "$REPORT"
-log "images: $OUT/plan.png $OUT/brisket.png $OUT/cook.png"
+log "images: $OUT/plan.png $OUT/brisket.png $OUT/cook.png $OUT/finish.png"

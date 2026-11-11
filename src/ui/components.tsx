@@ -4,6 +4,7 @@
 // Font scale rule: times, temps, weights and countdowns are <Num> units that never wrap,
 // shrink or ellipsize. Only secondary text (subtitles, notes) may ellipsize.
 
+import { createPortal } from 'preact/compat';
 import type { ComponentChildren, JSX } from 'preact';
 import { createContext } from 'preact';
 import { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
@@ -48,11 +49,16 @@ export const Inset = ({ children }: Kids) => <div class="inset">{children}</div>
 
 /* ---------- App structure ---------- */
 
-export function AppBar({ title, subtitle, actions }: { title: string; subtitle?: ComponentChildren; actions?: ComponentChildren }) {
+export function AppBar({ title, subtitle, overline, actions }: { title: string; subtitle?: ComponentChildren; overline?: string; actions?: ComponentChildren }) {
+  const sub = subtitle != null || overline != null;
   return (
-    <header class={cx('appbar', subtitle != null && 'appbar-sub')}>
-      {subtitle
-        ? <div class="fill stack gap-2"><h1 class="t-title">{title}</h1><span class="t-bodyM tone-secondary">{subtitle}</span></div>
+    <header class={cx('appbar', sub && 'appbar-sub')}>
+      {sub
+        ? <div class="fill stack gap-2">
+            {overline && <span class="t-overline tone-accentHi">{overline}</span>}
+            <h1 class="t-title">{title}</h1>
+            {subtitle != null && <span class="t-bodyM tone-secondary">{subtitle}</span>}
+          </div>
         : <h1 class="t-title">{title}</h1>}
       {actions && <div class="row gap-0">{actions}</div>}
     </header>
@@ -60,10 +66,12 @@ export function AppBar({ title, subtitle, actions }: { title: string; subtitle?:
 }
 
 /** App bar, a scrolling body with 16 dp sides, and an optional footer pinned above the nav. */
-export function Screen({ title, subtitle, actions, footer, children }: Kids & { title: string; subtitle?: ComponentChildren; actions?: ComponentChildren; footer?: ComponentChildren }) {
+export function Screen({ title, subtitle, overline, actions, footer, children }: Kids & {
+  title: string; subtitle?: ComponentChildren; overline?: string; actions?: ComponentChildren; footer?: ComponentChildren;
+}) {
   return (
     <div class="screen">
-      <AppBar title={title} subtitle={subtitle} actions={actions} />
+      <AppBar title={title} subtitle={subtitle} overline={overline} actions={actions} />
       <ScrollWithFooter bodyClass="screen-body" footClass="screen-foot" footer={footer}>{children}</ScrollWithFooter>
     </div>
   );
@@ -213,6 +221,18 @@ export function ActionRow({ icon, title, subtitle, onClick, tone }: {
   );
 }
 
+/** Read-only row in a GroupCard: title, a trailing status, a secondary line (Cook finished). */
+export function InfoRow({ title, trailing, subtitle, tone }: { title: ComponentChildren; trailing?: ComponentChildren; subtitle?: ComponentChildren; tone?: Tone }) {
+  return (
+    <div class="info-row">
+      <div class="row gap-12 info-top"><span class="fill t-bodyL w-500">{title}</span>{trailing && <span class={cx('t-body w-500 num', tone && `tone-${tone}`)}>{trailing}</span>}</div>
+      {subtitle && <span class="t-body tone-secondary">{subtitle}</span>}
+    </div>
+  );
+}
+
+export const Divider = () => <div class="divider" role="separator" />;
+
 export interface Choice { id: string; title: ComponentChildren; subtitle?: ComponentChildren }
 /** Two or more large outlined options, one selected (Keep serve / Move serve). */
 export function ChoiceCards({ options, value, onChange, label }: { options: Choice[]; value: string; onChange: (id: string) => void; label: string }) {
@@ -295,6 +315,11 @@ export function Button({ kind = 'primary', block, icon, disabled, onClick, child
       {icon}{children}
     </button>
   );
+}
+
+/** Text button that opens an outside page (the system browser takes it). */
+export function LinkButton({ href, children }: Kids & { href: string }) {
+  return <a class="btn btn-text btn-link rp" href={href} target="_blank" rel="noopener">{children}</a>;
 }
 
 /** 48 dp round icon button. `bleed`: keeps the 48 dp target but takes no extra height in a tight row. */
@@ -434,7 +459,9 @@ export function Sheet({ title, onClose, footer, flush, children }: Kids & { titl
   const back = useCallback(() => close(), [close]);
   useBack(back);
 
-  return (
+  // Portal: a sheet opened from inside a scroll area must not inherit its stacking context (the
+  // fade mask on footer-less screens would otherwise put the sheet under the bottom nav).
+  return createPortal(
     <SheetCtx.Provider value={{ close }}>
       <div class={cx('scrim', closing && 'scrim-out')} onClick={e => { if (e.target === e.currentTarget) close(); }}>
         <section class={cx('sheet', closing && 'sheet-out')} role="dialog" aria-modal="true" aria-label={title}>
@@ -446,7 +473,8 @@ export function Sheet({ title, onClose, footer, flush, children }: Kids & { titl
           <ScrollWithFooter bodyClass={cx('sheet-body', flush && 'flush')} footClass="sheet-foot" footer={footer}>{children}</ScrollWithFooter>
         </section>
       </div>
-    </SheetCtx.Provider>
+    </SheetCtx.Provider>,
+    document.body,
   );
 }
 
@@ -456,7 +484,7 @@ export function Menu({ anchor, onClose, intro, footer, children, field }: Kids &
 }) {
   useBack(onClose);
   const px = (n: number) => `${n}px`;
-  return (
+  return createPortal(
     <div class="scrim scrim-menu" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div class="menu-anchor" style={{ top: px(anchor.top), left: px(anchor.left), width: px(anchor.width) }}>{field}</div>
       <div class="menu" role="listbox" style={{ top: px(anchor.bottom + 8), left: px(anchor.left), width: px(anchor.width),
@@ -466,7 +494,7 @@ export function Menu({ anchor, onClose, intro, footer, children, field }: Kids &
         {footer && <div class="menu-foot">{footer}</div>}
       </div>
     </div>
-  );
+  , document.body);
 }
 
 export type { JSX };

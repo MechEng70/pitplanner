@@ -40,7 +40,10 @@ object Notifications {
 
     fun show(ctx: Context, alarmId: String, keys: List<String>, title: String, body: String, critical: Boolean, repeat: Int) {
         ensureChannel(ctx)
-        val shownTitle = if (repeat in 1..AlarmScheduler.NAG_REPEATS) "Still waiting: $title" else title
+        val nagging = repeat in 1..AlarmScheduler.NAG_REPEATS
+        val shownTitle = if (nagging) "Still waiting: $title" else title
+        // Mockup 14: repeats say how long the step has waited before the step text.
+        val shownBody = if (nagging) "${repeat * AlarmScheduler.NAG_EVERY_MS / 60_000} min past the step. $body" else body
 
         val open = PendingIntent.getActivity(
             ctx, alarmId.hashCode(),
@@ -61,8 +64,8 @@ object Notifications {
             .setSmallIcon(R.drawable.ic_stat_pit)
             .setColor(0xFFFF8F4A.toInt())
             .setContentTitle(shownTitle)
-            .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setContentText(shownBody)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(shownBody))
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
