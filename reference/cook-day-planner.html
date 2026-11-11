@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cook Day Planner</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --smoke: #1a1a18; --ash: #2e2e2a; --coal: #3d3d38; --ember: #c45e1a; --flame: #d9411e;
+    --bark: #8c6a3a; --cream: #f5f0e8; --paper: #faf8f4; --rule: #d4cfc4;
+    --steel: #4a6378; --hold: #c9b48f; --low: #c45e1a; --high: #d9411e;
+  }
+  body { font-family: 'IBM Plex Sans', sans-serif; background: var(--paper); color: var(--smoke);
+    padding: 2rem 1.25rem 3rem; max-width: 980px; margin: 0 auto; }
+  header { border-bottom: 2px solid var(--smoke); padding-bottom: 1rem; margin-bottom: 1.5rem; }
+  header h1 { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 1.05rem; letter-spacing: .04em;
+    color: var(--ember); text-transform: uppercase; margin-bottom: .3rem; }
+  header p { font-size: .82rem; color: var(--coal); font-weight: 300; }
+  .section-label { font-family: 'IBM Plex Mono', monospace; font-size: .7rem; font-weight: 600; letter-spacing: .08em;
+    color: var(--bark); text-transform: uppercase; margin: 2rem 0 .75rem; padding-bottom: .3rem; border-bottom: 1px solid var(--rule);
+    display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+
+  /* Controls */
+  .settings { display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem; background: white; border: 1px solid var(--rule); padding: 1rem; }
+  .settings .wide { grid-column: span 2; }
+  label.fld { display: flex; flex-direction: column; gap: .25rem; font-size: .7rem; color: var(--coal);
+    font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: .04em; }
+  input, select { font-family: 'IBM Plex Sans', sans-serif; font-size: .9rem; padding: .45rem .5rem; border: 1px solid var(--rule);
+    background: var(--paper); color: var(--smoke); border-radius: 2px; width: 100%; }
+  input:focus, select:focus { outline: 2px solid var(--ember); outline-offset: -1px; }
+  label.chk { display: flex; align-items: center; gap: .5rem; font-size: .8rem; color: var(--coal); cursor: pointer; }
+  label.chk input { width: 1.05rem; height: 1.05rem; accent-color: var(--ember); flex: none; }
+  .presets { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+  button { font-family: 'IBM Plex Mono', monospace; font-size: .72rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+    padding: .5rem .8rem; border: 1px solid var(--smoke); background: white; color: var(--smoke); cursor: pointer; border-radius: 2px; }
+  button:hover { background: var(--smoke); color: var(--cream); }
+  button.primary { background: var(--ember); border-color: var(--ember); color: white; }
+  button.primary:hover { background: var(--smoke); border-color: var(--smoke); }
+
+  .protein-pick { align-items: start; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: .75rem; }
+  .pcard { border: 1px solid var(--rule); background: white; }
+  .pcard.on { border-color: var(--ember); box-shadow: inset 3px 0 0 var(--ember); }
+  .pcard .ph { display: flex; align-items: center; gap: .6rem; padding: .7rem .85rem; cursor: pointer; }
+  .pcard .ph input { width: 1.1rem; height: 1.1rem; accent-color: var(--ember); flex: none; }
+  .pcard .ph span { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
+  .pcard .pb { display: none; padding: 0 .85rem .85rem; gap: .6rem; grid-template-columns: 1fr 1fr; }
+  .pcard.on .pb { display: grid; }
+  .pcard .pb .full { grid-column: 1 / -1; }
+
+  /* Alerts */
+  .alerts { display: flex; flex-direction: column; gap: .5rem; margin-top: 1.5rem; }
+  .alert { border-left: 3px solid var(--steel); background: #eef2f5; padding: .6rem .8rem; font-size: .8rem; line-height: 1.45; }
+  .alert.warn { border-color: var(--flame); background: #fdeee8; }
+  .alert.ok { border-color: #5b7a3a; background: #eef3e8; }
+  .alert b { font-family: 'IBM Plex Mono', monospace; font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; margin-right: .35rem; }
+
+  /* Summary strip */
+  .strip { display: grid; grid-template-columns: repeat(5, 1fr); border: 1px solid var(--rule); background: white; }
+  .strip > div { padding: .75rem .85rem; border-right: 1px solid var(--rule); }
+  .strip > div:last-child { border-right: none; }
+  .strip .k { font-family: 'IBM Plex Mono', monospace; font-size: .64rem; text-transform: uppercase; letter-spacing: .05em; color: var(--coal); }
+  .strip .v { font-family: 'IBM Plex Mono', monospace; font-size: 1.02rem; font-weight: 600; color: var(--ember); margin-top: .15rem; }
+  .strip .s { font-size: .68rem; color: var(--coal); font-weight: 300; margin-top: .1rem; }
+
+  /* Gantt */
+  .gantt-wrap { overflow-x: auto; border: 1px solid var(--rule); background: white; }
+  .gantt { min-width: 720px; padding: .6rem .75rem .75rem; }
+  .g-row { display: grid; grid-template-columns: 120px 1fr; align-items: center; min-height: 30px; }
+  .g-name { font-family: 'IBM Plex Mono', monospace; font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; color: var(--smoke); padding-right: .5rem; }
+  .g-track { position: relative; height: 22px; background: repeating-linear-gradient(90deg, transparent 0, transparent calc(var(--tick) - 1px), #eee9df calc(var(--tick) - 1px), #eee9df var(--tick)); }
+  .g-bar { position: absolute; top: 2px; bottom: 2px; border-radius: 2px; font-size: .6rem; color: white; overflow: hidden; white-space: nowrap;
+    padding: 0 4px; line-height: 18px; font-family: 'IBM Plex Mono', monospace; }
+  .g-bar.low { background: var(--low); } .g-bar.high { background: var(--high); } .g-bar.griddle { background: var(--steel); }
+  .g-bar.rest { background: var(--hold); color: var(--smoke); } .g-bar.slice { background: var(--smoke); }
+  .g-bar.prep { background: repeating-linear-gradient(45deg, #e8e1d3 0 4px, #f3eee5 4px 8px); color: var(--coal); }
+  .g-axis { position: relative; height: 18px; margin-left: 120px; }
+  .g-axis span { position: absolute; transform: translateX(-50%); font-family: 'IBM Plex Mono', monospace; font-size: .6rem; color: var(--coal); white-space: nowrap; }
+  .g-serve { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--smoke); }
+  .legend { display: flex; flex-wrap: wrap; gap: .9rem; font-size: .68rem; color: var(--coal); margin-top: .5rem; padding: 0 .75rem .6rem; }
+  .legend i { display: inline-block; width: 10px; height: 10px; margin-right: 4px; vertical-align: -1px; border-radius: 2px; }
+
+  /* Timeline */
+  .timeline { border: 1px solid var(--rule); background: white; }
+  .t-row { display: grid; grid-template-columns: 128px 74px 1fr; border-bottom: 1px solid var(--rule); }
+  .t-row:last-child { border-bottom: none; }
+  .t-row.head { background: var(--smoke); }
+  .t-row.head div { color: var(--cream); font-family: 'IBM Plex Mono', monospace; font-size: .66rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: .5rem .8rem; }
+  .t-row > div { padding: .6rem .8rem; font-size: .83rem; line-height: 1.4; }
+  .t-time { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: .78rem; color: var(--ember); white-space: nowrap; }
+  .t-tag span { font-family: 'IBM Plex Mono', monospace; font-size: .6rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+    padding: .15rem .35rem; border: 1px solid var(--rule); color: var(--coal); border-radius: 2px; white-space: nowrap; }
+  .t-row.key { background: #fff7f0; }
+  .t-row.crit { background: #fdeee8; }
+  .t-row.crit .t-time { color: var(--flame); }
+  .t-row.day { background: var(--cream); }
+  .t-row.day div { font-family: 'IBM Plex Mono', monospace; font-size: .68rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--bark); padding: .35rem .8rem; grid-column: 1 / -1; }
+
+  /* Target cards */
+  .protein-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .75rem; }
+  .protein-card { border: 1px solid var(--rule); padding: .9rem; background: white; }
+  .protein-card h3 { font-family: 'IBM Plex Mono', monospace; font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ember); margin-bottom: .1rem; }
+  .protein-card .m { font-size: .72rem; color: var(--coal); margin-bottom: .55rem; font-weight: 300; }
+  .stat { display: flex; justify-content: space-between; gap: .75rem; align-items: baseline; font-size: .76rem; border-bottom: 1px dotted var(--rule); padding: .28rem 0; }
+  .stat:last-child { border-bottom: none; }
+  .stat-label { color: var(--coal); font-weight: 300; font-size: .72rem; }
+  .stat-value { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: .72rem; text-align: right; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+  .info-block { border: 1px solid var(--rule); padding: 1rem; background: white; }
+  .info-block h3 { font-family: 'IBM Plex Mono', monospace; font-size: .7rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--bark); margin-bottom: .6rem; }
+  .info-block ul { list-style: none; }
+  .info-block li { font-size: .78rem; line-height: 1.5; color: var(--coal); padding-left: .9rem; position: relative; margin-bottom: .25rem; }
+  .info-block li::before { content: '-'; position: absolute; left: 0; color: var(--ember); font-weight: 600; }
+
+  #copyOut { width: 100%; height: 160px; margin-top: .5rem; font-family: 'IBM Plex Mono', monospace; font-size: .72rem; display: none; }
+  .empty { padding: 1.25rem; font-size: .85rem; color: var(--coal); background: white; border: 1px dashed var(--rule); }
+
+  footer { border-top: 1px solid var(--rule); margin-top: 2rem; padding-top: .75rem; font-size: .7rem; color: var(--coal);
+    font-family: 'IBM Plex Mono', monospace; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+
+  @media (max-width: 720px) {
+    body { padding: 1.25rem .85rem 2rem; }
+    .settings { grid-template-columns: 1fr 1fr; }
+    .strip { grid-template-columns: 1fr 1fr; }
+    .strip > div { border-bottom: 1px solid var(--rule); }
+    .two-col { grid-template-columns: 1fr; }
+    .t-row { grid-template-columns: 96px 1fr; }
+    .t-row .t-tag { display: none; }
+    .t-time { font-size: .72rem; white-space: normal; }
+  }
+  @media print {
+    .no-print, .protein-pick, .settings, .presets { display: none !important; }
+    body { padding: .5rem; max-width: none; }
+    .gantt-wrap { overflow: visible; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Cook Day Planner / Pit Boss 820 + Blackstone</h1>
+  <p>Pick the proteins and methods, set the ready-by time, and the schedule works backward from there. Times are planning estimates: probe temp and tenderness decide when it's done.</p>
+</header>
+
+<div class="section-label no-print"><span>Setup</span></div>
+<div class="settings no-print">
+  <label class="fld wide">Ready by (serve time)<input type="datetime-local" id="serve"></label>
+  <label class="fld">Smoker cook temp
+    <select id="low"><option value="225">225F</option><option value="250">250F</option><option value="275">275F</option></select>
+  </label>
+  <label class="fld">Oven hold temp (F)<input type="number" id="hold" min="140" max="200" step="5"></label>
+  <label class="fld">Pit preheat (min)<input type="number" id="preheat" min="5" max="45" step="5"></label>
+  <label class="fld">Hopper (lb)<input type="number" id="hopper" min="10" max="40" step="1"></label>
+  <label class="fld">Pellets lb/hr, low<input type="number" id="rLow" min="0.5" max="4" step="0.25"></label>
+  <label class="fld">Pellets lb/hr, 325F+<input type="number" id="rHigh" min="1" max="6" step="0.25"></label>
+  <label class="chk wide" style="grid-column: 1 / -1;"><input type="checkbox" id="clear"> Finish low-and-slow smoker items before any high-heat phase (they hold in the oven or cooler while the pit climbs)</label>
+</div>
+<div class="presets no-print">
+  <button class="primary" data-preset="saturday">Preset: brisket, breasts, wings</button>
+  <button data-preset="original">Preset: ribs, tri-tip, wings</button>
+  <button data-preset="clearall">Clear all</button>
+</div>
+
+<div class="section-label no-print"><span>What's cooking</span></div>
+<div class="protein-pick" id="pick"></div>
+
+<div class="alerts" id="alerts"></div>
+
+<div class="section-label"><span>At a glance</span></div>
+<div class="strip" id="strip"></div>
+
+<div class="section-label"><span>Timeline view</span></div>
+<div class="gantt-wrap"><div class="gantt" id="gantt"></div>
+  <div class="legend">
+    <span><i style="background:var(--low)"></i>Smoker, cook temp</span>
+    <span><i style="background:var(--high)"></i>Smoker, high heat</span>
+    <span><i style="background:var(--steel)"></i>Blackstone</span>
+    <span><i style="background:var(--hold)"></i>Rest / hold</span>
+    <span><i style="background:var(--smoke)"></i>Slice / plate</span>
+  </div>
+</div>
+
+<div class="section-label"><span>Cook schedule</span><button class="no-print" id="copyBtn">Copy as text</button></div>
+<textarea id="copyOut" readonly></textarea>
+<div class="timeline" id="timeline"></div>
+
+<div class="section-label"><span>Protein targets</span></div>
+<div class="protein-grid" id="targets"></div>
+
+<div class="section-label"><span>Reference</span></div>
+<div class="two-col">
+  <div class="info-block">
+    <h3>Rub (shared, no sugar)</h3>
+    <ul>
+      <li>Onion powder</li>
+      <li>Garlic powder</li>
+      <li>Paprika (base, generous)</li>
+      <li>Chili powder</li>
+      <li>Mustard powder</li>
+      <li>Cayenne (half the paprika volume)</li>
+      <li>Kosher salt</li>
+      <li>Binder: mustard-honey, thin coat before rub</li>
+    </ul>
+  </div>
+  <div class="info-block">
+    <h3>Pit Boss 820 notes</h3>
+    <ul>
+      <li>849 sq in total: about 593 main grate + 256 upper rack. 180-500F range.</li>
+      <li>Hopper is 21 lb on the Sportsman and 820D3; the Pro Series 820 is 19 lb. Set yours above.</li>
+      <li>Pellet grills commonly swing 30-40F around set point. Verify at grate level with a probe.</li>
+      <li>Climbing from 225F to 400F takes roughly 10-20 min depending on weather; the planner budgets 15.</li>
+      <li>Pellet burn rates above are estimates. Cold, wind and lid opening push them up.</li>
+      <li>Wings on a wire rack for airflow; ribs in a rib rack to save main-grate space.</li>
+    </ul>
+  </div>
+  <div class="info-block">
+    <h3>Food safety minimums (USDA FSIS)</h3>
+    <ul>
+      <li>All poultry, including breasts and wings: 165F.</li>
+      <li>Whole-muscle beef and pork (steaks, roasts, chops): 145F plus a 3 min rest.</li>
+      <li>Brisket, pork butt and rib targets (195-205F) are for collagen breakdown and texture, not safety.</li>
+      <li>Medium-rare tri-tip (130-135F) is below the USDA 145F minimum: your call.</li>
+      <li>Hot holding: keep it at 140F or above (FDA Food Code uses 135F).</li>
+    </ul>
+  </div>
+  <div class="info-block">
+    <h3>Holding</h3>
+    <ul>
+      <li>Brisket and pork butt hold well for 2-4 hr wrapped in a towel-lined cooler, or in the oven at the lowest setting that stays above 140F.</li>
+      <li>Ribs hold about 1 hr wrapped in foil before the bark softens.</li>
+      <li>Wings hold uncovered only, 20-30 min max, or the skin goes rubbery.</li>
+      <li>Chicken breasts hold poorly. Time them to come off right before serving.</li>
+      <li>Have the oven at hold temp before the first protein comes off.</li>
+    </ul>
+  </div>
+</div>
+
+<footer>
+  <span>fractional MedTech LLC / Cook Day Planner</span>
+  <span id="footSum"></span>
+</footer>
+
+<script>
+(function(){
+'use strict';
+const MIN = 60000;
+const DAY = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const TF = {225: 1, 250: 0.85, 275: 0.72};
+const pad = n => String(n).padStart(2, '0');
+const r5 = t => Math.round(t / (5 * MIN)) * 5 * MIN;
+function clock(t){ const d = new Date(r5(t)); let h = d.getHours(); const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12; return h + ':' + pad(d.getMinutes()) + ' ' + ap; }
+function fmt(t){ return DAY[new Date(r5(t)).getDay()] + ' ' + clock(t); }
+function dayKey(t){ const d = new Date(r5(t)); return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(); }
+function dayLong(t){ return new Date(r5(t)).toLocaleDateString(undefined, {weekday: 'long', month: 'short', day: 'numeric'}); }
+function hm(min){ min = min >= 30 ? Math.round(min / 5) * 5 : Math.round(min); const h = Math.floor(min / 60), m = min % 60; return h ? (m ? h + ' hr ' + m + ' min' : h + ' hr') : m + ' min'; }
+function hmc(min){ min = min >= 30 ? Math.round(min / 5) * 5 : Math.round(min); const h = Math.floor(min / 60), m = min % 60; return (h ? h + 'h' : '') + (m ? m + 'm' : (h ? '' : '0m')); }
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ---------- Protein library ---------- */
+const DEFS = [
+  { id: 'brisket', name: 'Brisket',
+    methods: [['smoker', 'Pit Boss, smoked']],
+    fields: [
+      {id: 'weight', label: 'Trimmed weight (lb)', type: 'number', def: 12, min: 3, max: 22, step: 0.5},
+      {id: 'wrap', label: 'Wrap at the stall', type: 'select', def: 'paper', opts: [['paper', 'Butcher paper'], ['foil', 'Foil'], ['none', 'No wrap']]},
+      {id: 'myRate', label: 'Your pit, hr/lb at 225F (0 = published rule)', type: 'number', def: 0.75, min: 0, max: 2, step: 0.05, full: true},
+      {id: 'rest', label: 'Rest / hold after pull (min)', type: 'number', def: 60, min: 30, max: 360, step: 15, full: true}
+    ],
+    build(c, S){
+      const P = {225: 1.25, 250: 1.0, 275: 0.8}, L = {225: 1.0, 250: 0.75, 275: 0.6}, H = {225: 1.5, 250: 1.25, 275: 1.0};
+      const wf = c.wrap === 'none' ? 1.15 : (c.wrap === 'foil' ? 0.95 : 1);
+      const mine = +c.myRate > 0;
+      const w = +c.weight || 12, rate = mine ? +c.myRate * TF[S.low] : P[S.low], tot = w * rate * 60 * wf;
+      const restM = Math.max(30, +c.rest || 60);
+      const wrapName = c.wrap === 'foil' ? 'foil' : 'butcher paper';
+      const phases = c.wrap === 'none'
+        ? [{dev: 'smoker', temp: S.low, min: tot, label: 'Brisket on the pit, unwrapped. Probe in the thickest part of the flat.', short: 'Smoke'}]
+        : [{dev: 'smoker', temp: S.low, min: tot * 0.55, label: 'Brisket on the pit, unwrapped. Probe in the thickest part of the flat.', short: 'Smoke'},
+           {dev: 'smoker', temp: S.low, min: tot * 0.45, label: 'Wrap brisket in ' + wrapName + ' once the bark is set (about 165-170F, usually in the stall). Back on, probe through the wrap.', short: 'Wrapped'}];
+      return { phases, rest: restM, slice: 20,
+        restLabel: 'Brisket off at 200-205F when the probe slides in like butter. Vent 10 min, then rewrap and hold in a towel-lined cooler or the oven at ' + S.hold + 'F.',
+        sliceLabel: 'Slice brisket against the grain. The point and flat run different directions: separate them first.',
+        method: 'Pit Boss at ' + S.low + 'F, ' + (c.wrap === 'none' ? 'no wrap' : wrapName + ' wrap'),
+        targets: [['Weight', w + ' lb trimmed'], ['Plan cook', hm(tot) + (mine ? ' (your pit)' : ' (rule)')], ['Basis', mine ? (+c.myRate).toFixed(2) + ' hr/lb at 225F, scaled' : P[S.low] + ' hr/lb published'], ['Published range', (w * L[S.low] * wf).toFixed(1) + '-' + (w * H[S.low] * wf).toFixed(1) + ' hr'],
+          ['Wrap at', c.wrap === 'none' ? 'n/a' : '165-170F'], ['Pull', '200-205F, probe tender']],
+        prep: [{lead: 75, text: 'Trim brisket, binder and rub. Let it sit while the pit comes up.'}],
+        foot: 16 * w };
+    } },
+
+  { id: 'tritip', name: 'Tri-Tip',
+    methods: [['reverse', 'Smoke, then Blackstone sear'], ['brisket', 'Smoked brisket-style (200F)']],
+    fields: [{id: 'weight', label: 'Weight (lb)', type: 'number', def: 2.5, min: 1, max: 5, step: 0.25}],
+    build(c, S){
+      const w = +c.weight || 2.5;
+      if (c.method === 'brisket'){
+        const tot = Math.max(210, 100 * w) * TF[S.low];
+        return { phases: [
+            {dev: 'smoker', temp: S.low, min: tot * 0.55, label: 'Tri-tip on the pit, fat cap up, unwrapped. Probe in the thickest part.', short: 'Smoke'},
+            {dev: 'smoker', temp: S.low, min: tot * 0.45, label: 'Wrap tri-tip in foil or paper (about 160-165F). Back on to 200-205F.', short: 'Wrapped'}],
+          rest: 45, slice: 10,
+          restLabel: 'Tri-tip off at 200-205F, probe tender. Hold wrapped in the oven at ' + S.hold + 'F.',
+          sliceLabel: 'Slice tri-tip against the grain. The grain changes direction at the bend: cut it in two there first.',
+          method: 'Pit Boss at ' + S.low + 'F, wrapped, brisket-style',
+          targets: [['Weight', w + ' lb'], ['Plan cook', hm(tot)], ['Wrap at', '160-165F'], ['Pull', '200-205F, probe tender'], ['Rest', '45 min wrapped']],
+          prep: [{lead: 60, text: 'Tri-tip: binder and rub, rest at room temp while the pit stabilizes.'}], foot: 45 };
+      }
+      const smoke = Math.max(60, 35 * w) * TF[S.low];
+      return { phases: [
+          {dev: 'smoker', temp: S.low, min: smoke, label: 'Tri-tip on the pit, fat cap up. Probe in the thickest part.', short: 'Smoke', endLabel: 'Tri-tip off the pit at about 120F. Tent loosely.'},
+          {dev: 'griddle', temp: 450, min: 8, anchor: true, label: 'Sear tri-tip on the Blackstone, high heat, 2-3 min per side to 130-135F (medium-rare).', short: 'Sear'}],
+        rest: 10, slice: 5,
+        restLabel: 'Tri-tip off the griddle at 130-135F (or 140F for medium). Rest 10 min tented.',
+        sliceLabel: 'Slice tri-tip against the grain. The grain changes direction at the bend: cut it in two there first.',
+        method: 'Pit Boss at ' + S.low + 'F to 120F, then Blackstone sear',
+        targets: [['Weight', w + ' lb'], ['Smoke', hm(smoke) + ' to 120F'], ['Sear', '2-3 min/side, high'], ['Finish', '130-135F med-rare'], ['USDA min', '145F + 3 min rest']],
+        prep: [{lead: 60, text: 'Tri-tip: binder and rub, rest at room temp while the pit stabilizes.'}], foot: 45 };
+    } },
+
+  { id: 'stlribs', name: 'St. Louis Ribs',
+    methods: [['221', '2-2-1 (better fit for St. Louis)'], ['321', '3-2-1'], ['nowrap', 'No wrap']],
+    fields: [
+      {id: 'racks', label: 'Racks', type: 'number', def: 3, min: 1, max: 6, step: 1},
+      {id: 'layout', label: 'Layout', type: 'select', def: 'rack', opts: [['rack', 'Rib rack'], ['flat', 'Flat on grate']]}],
+    build(c, S){ return ribs(c, S, 'St. Louis ribs', c.method === '321' ? [180, 120, 60] : c.method === 'nowrap' ? [330] : [120, 120, 60], 85, 30); } },
+
+  { id: 'bbribs', name: 'Baby Back Ribs',
+    methods: [['wrap', '2-1.5-1 wrapped'], ['nowrap', 'No wrap']],
+    fields: [
+      {id: 'racks', label: 'Racks', type: 'number', def: 2, min: 1, max: 6, step: 1},
+      {id: 'layout', label: 'Layout', type: 'select', def: 'rack', opts: [['rack', 'Rib rack'], ['flat', 'Flat on grate']]}],
+    build(c, S){ return ribs(c, S, 'Baby backs', c.method === 'nowrap' ? [270] : [120, 90, 60], 70, 25); } },
+
+  { id: 'butt', name: 'Pork Butt',
+    methods: [['smoker', 'Pit Boss, smoked']],
+    fields: [
+      {id: 'weight', label: 'Weight (lb)', type: 'number', def: 8, min: 3, max: 16, step: 0.5},
+      {id: 'wrap', label: 'Wrap at the stall', type: 'select', def: 'foil', opts: [['foil', 'Foil'], ['paper', 'Butcher paper'], ['none', 'No wrap']]},
+      {id: 'rest', label: 'Rest / hold (min, 60+)', type: 'number', def: 60, min: 60, max: 300, step: 15, full: true}],
+    build(c, S){
+      const P = {225: 1.5, 250: 1.25, 275: 1.0}, L = {225: 1.25, 250: 1.0, 275: 0.8}, H = {225: 2.0, 250: 1.5, 275: 1.25};
+      const wf = c.wrap === 'none' ? 1.1 : 1, w = +c.weight || 8, tot = w * P[S.low] * 60 * wf;
+      const phases = c.wrap === 'none'
+        ? [{dev: 'smoker', temp: S.low, min: tot, label: 'Pork butt on the pit, fat cap up. Probe away from the bone.', short: 'Smoke'}]
+        : [{dev: 'smoker', temp: S.low, min: tot * 0.6, label: 'Pork butt on the pit, fat cap up. Probe away from the bone.', short: 'Smoke'},
+           {dev: 'smoker', temp: S.low, min: tot * 0.4, label: 'Wrap pork butt (about 165F, bark set). Back on to 200-205F.', short: 'Wrapped'}];
+      return { phases, rest: Math.max(60, +c.rest || 60), slice: 15,
+        restLabel: 'Pork butt off at 200-205F when the bone wiggles free. Hold wrapped in a towel-lined cooler or the oven at ' + S.hold + 'F.',
+        sliceLabel: 'Pull the pork. Toss with the juices from the wrap.',
+        method: 'Pit Boss at ' + S.low + 'F, ' + (c.wrap === 'none' ? 'no wrap' : c.wrap + ' wrap'),
+        targets: [['Weight', w + ' lb'], ['Plan cook', hm(tot)], ['Typical range', (w * L[S.low] * wf).toFixed(1) + '-' + (w * H[S.low] * wf).toFixed(1) + ' hr'], ['Pull', '200-205F, bone loose']],
+        prep: [{lead: 60, text: 'Pork butt: binder and rub.'}], foot: 7 * w };
+    } },
+
+  { id: 'breasts', name: 'Chicken Breasts',
+    methods: [['griddle', 'Blackstone griddle'], ['smoker', 'Pit Boss, smoked']],
+    fields: [
+      {id: 'count', label: 'Breasts', type: 'number', def: 4, min: 1, max: 16, step: 1},
+      {id: 'size', label: 'Thickness', type: 'select', def: 'pounded', opts: [['pounded', 'Pounded to 3/4 in'], ['whole', 'As-is (~1.25 in)']]},
+      {id: 'brine', label: 'Wet brine 1-2 hr first', type: 'check', def: false, full: true}],
+    build(c, S){
+      const n = +c.count || 4, whole = c.size === 'whole';
+      const prep = [];
+      if (c.brine) prep.push({lead: 150, text: 'Brine chicken breasts: about 5% (3 Tbsp Morton or 1/4 cup Diamond Crystal kosher per quart of water), 1-2 hr max, then pat dry.'});
+      prep.push({lead: 30, text: (whole ? 'Pat breasts dry and season.' : 'Pound breasts to an even 3/4 in, pat dry, season.')});
+      let phases, method;
+      if (c.method === 'smoker'){
+        const m = (whole ? 110 : 80) * TF[S.low];
+        phases = [{dev: 'smoker', temp: S.low, min: m, label: 'Chicken breasts on the pit. Probe the thickest one; pull at 160F.', short: 'Smoke'}];
+        method = 'Pit Boss at ' + S.low + 'F';
+      } else {
+        phases = [{dev: 'griddle', temp: 400, min: whole ? 20 : 12, label: whole
+          ? 'Chicken breasts on the Blackstone, medium. Sear 3-4 min per side, then dome to finish, about 20 min total.'
+          : 'Chicken breasts on the Blackstone, medium-high (about 375-400F surface), 5-6 min per side.', short: 'Griddle'}];
+        method = 'Blackstone, ' + (whole ? 'medium with dome' : 'medium-high');
+      }
+      return { phases, rest: 8, slice: 0, holdsPoorly: true,
+        restLabel: 'Pull breasts at 160-162F, tent 5-10 min. Carryover takes them to 165F: confirm in the thickest part.',
+        method,
+        targets: [['Count', n + (whole ? ' whole' : ' pounded')], ['Cook', hm(phases[0].min)], ['Pull', '160-162F'], ['Final (USDA)', '165F'], ['Hold', 'Poorly: serve fast']],
+        prep, foot: 22 * n };
+    } },
+
+  { id: 'wings', name: 'Chicken Wings',
+    methods: [['smoke2', 'Pit Boss: smoke low, then 400F crisp'], ['hot', 'Pit Boss: 350F straight through'], ['griddle', 'Blackstone griddle']],
+    fields: [
+      {id: 'lb', label: 'Weight (lb)', type: 'number', def: 2, min: 0.5, max: 8, step: 0.5},
+      {id: 'drybrine', label: 'Dry brine ahead (salt + baking powder)', type: 'check', def: true, full: true}],
+    build(c, S){
+      const lb = +c.lb || 2; let phases, method;
+      if (c.method === 'hot'){
+        phases = [{dev: 'smoker', temp: 350, min: 60, label: 'Wings on at 350F on a wire rack. Flip at 30 min.', short: '350F'}];
+        method = 'Pit Boss at 350F, about 60 min';
+      } else if (c.method === 'griddle'){
+        phases = [{dev: 'griddle', temp: 350, min: 28, label: 'Wings on the Blackstone, medium (about 350F surface). Turn every 5 min; dome for the first 15.', short: 'Griddle'}];
+        method = 'Blackstone, medium, domed';
+      } else {
+        const sm = Math.round(50 * TF[S.low]);
+        phases = [
+          {dev: 'smoker', temp: S.low, min: sm, label: 'Wings on the pit on a wire rack. Smoke phase at ' + S.low + 'F.', short: 'Smoke'},
+          {dev: 'smoker', temp: 400, min: 15, setsPit: true, label: 'Crank the pit to 400F. Wings stay on while it climbs.', short: 'Ramp'},
+          {dev: 'smoker', temp: 400, min: 35, label: 'Wings crisp phase at 400F. Flip at the halfway point.', short: '400F'}];
+        method = 'Pit Boss: ' + S.low + 'F smoke, then 400F crisp';
+      }
+      const prep = c.drybrine ? [{lead: 480, text: 'Dry brine wings: kosher salt + aluminum-free baking powder, on a rack, uncovered in the fridge (8-24 hr ahead is ideal).'}] : [{lead: 30, text: 'Pat wings very dry and season.'}];
+      return { phases, rest: 5, slice: 0,
+        restLabel: 'Pull wings at 175-185F (165F is the safe minimum; higher renders the skin). Hold UNCOVERED; sauce right before serving.',
+        method,
+        targets: [['Weight', lb + ' lb'], ['Cook', hm(phases.reduce((a, p) => a + p.min, 0))], ['Pull', '175-185F'], ['Safe min', '165F'], ['Hold', 'Uncovered, 20-30 min max']],
+        prep, foot: 55 * lb };
+    } }
+];
+
+function ribs(c, S, nm, base, flatFoot, rackFoot){
+  const f = TF[S.low], n = +c.racks || 1;
+  const L = ['Smoke unwrapped', 'Wrapped', 'Unwrapped, set bark'];
+  let phases;
+  if (base.length === 1){
+    phases = [{dev: 'smoker', temp: S.low, min: base[0] * f, label: nm + ' on, bone side down. Spritz hourly after hour 2 if the bark looks dry.', short: 'Smoke'}];
+  } else {
+    phases = [
+      {dev: 'smoker', temp: S.low, min: base[0] * f, label: nm + ' on, bone side down.', short: 'Smoke'},
+      {dev: 'smoker', temp: S.low, min: base[1] * f, label: 'Wrap the ' + nm + ' in foil with a splash of apple juice or ACV and a few pats of butter.', short: 'Wrapped'},
+      {dev: 'smoker', temp: S.low, min: base[2] * f, label: 'Unwrap the ' + nm + ', back on to set the bark. Sauce in the last 30 min if saucing.', short: 'Set bark'}];
+  }
+  const tot = phases.reduce((a, p) => a + p.min, 0);
+  return { phases, rest: 15, slice: 10,
+    restLabel: nm + ' done when a probe slides between the bones easily (about 195-203F) and the rack cracks on the bend test. Hold wrapped in the oven at ' + S.hold + 'F.',
+    sliceLabel: 'Cut the ' + nm + ' between the bones.',
+    method: 'Pit Boss at ' + S.low + 'F, ' + (base.length === 1 ? 'no wrap' : base.map(m => +(m * f / 60).toFixed(2)).join('-') + ' hr'),
+    targets: [['Racks', n + (c.layout === 'flat' ? ', flat' : ', rib rack')], ['Plan cook', hm(tot)], ['Done', '195-203F / bend test'], ['Hold', '1 hr max wrapped']],
+    prep: [{lead: 45, text: nm + ': pull the membrane, mustard-honey binder, rub.'}],
+    foot: n * (c.layout === 'flat' ? flatFoot : rackFoot) };
+}
+
+/* ---------- State ---------- */
+function nextSaturday(){
+  const d = new Date(); let add = (6 - d.getDay() + 7) % 7;
+  if (add === 0 && d.getHours() >= 15) add = 7;
+  d.setDate(d.getDate() + add); d.setHours(17, 0, 0, 0);
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T17:00';
+}
+function blankItems(){
+  const o = {};
+  DEFS.forEach(d => { const it = {on: false, method: d.methods[0][0]}; d.fields.forEach(f => it[f.id] = f.def); o[d.id] = it; });
+  return o;
+}
+function preset(name, keepServe){
+  const S = {serve: keepServe || nextSaturday(), low: 225, hold: 170, preheat: 20, hopper: 21, rLow: 1.5, rHigh: 3, clear: true, items: blankItems()};
+  if (name === 'saturday'){
+    Object.assign(S.items.brisket, {on: true, weight: 12, wrap: 'paper', rest: 60, myRate: 0.75});
+    Object.assign(S.items.breasts, {on: true, method: 'griddle', count: 4, size: 'pounded'});
+    Object.assign(S.items.wings, {on: true, method: 'smoke2', lb: 2, drybrine: true});
+  } else if (name === 'original'){
+    Object.assign(S.items.stlribs, {on: true, method: '321', racks: 3});
+    Object.assign(S.items.tritip, {on: true, method: 'brisket', weight: 2.5});
+    Object.assign(S.items.wings, {on: true, method: 'smoke2', lb: 2});
+  }
+  return S;
+}
+const KEY = 'cookDayPlanner.v2';
+let S;
+try { const raw = localStorage.getItem(KEY); if (raw){ S = JSON.parse(raw); const b = blankItems(); for (const k in b) S.items[k] = Object.assign(b[k], S.items[k] || {}); } } catch (e) { S = null; }
+if (!S || !S.items) S = preset('saturday');
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+/* ---------- UI build ---------- */
+const settingIds = ['serve', 'low', 'hold', 'preheat', 'hopper', 'rLow', 'rHigh'];
+function syncSettingsToUI(){
+  settingIds.forEach(id => document.getElementById(id).value = S[id]);
+  document.getElementById('clear').checked = !!S.clear;
+}
+settingIds.forEach(id => document.getElementById(id).addEventListener('input', e => {
+  const v = e.target.value; S[id] = id === 'serve' ? v : (+v || S[id]); if (id === 'serve' && !v) return; render();
+}));
+document.getElementById('clear').addEventListener('change', e => { S.clear = e.target.checked; render(); });
+
+function buildPick(){
+  const host = document.getElementById('pick'); host.innerHTML = '';
+  DEFS.forEach(d => {
+    const it = S.items[d.id];
+    const card = document.createElement('div'); card.className = 'pcard' + (it.on ? ' on' : '');
+    let h = '<label class="ph"><input type="checkbox" data-on="' + d.id + '"' + (it.on ? ' checked' : '') + '><span>' + esc(d.name) + '</span></label><div class="pb">';
+    if (d.methods.length > 1){
+      h += '<label class="fld full">Method<select data-item="' + d.id + '" data-f="method">' +
+        d.methods.map(m => '<option value="' + m[0] + '"' + (it.method === m[0] ? ' selected' : '') + '>' + esc(m[1]) + '</option>').join('') + '</select></label>';
+    } else {
+      h += '<div class="full" style="font-size:.72rem;color:var(--coal)">Method: ' + esc(d.methods[0][1]) + '</div>';
+    }
+    d.fields.forEach(f => {
+      const cls = f.full ? ' full' : '';
+      if (f.type === 'select'){
+        h += '<label class="fld' + cls + '">' + esc(f.label) + '<select data-item="' + d.id + '" data-f="' + f.id + '">' +
+          f.opts.map(o => '<option value="' + o[0] + '"' + (it[f.id] === o[0] ? ' selected' : '') + '>' + esc(o[1]) + '</option>').join('') + '</select></label>';
+      } else if (f.type === 'check'){
+        h += '<label class="chk' + cls + '"><input type="checkbox" data-item="' + d.id + '" data-f="' + f.id + '"' + (it[f.id] ? ' checked' : '') + '>' + esc(f.label) + '</label>';
+      } else {
+        h += '<label class="fld' + cls + '">' + esc(f.label) + '<input type="number" inputmode="decimal" data-item="' + d.id + '" data-f="' + f.id + '" value="' + it[f.id] + '" min="' + f.min + '" max="' + f.max + '" step="' + f.step + '"></label>';
+      }
+    });
+    h += '</div>';
+    card.innerHTML = h; host.appendChild(card);
+  });
+}
+document.getElementById('pick').addEventListener('change', onPick);
+document.getElementById('pick').addEventListener('input', onPick);
+function onPick(e){
+  const t = e.target;
+  if (t.dataset.on){ S.items[t.dataset.on].on = t.checked; t.closest('.pcard').classList.toggle('on', t.checked); render(); return; }
+  if (!t.dataset.item) return;
+  const it = S.items[t.dataset.item], f = t.dataset.f;
+  if (t.type === 'checkbox') it[f] = t.checked;
+  else if (t.type === 'number'){ if (t.value === '' || isNaN(+t.value)) return; it[f] = +t.value; }
+  else it[f] = t.value;
+  render();
+}
+document.querySelectorAll('[data-preset]').forEach(b => b.addEventListener('click', () => {
+  S = preset(b.dataset.preset, S.serve); syncSettingsToUI(); buildPick(); render();
+}));
+
+/* ---------- Scheduler ---------- */
+function compute(){
+  const serve = new Date(S.serve).getTime();
+  if (isNaN(serve)) return null;
+  const low = +S.low;
+  const Sx = Object.assign({}, S, {low});
+  const items = [], alerts = [];
+  DEFS.forEach(d => {
+    const c = S.items[d.id]; if (!c || !c.on) return;
+    const r = d.build(c, Sx); r.id = d.id; r.name = d.name; r.extra = 0;
+    const finish = serve - (r.slice || 0) * MIN - r.rest * MIN;
+    let end = finish;
+    for (let i = r.phases.length - 1; i >= 0; i--){ const p = r.phases[i]; p.end = end; p.start = end - p.min * MIN; end = p.start; }
+    r.finish = finish; items.push(r);
+  });
+  if (!items.length) return {items, alerts, events: [], serve};
+
+  const isHigh = p => p.dev === 'smoker' && p.temp >= low + 50;
+  const needStart = p => p.setsPit ? p.start : p.start - 15 * MIN;
+  const highs = items.flatMap(it => it.phases.filter(isHigh));
+  if (S.clear && highs.length){
+    const H = Math.min(...highs.map(needStart));
+    items.forEach(it => {
+      if (it.phases.some(isHigh)) return;
+      const sm = it.phases.filter(p => p.dev === 'smoker'); if (!sm.length) return;
+      const lastEnd = Math.max(...sm.map(p => p.end)); if (lastEnd <= H) return;
+      const delta = Math.ceil((lastEnd - H) / (5 * MIN)) * 5 * MIN;
+      it.phases.forEach(p => { if (!p.anchor){ p.start -= delta; p.end -= delta; } });
+      it.extra = delta / MIN; it.shifted = true;
+      if (!it.phases.some(p => p.anchor)) it.finish -= delta;
+      alerts.push({lvl: it.holdsPoorly ? 'warn' : 'info', tag: 'Shifted',
+        text: it.name + ' moved ' + hm(it.extra) + ' earlier so the pit is clear before it climbs to high heat. ' +
+          (it.holdsPoorly ? 'Chicken breasts dry out on a long hold: switching them to the Blackstone avoids this.' : 'It holds that much longer in the oven or cooler.')});
+    });
+  }
+
+  // smoker temp conflicts
+  const sm = items.flatMap(it => it.phases.filter(p => p.dev === 'smoker').map(p => ({it, p}))).sort((a, b) => a.p.start - b.p.start);
+  const seen = {};
+  for (let i = 0; i < sm.length; i++) for (let j = i + 1; j < sm.length; j++){
+    const a = sm[i], b = sm[j];
+    if (a.it === b.it) continue;
+    if (a.p.start < b.p.end && b.p.start < a.p.end && Math.abs(a.p.temp - b.p.temp) > 25){
+      const k = a.it.id + '|' + b.it.id; if (seen[k]) continue; seen[k] = 1;
+      const s = Math.max(a.p.start, b.p.start), e = Math.min(a.p.end, b.p.end);
+      alerts.push({lvl: 'warn', tag: 'Pit conflict', text: a.it.name + ' wants ' + a.p.temp + 'F while ' + b.it.name + ' wants ' + b.p.temp + 'F, ' + fmt(s) + ' to ' + clock(e) +
+        '. Turn on the "finish low-and-slow first" option, or move the chicken to the Blackstone.'});
+    }
+  }
+
+  // grate space (estimate)
+  let peak = 0;
+  sm.forEach(x => {
+    const t = x.p.start;
+    const act = new Set(sm.filter(y => y.p.start <= t && t < y.p.end).map(y => y.it));
+    let tot = 0; act.forEach(it => tot += it.foot); peak = Math.max(peak, tot);
+  });
+  if (peak > 849) alerts.push({lvl: 'warn', tag: 'Space', text: 'Estimated peak load is about ' + Math.round(peak) + ' sq in, more than the 849 sq in total. Use a rib rack, go flat-to-vertical, or move something to the Blackstone.'});
+  else if (peak > 560) alerts.push({lvl: 'info', tag: 'Space', text: 'Estimated peak load is about ' + Math.round(peak) + ' sq in against a 593 sq in main grate. Plan on the upper rack for wings or breasts.'});
+
+  // events
+  const ev = [];
+  const add = (t, txt, tag, cls) => ev.push({t, txt, tag, cls: cls || ''});
+  let fire = null, pitEnd = null, refills = [], pellets = 0;
+  if (sm.length){
+    const first = sm[0].p;
+    fire = first.start - S.preheat * MIN;
+    pitEnd = Math.max(...sm.map(x => x.p.end));
+    add(fire, 'Fire the Pit Boss to ' + first.temp + 'F. Verify grate temp with a probe once it settles.', 'Pit', 'key');
+    let cur = first.temp;
+    sm.forEach(x => {
+      if (x.p.temp !== cur){
+        if (!x.p.setsPit) add(needStart(x.p), 'Set the pit to ' + x.p.temp + 'F so it is there when ' + x.it.name.toLowerCase() + ' go' + (/s$/.test(x.it.name) ? '' : 'es') + ' on.', 'Pit', 'crit');
+        cur = x.p.temp;
+      }
+    });
+    // pellets
+    let level = +S.hopper;
+    for (let t = fire; t < pitEnd; t += 5 * MIN){
+      const act = sm.filter(x => x.p.start <= t && t < x.p.end);
+      const temp = act.length ? Math.max(...act.map(x => x.p.temp)) : low;
+      const use = (temp >= 325 ? +S.rHigh : +S.rLow) * 5 / 60;
+      pellets += use; level -= use;
+      if (level < S.hopper * 0.1){ refills.push(t); level = +S.hopper; }
+    }
+    refills.forEach(t => add(t - 30 * MIN, 'Top off the hopper (estimated under 25% left).', 'Pit', 'crit'));
+    add(pitEnd, 'Pit Boss done. Run the shutdown cycle.', 'Pit');
+  }
+  const gp = items.flatMap(it => it.phases.filter(p => p.dev === 'griddle'));
+  let gOn = null;
+  if (gp.length){ gOn = Math.min(...gp.map(p => p.start)) - 15 * MIN; add(gOn, 'Fire the Blackstone, about 15 min preheat. Set a hot zone and a cooler zone.', 'Griddle', 'key'); }
+
+  const holders = items.filter(it => it.rest >= 15 || it.extra > 0);
+  if (holders.length){ const t = Math.min(...holders.map(it => it.finish)) - 15 * MIN; add(t, 'Oven to ' + S.hold + 'F for holding.', 'Oven'); }
+
+  items.forEach(it => {
+    const start = Math.min(...it.phases.map(p => p.start));
+    it.start = start;
+    it.prep.forEach(pr => add(start - pr.lead * MIN, pr.text, 'Prep'));
+    const onHeat = (Math.max(...it.phases.map(p => p.end)) - start) / MIN;
+    it.onHeat = onHeat;
+    it.phases.forEach((p, i) => {
+      let dur = ' [' + hm(p.min) + ']';
+      if (i === 0 && it.phases.length > 1) dur += ' Total on heat about ' + hm(onHeat) + ', off ' + clock(it.finish) + '.';
+      add(p.start, p.label + dur, p.dev === 'smoker' ? 'Pit' : 'Griddle', isHigh(p) ? 'crit' : (p === it.phases[0] ? 'key' : ''));
+      if (p.endLabel) add(p.end, p.endLabel, p.dev === 'smoker' ? 'Pit' : 'Griddle');
+    });
+    add(it.finish, it.restLabel + (it.extra ? ' Holds an extra ' + hm(it.extra) + ' so the pit is clear for the high-heat phase.' : ''), 'Pull', 'key');
+    if (it.slice) add(serve - it.slice * MIN, it.sliceLabel, 'Plate');
+  });
+  add(serve, 'Serve.', 'Serve', 'key');
+  ev.forEach((e, i) => e.i = i);
+  ev.sort((a, b) => (r5(a.t) - r5(b.t)) || (a.i - b.i));
+
+  if (fire !== null){
+    const fh = new Date(fire).getHours();
+    if (fh >= 21 || fh < 6) alerts.push({lvl: 'info', tag: 'Overnight', text: 'Pit fires at ' + fmt(fire) + '. Start with a full hopper and set a high and low alarm on the app or a wireless probe. Running at 250F or 275F moves the start later.'});
+    if (refills.length) alerts.push({lvl: 'info', tag: 'Pellets', text: refills.length + ' hopper top-off' + (refills.length > 1 ? 's' : '') + ' needed: first around ' + fmt(refills[0]) + '. Plan on about ' + Math.ceil(pellets) + ' lb total.'});
+  }
+  const earliest = ev.length ? ev[0].t : serve;
+  if (earliest < Date.now() && serve > Date.now()) alerts.push({lvl: 'warn', tag: 'Late', text: 'The first step (' + fmt(earliest) + ') is already in the past. Push the serve time or run hotter.'});
+  if (!alerts.some(a => a.lvl === 'warn')) alerts.unshift({lvl: 'ok', tag: 'Plan', text: 'No pit-temperature conflicts.'});
+
+  return {items, alerts, events: ev, serve, fire, pitEnd, pellets, gOn, refills, peak};
+}
+
+/* ---------- Render ---------- */
+let lastText = '';
+function render(){
+  save();
+  const R = compute();
+  const al = document.getElementById('alerts'), strip = document.getElementById('strip'), g = document.getElementById('gantt'),
+        tl = document.getElementById('timeline'), tg = document.getElementById('targets');
+  if (!R){ al.innerHTML = '<div class="alert warn"><b>Setup</b>Set a ready-by time.</div>'; return; }
+  if (!R.items.length){
+    al.innerHTML = ''; strip.innerHTML = ''; g.innerHTML = '<div class="empty">Pick at least one protein above.</div>';
+    tl.innerHTML = ''; tg.innerHTML = ''; lastText = ''; document.getElementById('footSum').textContent = ''; return;
+  }
+  al.innerHTML = R.alerts.map(a => '<div class="alert ' + a.lvl + '"><b>' + esc(a.tag) + '</b>' + esc(a.text) + '</div>').join('');
+
+  const pitHrs = R.fire !== null ? ((R.pitEnd - R.fire) / 3600000) : 0;
+  strip.innerHTML = [
+    ['Fire Pit Boss', R.fire !== null ? fmt(R.fire) : 'Not used', R.fire !== null ? 'Preheat ' + S.preheat + ' min to ' + R.items.flatMap(i => i.phases).filter(p => p.dev === 'smoker').sort((a, b) => a.start - b.start)[0].temp + 'F' : ''],
+    ['Pit run time', R.fire !== null ? pitHrs.toFixed(1) + ' hr' : '-', R.fire !== null ? 'Off ' + fmt(R.pitEnd) : ''],
+    ['Pellets (est.)', R.fire !== null ? Math.ceil(R.pellets) + ' lb' : '-', R.fire !== null ? (R.refills.length ? R.refills.length + ' top-off' + (R.refills.length > 1 ? 's' : '') : 'One hopper') : ''],
+    ['Blackstone on', R.gOn !== null ? fmt(R.gOn) : 'Not used', R.gOn !== null ? '15 min preheat' : ''],
+    ['Serve', fmt(R.serve), dayLong(R.serve)]
+  ].map(b => '<div><div class="k">' + b[0] + '</div><div class="v">' + b[1] + '</div><div class="s">' + b[2] + '</div></div>').join('');
+
+  // gantt
+  const prepStarts = R.items.flatMap(it => it.prep.map(p => it.start - p.lead * MIN)).filter(t => R.serve - t <= 12 * 3600000);
+  const t0Raw = Math.min(R.fire !== null ? R.fire : Infinity, R.gOn !== null ? R.gOn : Infinity, ...R.items.map(i => i.start), ...prepStarts);
+  const t0 = Math.floor(t0Raw / 3600000) * 3600000, t1 = Math.ceil((R.serve + 15 * MIN) / 3600000) * 3600000;
+  const span = t1 - t0, X = t => ((t - t0) / span * 100).toFixed(3) + '%', W = (a, b) => (Math.max(0, b - a) / span * 100).toFixed(3) + '%';
+  const hrs = span / 3600000, step = hrs <= 10 ? 1 : hrs <= 20 ? 2 : 3;
+  let gh = '';
+  const tickPct = (100 / hrs * step) + '%';
+  R.items.forEach(it => {
+    let bars = '';
+    it.prep.forEach(pr => { const s = it.start - pr.lead * MIN; if (s >= t0) bars += '<div class="g-bar prep" style="left:' + X(s) + ';width:' + W(s, Math.min(s + 30 * MIN, it.start)) + '" title="' + esc(pr.text) + '">prep</div>'; });
+    it.phases.forEach(p => {
+      const cls = p.dev === 'griddle' ? 'griddle' : (p.temp >= +S.low + 50 ? 'high' : 'low');
+      bars += '<div class="g-bar ' + cls + '" style="left:' + X(p.start) + ';width:' + W(p.start, p.end) + '" title="' + esc(p.label) + '">' + esc((p.short || '') + ' ' + hmc(p.min)) + '</div>';
+    });
+    const anchors = it.phases.filter(p => p.anchor);
+    if (anchors.length && it.extra){ const smEnd = Math.max(...it.phases.filter(p => !p.anchor).map(p => p.end)); bars += '<div class="g-bar rest" style="left:' + X(smEnd) + ';width:' + W(smEnd, anchors[0].start) + '">hold</div>'; }
+    const sliceAt = R.serve - (it.slice || 0) * MIN;
+    bars += '<div class="g-bar rest" style="left:' + X(it.finish) + ';width:' + W(it.finish, sliceAt) + '">rest ' + hmc((sliceAt - it.finish) / MIN) + '</div>';
+    if (it.slice) bars += '<div class="g-bar slice" style="left:' + X(sliceAt) + ';width:' + W(sliceAt, R.serve) + '"></div>';
+    bars += '<div class="g-serve" style="left:' + X(R.serve) + '"></div>';
+    gh += '<div class="g-row"><div class="g-name">' + esc(it.name) + '</div><div class="g-track" style="--tick:' + tickPct + '">' + bars + '</div></div>';
+  });
+  if (R.fire !== null){
+    let bars = '', cur = null, segS = R.fire;
+    const sm = R.items.flatMap(i => i.phases).filter(p => p.dev === 'smoker');
+    for (let t = R.fire; t <= R.pitEnd; t += 5 * MIN){
+      const act = sm.filter(p => p.start <= t && t < p.end);
+      const temp = act.length ? Math.max(...act.map(p => p.temp)) : (cur || +S.low);
+      if (cur === null){ cur = temp; segS = t; }
+      if (temp !== cur || t >= R.pitEnd){
+        bars += '<div class="g-bar ' + (cur >= +S.low + 50 ? 'high' : 'low') + '" style="opacity:.55;left:' + X(segS) + ';width:' + W(segS, t) + '">' + cur + 'F</div>';
+        cur = temp; segS = t;
+      }
+    }
+    gh += '<div class="g-row"><div class="g-name" style="color:var(--bark)">Pit set point</div><div class="g-track" style="--tick:' + tickPct + '">' + bars + '</div></div>';
+  }
+  let ax = '';
+  for (let t = t0; t <= t1; t += step * 3600000){
+    const d = new Date(t); let h = d.getHours(); const ap = h >= 12 ? 'p' : 'a'; h = h % 12 || 12;
+    ax += '<span style="left:' + X(t) + '">' + (d.getHours() === 0 || t === t0 ? DAY[d.getDay()] + ' ' : '') + h + ap + '</span>';
+  }
+  g.innerHTML = gh + '<div class="g-axis">' + ax + '</div>';
+
+  // timeline
+  let th = '<div class="t-row head"><div>Time</div><div class="t-tag">Where</div><div>Action</div></div>';
+  let lastDay = null; const lines = [];
+  R.events.forEach(e => {
+    const dk = dayKey(e.t);
+    if (dk !== lastDay){ th += '<div class="t-row day"><div>' + esc(dayLong(e.t)) + '</div></div>'; lines.push('', dayLong(e.t).toUpperCase()); lastDay = dk; }
+    th += '<div class="t-row ' + e.cls + '"><div class="t-time">' + clock(e.t) + '</div><div class="t-tag"><span>' + esc(e.tag) + '</span></div><div>' + esc(e.txt) + '</div></div>';
+    lines.push(clock(e.t).padStart(8) + '  [' + e.tag + '] ' + e.txt);
+  });
+  tl.innerHTML = th;
+  lastText = ('Cook Day Plan, serve ' + fmt(R.serve) + '\n' + lines.join('\n')).trim();
+
+  // targets
+  tg.innerHTML = R.items.map(it => {
+    const smP = it.phases.filter(p => p.dev === 'smoker');
+    const rows = [['On', fmt(it.start)], ['Time on heat', hm(it.onHeat)], ['Off heat', fmt(it.finish)], ['Rest / hold', hm(it.rest + it.extra)]].concat(it.targets);
+    return '<div class="protein-card"><h3>' + esc(it.name) + '</h3><div class="m">' + esc(it.method) + '</div>' +
+      rows.map(r => '<div class="stat"><span class="stat-label">' + esc(r[0]) + '</span><span class="stat-value">' + esc(r[1]) + '</span></div>').join('') + '</div>';
+  }).join('');
+
+  document.getElementById('footSum').textContent = 'Serve ' + fmt(R.serve) + ' | Pit at ' + S.low + 'F | Proteins: ' + R.items.length;
+}
+
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  const out = document.getElementById('copyOut');
+  try { await navigator.clipboard.writeText(lastText); document.getElementById('copyBtn').textContent = 'Copied'; setTimeout(() => document.getElementById('copyBtn').textContent = 'Copy as text', 1500); }
+  catch (e) { out.style.display = 'block'; out.value = lastText; out.focus(); out.select(); }
+});
+
+syncSettingsToUI(); buildPick(); render();
+})();
+</script>
+</body>
+</html>

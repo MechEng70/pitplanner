@@ -1,0 +1,35 @@
+{
+  "$comment": "Smoker picker list. Only entries with verified: true have checked specs; for the rest the app leaves hopper, grate and temp step blank and asks the user to check the manual. Add a source for every spec you fill in.",
+  "version": 1,
+  "fuelAlerts": {
+    "pellet": { "kind": "hopper", "label": "Hopper refill alerts" },
+    "gravity": { "kind": "hopper", "label": "Charcoal hopper refill alerts" },
+    "kamado": { "kind": "none", "label": "Long burns, few alerts" },
+    "drum": { "kind": "none", "label": "Long burns, few alerts" },
+    "offset": { "kind": "interval", "everyMin": 60, "label": "Fire checks every 1-2 hr" },
+    "electric": { "kind": "interval", "everyMin": 60, "label": "Wood chip refills" },
+    "other": { "kind": "none", "label": "No fuel alerts" }
+  },
+  "smokers": [
+    { "id": "pitboss-820", "brand": "Pit Boss", "model": "820", "type": "pellet", "verified": true,
+      "minTempF": 180, "maxTempF": 500, "tempStepF": 5, "hopperLb": 21, "mainGrateSqIn": 593, "upperRackSqIn": 256,
+      "sources": ["Pit Boss PB820D3 spec sheet: 849 sq in total, 593 main, 256 secondary, 21 lb hopper, 180-500F", "tempStepF 5: owner (Jason) on his unit; older dial controllers use fixed presets"] },
+    { "id": "pitboss-850", "brand": "Pit Boss", "model": "850", "type": "pellet", "verified": false },
+    { "id": "traeger-pro-780", "brand": "Traeger", "model": "Pro 780", "type": "pellet", "verified": false },
+    { "id": "traeger-ironwood", "brand": "Traeger", "model": "Ironwood", "type": "pellet", "verified": false },
+    { "id": "traeger-woodridge-pro", "brand": "Traeger", "model": "Woodridge Pro", "type": "pellet", "verified": false },
+    { "id": "weber-searwood", "brand": "Weber", "model": "Searwood", "type": "pellet", "verified": false },
+    { "id": "recteq-bullseye", "brand": "recteq", "model": "Bullseye", "type": "pellet", "verified": false },
+    { "id": "zgrills-700", "brand": "Z Grills", "model": "700", "type": "pellet", "verified": false },
+    { "id": "yoder-ys640s", "brand": "Yoder", "model": "YS640s", "type": "pellet", "verified": false },
+    { "id": "bge", "brand": "Big Green Egg", "model": "", "type": "kamado", "verified": false },
+    { "id": "kamado-joe-classic-3", "brand": "Kamado Joe", "model": "Classic III", "type": "kamado", "verified": false },
+    { "id": "weber-wsm", "brand": "Weber", "model": "Smokey Mountain", "type": "drum", "verified": false },
+    { "id": "pit-barrel", "brand": "Pit Barrel Cooker", "model": "", "type": "drum", "verified": false },
+    { "id": "masterbuilt-gravity-1050", "brand": "Masterbuilt", "model": "Gravity Series 1050", "type": "gravity", "verified": false },
+    { "id": "okjoe-highland", "brand": "Oklahoma Joe's", "model": "Highland", "type": "offset", "verified": false },
+    { "id": "old-country-brazos", "brand": "Old Country", "model": "Brazos", "type": "offset", "verified": false },
+    { "id": "masterbuilt-electric", "brand": "Masterbuilt", "model": "Electric smoker", "type": "electric", "verified": false }
+  ],
+  "griddleSizesIn": [17, 22, 28, 36]
+}

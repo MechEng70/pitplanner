@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cook history</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#FF8F4A}a:hover{color:#FFB07F}
+button,input{font-family:inherit}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #131211; color: #F1EBE5; font-family: Roboto, system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden; position: relative"><div style="height: 64px; display: flex; align-items: center; padding: 0 8px; flex: none"><a href="Pit.dc.html" aria-label="Back" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; color: #F1EBE5"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></a><h1 style="margin: 0; font-size: 22px; font-weight: 500">Cook history</h1></div>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 12px; padding: 0 16px 16px">
+<div style="background: #1F1D1B; border-radius: 20px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-size: 14px; font-weight: 500">Brisket on Pit Boss 820</span>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<div style="background: #131211; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 11px; color: #B5ABA2">Rate</span><span style="font-size: 16px; font-weight: 500">0.73</span><span style="font-size: 11px; color: #B5ABA2">hr/lb</span></div>
+<div style="background: #131211; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 11px; color: #B5ABA2">Cooks</span><span style="font-size: 16px; font-weight: 500">1</span><span style="font-size: 11px; color: #B5ABA2">logged</span></div>
+<div style="background: #131211; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 11px; color: #B5ABA2">Timing</span><span style="font-size: 16px; font-weight: 500">Per lb</span><span style="font-size: 11px; color: #B5ABA2">2 more cooks</span></div>
+</div></div>
+<h2 style="margin: 4px 4px 0; font-size: 14px; font-weight: 500; color: #B5ABA2">Cooks</h2>
+<button style="display: flex; flex-direction: column; gap: 4px; background: #1F1D1B; border: none; border-radius: 20px; padding: 14px 16px; color: #F1EBE5; text-align: left">
+<span style="display: flex; justify-content: space-between; width: 100%"><span style="font-size: 16px; font-weight: 500">Sat, Nov 14</span><span style="font-size: 13px; color: #9BD18B; font-weight: 500">On time</span></span>
+<span style="font-size: 13px; color: #B5ABA2">Brisket 12 lb, wings 2 lb, 4 chicken breasts</span>
+<span style="font-size: 13px; color: #D8CFC7">Brisket 25 min ahead of plan</span></button>
+<p style="margin: 8px 4px 0; font-size: 13px; color: #8A8079; line-height: 1.5">Tap a cook to see planned vs actual times, your notes, and to cook it again with a new serve time.</p>
+</div>
+<nav aria-label="Main" style="height: 80px; flex: none; background: #1B1917; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr))"><a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: #B5ABA2; font-size: 12px"><span style="width: 64px; height: 32px; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg></span>Plan</a><a href="Cook.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: #B5ABA2; font-size: 12px"><span style="width: 64px; height: 32px; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg></span>Cook</a><a href="Pit.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none; color: #F1EBE5; font-size: 12px; font-weight: 500"><span style="width: 64px; height: 32px; border-radius: 16px; background: #4A2E1C; display: flex; align-items: center; justify-content: center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFB07F" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span>Gear</a></nav></div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

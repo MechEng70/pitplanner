@@ -1,0 +1,15 @@
+# Android signing: NEVER commit. Back up the keystore and passwords somewhere other than GitHub.
+*.jks
+*.keystore
+keystore.properties
+signing/
+
+node_modules/
+dist/
+android/app/build/
+android/.gradle/
+android/local.properties
+*.apk
+*.aab
+.DS_Store
+.env

@@ -1,0 +1,219 @@
+{
+  "$comment": "Pit Planner cooking rules. Times are minutes at a 225F pit unless noted. 'pit' means the smoker set point chosen on the Plan screen. Rates are planning estimates, not doneness: probe temp and tenderness decide when food is done.",
+  "version": 1,
+  "tempModel": {
+    "$comment": "Cook time multiplier vs 225F: factor = base ^ ((T - 225) / 25). 0.85 per 25F fits the published 225/250/275 rates. Outside trustedRange the app shows a warning instead of a confident time.",
+    "referenceF": 225,
+    "basePer25F": 0.85,
+    "trustedRangeF": [200, 300]
+  },
+  "learning": {
+    "$comment": "Learned rate = (priorWeight * default + sum of observed rates normalized to 225F) / (priorWeight + n). Size-adjusted timing unlocks after unlockAfterCooks logged cooks of that food on that cooker.",
+    "priorWeight": 3,
+    "unlockAfterCooks": 3,
+    "sizeExponent": 0.67
+  },
+  "foods": [
+    {
+      "id": "brisket",
+      "name": "Brisket",
+      "group": "Beef",
+      "quantity": { "kind": "weight", "unit": "lb", "label": "Trimmed weight", "default": 12, "min": 3, "max": 22, "step": 0.5, "referenceWeight": 12 },
+      "methods": [
+        {
+          "id": "smoked",
+          "label": "Smoked",
+          "cooker": "smoker",
+          "timing": { "kind": "perWeight", "hrPerLbAt225": 1.25, "rangeAt225": [1.0, 1.5] },
+          "options": {
+            "wrap": { "label": "Wrap at the stall", "default": "paper", "choices": { "paper": { "label": "Butcher paper", "short": "paper wrap", "timeFactor": 1.0 }, "foil": { "label": "Foil", "short": "foil wrap", "timeFactor": 0.95 }, "none": { "label": "No wrap", "short": "no wrap", "timeFactor": 1.15 } } }
+          },
+          "phases": [
+            { "id": "smoke", "fraction": 0.55, "temp": "pit", "label": "Brisket on the smoker, unwrapped. Probe in the thickest part of the flat.", "short": "Smoke" },
+            { "id": "wrap", "fraction": 0.45, "temp": "pit", "label": "Check the brisket: wrap once the bark is set, about 165-170F.", "short": "Wrapped", "checkStep": true, "skipIf": { "wrap": "none" } }
+          ],
+          "restMin": { "default": 60, "min": 30 },
+          "sliceMin": 20,
+          "pull": { "label": "Check tenderness: pull at 200-205F when the probe slides in like butter.", "tempF": [200, 205], "checkStep": true },
+          "holdLimitMin": 240,
+          "prep": [ { "leadMin": 75, "label": "Trim brisket, binder and rub. Let it sit while the smoker comes up." } ],
+          "footprintSqInPerUnit": 16
+        }
+      ]
+    },
+    {
+      "id": "tritip",
+      "name": "Tri-tip",
+      "blurb": "Smoke and sear, or brisket-style",
+      "group": "Beef",
+      "quantity": { "kind": "weight", "unit": "lb", "default": 2.5, "min": 1, "max": 5, "step": 0.25 },
+      "methods": [
+        {
+          "id": "reverse",
+          "label": "Smoke, then griddle sear",
+          "short": "smoke then sear",
+          "cooker": "smoker",
+          "timing": { "kind": "perWeightMinutes", "minPerLbAt225": 35, "minMinutes": 60 },
+          "phases": [
+            { "id": "smoke", "fraction": 1.0, "temp": "pit", "label": "Tri-tip on the smoker, fat cap up. Pull at about 120F.", "short": "Smoke" },
+            { "id": "sear", "fixedMin": 8, "cooker": "griddle", "temp": 450, "anchorToEnd": true, "label": "Sear tri-tip on the griddle, high heat, 2-3 min per side to 130-135F.", "short": "Sear" }
+          ],
+          "restMin": { "default": 10, "min": 5 },
+          "sliceMin": 5,
+          "pull": { "label": "Tri-tip off at 130-135F (medium-rare, below the USDA 145F minimum) or 145F.", "tempF": [130, 145] },
+          "holdLimitMin": 30,
+          "prep": [ { "leadMin": 60, "label": "Tri-tip: binder and rub, rest at room temp." } ],
+          "footprintSqInPerUnit": 18
+        },
+        {
+          "id": "brisketStyle",
+          "label": "Smoked brisket-style (200F)",
+          "short": "brisket-style",
+          "cooker": "smoker",
+          "timing": { "kind": "perWeightMinutes", "minPerLbAt225": 100, "minMinutes": 210 },
+          "phases": [
+            { "id": "smoke", "fraction": 0.55, "temp": "pit", "label": "Tri-tip on the smoker, unwrapped.", "short": "Smoke" },
+            { "id": "wrap", "fraction": 0.45, "temp": "pit", "label": "Check the tri-tip: wrap at about 160-165F.", "short": "Wrapped", "checkStep": true }
+          ],
+          "restMin": { "default": 45, "min": 15 },
+          "sliceMin": 10,
+          "pull": { "label": "Check tenderness: pull at 200-205F.", "tempF": [200, 205], "checkStep": true },
+          "holdLimitMin": 120,
+          "prep": [ { "leadMin": 60, "label": "Tri-tip: binder and rub, rest at room temp." } ],
+          "footprintSqInPerUnit": 18
+        }
+      ]
+    },
+    {
+      "id": "stlribs",
+      "name": "St. Louis ribs",
+      "group": "Pork",
+      "quantity": { "kind": "count", "unit": "racks", "label": "Racks", "default": 3, "min": 1, "max": 6, "step": 1 },
+      "methods": [
+        { "id": "221", "label": "2-2-1", "note": "Smoke, wrapped, unwrapped hours at 225F. 2-2-1 suits St. Louis cut.", "cooker": "smoker", "timing": { "kind": "fixedScaled" },
+          "phases": [
+            { "id": "smoke", "fixedMin": 120, "temp": "pit", "label": "St. Louis ribs on, bone side down.", "short": "Smoke" },
+            { "id": "wrap", "fixedMin": 120, "temp": "pit", "label": "Wrap the ribs in foil with a splash of apple juice or ACV and a few pats of butter.", "short": "Wrapped" },
+            { "id": "unwrap", "fixedMin": 60, "temp": "pit", "label": "Unwrap the ribs, back on to set the bark. Sauce in the last 30 min if saucing.", "short": "Set bark" } ] },
+        { "id": "321", "label": "3-2-1", "note": "Smoke, wrapped, unwrapped hours at 225F. Longer smoke, softer ribs.", "cooker": "smoker", "timing": { "kind": "fixedScaled" },
+          "phases": [
+            { "id": "smoke", "fixedMin": 180, "temp": "pit", "label": "St. Louis ribs on, bone side down.", "short": "Smoke" },
+            { "id": "wrap", "fixedMin": 120, "temp": "pit", "label": "Wrap the ribs in foil with a splash of apple juice or ACV and a few pats of butter.", "short": "Wrapped" },
+            { "id": "unwrap", "fixedMin": 60, "temp": "pit", "label": "Unwrap the ribs, back on to set the bark.", "short": "Set bark" } ] },
+        { "id": "nowrap", "label": "No wrap", "cooker": "smoker", "timing": { "kind": "fixedScaled" },
+          "phases": [ { "id": "smoke", "fixedMin": 330, "temp": "pit", "label": "St. Louis ribs on, bone side down. Spritz hourly after hour 2 if the bark looks dry.", "short": "Smoke" } ] }
+      ],
+      "shared": {
+        "options": { "layout": { "label": "On the grate", "default": "rack", "choices": { "rack": { "label": "Rib rack", "footprintSqInPerUnit": 30 }, "flat": { "label": "Flat", "footprintSqInPerUnit": 85 } } } },
+        "restMin": { "default": 15, "min": 10 },
+        "sliceMin": 10,
+        "pull": { "label": "Check the ribs: done when a probe slides between the bones (about 195-203F) and the rack bends.", "tempF": [195, 203], "checkStep": true },
+        "holdLimitMin": 60,
+        "prep": [ { "leadMin": 45, "label": "Ribs: pull the membrane, binder, rub." } ]
+      }
+    },
+    {
+      "id": "bbribs",
+      "name": "Baby back ribs",
+      "group": "Pork",
+      "quantity": { "kind": "count", "unit": "racks", "label": "Racks", "default": 2, "min": 1, "max": 6, "step": 1 },
+      "methods": [
+        { "id": "wrap", "label": "2-1.5-1", "note": "Smoke, wrapped, unwrapped hours at 225F.", "cooker": "smoker", "timing": { "kind": "fixedScaled" },
+          "phases": [
+            { "id": "smoke", "fixedMin": 120, "temp": "pit", "label": "Baby backs on, bone side down.", "short": "Smoke" },
+            { "id": "wrap", "fixedMin": 90, "temp": "pit", "label": "Wrap the baby backs in foil with a splash of juice and butter.", "short": "Wrapped" },
+            { "id": "unwrap", "fixedMin": 60, "temp": "pit", "label": "Unwrap the baby backs, back on to set the bark.", "short": "Set bark" } ] },
+        { "id": "nowrap", "label": "No wrap", "cooker": "smoker", "timing": { "kind": "fixedScaled" },
+          "phases": [ { "id": "smoke", "fixedMin": 270, "temp": "pit", "label": "Baby backs on, bone side down.", "short": "Smoke" } ] }
+      ],
+      "shared": {
+        "options": { "layout": { "label": "On the grate", "default": "rack", "choices": { "rack": { "label": "Rib rack", "footprintSqInPerUnit": 25 }, "flat": { "label": "Flat", "footprintSqInPerUnit": 70 } } } },
+        "restMin": { "default": 15, "min": 10 },
+        "sliceMin": 10,
+        "pull": { "label": "Check the ribs: probe slides between the bones and the rack bends.", "tempF": [195, 203], "checkStep": true },
+        "holdLimitMin": 60,
+        "prep": [ { "leadMin": 45, "label": "Ribs: pull the membrane, binder, rub." } ]
+      }
+    },
+    {
+      "id": "butt",
+      "name": "Pork butt",
+      "group": "Pork",
+      "quantity": { "kind": "weight", "unit": "lb", "default": 8, "min": 3, "max": 16, "step": 0.5, "referenceWeight": 8 },
+      "methods": [
+        {
+          "id": "smoked",
+          "label": "Smoked",
+          "cooker": "smoker",
+          "timing": { "kind": "perWeight", "hrPerLbAt225": 1.5, "rangeAt225": [1.25, 2.0] },
+          "options": {
+            "wrap": { "label": "Wrap at the stall", "default": "foil", "choices": { "foil": { "label": "Foil", "short": "foil wrap", "timeFactor": 1.0 }, "paper": { "label": "Butcher paper", "short": "paper wrap", "timeFactor": 1.0 }, "none": { "label": "No wrap", "short": "no wrap", "timeFactor": 1.1 } } }
+          },
+          "phases": [
+            { "id": "smoke", "fraction": 0.6, "temp": "pit", "label": "Pork butt on the smoker, fat cap up. Probe away from the bone.", "short": "Smoke" },
+            { "id": "wrap", "fraction": 0.4, "temp": "pit", "label": "Check the pork butt: wrap at about 165F once the bark is set.", "short": "Wrapped", "checkStep": true, "skipIf": { "wrap": "none" } }
+          ],
+          "restMin": { "default": 60, "min": 30 },
+          "sliceMin": 15,
+          "pull": { "label": "Check tenderness: pull at 200-205F when the bone wiggles free.", "tempF": [200, 205], "checkStep": true },
+          "holdLimitMin": 240,
+          "prep": [ { "leadMin": 60, "label": "Pork butt: binder and rub." } ],
+          "footprintSqInPerUnit": 7
+        }
+      ]
+    },
+    {
+      "id": "breasts",
+      "name": "Chicken breasts",
+      "group": "Chicken",
+      "holdsPoorly": true,
+      "quantity": { "kind": "count", "unit": "breasts", "default": 4, "min": 1, "max": 16, "step": 1 },
+      "methods": [
+        { "id": "griddle", "label": "Griddle", "cooker": "griddle", "timing": { "kind": "byOption", "option": "thickness" },
+          "phases": [ { "id": "cook", "temp": 400, "label": "Chicken breasts on the griddle, medium-high (about 375-400F surface), 5-6 min per side.", "short": "Griddle" } ] },
+        { "id": "smoker", "label": "Smoker", "cooker": "smoker", "timing": { "kind": "byOptionScaled", "option": "thickness" },
+          "phases": [ { "id": "cook", "temp": "pit", "label": "Chicken breasts on the smoker. Probe the thickest one.", "short": "Smoke" } ] }
+      ],
+      "shared": {
+        "options": {
+          "thickness": { "label": "Thickness", "default": "pounded", "choices": {
+            "pounded": { "label": "Pounded to 3/4 in", "short": "pounded", "note": "Thin breasts barely carry over, so pull close to 165F.", "minutes": { "griddle": 12, "smoker": 80 }, "pullF": [163, 165] },
+            "whole": { "label": "As-is, about 1.25 in", "short": "as-is", "note": "Thick breasts carry over a few degrees. Confirm 165F after the rest.", "minutes": { "griddle": 20, "smoker": 110 }, "pullF": [160, 162] } } },
+          "brine": { "label": "Prep", "default": "none", "choices": { "none": { "label": "No brine" }, "wet": { "label": "Wet brine 1-2 hr", "prep": { "leadMin": 150, "label": "Brine chicken breasts (about 5%), 1-2 hr max, then pat dry." } } } }
+        },
+        "restMin": { "default": 8, "min": 5 },
+        "sliceMin": 0,
+        "pull": { "label": "Pull chicken breasts at the target temp and tent 5-10 min. Confirm 165F in the thickest part.", "tempF": [160, 165] },
+        "holdLimitMin": 20,
+        "prep": [ { "leadMin": 30, "label": "Pat breasts dry and season (pound to an even thickness if chosen)." } ],
+        "footprintSqInPerUnit": 22
+      }
+    },
+    {
+      "id": "wings",
+      "name": "Chicken wings",
+      "group": "Chicken",
+      "quantity": { "kind": "weight", "unit": "lb", "default": 2, "min": 0.5, "max": 8, "step": 0.5 },
+      "methods": [
+        { "id": "smokeCrisp", "label": "Smoke low, then 400F crisp", "short": "smoke then 400F crisp", "cooker": "smoker", "timing": { "kind": "phases" },
+          "phases": [
+            { "id": "smoke", "fixedMin": 50, "scaleWithPit": true, "temp": "pit", "label": "Wings on the smoker on a wire rack.", "short": "Smoke" },
+            { "id": "ramp", "fixedMin": 15, "temp": 400, "setsPit": true, "label": "Turn the smoker up to 400F. Wings stay on while it climbs.", "short": "Ramp" },
+            { "id": "crisp", "fixedMin": 35, "temp": 400, "label": "Wings crisp at 400F. Flip at the halfway point.", "short": "400F" } ] },
+        { "id": "hot", "label": "Smoker at 350F", "short": "smoker at 350F", "cooker": "smoker", "timing": { "kind": "phases" },
+          "phases": [ { "id": "cook", "fixedMin": 60, "temp": 350, "label": "Wings on at 350F on a wire rack. Flip at 30 min.", "short": "350F" } ] },
+        { "id": "griddle", "label": "Griddle", "cooker": "griddle", "timing": { "kind": "phases" },
+          "phases": [ { "id": "cook", "fixedMin": 28, "temp": 350, "label": "Wings on the griddle, medium (about 350F surface). Turn every 5 min; dome for the first 15.", "short": "Griddle" } ] }
+      ],
+      "shared": {
+        "options": { "drybrine": { "label": "Dry brine ahead", "default": "yes", "choices": { "yes": { "label": "Yes", "prep": { "leadMin": 480, "label": "Dry brine wings: kosher salt + aluminum-free baking powder, on a rack, uncovered in the fridge (8-24 hr ahead)." } }, "no": { "label": "No" } } } },
+        "restMin": { "default": 5, "min": 0 },
+        "sliceMin": 0,
+        "pull": { "label": "Pull wings at 175-185F (165F is the safe minimum). Hold UNCOVERED; sauce right before serving.", "tempF": [175, 185] },
+        "holdLimitMin": 30,
+        "prep": [],
+        "footprintSqInPerUnit": 55
+      }
+    }
+  ]
+}
