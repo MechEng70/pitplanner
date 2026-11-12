@@ -186,7 +186,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 
 
 ### T-005 Kit components
-- **Status:** todo
+- **Status:** done (see `git log --grep T-005`); D-4 decided.
 - **Goal:** the Pit Planner kit (TECH-DESIGN section 8), so screens never style ad hoc.
 - **Files:** `src/components/kit/*` (Text variants, Num, Stack/Row, Card, Button, IconButton, Chips,
   Segmented, Stepper, Tile/Tiles, InfoBox, ResultCard, Banner, ListRow, StatusRow, CheckRow, Field, Sheet,
@@ -201,6 +201,33 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Tests:** RNTL per component (Stepper handlers and disabled, Chips selection, Sheet back and close,
   CheckRow toggle); lint rule unit test.
 - **Device testing (Jason):** none.
+- **Notes (done 2026-11-12):**
+  - D-4: kit Sheet on React Native `Modal`, not `@gorhom/bottom-sheet` (reasons in TECH-DESIGN section 13).
+    Back goes to the top Modal, so stacked sheets close top first. Footer floats behind a 14 dp fade
+    (`FooterScroll`, reused by `Screen` later).
+  - Kit in `src/components/kit/` (`index.ts` re-exports `Text`/`Button`): Num, Stack/Row/Fill/Fixed/Spacer/
+    Divider, Card, Avatar, IconAvatar, Tile/Tiles, InfoBox, ResultCard, Banner, EmptyState, GroupCard,
+    IconButton, Chips (wrap, small, scroll), Segmented, Stepper, Field, ListRow, StatusRow, CheckRow, Sheet,
+    `useSheet`, all 0.2.0 icons on `react-native-svg` (added, 15.16.0). Not ported yet (no task needs them
+    before their screen): AppBar/Screen, Lanes, Menu/SelectField, ChoiceCards, SetupPage, InputField,
+    OptionCard, PickRow, StatusChip, ActionRow, InfoRow, BandNote, TextArea, SearchField; each comes with
+    the first screen that uses it.
+  - `Num`: tabular digits, spaces to no-break spaces (RN has no `nowrap`), cutting props not in its type.
+    Lint rule `pitplanner/num-text-size` (`eslint-rules/num-text-size.js`, RuleTester under node:test in
+    `npm run test:gate`, plus a wiring case in `tools/gate.test.mjs`) rejects `numberOfLines`, `clamp`,
+    `adjustsFontSizeToFit`, `ellipsizeMode`, `maxFontSizeMultiplier`, `allowFontScaling={false}` on a Num
+    or any element around one.
+  - `Text`: nested Text inherits the outer type and tone (so `Num` in a sentence matches); new `clamp` (one
+    line) and `relaxed` (ui.css `.lh`, 1.4) props. `Button`: disabled primary is grey with a tertiary label
+    (ui.css), `tone` accent (outline) and danger (text), icons take the label color.
+  - Tokens: `statusColors` (ok/warn/gold/error containers, on-error-container: ui.css literals),
+    `relaxedLineHeightRatio`, `chipHintSize`; tested against ui.css.
+  - Bug found: NativeWind inlined `rem` as 14 dp, so every Tailwind spacing class was 12.5% short (T-004's
+    button padding included). `inlineRem: 16` in `metro.config.cjs`; regression test
+    `src/theme/spacing.test.ts` (failed first).
+  - Accessibility: radiogroup/group containers are not accessibility elements (TalkBack reaches each
+    option); tests find them by label. Icons are hidden from TalkBack. Banner's message is the alert.
+  - Gallery: `app/dev/kit.tsx`, `pitplanner://dev/kit` (dev builds only).
 
 ### T-006 Device test tooling (Maestro)
 - **Status:** todo

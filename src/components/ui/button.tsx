@@ -1,9 +1,12 @@
 // Button (React Native Reusables `button`, rewritten for the Pit Planner tokens): the four kinds of the
-// 0.2.0 kit (legacy/src/ui/ui.css `.btn-*`). Android ripple on press, 48 dp minimum touch height.
+// 0.2.0 kit (legacy/src/ui/ui.css `.btn-*`). Android ripple on press, 48 dp minimum touch height. Icons in
+// the button take the label color (IconColor). `tone`: outline `accent`, text `danger` (ui.css .btn-accent,
+// .btn-danger). A disabled primary turns grey (.btn-primary:disabled); the other kinds fade to 50%.
 import { cva, type VariantProps } from 'class-variance-authority';
 import * as React from 'react';
 import { Pressable } from 'react-native';
-import { TextContext, type TextTone, type TextVariant, type TextWeight } from '@/components/ui/text';
+import { IconColor } from '@/components/kit/icons';
+import { TextContext, toneColor, type TextTone, type TextVariant, type TextWeight } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import { withAlpha } from '@/theme/color';
 import { colors } from '@/theme/tokens';
@@ -38,19 +41,36 @@ const RIPPLE: Record<Kind, string> = {
   text: withAlpha(colors.accent, 0.16),
 };
 
-type ButtonProps = React.ComponentProps<typeof Pressable> & VariantProps<typeof buttonVariants>;
+type ButtonProps = React.ComponentProps<typeof Pressable> &
+  VariantProps<typeof buttonVariants> & { tone?: 'accent' | 'danger' };
 
-function Button({ className, kind, block, disabled, ...props }: ButtonProps) {
+function labelFor(k: Kind, tone: ButtonProps['tone'], disabled: boolean) {
+  if (k === 'primary' && disabled) return { ...LABEL.primary, tone: 'tertiary' as const };
+  if (tone === 'accent' && k === 'outline') return { ...LABEL.outline, tone: 'accent' as const };
+  if (tone === 'danger' && k === 'text') return { ...LABEL.text, tone: 'error' as const };
+  return LABEL[k];
+}
+
+function Button({ className, kind, block, tone, disabled, ...props }: ButtonProps) {
   const k = kind ?? 'primary';
+  const off = !!disabled;
+  const label = labelFor(k, tone, off);
   return (
-    <TextContext.Provider value={LABEL[k]}>
-      <Pressable
-        className={cn(buttonVariants({ kind: k, block }), disabled && 'opacity-50', className)}
-        android_ripple={{ color: RIPPLE[k] }}
-        role="button"
-        disabled={disabled}
-        {...props}
-      />
+    <TextContext.Provider value={label}>
+      <IconColor.Provider value={toneColor[label.tone]}>
+        <Pressable
+          className={cn(
+            buttonVariants({ kind: k, block }),
+            off && (k === 'primary' ? 'bg-surface-2' : 'opacity-50'),
+            className,
+          )}
+          android_ripple={{ color: RIPPLE[k] }}
+          role="button"
+          aria-disabled={off}
+          disabled={off}
+          {...props}
+        />
+      </IconColor.Provider>
     </TextContext.Provider>
   );
 }

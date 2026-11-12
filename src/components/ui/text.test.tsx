@@ -53,3 +53,25 @@ test('button labels take the kind type from the 0.2.0 kit: primary 17/500, text 
 test('textStyle falls back to the 1.25 line height', () => {
   expect(textStyle('bodyL')).toEqual({ fontFamily: 'Roboto', fontSize: 16, fontWeight: '400', lineHeight: 20 });
 });
+
+test('a disabled primary turns grey with a tertiary label; tones recolor outline and text labels', async () => {
+  await render(
+    <>
+      <Button disabled>
+        <Text>Start cook</Text>
+      </Button>
+      <Button kind="outline" tone="accent">
+        <Text>Add food</Text>
+      </Button>
+      <Button kind="text" tone="danger">
+        <Text>Remove</Text>
+      </Button>
+    </>,
+  );
+  const start = screen.getByRole('button', { name: 'Start cook' });
+  expect(start).toBeDisabled();
+  expect(start.props.className).toContain('bg-surface-2');
+  expect(screen.getByText('Start cook').props.className).toContain('text-ink-3');
+  expect(screen.getByText('Add food').props.className).toContain('text-ember');
+  expect(screen.getByText('Remove').props.className).toContain('text-error');
+});

@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import tailwindConfig from '../../tailwind.config.js';
 import { withAlpha } from './color';
-import { colors, lineHeightRatio, radii, type } from './tokens';
+import { chipHintSize, colors, lineHeightRatio, radii, relaxedLineHeightRatio, statusColors, type } from './tokens';
 
 const css = readFileSync(join(__dirname, '../../legacy/src/ui/ui.css'), 'utf8');
 const camel = (kebab: string) => kebab.replace(/-([a-z0-9])/g, (_, c: string) => c.toUpperCase());
@@ -39,6 +39,22 @@ test('the type scale matches the ui.css .t-* classes (size, weight, line height)
   expect(rule('body')['line-height']).toBe(String(lineHeightRatio));
 });
 
+test('status container colors match the ui.css components that write them as literals', () => {
+  expect(statusColors.okContainer).toBe(rule('.avatar-ok').background);
+  expect(statusColors.warnContainer).toBe(rule('.status-warn').background);
+  expect(statusColors.warnContainer).toBe(rule('.banner-warn').background);
+  expect(statusColors.goldContainer).toBe(rule('.avatar-gold').background);
+  expect(statusColors.errorContainer).toBe(rule('.status-error').background);
+  expect(statusColors.errorContainer).toBe(rule('.banner-error').background);
+  expect(statusColors.onErrorContainer).toBe(rule('.banner-error').color);
+});
+
+test('relaxed line height and the chip hint size match ui.css', () => {
+  expect(String(relaxedLineHeightRatio)).toBe(rule('.lh')['line-height']);
+  expect(String(relaxedLineHeightRatio)).toBe(rule('.infobox')['line-height']);
+  expect(`${chipHintSize}px`).toBe(rule('.chip-hint')['font-size']);
+});
+
 test('radii match the ui.css components they are named for', () => {
   const r = (sel: string) => rule(sel)['border-radius'];
   expect(`${radii.statusDot}px`).toBe(r('.status-dot'));
@@ -51,13 +67,13 @@ test('radii match the ui.css components they are named for', () => {
   expect(`${radii.primary}px`).toBe(r('.btn-primary'));
 });
 
-test('the Tailwind theme exposes every token color, and only token colors', () => {
+test('the Tailwind theme exposes every token color (incl. status containers), and only token colors', () => {
   const theme = tailwindConfig.theme as { colors: object; fontSize: object };
   const flat = (o: object): string[] =>
     Object.values(o).flatMap(v => (typeof v === 'string' ? [v] : flat(v as object)));
   const themeColors = new Set(flat(theme.colors));
   themeColors.delete('transparent');
-  const tokenColors = new Set<string>(Object.values(colors));
+  const tokenColors = new Set<string>([...Object.values(colors), ...Object.values(statusColors)]);
   expect([...tokenColors].filter(c => !themeColors.has(c))).toEqual([]);
   expect([...themeColors].filter(c => !tokenColors.has(c))).toEqual([]);
   expect(Object.keys(theme.fontSize).sort()).toEqual(Object.keys(type).sort());

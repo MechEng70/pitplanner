@@ -6,6 +6,7 @@ import expoConfig from 'eslint-config-expo/flat.js';
 import { config as tsConfig, configs as tsConfigs } from 'typescript-eslint';
 import reactNative from 'eslint-plugin-react-native';
 import globals from 'globals';
+import numTextSize from './eslint-rules/num-text-size.js';
 
 const RN_AND_EXPO = ['react-native', 'react-native-*', 'expo', 'expo-*', '@expo/*', 'expo/*'];
 const msg = (layer, rule) => `${layer}: ${rule} (TECH-DESIGN section 3).`;
@@ -36,7 +37,7 @@ export default tsConfig(
   ...expoConfig,
   ...tsConfigs.recommended,
   {
-    plugins: { 'react-native': reactNative },
+    plugins: { 'react-native': reactNative, pitplanner: { rules: { 'num-text-size': numTextSize } } },
     rules: {
       'react-native/no-unused-styles': 'error',
       'react-native/split-platform-components': 'error',
@@ -44,7 +45,10 @@ export default tsConfig(
       // Theme tokens only (UI acceptance rules): no hex or rgb literals in styles, no inline style objects.
       'react-native/no-color-literals': 'error',
       'react-native/no-inline-styles': 'error',
-      'react-native/no-raw-text': ['error', { skip: [] }],
+      // These kit components wrap their children in a Text (src/components/kit), so literals inside are fine.
+      'react-native/no-raw-text': ['error', { skip: ['Num', 'Banner', 'InfoBox'] }],
+      // Font scale rule (TECH-DESIGN section 8): nothing truncates or shrinks a Num.
+      'pitplanner/num-text-size': 'error',
     },
   },
   {
@@ -147,7 +151,7 @@ export default tsConfig(
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
   {
-    files: ['tools/**/*.{js,mjs}', '*.config.{js,ts}', 'jest.*.js'],
+    files: ['tools/**/*.{js,mjs}', 'eslint-rules/**/*.{js,mjs}', '*.config.{js,ts}', 'jest.*.js'],
     languageOptions: { globals: { ...globals.node } },
   },
   {

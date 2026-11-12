@@ -136,6 +136,12 @@ const cases = [
     'react-hooks/rules-of-hooks',
     'React Hooks rules',
   ],
+  [
+    'src/screens/probe.tsx',
+    "import { Num } from '@/components/kit';\nexport const P = () => <Num numberOfLines={1}>6:20 AM</Num>;\n",
+    'pitplanner/num-text-size',
+    'UI: a Num never truncates (font scale rule)',
+  ],
   ['src/lib/probe.ts', 'const unused = 1;\nexport {};\n', '@typescript-eslint/no-unused-vars', 'a plain lint error'],
 ];
 

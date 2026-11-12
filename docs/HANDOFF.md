@@ -3,7 +3,7 @@
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## START HERE: scaffold, gate and theme in place (T-002..T-004 done), T-005 next
+## START HERE: scaffold, gate, theme and kit in place (T-002..T-005 done), T-006 next
 
 - Root is now the Expo app: `app.config.ts` (variants by `APP_VARIANT`, versionCode from package.json),
   `app/` routes (tabs Plan, Cook, Gear placeholders), `src/lib/` pure helpers, `src/platform/types.ts`
@@ -29,6 +29,11 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
 - The Expo dev build is on the phone (replaced the Capacitor dev copy; its data is backed up in
   `legacy/tools/device/out/dev-copy-backup-2026-11-12/`). To run it: `npm start`, then
   `adb reverse tcp:8081 tcp:8081` and open "Pit Planner dev". First launch shows the Expo dev menu intro.
+- Kit (T-005): build screens from `@/components/kit` only (notes in TASKS T-005). Times, temps, weights and
+  countdowns are `<Num>`; the lint rule `pitplanner/num-text-size` stops anything cutting one. Sheets are the
+  kit `Sheet` on `Modal` (D-4). Tailwind spacing is now true dp (`inlineRem: 16`). Gallery
+  `pitplanner://dev/kit`. Not ported until their screen needs them: AppBar/Screen, Lanes, Menu/SelectField
+  and the Setup form pieces (list in TASKS T-005).
 - SE-003 (Snyk, `braces`/`open` in Metro and dev-middleware, not shipped): approved with conditions; override
   failed (open 11 is ESM-only), ignores expire 2027-02-10. Re-check triggers are in SECURITY-EXCEPTIONS.
 
@@ -62,7 +67,7 @@ Key points of the plan (details in TECH-DESIGN):
 - Task IDs were renumbered: old Capacitor-era T-002..T-040 are superseded (mapping table at the end of
   TASKS.md). SE-001's follow-up is now T-057.
 
-Open decisions in TECH-DESIGN section 13: D-4 bottom sheet library,
+Open decisions in TECH-DESIGN section 13 (D-4 decided in T-005: kit Sheet on `Modal`):
 D-5 state (keep context store), D-6 in-place port with `legacy/`, D-7 generated `android/`, D-8 Maestro.
 
 ## Engineering plan and quality gate (2026-11-12)
@@ -226,7 +231,7 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 1. Done 2026-11-12: Jason approved the stack-change plan; T-001 phone check on 0.2.0 passed.
 2. Jason: push `main` when ready (plan docs and T-001 are local only).
 3. Jason: install the Maestro CLI before T-006 (`curl -fsSL "https://get.maestro.mobile.dev" | bash`).
-4. T-002..T-004 done (R-1 closed), follow-ups approved 2026-11-12. Next: T-005 (kit components), then T-006,
+4. T-002..T-005 done (R-1 closed, D-4 decided). Next: T-006 (Maestro; Jason installs the CLI first),
    per WBS "Suggested order" (T-058 now sits between T-019 and the Cook screen).
    Push the `v0.2.0` tag only when Jason says.
 5. Still open from before (carried into the plan): real cook with alarms through a reboot (now T-037 on the Expo

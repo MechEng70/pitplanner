@@ -3,7 +3,7 @@
 // shadcn semantic names (background, primary, muted, accent, border, ...); they map onto the tokens here.
 // Our ember accent is `ember` (`primary` in Reusables terms): Reusables' `accent` is a subtle pressed background.
 import nativewindPreset from 'nativewind/preset';
-import { colors as c, radii, type, lineHeightRatio } from './src/theme/tokens.ts';
+import { colors as c, statusColors as sc, radii, type, lineHeightRatio } from './src/theme/tokens.ts';
 
 const fontSize = Object.fromEntries(
   Object.entries(type).map(([name, t]) => [
@@ -40,9 +40,10 @@ export default {
       },
       result: c.result,
       griddle: { DEFAULT: c.griddle, container: c.griddleContainer },
-      ok: c.ok,
-      warn: c.warn,
-      error: c.error,
+      ok: { DEFAULT: c.ok, container: sc.okContainer },
+      warn: { DEFAULT: c.warn, container: sc.warnContainer },
+      gold: { container: sc.goldContainer },
+      error: { DEFAULT: c.error, container: sc.errorContainer, 'on-container': sc.onErrorContainer },
       scrim: c.scrim,
       // React Native Reusables (shadcn) semantic names
       background: c.bg,

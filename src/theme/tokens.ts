@@ -37,12 +37,28 @@ export const colors = {
 
 export type ColorName = keyof typeof colors;
 
+/**
+ * Container colors ui.css writes as literals on the components that use them (status chips, avatars,
+ * banners), not as `:root` variables. Kept apart from `colors` so `colors` stays equal to ui.css `:root`.
+ */
+export const statusColors = {
+  okContainer: '#1f2a1c', // .avatar-ok, .status-ok
+  warnContainer: '#2e221a', // .avatar-warn, .status-warn, .banner-warn
+  goldContainer: '#3a3018', // .avatar-gold
+  errorContainer: '#3a1c18', // .status-error, .banner-error
+  onErrorContainer: '#ffd9d2', // .banner-error text
+} as const;
+
 /** Font family registered natively by the expo-font config plugin (app.config.ts) with these weights. */
 export const fontFamily = 'Roboto';
 export const fontWeights = { regular: '400', medium: '500', bold: '700' } as const;
 
 /** ui.css sets `line-height: 1.25` on body; a few styles override it. */
 export const lineHeightRatio = 1.25;
+/** ui.css `.lh` (secondary lines under a title, notes, info boxes): wrapped text gets more air. */
+export const relaxedLineHeightRatio = 1.4;
+/** ui.css `.chip-hint`: the small second line in a chip. Not a `.t-*` style, so not in `type`. */
+export const chipHintSize = 11;
 
 /**
  * Type scale in dp (ui.css `.t-*`; the Android font scale applies on top, never capped).

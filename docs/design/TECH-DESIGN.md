@@ -275,8 +275,22 @@ times stay exact. Changes made without asking keep serve only if every food keep
 - **Components:** Reusables primitives (Button, Text, Switch, Checkbox, RadioGroup, Dialog, Select,
   Separator), themed; the Pit Planner kit on top (Num, Stepper, Chips, Tile/Tiles, ResultCard, InfoBox, Banner,
   ListRow, StatusRow, Lanes chart on `react-native-svg`, Sheet). Screens use the kit only, no one-off styles.
-- **Bottom sheets:** `@gorhom/bottom-sheet` if it supports RN 0.88 at T-005; else a kit Sheet on React
-  Native `Modal` (D-4).
+- **Bottom sheets (D-4, decided in T-005):** the kit `Sheet` on React Native `Modal`
+  (`src/components/kit/sheet.tsx`): scrim fade and slide-up on the native driver (honors reduce motion),
+  Close, scrim tap and Android back (the system sends it to the top `Modal`, so stacked sheets close top
+  first), `useSheet().close(after)`. The footer floats over the scroll area behind a 14 dp fade and the
+  content gets its measured height as bottom padding (the 0.2.0 ScrollWithFooter rule, `FooterScroll`).
+- **Kit (T-005):** `src/components/kit` (index re-exports `Text` and `Button` from `src/components/ui`).
+  `Num` is a `Text` with tabular digits whose spaces become no-break spaces (CSS `nowrap`); it does not
+  accept `numberOfLines`, `clamp`, `adjustsFontSizeToFit`, `ellipsizeMode`, `maxFontSizeMultiplier` or
+  `allowFontScaling`, and the ESLint rule `pitplanner/num-text-size` (`eslint-rules/`) also rejects them on
+  any element around a `Num`. A `Text` passes its type and tone to `Text` nested in it, so a `Num` in a
+  sentence matches it. Icons (`react-native-svg`) take their container's color through `IconColor` like CSS
+  `currentColor`. Status container colors ui.css writes as literals are `statusColors` in the tokens.
+  Containers (radiogroup, group) are not accessibility elements, so TalkBack reaches each option; tests find
+  them by label. Gallery: `pitplanner://dev/kit` (dev builds).
+- **Spacing:** NativeWind inlines `rem` at 14 dp by default; `metro.config.cjs` sets `inlineRem: 16`, so
+  Tailwind spacing classes are their nominal dp (`p-4` = 16). Regression test `src/theme/spacing.test.ts`.
 - **Text size rule (Jason):** follow the system font scale (React Native's `allowFontScaling` default; no
   `maxFontSizeMultiplier` caps on content). Times, temps, weights and countdowns (`<Num>`) never truncate,
   shrink (`adjustsFontSizeToFit` is banned) or ellipsize at any scale; only secondary text may use
@@ -399,7 +413,7 @@ behaviors they cover (e.g. Food details timing) are re-tested in Jest when each 
 | D-1 | Distribution | Decided 2026-11-12: GitHub Releases primary, Google Drive optional mirror. |
 | D-2 | TypeScript version | Decided in T-002: TypeScript 6.0.3 (`~6.0.3`, what SDK 58 pins). The `typescript7` alias and the 6/7 split are gone; `npm run typecheck` is `tsc --noEmit` over `tsconfig.json` (extends `expo/tsconfig.base`, adds `strict`, `allowImportingTsExtensions`, `noUnusedLocals`). Metro and `jest-expo` resolve the engine's explicit `.ts` imports with no resolver config, so there is no `metro.config.js` or `babel.config.js` yet (NativeWind adds them in T-004). |
 | D-3 | Snyk Gradle scope (SE-001) | Approved: `releaseRuntimeClasspath` only until T-057, deadline 2027-02-01. Re-check after the first prebuild: SDK 58 brings its own AGP, so the findings may change. |
-| D-4 | Bottom sheets | `@gorhom/bottom-sheet` if it supports RN 0.88 at T-005; else a kit Sheet on `Modal`. |
+| D-4 | Bottom sheets | Decided in T-005 (2026-11-12): kit Sheet on React Native `Modal`. `@gorhom/bottom-sheet` 5.2.14 (May 2026) predates RN 0.88, needs `react-native-gesture-handler` as a second native dependency, and gives drag-to-dismiss, which the 0.2.0 sheet never had (its handle is visual only). `Modal` gives parity, native back handling per sheet and plain Jest tests. Revisit only if a screen needs drag or snap points. |
 | D-5 | App state | Keep the current pattern (one context store, every change written through repositories); no new state library unless the Cook screen shows re-render cost. |
 | D-6 | Port in place vs side by side | In place: the Capacitor app moves to `legacy/` in T-002; the Expo app lives at the root. 0.2.x hotfixes from a branch off tag `v0.2.0`. Friends stay on 0.2.0 until 0.3.0 reaches parity. |
 | D-7 | Generated `android/` (CNG) | Yes: no hand edits; everything through `app.config.ts`, config plugins and modules. Keeps Expo SDK upgrades tractable. |

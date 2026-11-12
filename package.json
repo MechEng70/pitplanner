@@ -10,7 +10,7 @@
     "android": "APP_VARIANT=development expo run:android",
     "test": "npm run test:engine && npm run test:gate && npm run test:app",
     "test:engine": "node --test engine/*.test.ts",
-    "test:gate": "node --test tools/*.test.mjs",
+    "test:gate": "node --test tools/*.test.mjs eslint-rules/*.test.mjs",
     "test:app": "jest",
     "test:android": "tools/test-android.sh",
     "test:all": "npm test && npm run test:android",
@@ -45,6 +45,7 @@
     "react-native-reanimated": "4.7.1",
     "react-native-safe-area-context": "~5.11.1",
     "react-native-screens": "~4.30.1",
+    "react-native-svg": "15.16.0",
     "react-native-worklets": "0.13.0",
     "tailwind-merge": "^2.6.1"
   },
