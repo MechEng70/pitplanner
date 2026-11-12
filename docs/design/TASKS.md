@@ -403,16 +403,55 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Goal:** quantity, cooker chips (missing cookers disabled with "Add in Gear"), method, options, rest, Timing
   (three models for by-weight foods, Standard/Total hours otherwise, "Use for future"), live result card.
   PR-3 (T-017) applies to every stepper (quantity, hr/lb, total hours) and chip: no automatic scrolling after a
-  change. Open for Jason before this task: how the result card stays visible without scrolling (the HANDOFF
-  alternative is pinning it).
-- **Files:** `src/screens/plan/FoodEdit.tsx`, tests, fidelity PNGs 08-10.
+  change. Result (Jason, 2026-11-12): a fixed-height summary bar pinned at the bottom, above the tab bar, showing
+  fire, off heat and serve; the full result card stays in the scroll; tapping the bar scrolls to the full card
+  (the only scroll, and the user starts it). The bar meets PR-3: fixed height at each font scale, tabular
+  digits, no layout shift when its values change.
+- **Files:** `src/screens/plan/FoodEdit.tsx`, `src/components/kit/ResultBar.tsx`, tests, fidelity PNGs 08-10,
+  SPEC.md section 3 "Food details" (add the summary bar).
 - **Depends on:** T-017.
 - **Acceptance:** the T-001 checklist (HANDOFF) holds on the new UI; 12 lb brisket at 0.75 hr/lb shows 9 hr
   and fire 6:20 AM for a 5:00 PM serve; the T-006 `stable-controls` flow passes on Food details at 115% and
-  130% (hr/lb + five times, - five times).
+  130% (hr/lb + five times, - five times). The summary bar keeps its height and position while hr/lb changes, and tapping it brings
+  the full result card into view.
 - **Tests:** RNTL versions of the nine legacy FoodEdit cases (three/two models, source line, saves, hint once,
   result card text).
 - **Device testing (Jason):** add brisket, set 0.75, read the result card at his usual font size.
+
+### T-058 Survive font-size changes and process death
+- **Status:** todo
+- **Goal:** changing the system font size never rebuilds the screen, and the active cook, the selected tab and
+  unsaved edits survive the app being killed in the background (Jason, 2026-11-12, after the T-004 finding: a
+  font-size change recreated the activity and the app came back on Plan with its UI state lost).
+- **Files:** `plugins/withFontScaleConfigChange.js` (+ test), `app.config.ts`, `src/lib/uiState.ts` (+ tests),
+  `app/_layout.tsx`, `app/(tabs)/_layout.tsx`, the Food details and Plan draft screens, `tools/device/flows/
+  survive.yaml`, `docs/HANDOFF.md`.
+- **Depends on:** T-006, T-010, T-019. **Before:** T-021 (the Cook screen).
+- **Approach:**
+  - (a) A config plugin adds `fontScale` to the main activity's `android:configChanges`, so Android hands the
+    change to the running activity instead of recreating it. Text must still resize live: confirm React Native
+    picks up the new scale (`useWindowDimensions().fontScale`); if it does not, re-render the root on a
+    fontScale change, never recreate the activity.
+  - (b) The active cook is already in SQLite (`active_cook`, T-008). The selected tab, the open route (including
+    which food Food details is editing) and unsaved edit drafts (Food details form, Plan draft) are written to
+    `kv` on every change and restored before the first render (splash held until loaded). A draft whose food
+    no longer exists is dropped.
+- **Acceptance (pass/fail):**
+  - Font size changed in Settings with the app open on Gear, and mid-cook on Cook: same activity (no new
+    `Running "main"` in logcat), same tab and screen, Next up and countdown unchanged, text visibly resized
+    within 1 s; nothing truncated at 130%.
+  - "Don't keep activities" on (Developer options): leave Food details with an unsaved hr/lb change, open
+    another app, come back: same tab, same screen, the unsaved value still there.
+  - Process killed in the background (`adb shell am kill`): the active cook comes back with the same Next up;
+    `dumpsys alarm` for the app is the same before and after; the selected tab is restored.
+- **Tests:** Jest: `uiState` save/restore round trip against `better-sqlite3`; a draft for a deleted food is
+  dropped; the config plugin adds `fontScale` (manifest fixture). Device flow `survive.yaml` runs the three
+  acceptance checks at 115% and 130% and turns "Don't keep activities" back off at the end.
+- **Device testing (Jason):** (1) With Developer options > "Don't keep activities" on, change hr/lb on Food
+  details, switch to another app and back. Judge: same screen, same tab, the changed value still shown, compared
+  with what was on screen before switching. Turn the option off afterwards. (2) During a test cook on Cook,
+  change Settings > Display > Font size to the largest and back. Judge: the app stays on Cook with the same Next
+  up and countdown and the text resizes, compared with a screenshot taken before the change.
 
 ---
 
@@ -434,7 +473,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   smoker-overlap band, next three steps, red permission banner re-checked on resume.
 - **Files:** `app/(tabs)/cook.tsx`, `src/screens/cook/CookScreen.tsx`, `src/components/kit/Lanes.tsx`,
   `src/screens/plan/StartCheckSheet.tsx`, tests, fidelity PNG 12.
-- **Depends on:** T-015, T-019, T-020.
+- **Depends on:** T-015, T-019, T-020, T-058.
 - **Acceptance:** Start cook schedules alarms once; the banner appears when a permission is revoked mid-cook.
 - **Tests:** RNTL: Next up wording for check steps; banner on resume (fake permissions); Start cook blocked
   until fixed or acknowledged.

@@ -226,7 +226,8 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 1. Done 2026-11-12: Jason approved the stack-change plan; T-001 phone check on 0.2.0 passed.
 2. Jason: push `main` when ready (plan docs and T-001 are local only).
 3. Jason: install the Maestro CLI before T-006 (`curl -fsSL "https://get.maestro.mobile.dev" | bash`).
-4. T-002..T-004 done (R-1 closed). Next: T-005 (kit components), then T-006, per WBS "Suggested order".
+4. T-002..T-004 done (R-1 closed), follow-ups approved 2026-11-12. Next: T-005 (kit components), then T-006,
+   per WBS "Suggested order" (T-058 now sits between T-019 and the Cook screen).
    Push the `v0.2.0` tag only when Jason says.
 5. Still open from before (carried into the plan): real cook with alarms through a reboot (now T-037 on the Expo
    build), two-phone share via Gmail/Drive (T-031), lane chart full screen (T-040), import-made conflict fix
@@ -240,8 +241,13 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 - Plan: only Start cook is pinned; at 115% three cards + Add food fit, at 130% two cards.
 - Changing a value never moves the control being tapped or shifts the layout (Jason, 2026-11-12; T-017
   PR-3): tabular digits, fixed-height rows for computed values, no warnings above the control, no automatic
-  scrolling. This retires the 0.2.0 "result card scrolls into view after any change" behavior; how the
-  result card stays visible in Food details (pin it?) is open for Jason before T-019.
+  scrolling. This retires the 0.2.0 "result card scrolls into view after any change" behavior.
+- Food details result (T-019): a fixed-height summary bar pinned at the bottom above the tab bar (fire, off
+  heat, serve); the full result card stays in the scroll; tapping the bar scrolls to it; meets PR-3.
+- Font size and process death (T-058, before the Cook screen): `configChanges` so a font-size change doesn't
+  rebuild the screen (text still resizes live); the active cook, selected tab and unsaved edits survive
+  process death. Device test with "Don't keep activities" on and a live font-size change mid-cook.
+- No UI element that isn't in `docs/mockups` or SPEC without asking Jason first (CLAUDE.md).
 - Smoker temp is the dropdown in the cooker's steps, never preset buttons (SPEC section 1; T-017 PR-1).
 - Setup step 1 is Welcome + units (the canvas has no step 1). Add a cooker (17) built with Setup.
 - Alerts stay in the notification shade until handled or swiped; nothing removes them silently.
@@ -251,9 +257,7 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 
 - Font size changed while the app is open (or in the background) recreates the Android activity: the React tree
   remounts, the app returns to the Plan tab, and open sheets, the selected tab and unsaved edits are lost.
-  Saved data is not affected. Checked on a release build 2026-11-12. Likely fix: add `fontScale` to the
-  activity's `configChanges` with a config plugin and check that text re-scales live. Needs a task; Jason to
-  decide.
+  Checked on a release build 2026-11-12. Now task T-058 (Jason, 2026-11-12), done before the Cook screen.
 - Release builds show a missing-glyph box for the tab bar icons (no icons set yet); the kit tab bar (T-005)
   replaces them.
 

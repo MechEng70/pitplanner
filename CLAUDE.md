@@ -13,6 +13,7 @@
   destructive on a device or in the repo. Don't read consent into an unclear reply; ask again.
 - Device screenshots always crop off the status bar (notification icons show other apps; the repo is public).
 - Do not fill in smoker specs without a source; leave `verified: false` entries blank.
+- No UI element that isn't in `docs/mockups` or SPEC without asking Jason first.
 - UI copy: plain, short, no exclamation marks except greetings. Straight apostrophes.
 
 # Plan
