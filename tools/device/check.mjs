@@ -1,5 +1,6 @@
 // Device checks over uiautomator dumps, for run.sh. Exit 0 = pass, 1 = fail (problems on stdout).
 //   node check.mjs find <dump.xml> <label> <topPx> <bottomPx>       fully on screen? (exit 3: above it)
+//   node check.mjs center <dump.xml> <label>                        prints "x y" of the control's center
 //   node check.mjs stable <before.xml> <after.xml> <label>          T-006 stable-controls
 //   node check.mjs keyboard <dump.xml> <field> <footer> <imeTop> <topPx>   T-006 sheet-keyboard
 import { readFileSync } from 'node:fs';
@@ -14,6 +15,11 @@ if (cmd === 'find') {
   if (n && fullyVisible(n, top, Number(a[3] ?? Infinity))) process.exit(0);
   console.log(`"${a[1]}" is not fully on screen`);
   process.exit(n && n.b.t < top ? 3 : 1);
+} else if (cmd === 'center') {
+  const n = findByLabel(load(a[0]), a[1]);
+  if (!n) process.exit(1);
+  console.log(`${Math.round((n.b.l + n.b.r) / 2)} ${Math.round((n.b.t + n.b.b) / 2)}`);
+  process.exit(0);
 } else if (cmd === 'stable') {
   problems = movedAbove(load(a[0]), load(a[1]), a[2]);
 } else if (cmd === 'keyboard') {

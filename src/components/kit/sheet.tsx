@@ -180,7 +180,9 @@ export function Sheet({
 }) {
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const kb = useKeyboardHeight();
+  // React Native's keyboard height leaves out the navigation bar under it, so the lift adds the bottom inset.
+  const kbOpen = useKeyboardHeight();
+  const kb = kbOpen > 0 ? kbOpen + insets.bottom : 0;
   const [shown] = React.useState(() => new Animated.Value(0)); // 0 = off screen, 1 = up
   const [closing, setClosing] = React.useState(false);
   const after = React.useRef<(() => void) | undefined>(undefined);

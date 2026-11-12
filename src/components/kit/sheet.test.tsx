@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Keyboard, Pressable, StyleSheet, type ViewStyle } from 'react-native';
+import * as SafeArea from 'react-native-safe-area-context';
 import { Sheet, SHEET_OUT_MS, useSheet } from './sheet';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
@@ -116,4 +117,31 @@ test('the open keyboard lifts the sheet and shortens it by the keyboard height',
   expect(frameOf().marginBottom ?? 0).toBe(0);
   expect(maxOf()).toBe(closedMax);
   spy.mockRestore();
+});
+
+// Regression (T-006 on the emulator): React Native's keyboard height leaves out the navigation bar inset, so
+// with a navigation bar (the emulator's; the phone's gesture bar is 0 dp) the sheet lifted 24 dp short and
+// Save sat under the keyboard.
+test('the lift includes the bottom inset under the keyboard (navigation bar)', async () => {
+  const insets = jest.spyOn(SafeArea, 'useSafeAreaInsets').mockReturnValue({ top: 24, left: 0, right: 0, bottom: 24 });
+  const handlers: Record<string, (e: { endCoordinates: { height: number } }) => void> = {};
+  const kb = jest.spyOn(Keyboard, 'addListener').mockImplementation((name, fn) => {
+    handlers[name] = fn as (typeof handlers)[string];
+    return { remove: () => {} } as ReturnType<typeof Keyboard.addListener>;
+  });
+  await render(
+    <Sheet title="Griddle" onClose={() => {}} footer={<Text>Save</Text>}>
+      <Text>Body</Text>
+    </Sheet>,
+  );
+  const frame = () => StyleSheet.flatten(screen.getByTestId('sheet-frame').props.style) as ViewStyle;
+  const dialog = () => StyleSheet.flatten(screen.getByLabelText('Griddle').props.style) as ViewStyle;
+  expect(frame().paddingBottom).toBe(24);
+  const closedMax = frame().maxHeight as number;
+  await act(() => handlers.keyboardDidShow({ endCoordinates: { height: 278 } }));
+  expect(dialog().marginBottom).toBe(278 + 24);
+  expect(frame().paddingBottom).toBe(0);
+  expect(frame().maxHeight).toBe(closedMax - (278 + 24));
+  kb.mockRestore();
+  insets.mockRestore();
 });

@@ -4,7 +4,13 @@
 import '../global.css';
 import { Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { LogBox } from 'react-native';
 import { navTheme } from '@/theme/navTheme';
+
+// react-native-css-interop (NativeWind) wraps ImageBackground at import time, so RN 0.88 warns on every dev
+// start. Not ours to fix; its LogBox toast covered the tab bar on the emulator (T-006). Remove when NativeWind
+// drops the wrapper.
+LogBox.ignoreLogs(['ImageBackground is deprecated']);
 
 export default function RootLayout() {
   return (

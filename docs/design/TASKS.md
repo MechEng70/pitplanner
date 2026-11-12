@@ -20,6 +20,11 @@ How to work a task (every task; see CLAUDE.md "Quality gate"):
 
 Status values: `todo`, `in progress`, `done (commit)`, `blocked (reason)`.
 
+Device tests run on the test emulator (`npm run device`, `tools/device/avd.sh`: Android 16, 360x792 dp like
+the phone). Jason's phone is used only where a task says **Real phone** (Jason, 2026-11-12): real alarms in
+Doze, after a reboot and on the lock screen, OEM battery behavior, Bluetooth and the HA probes, other people's
+phones and accounts, and the real cook. Then `npm run device -- --phone` (data backed up and restored).
+
 UI tasks share these acceptance rules (not repeated per task): match the named mockups; theme tokens only;
 `Num` values never truncate, shrink or ellipsize at 115% and 130% (Maestro screenshots in `docs/fidelity/`);
 Android back closes the top sheet first; copy per CLAUDE.md.
@@ -251,7 +256,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   keyboard open keeps the focused field and the pinned footer visible, at 115% and 130%. If `Modal` cannot
   pass it, stop and tell Jason.
 - **Tests:** n/a (tooling); `shellcheck` clean.
-- **Device testing (Jason):** phone unlocked and plugged in during the run.
+- **Device testing (Jason):** none since the emulator is the default; for `--phone`, the phone unlocked and
+  plugged in.
 - **Notes (done 2026-11-12):**
   - `npm run device -- [--no-build] [--only smoke,sheet-keyboard,stable-controls]`; full pass with build about
     8.5 minutes. Starts Metro if it is not running (and stops it after), cold-starts the dev build through the
@@ -294,6 +300,20 @@ Android back closes the top sheet first; copy per CLAUDE.md.
       found another app's access token in one such copy under `out/maestro` (git-ignored, never committed).
       Each Maestro call now writes to a temp dir outside the repo that is deleted when the flow ends; nothing
       from Maestro but its step lines is kept. Semgrep keeps scanning `tools/device/out/` as a safety net.
+  - Second round (Jason, 2026-11-12):
+    - `~/.maestro/tests/` deleted (Jason's yes). The device log is cleared before and after each run and
+      saved only when a test fails: the app's own lines (`logcat --uid`), redacted (`redact.mjs`, tested).
+    - Default target is the test emulator (`avd.sh`, API 36, 360x792 dp, KVM; boots headless in about 35 s);
+      `--phone` for tasks marked **Real phone**. Install goes to the target only (`assembleDebug` + `adb
+      install`; `installDebug` would install on every attached device). The phone's data is backed up and
+      restored; the emulator's is not (nothing of Jason's on it).
+    - The emulator found two things the phone could not: React Native's keyboard height leaves out the
+      navigation bar inset (the phone's gesture bar is 0 dp), so the sheet lifted 24 dp short and Save sat
+      under the keyboard (fixed, regression test in `sheet.test.tsx`); and the LogBox toast for a
+      NativeWind warning ("ImageBackground is deprecated", from react-native-css-interop) covered the tab
+      bar (that one warning is ignored in `app/_layout.tsx`).
+    - `launch` closes the dev menu's first-launch intro; `launch` and every screenshot wait for the
+      "Refreshing..." banner to clear (and retake if it came up during the capture).
 
 ### T-007 Release build: signing plugin, versionCode, release script
 - **Status:** todo
@@ -430,6 +450,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Depends on:** T-015, T-006.
 - **Acceptance:** every row passes, including a locked reboot ringing on time.
 - **Tests:** any failure gets a regression test in T-014's files.
+- **Real phone:** yes: alarms through Doze and a locked reboot need the real phone and its OEM power management.
 - **Device testing (Jason):** unlock after the reboot step when asked; leave the phone idle for the Doze step.
 
 ---
@@ -625,6 +646,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Acceptance:** a short live cook on the dev build: alert Done and +15 from the shade; End cook > Save writes
   history and cancels all alarms.
 - **Tests:** RNTL finish screen; Jest drain-and-apply.
+- **Real phone:** yes: the alert on the real lock screen and its notification actions.
 - **Device testing (Jason):** optional: handle one alert from the lock screen.
 
 ---
@@ -650,6 +672,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Depends on:** T-015, T-024.
 - **Acceptance:** the test alert rings in Doze; a Samsung shows its help link, a Pixel shows none.
 - **Tests:** maker mapping unit test; RNTL rows.
+- **Real phone:** yes: the test alert in Doze and the OEM battery help (OnePlus; a Samsung if available).
 - **Device testing (Jason):** none on a Pixel; a friend's Samsung if available.
 
 ---
@@ -719,6 +742,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Depends on:** T-030.
 - **Acceptance:** both routes open the Shared plan sheet with the right menu.
 - **Tests:** a regression test per failing intent shape.
+- **Real phone:** yes: two real phones and real Gmail/Drive accounts.
 - **Device testing (Jason):** share from his phone to his wife's via Gmail and via Drive.
 
 ---
@@ -742,6 +766,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Depends on:** T-007.
 - **Acceptance:** Jason reviews; copy per CLAUDE.md; the notes explain the new look and the data import.
 - **Tests:** none (docs).
+- **Real phone:** yes: the install guide on his wife's phone.
 - **Device testing (Jason):** follow INSTALL.md once on his wife's phone.
 
 ### T-034 Parity review
@@ -783,6 +808,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Depends on:** T-034.
 - **Acceptance:** each alarm within 1 min of plan; none lost on reboot.
 - **Tests:** any bug gets a regression test.
+- **Real phone:** yes: the real Saturday cook with alarms.
 - **Device testing (Jason):** the cook.
 
 ### T-038 Upgrade test and cut 0.3.0
@@ -795,6 +821,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Acceptance:** release `v0.3.0` with APK and SHA-256; `snyk:monitor` ran; Jason's phone upgraded with gear,
   rates and history intact (or the notice says what was not kept).
 - **Tests:** `npm run check` at the tagged commit.
+- **Real phone:** yes, after the emulator: 0.3.0 over 0.2.0 with Jason's real data.
 - **Device testing (Jason):** optional safety copy first (HANDOFF backup route); install 0.3.0 over 0.2.0;
   check Gear, Cook rates and history.
 
@@ -876,6 +903,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Acceptance:** sign-in completes and survives a restart; Disconnect revokes and deletes; the non-admin
   registry-read result is recorded in `docs/ha-entities.md`.
 - **Tests:** RNTL screen states; Semgrep secrets clean.
+- **Real phone:** yes: HA sign-in on the phone on the home network.
 - **Device testing (Jason):** type the HA password into HA's own page; later disable the HA user and see
   "Signed out".
 
@@ -899,6 +927,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Acceptance:** on Jason's HA: the PB850SPW2, its probes and the Chef iQ probes listed with live values or
   "asleep".
 - **Tests:** discovery with fixtures from `docs/ha-entities.md`; migration test (1 -> 2 with data).
+- **Real phone:** yes: Bluetooth probes through HA, awake and asleep.
 - **Device testing (Jason):** run discovery at home with probes awake and asleep.
 
 ### T-048 Gear > Home Assistant connected
@@ -918,6 +947,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Depends on:** T-047.
 - **Acceptance:** two foods cannot pick the same probe; "None" allowed with a warning.
 - **Tests:** RNTL; normalize test.
+- **Real phone:** yes: two real probes.
 - **Device testing (Jason):** start a cook with two probes.
 
 ### T-050 `engine/probe.ts` and live temps on Live cook
@@ -929,6 +959,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Depends on:** T-046, T-049, T-020.
 - **Acceptance:** F/C per settings.
 - **Tests:** engine tests with fake readings; RNTL stale rendering.
+- **Real phone:** yes: a real probe in hot water.
 - **Device testing (Jason):** probe in hot water; unplug it; grey after 2 min.
 
 ### T-051 Publish `sensor.pit_planner_cook` (HA Phase 2)
@@ -939,6 +970,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Depends on:** T-050.
 - **Acceptance:** no tokens or personal data in the attributes.
 - **Tests:** builder unit tests; publish schedule with fake timers.
+- **Real phone:** yes: a real cook publishing to HA.
 - **Device testing (Jason):** watch the sensor in HA during a short cook.
 
 ### T-052 HA blueprint
@@ -949,6 +981,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Depends on:** T-051.
 - **Acceptance:** Jason imports it; the hot-water test notifies at the wrap target.
 - **Tests:** a node:test that parses the YAML and checks inputs and triggers.
+- **Real phone:** yes: the blueprint with a real probe.
 - **Device testing (Jason):** import and hot-water test.
 
 ### T-053 Probe suggestions and pit-drop prompt (HA Phase 3)
@@ -958,6 +991,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Depends on:** T-050.
 - **Acceptance:** suggestions only for the mapped probe and the current check step.
 - **Tests:** engine and RNTL.
+- **Real phone:** yes: hot-water test with a real probe.
 - **Device testing (Jason):** hot-water test.
 
 ### T-054 Probe times feed rate learning
@@ -967,6 +1001,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Depends on:** T-053.
 - **Acceptance:** Cook finished says which time was used.
 - **Tests:** new finish cases.
+- **Real phone:** yes: a real cook with a probe.
 - **Device testing (Jason):** a real cook with a probe.
 
 ### T-055 Confirmed set-temp button (HA Phase 4, optional)
@@ -977,6 +1012,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Depends on:** T-053.
 - **Acceptance:** refuses when the grill is off.
 - **Tests:** guard unit tests; RNTL confirm.
+- **Real phone:** yes: the real grill running.
 - **Device testing (Jason):** with the grill running.
 
 ---

@@ -34,8 +34,11 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
   kit `Sheet` on `Modal` (D-4). Tailwind spacing is now true dp (`inlineRem: 16`). Gallery
   `pitplanner://dev/kit`. Not ported until their screen needs them: AppBar/Screen, Lanes, Menu/SelectField
   and the Setup form pieces (list in TASKS T-005).
-- Device tests (T-006): `npm run device` (Maestro + uiautomator dumps, 115% and 130%, data backed up and
-  restored, screenshots cropped). Read `tools/device/out/report.txt` first. `tools/device/README.md`.
+- Device tests (T-006): `npm run device` runs on the test emulator by default (`tools/device/avd.sh`; Maestro +
+  uiautomator dumps, 115% and 130%, screenshots cropped). `--phone` only for tasks marked **Real phone** in
+  TASKS. The device log is cleared before and after and kept only on failure, app lines, redacted. Maestro's
+  own output (it holds the whole device log) is deleted after each flow. Read
+  `tools/device/out/report.txt` first. `tools/device/README.md`.
   New screens add their controls to `tools/device/targets.tsv` (`stable-controls`, T-017 PR-3).
 - D-4 confirmed by Jason on condition of the `sheet-keyboard` device test; it passes (Sheet lifts by the
   keyboard height, `FooterScroll` reveals the focused field above the footer). Kit `InputField` added.

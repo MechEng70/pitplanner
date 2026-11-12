@@ -6,6 +6,7 @@
 set -euo pipefail
 # shellcheck source=tools/device/lib.sh
 . "$(dirname "$0")/lib.sh"
+pick_target || exit 1
 
 DIRS=(databases files shared_prefs no_backup)
 DATA="/data/data/$PKG"

@@ -1,6 +1,7 @@
 #!/bin/bash
 # Shared helpers for the device tools (sourced, not run). Bash only: zsh does not word-split, so keep the adb
-# wrapper a function. The phone is ANDROID_SERIAL, or the only device attached.
+# wrapper a function. The target is ANDROID_SERIAL if set, else the test emulator (default) or, with
+# DEVICE_TARGET=phone, the one real phone attached (`pick_target`).
 # shellcheck disable=SC2034  # PKG, OUT and DEVICE_DIR are used by the scripts that source this file.
 
 DEVICE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -10,14 +11,34 @@ PKG=io.github.mecheng70.pitplanner.debug
 MAESTRO="${MAESTRO:-$(command -v maestro || echo "$HOME/.maestro/bin/maestro")}"
 METRO_PORT=8081
 
-if [ -z "${ANDROID_SERIAL:-}" ]; then
-  mapfile -t _devs < <(adb devices | awk 'NR > 1 && $2 == "device" { print $1 }')
-  if [ "${#_devs[@]}" -ne 1 ]; then
-    echo "Attach exactly one phone or set ANDROID_SERIAL (found ${#_devs[@]})." >&2
-    exit 1
+# Set ANDROID_SERIAL to the target: the running test emulator, or (DEVICE_TARGET=phone) the one phone attached.
+# The real phone is only for tests that need real hardware (TASKS: "Real phone").
+pick_target() {
+  [ -n "${ANDROID_SERIAL:-}" ] && return 0
+  local devs
+  if [ "${DEVICE_TARGET:-emulator}" = phone ]; then
+    mapfile -t devs < <(adb devices | awk 'NR > 1 && $2 == "device" && $1 !~ /^emulator-/ { print $1 }')
+    [ "${#devs[@]}" -eq 1 ] || { echo "Attach exactly one phone (found ${#devs[@]})." >&2; return 1; }
+  else
+    mapfile -t devs < <(adb devices | awk '$1 ~ /^emulator-/ && $2 == "device" { print $1 }')
+    [ "${#devs[@]}" -ge 1 ] || { echo "No emulator running: tools/device/avd.sh start" >&2; return 1; }
   fi
-  export ANDROID_SERIAL="${_devs[0]}"
-fi
+  export ANDROID_SERIAL="${devs[0]}"
+}
+
+is_emulator() { [[ "$ANDROID_SERIAL" == emulator-* ]]; }
+
+# Clear the device log (before and after every run: the log holds every app's output, which can include
+# other apps' tokens).
+clear_logcat() { A logcat -c </dev/null || A logcat -b main -b system -b crash -c </dev/null || true; }
+
+# Save the app's own log lines (by its uid), redacted for token patterns, to $1. Only called when a test failed.
+save_app_logcat() {
+  local uid
+  uid=$(A shell pm list packages -U "$PKG" </dev/null | sed -nE "s/^package:$PKG uid:([0-9]+).*/\1/p" | tr -d '\r')
+  [ -n "$uid" ] || return 0
+  A logcat -d --uid="$uid" </dev/null | node "$DEVICE_DIR/redact.mjs" >"$1"
+}
 
 A() { adb -s "$ANDROID_SERIAL" "$@"; }
 
@@ -35,6 +56,34 @@ launch() {
     A shell am start -W -a android.intent.action.VIEW -d "pitplanner://$route" "$PKG" >/dev/null
     sleep 2
   fi
+  dismiss_dev_menu_intro
+  wait_for_refresh
+}
+
+# A fresh install of the dev build shows the dev menu's intro ("This is the developer menu", Continue) once;
+# it covers the app, so close it.
+dismiss_dev_menu_intro() {
+  local tmp="$OUT/.intro.xml" xy
+  dump >"$tmp" 2>/dev/null || return 0
+  grep -q 'This is the developer menu' "$tmp" || return 0
+  xy=$(node "$DEVICE_DIR/check.mjs" center "$tmp" Continue) || return 0
+  # shellcheck disable=SC2086  # "x y"
+  A shell input tap $xy
+  sleep 1
+}
+
+# Wait (up to 60 s) until the dev build's "Refreshing..." / bundling banner is gone, so no screenshot or
+# bounds check catches it.
+REFRESH_TEXT='text="(Refreshing|Bundling|Downloading|Loading from)[^"]*"'
+refreshing() { dump 2>/dev/null | grep -qE "$REFRESH_TEXT"; }
+wait_for_refresh() {
+  local t0=$SECONDS
+  while ((SECONDS - t0 < 60)); do
+    refreshing || return 0
+    sleep 1
+  done
+  echo "the dev build's Refreshing banner did not clear" >&2
+  return 1
 }
 
 # The app's UI tree (uiautomator XML) on stdout: the focused window only. If anything else has focus (the

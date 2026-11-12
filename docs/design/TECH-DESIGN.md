@@ -383,7 +383,7 @@ registry unreachable a scan took 97 s and failed.
 | App logic, repositories, migrations | Jest + `better-sqlite3` | `src/**/*.test.ts` |
 | UI components and screens | Jest + React Native Testing Library | `src/**/*.test.tsx` |
 | Native | JUnit, Robolectric | `modules/*/android/src/test/` |
-| Device | `npm run device`: Maestro taps by label, `uiautomator dump` checks, adb screencap at 115/130%, heads-up banners off (`tools/device/README.md`) | dev build `io.github.mecheng70.pitplanner.debug` |
+| Device | `npm run device`: Maestro taps by label, `uiautomator dump` checks, adb screencap at 115/130%, heads-up banners off, device log cleared and kept only (app lines, redacted) on failure (`tools/device/README.md`). Default target: the test emulator (API 36, 360x792 dp, `tools/device/avd.sh`); Jason's phone (`--phone`) only for tests marked **Real phone** in TASKS | dev build `io.github.mecheng70.pitplanner.debug` |
 | Regression | any level | one per fixed bug, failing first |
 
 The Playwright-over-CDP device scripts only work with the WebView; they move to `legacy/` and are replaced by
