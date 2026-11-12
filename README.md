@@ -28,6 +28,7 @@ npm install
 npm run dev        # web UI at http://localhost:5173 (Preferences falls back to localStorage)
 npm test           # engine unit tests
 npm run typecheck
+npm run check      # full quality gate (format, lint, types, all tests, Semgrep, Snyk); see CLAUDE.md
 npm run sync       # build the web UI and copy it into android/
 npx cap open android   # or: cd android && ./gradlew assembleDebug
 ```

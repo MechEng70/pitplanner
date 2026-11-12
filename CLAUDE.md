@@ -8,3 +8,34 @@
 - Never commit signing keys (`*.jks`, `*.keystore`, `keystore.properties`).
 - Do not fill in smoker specs without a source; leave `verified: false` entries blank.
 - UI copy: plain, short, no exclamation marks except greetings. Straight apostrophes.
+
+# Plan
+
+- Engineering plan: `docs/design/TECH-DESIGN.md` (architecture, layer rules, platform services, alarms,
+  live-cook states, HA, security, release, tests), `docs/design/TASKS.md` (T-001...), `docs/design/WBS.md`
+  (phases, critical path). Work one task at a time; update its status line when done.
+
+# Quality gate (mandatory for every task)
+
+- Write unit tests for new logic and a regression test for every bug fixed (write it failing first).
+  Engine: node:test (`engine/*.test.ts`). UI components: Vitest + Testing Library (`src/**/*.test.tsx`).
+  Native Kotlin: JUnit, Robolectric where Android classes are involved (`android/app/src/test/`).
+- After each task run `npm run check` and fix everything it reports. It runs, in order, and stops at the
+  first failure:
+  1. Prettier (format, then check)
+  2. ESLint (TypeScript and Preact rules, zero warnings)
+  3. TypeScript typecheck
+  4. The full test suite: engine + UI + Android (unit and regression, not only new tests)
+  5. Semgrep (TypeScript, Kotlin and secrets rulesets)
+  6. Snyk: `snyk test --all-projects --severity-threshold=high`, then `snyk code test --severity-threshold=high`
+- A task is not done until `npm run check` passes. Report its summary (the "check summary" block) at the end
+  of each task.
+- No high or critical Semgrep or Snyk finding may be left open. A finding judged a false positive (or not
+  shipped) gets a written justification in `docs/design/SECURITY-EXCEPTIONS.md` before it is excluded. Never
+  remove or skip a gate step to get a pass.
+- If the Gradle part of the Snyk scan fails, run `cd android && ./gradlew assembleDebug` once and retry
+  before reporting a problem.
+- Snyk and GitHub tokens and the Snyk org ID come from the user's own CLI config. Never write them into the
+  repo, scripts or docs.
+- `npm run snyk:monitor` (`snyk monitor --all-projects`) is not part of the check. Run it only after a release
+  or a push to main; it is a step in the release process (TECH-DESIGN section 11).
