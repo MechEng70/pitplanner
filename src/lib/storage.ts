@@ -3,7 +3,7 @@
 
 import { Preferences } from '@capacitor/preferences';
 
-export type Key = 'gear' | 'settings' | 'draft' | 'rates' | 'totalHours' | 'rateLocks' | 'activeCook' | 'flags';
+export type Key = 'gear' | 'settings' | 'draft' | 'rates' | 'totalHours' | 'rateLocks' | 'update' | 'activeCook' | 'flags';
 
 export async function load<T>(key: Key): Promise<T | null> {
   const { value } = await Preferences.get({ key });

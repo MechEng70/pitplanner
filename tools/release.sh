@@ -14,8 +14,11 @@ npm test >/dev/null
 npm run build >/dev/null
 npx cap sync android >/dev/null
 export JAVA_HOME=/usr/lib/jvm/temurin-21-jdk ANDROID_HOME="$HOME/Android/Sdk"
-(cd android && ./gradlew assembleRelease -q 2>&1 | grep -iE "^e:|error|fail" || true)
 APK=android/app/build/outputs/apk/release/app-release.apk
+rm -f "$APK"   # a failed build must not leave the previous APK to be copied
+if ! LOG=$(cd android && ./gradlew assembleRelease -q 2>&1); then
+  echo "$LOG" | grep -E "^e:|error:|FAILED" | head -20; echo "BUILD FAILED"; exit 1
+fi
 [ -f "$APK" ] || { echo "No signed APK was built (check keystore.properties)."; exit 1; }
 BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
 "$BT/apksigner" verify --print-certs "$APK" | grep -E "Signer #1 certificate (DN|SHA-256)"

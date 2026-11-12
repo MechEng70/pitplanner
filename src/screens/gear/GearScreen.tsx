@@ -7,6 +7,7 @@ import { useStore } from '../../lib/store.tsx';
 import { fmtTemp, type Units } from '../../lib/format.ts';
 import { defaultGriddle, defaultOven, hasHopper, smokerTypeInfo } from '../../lib/gear.ts';
 import { rateRows, ratesSummary } from '../../lib/historyView.ts';
+import { availableUpdate, RELEASES_PAGE } from '../../lib/update.ts';
 import { rules } from '../../lib/rules.ts';
 import { allGranted, type AlarmStatus } from '../../platform/alarms.ts';
 import { AlertChecks, TestAlertButton, useAlarmStatus } from '../shared/AlertChecks.tsx';
@@ -33,6 +34,7 @@ export function GearScreen({ onDebug, onHistory }: { onDebug: () => void; onHist
     if (k === 'smoker') return setOpen('picker');
     setOpen(k);
   };
+  const update = availableUpdate(state.update, __APP_VERSION__);
   const rateLine = ratesSummary(rateRows(rules, state.history, gear.smoker?.id ?? 'none', state.rates, state.totalHours, state.rateLocks), units);
 
   return (
@@ -72,6 +74,10 @@ export function GearScreen({ onDebug, onHistory }: { onDebug: () => void; onHist
       <Stack gap={8}>
         <Text v="section" tone="secondary" as="h2">App</Text>
         <GroupCard>
+          {update && (
+            <ListRow leading={<IconAvatar tone="ok"><span class="avatar-text">new</span></IconAvatar>} title="Update available" wrap
+              subtitle={`Version ${update}. Download it in your browser, then open it to install.`} href={state.update!.url ?? RELEASES_PAGE} />
+          )}
           <ListRow leading={<IconAvatar tone={!status || allGranted(status) ? 'ok' : 'warn'}><Bell /></IconAvatar>} title="Alerts" wrap
             subtitle={alertsSubtitle(status)} onClick={() => setOpen('alerts')} />
           <ListRow leading={<IconAvatar><Thermo /></IconAvatar>} title="Units" wrap

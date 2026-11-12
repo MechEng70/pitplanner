@@ -1,11 +1,13 @@
 // App state: loaded once from storage, written back on every change.
 
 import { createContext, type ComponentChildren } from 'preact';
-import { useContext, useEffect, useState, useCallback } from 'preact/hooks';
+import { useContext, useEffect, useRef, useState, useCallback } from 'preact/hooks';
+import { App as CapApp } from '@capacitor/app';
 import type { CookLog, Cookers, ItemInput, PlanInput } from '../../engine/types.ts';
 import type { Units } from './format.ts';
 import { load, save, remove } from './storage.ts';
 import { normalize, type ActiveCook } from './cook.ts';
+import { dueForCheck, fetchLatest, type UpdateInfo } from './update.ts';
 import { loadHistory, saveHistory, logsOf, type CookRecord } from './history.ts';
 
 export interface Draft {
@@ -22,6 +24,7 @@ export interface AppState {
   rates: Record<string, number>;   // foodId -> hr/lb at 225F set by the user
   totalHours: Record<string, number>; // foodId -> saved default total hours on heat
   rateLocks: Record<string, boolean>; // foodId -> saved rate never blends with logged cooks
+  update: UpdateInfo | null;       // last update check (SPEC section 10)
   history: CookLog[];              // learned-from logs, derived from records
   records: CookRecord[];           // history file
   cook: ActiveCook | null;         // running cook, written on every change (reboot restore reads it)
@@ -66,9 +69,9 @@ export function StoreProvider({ now, children }: { now: number; children: Compon
 
   useEffect(() => {
     (async () => {
-      const [gear, units, draft, rates, totalHours, rateLocks, cook, flags, records] = await Promise.all([
+      const [gear, units, draft, rates, totalHours, rateLocks, update, cook, flags, records] = await Promise.all([
         load<Cookers>('gear'), load<Units>('settings'), load<Draft>('draft'), load<Record<string, number>>('rates'),
-        load<Record<string, number>>('totalHours'), load<Record<string, boolean>>('rateLocks'), load<unknown>('activeCook'), load<AppState['flags']>('flags'), loadHistory(),
+        load<Record<string, number>>('totalHours'), load<Record<string, boolean>>('rateLocks'), load<UpdateInfo>('update'), load<unknown>('activeCook'), load<AppState['flags']>('flags'), loadHistory(),
       ]);
       setState({
         gear: gear ?? {},
@@ -78,6 +81,7 @@ export function StoreProvider({ now, children }: { now: number; children: Compon
         rates: rates ?? {},
         totalHours: totalHours ?? {},
         rateLocks: rateLocks ?? {},
+        update: update ?? null,
         history: logsOf(records),
         records,
         cook: normalize(cook),
@@ -85,6 +89,27 @@ export function StoreProvider({ now, children }: { now: number; children: Compon
       });
     })();
   }, []);
+
+  // Update check on launch and on resume, at most daily.
+  const checking = useRef(false);
+  const checkUpdate = useCallback(async (prev: UpdateInfo | null) => {
+    const now = Date.now();
+    if (checking.current || !dueForCheck(prev, now)) return;
+    checking.current = true;
+    const update = await fetchLatest(now, prev);
+    checking.current = false;
+    save('update', update);
+    setState(s => s && { ...s, update });
+  }, []);
+  const updateRef = useRef<UpdateInfo | null>(null);
+  updateRef.current = state?.update ?? null;
+  const loaded = state != null;
+  useEffect(() => {
+    if (!loaded) return;
+    checkUpdate(updateRef.current);
+    const h = CapApp.addListener('resume', () => checkUpdate(updateRef.current));
+    return () => { h.then(x => x.remove()); };
+  }, [loaded]);
 
   const setDraft = useCallback((fn: (d: Draft) => Draft) => setState(s => {
     if (!s) return s;
