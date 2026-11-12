@@ -344,7 +344,9 @@ where the stack does:
 6. **Snyk** `snyk test --all-projects --severity-threshold=high` (npm + the prebuilt `android/` Gradle
    projects, our modules included as `android/` subprojects; `modules/` is excluded from standalone discovery
    because a module's `build.gradle` has no wrapper and cannot run alone; Gradle scope per SE-001; npm
-   dev-tooling ignores per SE-003), then `snyk code test
+   dev-tooling ignores per SE-003; `tools/snyk.sh` also fails if Snyk skips a project or tests fewer than
+   exist: every `package-lock.json` plus every Gradle project `gradlew projects` lists, checked by
+   `tools/snyk-coverage.mjs`, regression test `tools/snyk.test.mjs`), then `snyk code test
    --severity-threshold=high`. If the Gradle part fails, run `cd android && ./gradlew assembleDebug` once and
    retry.
 

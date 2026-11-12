@@ -86,9 +86,16 @@ justification, how it is excluded, follow-up task, review date.
   earlier on any trigger below.
 - **Tool:** `snyk test --all-projects` (npm, `package-lock.json`).
 - **Found (2026-11-12, first scan of the Expo stack):**
-  - SNYK-JS-BRACES-19963945, high, Uncontrolled Recursion in `braces@3.0.3`, via `metro > metro-file-map >
-    micromatch@4.0.8` (from `react-native` and from `expo > @expo/cli > @expo/metro`).
-  - SNYK-JS-OPEN-22112123, high, Improper Encoding or Escaping of Output in `open@8.4.2`, via
+  - SNYK-JS-BRACES-19963945 (CVE-2026-93687), high, Uncontrolled Recursion, published by Snyk 2026-09-20.
+    Installed: `braces@3.0.3`, one copy in the tree (`npm ls braces`: deduped), the latest release. Snyk's
+    vulnerable range is `*` (every version) and it lists no fixed version. Paths: `metro > metro-file-map >
+    micromatch@4.0.8 > braces` (from `react-native` and from `expo > @expo/cli > @expo/metro`).
+    Not CVE-2024-4068 (SNYK-JS-BRACES-6838727, "Excessive Platform Resource Consumption within a Loop", fixed
+    in 3.0.3; checked on security.snyk.io 2026-11-12): 3.0.3 already contains that
+    fix, and Snyk does not report it here. So an override has no version to move to; it was not that an
+    override failed to reach the package.
+  - SNYK-JS-OPEN-22112123 (CVE-2026-119025), high, Improper Encoding or Escaping of Output in `open@8.4.2`
+    (vulnerable `<11.0.0`, fixed in 11.0.0, published 2026-11-01), via
     `@react-native/dev-middleware` (from `expo > @expo/cli` and from `react-native > community-cli-plugin`).
 - **Override tried first (Jason's condition), 2026-11-12, in a scratch copy of the project:**
   - `braces`: no fixed release exists (3.0.3 is the latest, and it is the vulnerable version; `micromatch`

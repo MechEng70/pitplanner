@@ -238,13 +238,24 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
   scale; only secondary text may. Test at 115% and 130% (normal is 115%).
 - Engine rounds phase starts to 5-minute steps; off-heat stays exact (serve - slice - rest).
 - Plan: only Start cook is pinned; at 115% three cards + Add food fit, at 130% two cards.
-- Food details: result card scrolls into view after any change. Known tradeoff, raised with Jason
-  and not yet answered: the stepper being tapped scrolls away; alternative is pinning the result card.
+- Changing a value never moves the control being tapped or shifts the layout (Jason, 2026-11-12; T-017
+  PR-3): tabular digits, fixed-height rows for computed values, no warnings above the control, no automatic
+  scrolling. This retires the 0.2.0 "result card scrolls into view after any change" behavior; how the
+  result card stays visible in Food details (pin it?) is open for Jason before T-019.
+- Smoker temp is the dropdown in the cooker's steps, never preset buttons (SPEC section 1; T-017 PR-1).
 - Setup step 1 is Welcome + units (the canvas has no step 1). Add a cooker (17) built with Setup.
 - Alerts stay in the notification shade until handled or swiped; nothing removes them silently.
 - Cost: keep sessions short, screenshot only at checkpoints, use `npm run device` instead of step-by-step driving.
 
 ## Known open items
+
+- Font size changed while the app is open (or in the background) recreates the Android activity: the React tree
+  remounts, the app returns to the Plan tab, and open sheets, the selected tab and unsaved edits are lost.
+  Saved data is not affected. Checked on a release build 2026-11-12. Likely fix: add `fontScale` to the
+  activity's `configChanges` with a config plugin and check that text re-scales live. Needs a task; Jason to
+  decide.
+- Release builds show a missing-glyph box for the tab bar icons (no icons set yet); the kit tab bar (T-005)
+  replaces them.
 
 - Quiet alerts holds scheduled steps but native repeats of an already-overdue step still ring.
 - History entries can be removed but not edited (SPEC failure mode 14 says editable).

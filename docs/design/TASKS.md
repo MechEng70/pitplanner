@@ -168,6 +168,19 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     as source changes and prebuilt on every run (regression test `tools/prebuild.test.mjs`, failing first);
     Snyk tried `modules/pit-alarms/android/build.gradle` as a standalone project and skipped it (`modules`
     now excluded from discovery; the module is scanned as an `android/` subproject, 22 projects, none skipped).
+  - Follow-ups after Jason's review (2026-11-12, before T-005):
+    - Gate: `tools/snyk.sh` (step 6) fails when Snyk skips a project or tests fewer than exist (21 Gradle + 1
+      npm = 22 today); regression test `tools/snyk.test.mjs` failed on the old step first.
+    - SE-003: `braces` is SNYK-JS-BRACES-19963945 / CVE-2026-93687 on `braces@3.0.3`, all versions affected,
+      no fix; not CVE-2024-4068 (fixed in 3.0.3, already installed).
+    - Font size changed with the app open, release build (dev variant, release build type): same process and
+      React instance, but the activity is recreated and the React tree remounts: the app returns to the Plan
+      tab and in-memory UI state is lost. No error is logged in release (the "configured linking" message is
+      dev-only). Not fixed; see HANDOFF "Known open items".
+    - T-002 screenshot cropped below the status bar; CLAUDE.md now requires it for every device screenshot.
+    - Jason's review of the spike: requirements PR-1 (temp dropdown, no presets), PR-2 (food icons), PR-3
+      (changing a value never moves the control) added to T-017, with the `stable-controls` device test in
+      T-006. The temp presets were Claude's invention for the spike, against SPEC section 1, not 0.2.0 behavior.
   - Tests: tokens equal `ui.css` (colors, type, line heights, radii), Tailwind exposes exactly the token colors,
     text variants and button labels use Roboto at the token size/weight, no font-scale cap, `cn`, `withAlpha`.
 
@@ -183,7 +196,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   (bottom sheet) first; Android back closes the top sheet; ripple on pressables; same accessibility roles and
   labels as the legacy kit (tests query by role and label).
 - **Acceptance:** the kit gallery shows every component; the lint rule rejects `numberOfLines` and
-  `adjustsFontSizeToFit` on `Num`.
+  `adjustsFontSizeToFit` on `Num`; `Num` renders tabular digits (`fontVariant: ['tabular-nums']`, Jest) so a value
+  keeps its width as it changes (T-017 PR-3); `Avatar` shows the cooker icon (T-017 PR-2).
 - **Tests:** RNTL per component (Stepper handlers and disabled, Chips selection, Sheet back and close,
   CheckRow toggle); lint rule unit test.
 - **Device testing (Jason):** none.
@@ -198,7 +212,13 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   font scale 1.15 then 1.3, restore everything on exit. Flows tap by accessibility label; `adb exec-out
   screencap` for images.
 - **Acceptance:** `npm run device -- --only smoke` installs the dev build and captures the tabs at both scales,
-  data restored afterwards.
+  data restored afterwards. Screenshots are cropped below the status bar (CLAUDE.md). After each font-scale
+  change the app is relaunched (changing it with the app open recreates the activity; see T-004 notes).
+- **Device test `stable-controls` (T-017 PR-3):** at 115% and 130%, record the on-screen bounds (`uiautomator
+  dump`) of the control being tapped and of every element above it, tap it N times (stepper + five times then -
+  five times; a temp choice; a mode toggle), dump again, and fail listing any element whose bounds changed.
+  Targets: the `app/dev/spike` stepper now (it jumps per Jason's T-004 review, so the flow must fail there:
+  that proves it detects a jump), then Plan (T-017) and Food details (T-019).
 - **Tests:** n/a (tooling); `shellcheck` clean.
 - **Device testing (Jason):** phone unlocked and plugged in during the run.
 
@@ -354,6 +374,18 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Tests:** RNTL: empty state actions; cards show start time and time on heat from `buildPlan`; tile values;
   Start cook disabled with no food.
 - **Device testing (Jason):** compare with mockups 04-05 on the phone.
+- **Requirements (pass/fail; Jason's T-004 review, 2026-11-12):**
+  - **PR-1 Smoker temp is the dropdown.** One field showing the temp and the fire time (mockup 05), opening the
+    temp menu (T-018) in the cooker's own steps: 5F on the Sportsman 850 (SPEC section 1 "Smoker temp", section
+    3 "Plan"). Fail: any preset temp buttons or chips anywhere on Plan.
+  - **PR-2 Every food card has its cooker icon.** The avatar shows the icon (mockup 05: flame on ember for the
+    smoker, griddle on blue) at 100%, 115% and 130%. Fail: an empty or missing avatar at any scale.
+  - **PR-3 Changing a value never moves what you are tapping.** A stepper tap, temp choice, chip or mode toggle
+    leaves the tapped control and everything above it where it was. Computed values (times, durations, temps,
+    weights, pellets) use `Num` with tabular digits; rows that show computed values reserve a fixed height per
+    font scale; warnings and info appear below the control or in the Conflicts tile, never above it; no
+    automatic scrolling after a change. Fail: the T-006 `stable-controls` flow reports a moved bound at 115% or
+    130%.
 
 ### T-018 Smoker temp menu, Add food, Issues sheet (06, 07)
 - **Status:** todo
@@ -361,19 +393,23 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   picker with search and groups; conflicts sheet with fixes (move to griddle, change temp, finish earlier).
 - **Files:** `src/screens/plan/TempMenu.tsx`, `FoodPick.tsx`, `IssuesSheet.tsx`, tests, fidelity PNGs.
 - **Depends on:** T-017.
-- **Acceptance:** only settable temps offered (failure mode 12); each fix changes the plan.
+- **Acceptance:** only settable temps offered (failure mode 12); each fix changes the plan; PR-1 and PR-3 (T-017)
+  hold: the temp field stays put after a choice.
 - **Tests:** RNTL per sheet (search filters, temps from `settableTemps`, a fix applies).
 - **Device testing (Jason):** none beyond the screenshots.
 
 ### T-019 Food details (08, 09, 10)
 - **Status:** todo
 - **Goal:** quantity, cooker chips (missing cookers disabled with "Add in Gear"), method, options, rest, Timing
-  (three models for by-weight foods, Standard/Total hours otherwise, "Use for future"), live result card that
-  scrolls into view after changes.
+  (three models for by-weight foods, Standard/Total hours otherwise, "Use for future"), live result card.
+  PR-3 (T-017) applies to every stepper (quantity, hr/lb, total hours) and chip: no automatic scrolling after a
+  change. Open for Jason before this task: how the result card stays visible without scrolling (the HANDOFF
+  alternative is pinning it).
 - **Files:** `src/screens/plan/FoodEdit.tsx`, tests, fidelity PNGs 08-10.
 - **Depends on:** T-017.
 - **Acceptance:** the T-001 checklist (HANDOFF) holds on the new UI; 12 lb brisket at 0.75 hr/lb shows 9 hr
-  and fire 6:20 AM for a 5:00 PM serve.
+  and fire 6:20 AM for a 5:00 PM serve; the T-006 `stable-controls` flow passes on Food details at 115% and
+  130% (hr/lb + five times, - five times).
 - **Tests:** RNTL versions of the nine legacy FoodEdit cases (three/two models, source line, saves, hint once,
   result card text).
 - **Device testing (Jason):** add brisket, set 0.75, read the result card at his usual font size.

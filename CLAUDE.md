@@ -11,6 +11,7 @@
 - Never commit signing keys (`*.jks`, `*.keystore`, `keystore.properties`).
 - Destructive actions need an explicit yes from Jason first: uninstalling apps, deleting data, or anything else
   destructive on a device or in the repo. Don't read consent into an unclear reply; ask again.
+- Device screenshots always crop off the status bar (notification icons show other apps; the repo is public).
 - Do not fill in smoker specs without a source; leave `verified: false` entries blank.
 - UI copy: plain, short, no exclamation marks except greetings. Straight apostrophes.
 

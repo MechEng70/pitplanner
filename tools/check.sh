@@ -21,16 +21,6 @@ step() {
 }
 report() { echo; echo "=== check summary ==="; printf '%s\n' "${SUMMARY[@]}"; }
 
-snyk_scan() {
-  command -v snyk >/dev/null || { echo "snyk not found (npm i -g snyk, then snyk auth)"; return 1; }
-  # Gradle: only what ships in the APK (releaseRuntimeClasspath). Build-machine tooling findings
-  # (AGP test runner) are tracked in docs/design/SECURITY-EXCEPTIONS.md, SE-001.
-  # modules/: our Expo modules' build.gradle files are not standalone Gradle projects (no wrapper); their
-  # dependencies are scanned as subprojects of the generated android/ (for example "Pit Planner dev/pit-alarms").
-  snyk test --all-projects --severity-threshold=high --exclude=reference,release,legacy,docs,modules \
-    --configuration-matching='^releaseRuntimeClasspath$' \
-    && snyk code test --severity-threshold=high
-}
 
 step "1 Prettier (write, then check)" bash -c 'npx prettier --write --log-level warn . && npx prettier --check --log-level warn .'
 step "2 ESLint (zero warnings)" npx eslint --max-warnings 0 .
@@ -39,5 +29,5 @@ step "3 TypeScript typecheck" npm run --silent typecheck
 tools/prebuild-if-stale.sh || { SUMMARY+=("FAIL  prebuild android/"); report; exit 1; }
 step "4 Tests (engine, gate, app, Android)" npm run --silent test:all
 step "5 Semgrep (typescript, kotlin, secrets)" tools/semgrep.sh
-step "6 Snyk (open source + code, high+)" snyk_scan
+step "6 Snyk (open source + code, high+)" tools/snyk.sh
 report
