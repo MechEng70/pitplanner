@@ -24,8 +24,8 @@ const measure = () =>
 const serve = await p.evaluate(() => new Date(2026, 10, 14, 17, 0).getTime());
 const gear = {
   smoker: {
-    id: 'pitboss-820',
-    name: 'Pit Boss 820',
+    id: 'pitboss-sportsman-850',
+    name: 'Pit Boss Sportsman 850',
     type: 'pellet',
     tempStepF: 5,
     minTempF: 180,

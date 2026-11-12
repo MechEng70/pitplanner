@@ -20,12 +20,13 @@ Status values: `todo`, `in progress`, `done (commit)`, `blocked (reason)`.
 ## Phase 1: Cook timing fix
 
 ### T-001 Close out the cook timing fix (HA-INTEGRATION "Do first")
-- **Status:** todo. The code shipped in `f12b060` and `e86d930` (0.2.0); this task checks it against the
-  "Do first" list and collects the evidence that was never recorded.
+- **Status:** done (see commit "T-001"), pending Jason's phone test. The code shipped in `f12b060` and
+  `e86d930` (0.2.0); this task checked it against the "Do first" list, added the missing tests
+  (`engine/timing.test.ts`, `FoodEdit.test.tsx`) and the screenshots. Checklist: `docs/HANDOFF.md`.
 - **Goal:** every item of HA-INTEGRATION.md "Do first" is verifiably met, with the phone screenshots its
   "Done when" asks for.
-- **Files:** `engine/plan.test.ts`, `src/screens/plan/FoodEdit.tsx` (only if a gap is found),
-  `docs/fidelity/timing-*.png` (new), `docs/HA-INTEGRATION.md` (mark done), `docs/HANDOFF.md`.
+- **Files:** `engine/plan.test.ts`, `engine/timing.test.ts`, `src/screens/plan/FoodEdit.test.tsx`,
+  `src/test/setup.ts`, `tools/device/timing.mjs`, `tools/device/run.sh`, `docs/fidelity/timing-*.png` (new), `docs/HA-INTEGRATION.md` (mark done), `docs/HANDOFF.md`.
 - **Depends on:** none.
 - **Approach:**
   1. Walk items 1-7 of "Do first" against the code; list each with the file/test that meets it.

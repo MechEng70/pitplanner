@@ -1,6 +1,20 @@
 # Handoff (2026-11-12, end of fourth session)
 
-Read SPEC.md and CLAUDE.md first. This note is what a fresh session needs on top of them.
+Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
+`docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
+
+## Engineering plan and quality gate (2026-11-12)
+
+- `docs/design/`: TECH-DESIGN, TASKS (T-001..T-040), WBS, SECURITY-EXCEPTIONS. CLAUDE.md has the mandatory
+  gate: `npm run check` = Prettier, ESLint (zero warnings), typecheck (TS 7), engine + UI (Vitest) + Android
+  (JUnit) tests, Semgrep, Snyk (open source + code). A task is not done until it passes.
+- Decisions (Jason): GitHub Releases is the primary channel, Drive an optional mirror (D-1). Snyk Gradle scan
+  limited to `releaseRuntimeClasspath` until T-039 (by 2027-02-01; SE-001). `reference/` and `docs/` excluded
+  from Snyk Code and Semgrep (SE-002).
+- Commits: `ef2107b` format/lint cleanup (typed rules schema `engine/rules.ts`), `ed51a0f` tooling,
+  `fc69f5d` plan docs. Pushed; `npm run snyk:monitor` ran after the push.
+- `tools/device/run.sh` now turns heads-up notifications off during captures (restored on exit): chat
+  banners from other apps had landed in screenshots, and the repo is public.
 
 ## Done
 
@@ -71,36 +85,52 @@ release-signed debuggable APK, used once to move Jason's data off the debug inst
 `io.github.mecheng70.pitplanner.debug`, label "Pit Planner dev", own data. `tools/device/` (attach.sh,
 pending.sh, deploy.sh) only touches the dev copy. Never uninstall the release without backing up first.
 
-Distribution: Jason uploads `release/pitplanner-<version>.apk` to his Google Drive and shares the link; no
-GitHub Releases. The in-app update check (`src/lib/update.ts`, GitHub API) therefore finds nothing (the repo
-answers 404 anonymously); Jason chose to leave it as is for now.
+Distribution (decided 2026-11-12, D-1): GitHub Releases on the public repo is primary; Google Drive is an
+optional mirror. The in-app update check (`src/lib/update.ts`) has nothing to find until the first release
+(T-004 checks it, including prereleases).
 
-## Release 0.2.0: built, not yet on Jason's phone
+## Release 0.2.0: on Jason's phone
 
-`release/pitplanner-0.2.0.apk` (versionCode 200) is rebuilt from `e86d930`, so it has everything up to the
-Sportsman 850 entry. Jason has not sent it to the team yet. His real app is still 0.1.0.
+`release/pitplanner-0.2.0.apk` (versionCode 200), built from `e86d930`, has everything up to the Sportsman 850
+entry. Jason installed it himself over 0.1.0 (2026-11-12; not checked over adb, the phone was disconnected).
+He still needs to re-pick his smoker as the Pit Boss Sportsman 850 in Gear.
 
-Pending, waiting for Jason's go: install 0.2.0 over his real app with a backup. The release is not
-debuggable (`run-as` refused) and targets SDK 36, so `adb backup` skips its data and its WebView has no
-DevTools socket. Agreed approach, not yet approved:
-1. Build 0.2.0 with `-PdebuggableRelease` (release-signed, debuggable).
-2. `adb install -r` it over 0.1.0 and do not open it (data stays as 0.1.0 left it; no new app code runs).
-3. Copy the app data out with `run-as io.github.mecheng70.pitplanner` (shared_prefs, files) to `tools/device/out/`.
-4. `adb install -r release/pitplanner-0.2.0.apk` (same versionCode is allowed with -r), open it, check gear
-   and history on screen. Then Jason re-picks his smoker as the Pit Boss Sportsman 850 in Gear.
+For a future backup of the real app: it is not debuggable (`run-as` refused), targets SDK 36 (`adb backup`
+skips its data) and has no WebView DevTools socket. Route that works: install a `-PdebuggableRelease` build of
+the same version with `adb install -r` without opening it, copy the data out with `run-as`, then install the
+normal APK over it.
 Shell note: in zsh, `A="adb -s 5ece07c1"; $A shell ...` does not word-split and prints nothing. Write the
 full command or use the bash scripts in tools/device/.
 
-The dev copy is one step behind: it lacks the Sportsman 850 catalog entry and the 105C/205C set-point
-fix in the shared-smoker note (both made after the last device run). Any `npm run device` run reinstalls it.
+The dev copy was rebuilt from the T-001 work tree on 2026-11-12 (has the Sportsman 850 entry and the
+105C/205C fix).
 
-## Cook timing (HA-INTEGRATION.md "Do first"): done
+## Cook timing (HA-INTEGRATION.md "Do first"): done, closed out as T-001
 
 Food details Timing: Hours per pound (stepper, 0.05 steps, source shown) / Total hours (any food, used as-is,
 `TOTAL_HOURS_FIXED` info when the temp changes) / Size-adjusted (no lock; anchored at the reference weight).
 "Use for future [food] on [cooker]" saves `rates` or `totalHours`. Rate rule (Jason): a saved rate is exact
 until 3 logged cooks, then blends with them unless locked (`rateLocks`, "Keep my rate exactly" in Gear >
 Cook rates). Brisket-style tri-tip is perWeight (1.67 hr/lb, 3.5 hr floor). `npm run device -- --only timing`.
+
+T-001 check against "Do first" (2026-11-12):
+
+| Item | Where | Test |
+|---|---|---|
+| 1a Hours per pound, 0.05 steps, source shown, 0.3-2.5, soft warning outside 0.5-1.6 | FoodEdit `Timing`, `src/lib/timing.ts`, `sourceText` | `engine/timing.test.ts`; FoodEdit.test "hours per pound shows the rate, its source..." |
+| 1b Total hours, as-is, TOTAL_HOURS_FIXED on temp change, any food | engine `plan.ts`; FoodEdit | plan.test "total hours are used exactly..."; FoodEdit.test "total hours..." and "Standard and Total hours" (ribs) |
+| 1c Size-adjusted, no lock, anchored at reference weight, "Estimate..." line | engine `rateFor`/`buildItem`; FoodEdit | plan.test "size-adjusted works with no history..."; FoodEdit.test "size-adjusted..." |
+| 2 Use for future [food] on [smoker], Gear Cook rates shows it | FoodEdit `save`, store `setRate`/`setTotalHours`, `historyView.rateRows` | FoodEdit.test "stepping the rate..." and "total hours..."; history.test |
+| 3 Result card shows the method | FoodEdit `methodText` | FoodEdit.test "a saved 0.75 hr/lb plans 9 hr and the result card names the rate" |
+| 4 Engine tests (4 named) | `engine/plan.test.ts` | lines "a 12 lb brisket at 0.75...", "total hours...", "a per-item rate beats...", "size-adjusted works..." |
+| 5 One-time published-rate hint | FoodEdit `hint`, `flags.rateHintShown` | FoodEdit.test "shows the published-rate hint once" / "does not show the hint once it has been seen" |
+| 6 No truncated numbers at 115/130% | device `timing.mjs` measure | `npm run device -- --only timing`: clipped [] at both scales |
+| 7 SPEC 1 and 4 updated | SPEC.md "Timing model" row, section 4 Rates/Total hours/Size-adjusted | n/a |
+
+Screenshots (Sportsman 850, 12 lb brisket, 5:00 PM Sat serve): `docs/fidelity/timing-modes-115.png`,
+`timing-modes-130.png` (three modes, 9 hr, fire 6:20 AM), `timing-plan.png` (published 1.25 = 15 hr; Plan at
+0.75 hr/lb, fire 6:20 AM, at 115% and 130%). The 115% Total hours panel has a blue system screen tint;
+content is unaffected.
 
 ## Open shared plan (11): done
 
@@ -130,7 +160,7 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 
 ## Next
 
-1. Jason: install 0.2.0 (see above), re-pick the smoker, then (a) a real cook end to end with alarms through a
+1. Jason: re-pick the smoker as the Sportsman 850 in Gear, then (a) a real cook end to end with alarms through a
    reboot and (b) Share plan between two phones, opened from Drive or Gmail (only a file:// VIEW is tested).
 2. HA Phase 1: mock the 6 screens in HA-INTEGRATION 4.5 first, then sign-in with the `pitplanner` HA user,
    discovery, probe per food, live temps. Phase 0 notes: `docs/ha-entities.md`.

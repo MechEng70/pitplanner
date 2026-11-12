@@ -2,6 +2,8 @@
 
 ## Do first: cook timing fix (before any Home Assistant work)
 
+Status: done in 0.2.0, closed out as T-001 on 2026-11-12 (checklist and screenshots in `docs/HANDOFF.md`).
+
 Problem on the phone: a 12 lb brisket plans about 15 hr at 225F (published 1.25 hr/lb) and nothing can be changed. Size-adjusted is permanently locked because it needs 3 logged cooks and End cook and history aren't built yet. Jason's pit actually runs about 0.75 hr/lb (9 hr for 12 lb).
 
 1. Food details: replace the Timing switch with three options, available for every food:
@@ -17,7 +19,7 @@ Problem on the phone: a 12 lb brisket plans about 15 hr at 225F (published 1.25 
 
 Done when: phone screenshots of Brisket details in each of the three modes, and the Plan screen with Jason's brisket at 0.75 hr/lb (fire around 6:20 AM for a 5:00 PM serve).
 
-Order for tomorrow: this timing fix, then the beta release to friends (signed APK on GitHub Releases), then Home Assistant Phase 0 below.
+Order: this timing fix (done), then the beta release to friends (signed APK on GitHub Releases), then Home Assistant (Phase 0 done). Current order: `docs/design/WBS.md`.
 
 ---
 

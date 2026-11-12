@@ -20,10 +20,14 @@ if $A shell dumpsys window | grep -q "isKeyguardShowing=true"; then
 fi
 ORIG_STAYON=$($A shell settings get global stay_on_while_plugged_in | tr -d '\r')
 $A shell svc power stayon usb
+# Other apps' heads-up banners (chat messages) must not land in screenshots that get committed.
+ORIG_HEADSUP=$($A shell settings get global heads_up_notifications_enabled | tr -d '\r')
+$A shell settings put global heads_up_notifications_enabled 0
 restore() {
   ./attach.sh && node restore.mjs >/dev/null && log "data restored"
   $A shell settings put system font_scale "$ORIG_SCALE"; log "font scale back to $ORIG_SCALE"
   $A shell settings put global stay_on_while_plugged_in "$ORIG_STAYON"
+  $A shell settings put global heads_up_notifications_enabled "$ORIG_HEADSUP"; log "heads-up back to $ORIG_HEADSUP"
 }
 trap restore EXIT
 
