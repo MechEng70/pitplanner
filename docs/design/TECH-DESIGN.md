@@ -1,337 +1,374 @@
 # Pit Planner: technical design
 
-Status: 2026-11-12, app 0.2.0 (versionCode 200) on Jason's phone. Companion documents: [TASKS.md](TASKS.md)
-(one entry per task), [WBS.md](WBS.md) (phases, critical path), [SECURITY-EXCEPTIONS.md](SECURITY-EXCEPTIONS.md).
+Status: 2026-11-12, plan for the stack change (approved by Jason 2026-11-12). The app moves from Capacitor + Preact
+(WebView; releases 0.1.0 and 0.2.0) to Expo + React Native. 0.2.0 is on Jason's and friends' phones; 0.3.0 is
+the first Expo release and must upgrade it in place.
 
-Read order for a fresh session: `CLAUDE.md` (rules and quality gate), `SPEC.md` (what the app does),
-this file (how it is built), then the task you are given in `TASKS.md`. `docs/HANDOFF.md` is the running log
-of what the last session did; `docs/HA-INTEGRATION.md` is the Home Assistant plan.
+Companion documents: [TASKS.md](TASKS.md) (one entry per task), [WBS.md](WBS.md) (phases, critical path),
+[SECURITY-EXCEPTIONS.md](SECURITY-EXCEPTIONS.md).
 
-Where this file and SPEC.md disagree on behavior, SPEC.md wins. Where they disagree on structure, this file
-wins. Fix the other document in the same task.
+Read order for a fresh session: `CLAUDE.md` (rules and quality gate), `SPEC.md` (what the app does), this file
+(how it is built), then your task in `TASKS.md`. `docs/HANDOFF.md` is the running log; `docs/HA-INTEGRATION.md`
+is the Home Assistant plan. Where this file and SPEC.md disagree on behavior, SPEC.md wins; on structure, this
+file wins. Fix the other document in the same task. SPEC.md section 2 (Architecture) and the Capacitor
+mentions in CLAUDE.md are rewritten to match this file in T-002.
 
 ---
 
-## 1. System at a glance
+## 1. Stack
 
-Android app, sideloaded APK. Capacitor 8 wraps a Preact + TypeScript web UI built by Vite. No backend, no
-accounts; all data lives on the phone. Native Kotlin plugins do what a WebView cannot: exact alarms that
-survive Doze and reboots, and receiving opened `.pitplan` files. Home Assistant (v2) is optional and talks
-straight from the phone to the user's own HA server.
+| Concern | Choice | Notes |
+|---|---|---|
+| App framework | Expo SDK 58 (current at planning: `expo` 58.0.x), React Native 0.88, TypeScript | Development builds (`npx expo run:android`), never Expo Go. New Architecture (default). Pin the exact SDK at T-002; SDK upgrades are their own tasks. |
+| Navigation | Expo Router (file-based, `app/`) | Tabs: Plan, Cook, Gear. Setup as a stack shown on first run. Sheets as kit components. |
+| Styling | NativeWind 4.2 (Tailwind classes) | Theme from the design tokens (section 8). Dark only. |
+| Components | React Native Reusables (shadcn-style source copied into `src/components/ui/`, built on `@rn-primitives`) | Themed to the mockups; we own the copied code. |
+| Storage | `expo-sqlite` | One database `pitplanner.db`; versioned migrations from day one (section 5). |
+| Secrets | `expo-secure-store` | Android Keystore-backed. HA refresh token only. |
+| Files and sharing | `expo-file-system`, `expo-sharing`, intent filters via config plugin | `.pitplan` export and open. |
+| Fonts | `expo-font` + Roboto (`@expo-google-fonts/roboto`) | Bundled. |
+| Native code | Expo Modules API (Kotlin) in `modules/` | `pit-alarms` (setAlarmClock, receivers, notifications), `pit-legacy` (one-time read of 0.2.0 data). iOS implementations later behind the same TS interfaces. |
+| Engine | `engine/` pure TypeScript, unchanged | Runs in Metro and in `node --test`. |
+| Build | Continuous Native Generation: `npx expo prebuild` generates `android/`; local Gradle signed release | No EAS. `android/` is generated and git-ignored; native config lives in `app.config.ts`, `plugins/` and `modules/`. |
+| Server | none | No backend and no Redis: there is no server to run it on, and Redis does not run on a phone. All data is on the phone; Home Assistant is the user's own server and optional. |
+
+## 2. Repository layout (target after T-002)
 
 ```
-+--------------------------------------------------------------------------------+
-|  UI (src/screens, src/ui)        Preact components, kit in src/ui/components.tsx |
-+--------------------------------------------------------------------------------+
-|  App logic (src/lib)             store, cook (live state), views, format, share   |
-|                                  ha/ (v2: auth, websocket, discovery)             |
-+-----------------------------+--------------------------------------------------+
-|  Engine (engine/)  PURE     |  Platform services (src/platform)                 |
-|  plan, live, alarms, temps, |  alarms, storage, secure storage, files/share,    |
-|  units, rules types, probe  |  permissions, app links. One interface each;      |
-|                             |  Android impl now, web fake for dev/tests,        |
-|                             |  iOS impl later.                                  |
-+-----------------------------+-------------------------+------------------------+
-|  Rules data (data/)         |  Capacitor core plugins | Native plugins (Kotlin) |
-|  foods.json, cookers.json   |  preferences, filesystem,| PitAlarms, PitSharedPlan|
-|                             |  share, app             | (v2: PitSecureStore)    |
-+-----------------------------+-------------------------+------------------------+
+app/                    Expo Router routes: (tabs)/plan, (tabs)/cook, (tabs)/gear, setup/
+src/
+  components/ui/        React Native Reusables components (copied, themed)
+  components/kit/       Pit Planner kit on top: Num, Stepper, Chips, Tile, ResultCard, Lanes, Sheet, ...
+  screens/              screen bodies used by routes (routes stay thin; screens are tested)
+  lib/                  app logic; pure helpers keep today's paths and exports (rule 3)
+  db/                   SQLite: Db interface, migrations/, repositories, legacy import
+  platform/             TS interfaces + Expo implementations (alarms, share, links, secrets)
+  theme/                tokens.ts, fonts
+modules/
+  pit-alarms/           Expo module: alarm scheduler, receivers, notifications (+ JUnit tests)
+  pit-legacy/           Expo module: reads the 0.2.0 Capacitor SharedPreferences once (+ JUnit tests)
+plugins/                config plugins: release signing, intent filters, network security config
+engine/  data/          unchanged
+legacy/                 the Capacitor app (old src/ UI, android/ sources, capacitor.config.ts, vite config,
+                        WebView device scripts) as reference until parity; not built, linted or tested;
+                        deleted after 0.3.0 ships (T-039)
+tools/                  check.sh, release scripts, device/ (Maestro flows + adb helpers)
 ```
 
-## 2. Layers and dependency rules
+The Capacitor build stays reproducible from tag `v0.2.0` (created in T-002 on commit `e86d930`, the commit the
+0.2.0 APK was built from). A 0.2.x hotfix, if ever needed, is built on a branch from that tag, the only
+exception to "commit on main".
+
+## 3. Layers and dependency rules
 
 | Layer | Path | May import | Must not import |
 |---|---|---|---|
 | Rules data | `data/*.json` | nothing | n/a |
-| Engine | `engine/` | `engine/*`, types of the rules data | DOM, `Date.now()`, timers, `@capacitor/*`, `src/*`, storage, network |
-| App logic | `src/lib/` | engine, `src/platform/` interfaces, rules data | screens, `@capacitor/*` directly (new code) |
-| Platform services | `src/platform/` | `@capacitor/*`, engine types | screens, `src/lib/` state |
-| UI | `src/screens/`, `src/ui/` | `src/lib/`, `src/platform/` (via lib where possible), engine (pure helpers) | `@capacitor/*` directly |
-| Native plugins | `android/app/src/main/java/.../` | Android SDK, Capacitor | WebView JS state (talk only through the bridge) |
+| Engine | `engine/` | `engine/*` | React, React Native, Expo, `src/*`, clock, storage, network |
+| App logic | `src/lib/` | engine, `src/db` and `src/platform` interfaces | React Native UI, `expo-*` directly |
+| Storage | `src/db/` | engine types, its `Db` interface | screens; `expo-sqlite` only in `src/db/expoDb.ts` |
+| Platform | `src/platform/` | `expo-*`, `modules/*` JS APIs | screens, app state |
+| UI | `app/`, `src/screens/`, `src/components/` | `src/lib`, engine pure helpers, platform via hooks | `expo-sqlite`, `modules/*` |
+| Native | `modules/*/android` | Android SDK, Expo Modules API | JS state (bridge only) |
 
 Rules:
+1. **The engine stays pure and is not touched by the port.** Every function takes `now` and `rules` as
+   parameters; `engine/*.test.ts` keep running with `node --test`.
+2. **Rules are data** (`data/foods.json`, schema `engine/rules.ts`, checked by `engine/rules.test.ts`).
+3. **Pure helpers keep their paths.** `engine/*.test.ts` import `src/lib/cookView.ts`, `finish.ts`,
+   `historyView.ts`, `sharedPlan.ts`, `timing.ts`, `update.ts`, and types from `cook.ts` and `history.ts`. These
+   stay at the same paths with the same exports, so the engine tests do not change; only their storage and
+   platform imports are swapped (e.g. `history.ts` keeps `CookRecord`, its I/O moves to `src/db`).
+4. **Platform access goes through `src/platform/`**; ESLint `no-restricted-imports` enforces it (T-003).
+5. **Native holds only what must work with the app dead:** the alarm set, nags, queued notification actions.
+6. **Units:** instants epoch ms; temps F; weights lb; convert at display (`engine/units.ts`, `src/lib/format.ts`).
 
-1. **The engine stays pure.** Every engine function takes `now` (epoch ms) and `rules` as parameters. No
-   clock reads, no I/O, no randomness without a seed. This is what lets `node --test` run it with no browser.
-2. **Rules are data.** A new food, method, phase or option is a change to `data/foods.json` plus a test, not
-   a code branch. The schema is `engine/rules.ts`; `engine/rules.test.ts` checks every field the planner reads
-   without a fallback. If a rule needs a field the schema lacks, add it to the schema (optional) and the test.
-3. **Pure helpers take rules as a parameter.** `src/lib/rules.ts` imports JSON, which `node --test` cannot
-   load from inside `src/`; so helpers tested by node (`historyView.ts`, `sharedPlan.ts`, `finish.ts`) take
-   `rules: Rules` as an argument.
-4. **Platform access goes through `src/platform/`.** Existing code still imports `@capacitor/preferences`,
-   `@capacitor/filesystem`, `@capacitor/app` and `@capacitor/share` from `src/lib/`; T-008 moves those behind
-   the interfaces in section 3 and adds an ESLint `no-restricted-imports` rule so it stays that way.
-5. **Native code holds only what must survive with the app dead.** The alarm set, open nags and queued
-   notification actions live natively (`AlarmStore`). Everything else (plans, history, settings) is owned
-   by JS and stored through platform services.
-6. **Units.** All stored instants are epoch milliseconds; temperatures F; weights lb. Convert only at display
-   (`engine/units.ts`, `src/lib/format.ts` `tx`/`localizeText`).
+## 4. Platform services
 
-## 3. Platform services interface
-
-One TypeScript interface per capability in `src/platform/`, each with an Android implementation (now), a web
-fake (browser dev and Vitest), and a documented future iOS implementation. Screens and `src/lib/` depend on
-the interface only. Status column: what exists today.
+Same interfaces as planned before the stack change; implementations move to Expo.
 
 ```ts
-// src/platform/services.ts (T-008). Shapes, not final code.
-export interface AlarmService {            // exists as PitAlarms in src/platform/alarms.ts
+// src/platform/types.ts
+export interface AlarmService {
   replaceAll(alarms: AlarmSpec[]): Promise<{ scheduled: number; exact: boolean }>;
   cancelAll(): Promise<void>;
   acknowledge(keys: string[]): Promise<void>;
+  setQuiet(until: number | null): Promise<void>;
   testAlarm(seconds: number, title?: string, body?: string): Promise<{ at: number; exact: boolean }>;
   scheduled(): Promise<{ alarms: AlarmSpec[]; nags: StoredNag[] }>;
   drainActions(): Promise<NotificationAction[]>;
   onFired(fn: (e: AlarmEvent) => void): Unsubscribe;
   onAction(fn: (e: AlarmEvent) => void): Unsubscribe;
 }
-export interface PermissionService {      // part of PitAlarms today
-  status(): Promise<AlarmStatus>;          // notifications, exactAlarms, batteryUnrestricted, fullScreen
+export interface PermissionService {
+  status(): Promise<AlarmStatus>; // notifications, exactAlarms, batteryUnrestricted, fullScreen
   requestNotifications(): Promise<AlarmStatus>;
   openSettings(which: 'exactAlarm' | 'battery' | 'fullScreen' | 'notifications'): Promise<void>;
 }
-export interface KeyValueStore {          // src/lib/storage.ts over @capacitor/preferences today
-  get<T>(key: Key): Promise<T | null>; set(key: Key, v: unknown): Promise<void>; remove(key: Key): Promise<void>;
+export interface SecretStore {
+  get(k: SecretKey): Promise<string | null>;
+  set(k: SecretKey, v: string): Promise<void>;
+  remove(k: SecretKey): Promise<void>;
 }
-export interface FileStore {              // src/lib/history.ts over @capacitor/filesystem today
-  readText(path: string): Promise<string | null>; writeText(path: string, text: string): Promise<void>;
-}
-export interface SecureStore {            // new in HA Phase 1 (T-025)
-  get(key: SecretKey): Promise<string | null>; set(key: SecretKey, v: string): Promise<void>; remove(key: SecretKey): Promise<void>;
-}
-export interface ShareService {           // src/lib/share.ts + src/platform/sharedPlan.ts today
+export interface ShareService {
   sharePlanFile(name: string, text: string): Promise<void>;
-  takeOpenedPlan(): Promise<{ text?: string; name?: string; error?: string } | null>;
-  onPlanOpened(fn: () => void): Unsubscribe;
+  onPlanOpened(fn: (file: { text?: string; name?: string; error?: string }) => void): Unsubscribe;
 }
-export interface AppLinks {               // @capacitor/app today; HA auth callback in T-026
-  openExternal(url: string): Promise<void>;          // browser / Custom Tab
-  onAppUrl(fn: (url: string) => void): Unsubscribe;  // pitplanner://auth-callback
+export interface AppLinks {
+  openExternal(url: string): Promise<void>;
+  openAuthSession(url: string, redirect: string): Promise<string | null>;
   onResume(fn: () => void): Unsubscribe;
 }
 ```
 
-| Service | Android (now) | Web fake | iOS (future, not in scope) |
+| Service | Android (Expo) | Test fake | iOS (future, not in scope) |
 |---|---|---|---|
-| AlarmService | `PitAlarms` Kotlin plugin, `AlarmManager.setAlarmClock()` | logs, schedules nothing, reports missing permissions | `UNUserNotificationCenter` time-interval/calendar triggers; time-sensitive or critical alerts (critical needs an Apple entitlement); no nag repeats while the app is dead beyond pre-scheduled copies (64 pending limit); iOS 26 AlarmKit if available |
-| PermissionService | `PitAlarms.status` etc. | all false | notification authorization; no exact-alarm or battery concepts (report true) |
-| KeyValueStore | `@capacitor/preferences` (SharedPreferences) | localStorage | `@capacitor/preferences` (UserDefaults) |
-| FileStore | `@capacitor/filesystem` `Directory.Data` | in-memory | same plugin |
-| SecureStore | new Kotlin plugin, Android Keystore AES-GCM key wrapping values in SharedPreferences (or Jetpack Security if still maintained at build time) | in-memory, never localStorage | Keychain (`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`) |
-| ShareService | `@capacitor/share` + `PitSharedPlan` (VIEW/SEND intent filters, 256 KB cap) | download link | share sheet + UTI document type for `.pitplan` |
-| AppLinks | `@capacitor/app` `appUrlOpen`, intent filter for `pitplanner://` | `window.open` | custom URL scheme, `ASWebAuthenticationSession` for HA login |
+| AlarmService, PermissionService | `modules/pit-alarms` (Kotlin port of the 0.2.0 plugin) | records calls | Swift module, same JS API: `UNUserNotificationCenter` time-sensitive alerts, AlarmKit where available; needs a Mac + Xcode and its own alarm review |
+| SecretStore | `expo-secure-store` | in-memory | `expo-secure-store` (Keychain), no change |
+| Storage (`Db`) | `expo-sqlite` | `better-sqlite3` in Jest | `expo-sqlite`, no change |
+| ShareService | `expo-sharing` + `expo-file-system` (reads `content://`), intent filters by config plugin, 256 KB cap | in-memory | `expo-sharing`; `.pitplan` document type via config plugin |
+| AppLinks | `expo-linking`, `expo-web-browser` (Custom Tab auth session), `AppState` | scripted | same packages |
 
-iOS work needs a Mac with Xcode, an Apple developer account for device installs, and its own alarm design
-review (iOS has no `setAlarmClock` equivalent for third-party apps before AlarmKit). Only the interfaces and
-this table are in scope (WBS phase 9).
+## 5. Data model (SQLite)
 
-## 4. Data model and storage
+Database `pitplanner.db` via `expo-sqlite`. Instants INTEGER epoch ms; temps REAL F; weights REAL lb. JSON
+columns hold engine-owned shapes that evolve with the engine (validated and normalized on read).
 
-Types live in `engine/types.ts` (plan) and `src/lib/*.ts` (app state). SPEC section 9 lists the stored
-items; this is where each one lives.
-
-| Key / file | Store | Type | Written when |
-|---|---|---|---|
-| `gear` | Preferences | `Cookers` (smoker, griddle, oven profiles) | Setup finish, Gear edits |
-| `settings` | Preferences | `{ units }` | Setup, Gear > Units |
-| `draft` | Preferences | `Draft` (mode, at, pitTempF, items) | every Plan edit |
-| `rates` / `rateLocks` / `totalHours` | Preferences | `Record<foodId, ...>` | "Use for future", Gear > Cook rates |
-| `activeCook` | Preferences | `ActiveCook` (`src/lib/cook.ts`) | Start cook and every live change; removed at End cook |
-| `flags` | Preferences | one-time hints shown | when a hint is shown |
-| `update` | Preferences | `UpdateInfo` (last release check) | at most daily |
-| `history.json` | Filesystem `Data` | `CookRecord[]` | Save on Cook finished, Remove in history |
-| native `AlarmStore` | SharedPreferences (device-protected storage, so it works before first unlock) | alarm set, nags, queued actions | every `setAlarms`, fire, action |
-| `haConfig` (v2) | Preferences | address, smoker climate entity, probes (label, entity ID), per-food last probe | HA discovery Save |
-| `ha.refreshToken` (v2) | SecureStore | string | sign-in, refresh; deleted at Disconnect |
-
-Rules:
-- `load()` returns `null` on missing or corrupt JSON; every reader supplies defaults. `normalize()` upgrades
-  older `activeCook` shapes. Any change to a stored shape needs a normalize step and a test that loads the old
-  shape.
-- No schema version field on Preferences entries today. Add one only when a breaking change is needed
-  (decision D-6).
-- `.pitplan` (share file) is `{ app: 'pit-planner', version: 1, serveAt: iso, pitTempF, items }`. Export drops
-  the sender's `hrPerLb`, `totalHours`, `totalHoursAtF`, `timingModel`. Import validates every field
-  (`src/lib/sharedPlan.ts`) and never trusts sizes, ids or options.
-
-## 5. Scheduling engine (summary)
-
-Full rules: SPEC section 4. Entry points: `buildPlan(rules, input)` (from scratch) and `derive(rules, input,
-items, serveAt)` (re-lay events and warnings after live edits). Output `Plan` has `items[].phases`,
-`events[]` (each with `alarm`, `checkStep`, `critical`), `warnings[]`, fire/pit-off/griddle times, pellets,
-footprint. Phase starts round to 5-minute steps; off-heat stays exact. `engine/live.ts` holds live edits
-(`markStepDone`, `markPullDone`, `shiftRemaining`, `pitOutage`, `extendCook`, `postponeStep`,
-`holdsCover`). `engine/alarms.ts` turns events into `AlarmSpec[]` with stable step keys, grouping alarms in
-the same minute (failure mode 11).
-
-## 6. Alarm design (SPEC section 6)
-
-Implemented and device-tested (`docs/alarm-testing.md`, including Doze and a locked reboot).
-
-```
-plan.events --alarmsFromPlan(plan, now)--> AlarmSpec[] --PitAlarms.setAlarms--> AlarmScheduler.replaceAll
-                                                                               |  cancel every PendingIntent
-                                                                               |  setAlarmClock() per alarm
-                                                                               v
-AlarmReceiver (fires) -> Notifications.show (Done / +15 min / Open, full-screen when critical or at night)
-                      -> Nag every 10 min, up to 6, then "Cook needs you"
-ActionReceiver (Done / +15) -> AlarmStore.queueAction -> app drains on start/resume -> cook.ts applies -> replan
-RestoreReceiver (LOCKED_BOOT_COMPLETED, BOOT_COMPLETED, MY_PACKAGE_REPLACED, TIME_SET, TIMEZONE_CHANGED,
-                 SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED) -> AlarmScheduler.restore from AlarmStore
+```sql
+-- 0001_init
+CREATE TABLE kv (             -- small settings: units, one-time hint flags, update check, plan draft
+  key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at INTEGER NOT NULL);
+CREATE TABLE cookers (        -- gear: one row per cooker the user owns
+  id TEXT PRIMARY KEY, kind TEXT NOT NULL CHECK (kind IN ('smoker','griddle','oven')),
+  profile TEXT NOT NULL,      -- JSON SmokerProfile | GriddleProfile | OvenProfile
+  position INTEGER NOT NULL, updated_at INTEGER NOT NULL);
+CREATE TABLE rate_overrides ( -- Cook rates: saved hr/lb at 225F and/or saved total hours, per food
+  food_id TEXT PRIMARY KEY, hr_per_lb REAL, total_hours REAL,
+  locked INTEGER NOT NULL DEFAULT 0, updated_at INTEGER NOT NULL);
+CREATE TABLE active_cook (    -- at most one running cook, rewritten on every change
+  id INTEGER PRIMARY KEY CHECK (id = 1), data TEXT NOT NULL,  -- JSON ActiveCook
+  started_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
+CREATE TABLE cook_history (
+  id TEXT PRIMARY KEY, served_at INTEGER NOT NULL, pit_temp_f REAL NOT NULL,
+  late_min INTEGER, notes TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL);
+CREATE TABLE cook_history_items (
+  id INTEGER PRIMARY KEY, cook_id TEXT NOT NULL REFERENCES cook_history(id) ON DELETE CASCADE,
+  position INTEGER NOT NULL, name TEXT NOT NULL, food_id TEXT NOT NULL, method_id TEXT NOT NULL,
+  smoker_id TEXT NOT NULL, quantity REAL NOT NULL, pit_temp_f REAL NOT NULL,
+  minutes_on_heat REAL NOT NULL, planned_min REAL NOT NULL, actual_min REAL NOT NULL,
+  options TEXT,               -- JSON Record<string, string>
+  discarded INTEGER NOT NULL DEFAULT 0);
+CREATE INDEX cook_history_items_learn ON cook_history_items(food_id, method_id, smoker_id);
 ```
 
-Invariants (each has or needs a test):
-1. After any plan change: save the cook, then `rescheduleFromPlan` (cancel all, schedule the new set). Never
-   patch one alarm.
-2. Step keys are stable across replans (`keyedEvents`), so Done on a notification still finds its step after
-   the plan moved.
-3. Notifications stay in the shade until Done, +15 or swipe; nothing removes them silently.
-4. Native state is enough to ring with the app dead and the phone just rebooted and locked.
-5. Time steps are alarmed by the app only; temperature events by HA only (v2, no duplicates).
-6. Missing notification, exact-alarm or battery permission blocks Start cook until fixed or acknowledged, and
-   shows a red banner on Live Cook (failure mode 9).
+Mapping from the 0.2.0 model: `gear` -> `cookers`; `settings`, `flags`, `update`, `draft` -> `kv`; `rates`,
+`totalHours`, `rateLocks` -> `rate_overrides`; `activeCook` -> `active_cook`; `history.json` (`CookRecord[]`)
+-> `cook_history` + `cook_history_items`. `logsOf(records)` becomes a query; `CookRecord` stays the type the
+screens and `historyView.ts` use.
 
-Known gap: Quiet alerts holds scheduled steps, but native nag repeats of an already-overdue step still ring
-(T-009).
+**Migrations, versioned from day one:**
+- `src/db/migrations/NNNN_name.ts` exports `{ version: N, up(db) }`. The runner reads `PRAGMA user_version`,
+  applies every higher migration in order, each in its own transaction, and sets `user_version`. A failed
+  migration rolls back and the app shows an error screen with "Export my data", never a silent reset.
+- Shipped migrations are never edited; fixes are new migrations.
+- `PRAGMA foreign_keys = ON` and `journal_mode = WAL` at open.
+- Tests (Jest, `better-sqlite3` behind the same `Db` interface): 0 -> latest matches a schema snapshot; for
+  every version N, fixture data at N migrates to latest intact; every repository round-trips.
+- Export: Gear > Export shares a JSON dump through the share sheet (T-036).
+
+**Can the 0.2.0 data be migrated? Yes.** Same app ID and signing key means Android keeps the app's data
+directory across the upgrade. The Capacitor app stored:
+- `@capacitor/preferences`: SharedPreferences file `CapacitorStorage` (`shared_prefs/CapacitorStorage.xml`),
+  one JSON string per key (`gear`, `settings`, `draft`, `rates`, `totalHours`, `rateLocks`, `activeCook`,
+  `flags`, `update`).
+- `@capacitor/filesystem` `Directory.Data`: `files/history.json` (the directory Expo calls `documentDirectory`).
+- Native alarm state: `AlarmStore` SharedPreferences in device-protected storage.
+
+On first launch of 0.3.0, after migrations, `src/db/legacyImport.ts` runs once (guarded by
+`kv.legacy_import`): `modules/pit-legacy` returns the `CapacitorStorage` entries as strings; JS reads
+`history.json` with `expo-file-system`; both pass through the existing `normalize`/validation code and are
+written to SQLite in one transaction. On success it sets `legacy_import = done` and renames the old files
+(`*.imported`, kept until 0.4.0). A running cook is imported and its alarms rescheduled from `plan.events` if
+its serve time is in the future; otherwise it is dropped.
+
+**Fresh-start fallback:** if a part fails to parse, the app imports what it can, keeps the originals, and shows
+a one-time notice, e.g. "Pit Planner has a new look. Your cookers, rates and 4 past cooks came along. Your plan
+draft could not be moved." If nothing can be read: "Pit Planner has a new look and starts fresh. Set up your
+cookers again." Tested on an emulator by installing the real `release/pitplanner-0.2.0.apk`, adding data, then
+installing 0.3.0 over it (T-012, T-038).
+
+Old alarms across the upgrade: alarms do not survive an app update (the 0.2.0 receivers already assume this and
+reschedule on `MY_PACKAGE_REPLACED`). `pit-alarms` keeps the receiver class names
+`io.github.mecheng70.pitplanner.alarms.*` so an in-flight `PendingIntent` still resolves, and the import
+reschedules from the imported cook.
+
+## 6. Alarm design (SPEC section 6), as an Expo module
+
+`modules/pit-alarms` ports the 0.2.0 Kotlin (`legacy/android/.../alarms/`: `AlarmScheduler`, `AlarmStore`,
+`Notifications`, `Receivers`, `AlarmsPlugin`) to the Expo Modules API. Behavior does not change:
+
+```
+plan.events --alarmsFromPlan(plan, now)--> AlarmSpec[] --AlarmService.replaceAll--> AlarmScheduler.replaceAll
+   cancel every PendingIntent, then setAlarmClock() per alarm (the system leaves Doze for these)
+AlarmReceiver -> Notifications.show (Done / +15 min / Open; full-screen when critical or at night)
+              -> nag every 10 min, up to 6, then "Cook needs you"
+ActionReceiver (Done / +15) -> AlarmStore.queueAction -> app drains on start/resume -> replan -> replaceAll
+RestoreReceiver: LOCKED_BOOT_COMPLETED, BOOT_COMPLETED, MY_PACKAGE_REPLACED, TIME_SET, TIMEZONE_CHANGED,
+                 SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED -> reschedule from AlarmStore
+```
+
+- The module's `AndroidManifest.xml` declares the receivers (`exported=false`, `directBootAware=true`) and
+  permissions (`POST_NOTIFICATIONS`, `SCHEDULE_EXACT_ALARM`, `RECEIVE_BOOT_COMPLETED`,
+  `USE_FULL_SCREEN_INTENT`, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, `WAKE_LOCK`, as in 0.2.0); merged at
+  prebuild.
+- Events to JS (`onFired`, `onAction`) through the module's event emitter.
+- New in the port: `setQuiet(until)` so Quiet also defers native nags (the known gap in 0.2.0).
+- One notification owner: the module posts every step notification and requests `POST_NOTIFICATIONS` itself.
+  `expo-notifications` and Notifee are not used (their schedulers do not use `setAlarmClock`).
+- Invariants, each with a test: replace the whole set, never patch; stable step keys; notifications stay until
+  handled; rings with the app dead after a locked reboot; time steps app-only, temperature events HA-only;
+  missing permission blocks Start cook and shows the red banner.
+- iOS: a future Swift implementation of the same `AlarmService`; out of scope.
 
 ## 7. Live-cook state machine
 
-The running cook is `ActiveCook` (`src/lib/cook.ts`). Every operation is a pure function returning a new
-`ActiveCook`; the caller saves it and calls `syncAlarms`. Today the states are implied by fields. T-012 makes
-them explicit in `engine/cookState.ts` (pure, tested) so the UI and tests share one definition.
+Behavior unchanged. `ActiveCook` (type exported from `src/lib/cook.ts`) is stored in `active_cook`. T-020
+extracts the states into a new pure file `engine/cookState.ts` (existing engine files and tests untouched).
 
-```
-            Start cook (perms ok or acknowledged)
-  [Planning] ------------------------------------> [Cooking]
-      ^                                              |  ^   |  ^          |
-      | Start over (keeps menu)                      |  |   |  | Back up  | End cook
-      +----------------------------------------------+  |   |  | to temp  v
-                                                        |   v  |       [Finishing] --Save--> history, idle
-                              Quiet 30 min (UI hold) ---+ [PitDown]            \--Discard--> idle
-                              ends at quietUntil         clock stopped (pitDownAt)
-```
-
-| State | Condition (fields) | Allowed actions | Alarm effect |
+| State | Condition | Allowed actions | Alarm effect |
 |---|---|---|---|
-| Planning | `activeCook == null` | edit draft, Start cook | none scheduled |
-| Cooking | cook set, `pitDownAt == null` | Done, +15, Not yet (+30 on pull checks), Running behind/ahead (+-15, keep/move serve), Quiet, Pit went out, Start over, End cook | full set from `plan.events` |
-| Cooking + Quiet | `quietUntil > now` | same | steps in the window held; one summary at the end; steps stay overdue |
-| Cooking + overdue step | a pending step's `dueAt < now`, not in `done` | Done (asks shift or keep serve if off by >= 5 min) | native nag every 10 min |
-| PitDown | `pitDownAt != null` | Back up to temp, End cook | smoker steps cancelled until back up; `pitOutage` adds downtime + 15 min recovery |
-| Finishing | End cook pressed | Save (logs actual minutes, feeds rates), Discard | cancel all |
+| Planning | no active cook | edit plan, Start cook | none |
+| Cooking | cook, `pitDownAt == null` | Done, +15, Not yet, Running behind/ahead, Quiet, Pit went out, Start over, End cook | full set from `plan.events` |
+| Cooking + Quiet | `quietUntil > now` | same | steps and nags inside the window held to its end; one summary |
+| Cooking + overdue | pending step `dueAt < now` | Done (asks keep or move serve if off by >= 5 min) | nag every 10 min |
+| PitDown | `pitDownAt != null` | Back up to temp, End cook | smoker steps held; `pitOutage` adds downtime + 15 min |
+| Finishing | End cook | Save (logs to history), Discard | cancel all |
 
-Transitions that change times round scheduled times to 5 minutes; actual times (pulled at) stay exact.
-"Changes without asking" (alert Done/+15, Not yet) keep serve only if every food keeps its minimum rest
-(`holdsCover`); otherwise serve moves.
+Every change: write `active_cook`, then `replaceAll` from the new plan. Scheduled times round to 5 min; actual
+times stay exact. Changes made without asking keep serve only if every food keeps its minimum rest
+(`holdsCover`).
 
-## 8. Home Assistant integration (v2)
+## 8. UI, theme and text size
 
-Plan of record: `docs/HA-INTEGRATION.md`. Entity survey: `docs/ha-entities.md`. Design points:
+- **Source of truth:** mockup PNGs `docs/mockups/*.png` and sources `docs/mockups/source/*.dc.html`. Their
+  token values were already extracted into the Capacitor kit (`legacy/src/ui/ui.css`: `--bg #131211`,
+  `--surface #1f1d1b`, `--accent #ff8f4a`, `--accent-container #4a2e1c`, `--griddle #8ec2f0`, `--ok #9bd18b`,
+  `--warn #ffd27a`, `--error #ff9a86`, four text levels, the type scale). T-004 moves them to
+  `src/theme/tokens.ts`, used by `tailwind.config.js` (NativeWind) and the Reusables theme variables. Dark
+  only; Roboto; one ember accent; griddle blue.
+- **Components:** Reusables primitives (Button, Text, Switch, Checkbox, RadioGroup, Dialog, Select,
+  Separator), themed; the Pit Planner kit on top (Num, Stepper, Chips, Tile/Tiles, ResultCard, InfoBox, Banner,
+  ListRow, StatusRow, Lanes chart on `react-native-svg`, Sheet). Screens use the kit only, no one-off styles.
+- **Bottom sheets:** `@gorhom/bottom-sheet` if it supports RN 0.88 at T-005; else a kit Sheet on React
+  Native `Modal` (D-4).
+- **Text size rule (Jason):** follow the system font scale (React Native's `allowFontScaling` default; no
+  `maxFontSizeMultiplier` caps on content). Times, temps, weights and countdowns (`<Num>`) never truncate,
+  shrink (`adjustsFontSizeToFit` is banned) or ellipsize at any scale; only secondary text may use
+  `numberOfLines`. Layouts wrap instead. Checked at 100/115/130% on the phone in every UI task (Maestro +
+  screencap) and by an ESLint rule that forbids `numberOfLines`/`adjustsFontSizeToFit` on `Num`.
+- **Look:** a stock Android app (Material 3 patterns), not a web page: `android_ripple` on pressables, Android
+  back closes the top sheet first, edge-to-edge with correct insets.
 
-- **Ownership:** the app owns the plan and the clock (its own alarms); HA owns temperatures (HA blueprint
-  sends temperature alerts through the HA Companion app). No step is alerted by both.
-- **Code layout:** all HA network code in `src/lib/ha/` (`auth.ts`, `ws.ts`, `rest.ts`, `discovery.ts`,
-  `publish.ts`); pure decision logic in `engine/probe.ts` (`nextTempEvent`, `suggestion`, staleness) tested
-  with fake readings. HA is never imported by the engine.
-- **Auth:** HA's OAuth-style login for third-party apps. `client_id` = `https://mecheng70.github.io/pitplanner/`
-  (GitHub Pages page whose `<head>` holds `<link rel="redirect_uri" href="pitplanner://auth-callback">`).
-  Login opens in a Custom Tab; the app never sees the password. `state` carries the HA address and a random
-  nonce; reject a mismatched nonce. Code exchange and refresh at `/auth/token`; Disconnect revokes at
-  `/auth/revoke`.
-- **Transport:** WebSocket `subscribe_entities` while open, REST polling every 15 s as fallback, exponential
-  backoff on failure. Stale over 2 min shows grey, never a guessed value.
-- **Publishing (Phase 2):** `POST /api/states/sensor.pit_planner_cook` on Start cook, every change, End cook,
-  on open, and every 10 min while the app is open during a cook. The blueprint treats a missing sensor as no
-  cook. Background re-publish with the app closed is not in scope (decision D-5).
-- **Read-only toward the grill** until Phase 4; never `pitboss.start_grill`, never the power switch.
-- **Phases:** 0 survey (done), 1 sign-in + discovery + live temps, 2 publish + blueprint, 3 suggestions and
-  probe-based learning, 4 optional confirmed set-temp. WBS phase 8.
+## 9. Home Assistant (v2)
 
-## 9. Security
+Plan of record `docs/HA-INTEGRATION.md`, survey `docs/ha-entities.md`. Changes from the stack switch:
+- Refresh token in `expo-secure-store` (no custom Keystore plugin). Access token in memory only.
+- Login: `expo-web-browser` `openAuthSessionAsync` (Custom Tab) with redirect `pitplanner://auth-callback`;
+  scheme in `app.config.ts` (`scheme: 'pitplanner'`). `client_id` page on GitHub Pages as planned.
+- WebSocket: React Native's built-in `WebSocket`; REST via `fetch`. Network code in `src/lib/ha/`; pure logic in
+  a new `engine/probe.ts`.
+- LAN cleartext only per host, through a network security config written by a config plugin.
+
+## 10. Security
 
 | Asset | Rule |
 |---|---|
-| Release signing key `~/keys/pitplanner.jks` | Never in the repo (`.gitignore` covers `*.jks`, `*.keystore`, `keystore.properties`, `signing/`). Backed up off GitHub. Losing it forces every user to uninstall. Cert SHA-256 `b6c32d12...0a29` (HANDOFF). |
-| `android/keystore.properties` | Local only; template `keystore.properties.example`. Semgrep ignores it via `.semgrepignore` so a local scan never prints the passwords. |
-| HA refresh token | SecureStore only (Keystore-backed). Never in Preferences, logs, `.pitplan`, crash text or the repo. |
-| HA access token | Memory only, about 30 min; refresh on expiry or 401. |
-| HA password | Never seen by the app (Custom Tab login). |
-| Snyk / GitHub tokens | Read by the CLIs from the user's own config (`snyk config`, `gh auth`). Never in the repo, scripts or CI files. |
-| `.pitplan` import | Untrusted input: 256 KB cap natively, every field validated, unknown foods dropped, numbers clamped. |
-| Network | HTTPS only for remote HA. Cleartext allowed only for a user-entered LAN IP via network security config, with a warning. GitHub update check is anonymous. |
-| Exported components | Receivers `exported=false`; the activity is exported only for MAIN and the `.pitplan` VIEW/SEND filters (and `pitplanner://auth-callback` in v2). |
-| Static checks | Semgrep (`p/typescript`, `p/kotlin`, `p/secrets`) and Snyk (open source + code) in `npm run check`; no high or critical finding left open; exceptions written up in `SECURITY-EXCEPTIONS.md`. |
+| Release signing key `~/keys/pitplanner.jks` | The same key as 0.1.0/0.2.0 (required for the in-place upgrade). Never in the repo. `plugins/withReleaseSigning` reads a git-ignored `keystore.properties` at the repo root (moved from `android/`, which is now generated) at prebuild. The release script checks cert SHA-256 `b6c32d12...0a29`. |
+| HA refresh token | `expo-secure-store` only; never in SQLite, logs, `.pitplan`, crash text or the repo. |
+| SQLite database | App-private; no secrets. Android auto-backup stays on for it (cook history matters); T-035 checks that secure-store entries are excluded from backup. |
+| `.pitplan` import | Untrusted: 256 KB cap, validated by `src/lib/sharedPlan.ts`, numbers clamped, unknown foods dropped. |
+| Network | HTTPS only for remote HA; anonymous GitHub update check. |
+| Exported components | Main activity only (launcher, `.pitplan` VIEW/SEND, `pitplanner://`); receivers `exported=false`. |
+| Tool tokens | Snyk and GitHub tokens from the user's own CLI config only. |
+| Static checks | Semgrep + Snyk in `npm run check`; exceptions only via `SECURITY-EXCEPTIONS.md`. |
 
-The HA user is a non-admin HA account, but HA non-admins can still control every entity; the app limits
-itself in code (read-only, 3.4 of HA-INTEGRATION) and the help text says so.
+## 11. Quality gate and test strategy
 
-## 10. Quality gate and test strategy
+`npm run check` (`tools/check.sh`) runs in order and stops at the first failure. Same six steps; tools change
+where the stack does:
 
-`npm run check` (`tools/check.sh`) runs, in order, stopping at the first failure:
+1. **Prettier** write, then check (TS/TSX/JS/JSON/CSS; markdown, `data/`, `docs/`, `legacy/` and generated
+   `android/` excluded).
+2. **ESLint**, zero warnings: `eslint-config-expo` (flat) + `typescript-eslint` + React, React Hooks and React
+   Native rules (`eslint-plugin-react-native`), `no-restricted-imports` for the layer rules, a local rule for
+   `Num` text size.
+3. **Typecheck** `tsc --noEmit` with the TypeScript version the Expo SDK supports (D-2).
+4. **Tests** `npm run test:all`:
+   - engine: `node --test engine/*.test.ts` (unchanged);
+   - app logic, repositories, migrations, UI: Jest (`jest-expo`) + React Native Testing Library; SQLite code
+     against `better-sqlite3`;
+   - native: JUnit (+ Robolectric) in `modules/*/android/src/test`, run through Gradle in the prebuilt
+     `android/`. `check.sh` runs `npx expo prebuild --platform android --no-install` first when `android/` is
+     missing or older than `app.config.ts`, `plugins/` or `modules/`.
+5. **Semgrep** `p/typescript p/kotlin p/secrets`, `--no-git-ignore`, over `app/ src/ engine/ data/ modules/
+   plugins/ tools/`; generated `android/` and `legacy/` excluded (SE-002 extended in T-003).
+6. **Snyk** `snyk test --all-projects --severity-threshold=high` (npm + the prebuilt `android/` Gradle
+   projects; Gradle scope per SE-001), then `snyk code test --severity-threshold=high`. If the Gradle part
+   fails, run `cd android && ./gradlew assembleDebug` once and retry.
 
-1. Prettier: `prettier --write .` then `prettier --check .` (config `.prettierrc.json`; markdown, `data/`,
-   `docs/`, `android/` excluded by `.prettierignore`).
-2. ESLint: `eslint --max-warnings 0 .` (`eslint.config.js`: eslint-config-preact + typescript-eslint
-   recommended).
-3. Typecheck: `tsc --noEmit` with TypeScript 7 (`typescript7` package alias).
-4. Tests: `npm run test:all` = engine (node:test) + UI (Vitest) + Android (JUnit via
-   `./gradlew testDebugUnitTest`).
-5. Semgrep: `semgrep scan --error --severity ERROR --no-git-ignore` with `p/typescript p/kotlin p/secrets`
-   (`.semgrepignore` excludes generated and local-secret files).
-6. Snyk: `snyk test --all-projects --severity-threshold=high` (Gradle limited to `releaseRuntimeClasspath`,
-   see SE-001) then `snyk code test --severity-threshold=high` (`.snyk` excludes `reference/`, `dist/`,
-   `release/`; see SE-002).
+`npm run snyk:monitor` runs after a release or a push to main (not in the gate).
 
-`npm run snyk:monitor` (`snyk monitor --all-projects`) is not in the gate; run it after a release or a push to
-main.
+| Level | Tool | Where |
+|---|---|---|
+| Engine | node:test | `engine/*.test.ts` (unchanged) |
+| App logic, repositories, migrations | Jest + `better-sqlite3` | `src/**/*.test.ts` |
+| UI components and screens | Jest + React Native Testing Library | `src/**/*.test.tsx` |
+| Native | JUnit, Robolectric | `modules/*/android/src/test/` |
+| Device | Maestro flows (`tools/device/flows/`) + adb screencap at 115/130%, heads-up banners off | dev build `io.github.mecheng70.pitplanner.debug` |
+| Regression | any level | one per fixed bug, failing first |
 
-| Level | Tool | Location | What goes here |
-|---|---|---|---|
-| Engine unit | `node --test` (Node 22.18+, runs .ts) | `engine/*.test.ts` | every engine function; every failure mode in SPEC 7 with a unit test column; rules schema |
-| Pure app helpers | `node --test` | `engine/*.test.ts` importing `src/lib/*` | helpers that take `rules` as a parameter |
-| UI components | Vitest + Testing Library + jsdom | `src/**/*.test.tsx` | kit components, screen logic that is not pure (store wiring, sheets, button states); query by role and label like a user |
-| Native | JUnit, Robolectric when Android classes are used | `android/app/src/test/java/...` | AlarmStore JSON, scheduler replaceAll/restore, receivers, SharedPlan size cap, SecureStore |
-| Regression | any of the above | next to the code | one test per fixed bug, named for the symptom, written to fail before the fix |
-| Device | `npm run device` (`tools/device/`) + manual | dev copy `...pitplanner.debug` | alarms in Doze, reboot, permissions, font scale 100/115/130%, mockup fidelity screenshots |
+The Playwright-over-CDP device scripts only work with the WebView; they move to `legacy/` and are replaced by
+Maestro flows (T-006). The alarm device tests (Doze, locked reboot) are re-run on the Expo build (T-016)
+following `docs/alarm-testing.md`. The Vitest tests from the Capacitor UI move to `legacy/` with it; the
+behaviors they cover (e.g. Food details timing) are re-tested in Jest when each screen is ported.
 
-Device rules: scripts only touch the dev copy. Never uninstall the release without a backup (HANDOFF has the
-route). Batch device runs; screenshot only at checkpoints.
+## 12. Build and release
 
-## 11. Release process
+- **Variants** in `app.config.ts` by `APP_VARIANT`: `development` -> `io.github.mecheng70.pitplanner.debug`,
+  "Pit Planner dev" (installs beside the release, own data); `production` -> `io.github.mecheng70.pitplanner`,
+  "Pit Planner". The app ID is permanent.
+- **Version:** `package.json` `version` -> `expo.version`; `android.versionCode = major*10000 + minor*100 +
+  patch` (0.3.0 -> 300 > 200, so 0.2.0 upgrades in place).
+- **Release (local, no EAS):**
+  1. All tasks for the release done; `git status` clean on `main`; `npm run check` passes.
+  2. Bump `package.json` version (0.3.0 for the first Expo release).
+  3. `npm run release`: `APP_VARIANT=production npx expo prebuild --platform android --clean`, then
+     `cd android && ./gradlew assembleRelease` (signing from `plugins/withReleaseSigning`), then verify the cert
+     SHA-256 with `apksigner` and print versionCode/versionName -> `release/pitplanner-<version>.apk`.
+  4. Upgrade test on an emulator: install `release/pitplanner-0.2.0.apk`, add data, install the new APK over
+     it, check the import (by hand in T-038; a Maestro flow after that).
+  5. Commit the version bump; tag `v<version>`; push `main` and the tag (Jason approves).
+  6. `gh release create v<version> <apk> --notes-file docs/release-notes/<version>.md` with the SHA-256
+     (`--prerelease` for betas). Google Drive mirror optional (D-1).
+  7. `npm run snyk:monitor`.
+  8. Check the in-app update row on a phone on the previous version; update `docs/HANDOFF.md`.
 
-GitHub Releases is the primary distribution channel (D-1, decided 2026-11-12); Google Drive is an optional
-mirror only (upload the same APK after step 7 if friends use the Drive link). The repo `MechEng70/pitplanner` is public as of 2026-11-12, so anonymous
-release downloads and the in-app update check can work.
-
-1. All tasks in the release are done; `git status` clean on `main`.
-2. Bump `version` in `package.json` (versionCode = major*10000 + minor*100 + patch; must go up).
-3. `npm run check` passes.
-4. `npm run release` builds `release/pitplanner-<version>.apk`, verifies the signing cert SHA-256 and prints
-   versionCode/versionName.
-5. Install on the dev copy path is not possible for release builds; install the release APK on Jason's phone
-   with `adb install -r` only after a backup if data matters (HANDOFF route), or let Jason install it.
-6. Commit the version bump; tag `v<version>`; push `main` and the tag (only when Jason says to push).
-7. `gh release create v<version> release/pitplanner-<version>.apk --title ... --notes-file ...` with the
-   APK's SHA-256 in the notes. Mark betas `--prerelease`.
-8. `npm run snyk:monitor` (records the released dependency tree in Snyk).
-9. Check the in-app update row on a phone running the previous version.
-10. Update `docs/HANDOFF.md` (what shipped, versionCode, commit).
-
-## 12. Open decisions and risks
+## 13. Open decisions and risks
 
 | ID | Decision or risk | Recommendation |
 |---|---|---|
-| D-1 | Distribution channel. | Decided 2026-11-12 (Jason): GitHub Releases is primary; Google Drive is an optional mirror only. The repo is public, so release downloads and the in-app update check work anonymously. |
-| D-2 | TypeScript 7 vs typescript-eslint (supports < 6.1). | Done this session: ESLint parses with `typescript` 6.0.3; typecheck runs TS 7 (`typescript7` alias). Revisit when typescript-eslint supports TS 7 (T-040); then drop the alias. Risk: syntax only TS 7 accepts would fail lint first; low for this codebase. |
-| D-3 | Snyk Gradle scan reports 28 high/critical issues in AGP's test runner (UTP, netty, grpc), not in the APK. | Approved 2026-11-12 (Jason): gate on `releaseRuntimeClasspath` (what ships); `snyk:monitor` keeps all configurations; T-039 removes the limit by 2027-02-01. See SE-001. |
-| D-4 | Snyk Code was not enabled for the org (403) at first. | Resolved 2026-11-12: Jason enabled it. One high finding, a false positive in `reference/` (SE-002), excluded via `.snyk`. `snyk code test` stays in the gate. |
-| D-5 | HA re-publish every 10 min needs the app alive; Android may kill it overnight. | Accept for Phase 2 (blueprint treats missing sensor as no cook; the app re-publishes on open). If it proves a problem, re-publish from the native alarm receivers at each step (they already run with the app dead). |
-| D-6 | No version field on stored Preferences JSON. | Keep `normalize()` per key; add `v` only on the first breaking change. |
-| D-7 | Secure storage for HA tokens: Jetpack Security (`EncryptedSharedPreferences`) is deprecated. | Write a small Keystore AES-GCM wrapper in the SecureStore plugin (T-025), Robolectric-tested with a fake key provider; device-test on the real phone. |
-| D-8 | Live-cook states are implicit in `ActiveCook` fields. | Extract `engine/cookState.ts` (T-012) before HA Phase 3 adds probe-driven transitions. |
-| D-9 | GitHub Pages for HA `client_id` needs Pages enabled on the public repo. | Serve from `docs/ha-client/` or a `gh-pages` branch with one static `index.html` (T-024). Jason enables Pages. |
-| R-1 | Maker battery killers (Samsung etc.) delay alarms (failure mode 10). | Battery exemption is in setup; add the per-maker help link (T-016). Test on a Samsung if a friend has one. |
-| R-2 | Losing the signing key. | Keep two off-GitHub backups; check them at each release (release step 1). |
-| R-3 | Untrusted `.pitplan` files from chat apps. | Already capped and validated; keep a regression test per parsing bug. |
-| R-4 | `@capacitor/local-notifications` would not use `setAlarmClock`. | Do not adopt it for steps; any new alert type goes through PitAlarms. |
+| D-1 | Distribution | Decided 2026-11-12: GitHub Releases primary, Google Drive optional mirror. |
+| D-2 | TypeScript version | Use the version Expo SDK 58 supports. If below 7, drop the `typescript7` alias and the 6/7 split. The engine's explicit `.ts` imports need `allowImportingTsExtensions`; verify Metro and Jest resolve them in T-002 (resolver config if needed, never an engine change). |
+| D-3 | Snyk Gradle scope (SE-001) | Approved: `releaseRuntimeClasspath` only until T-057, deadline 2027-02-01. Re-check after the first prebuild: SDK 58 brings its own AGP, so the findings may change. |
+| D-4 | Bottom sheets | `@gorhom/bottom-sheet` if it supports RN 0.88 at T-005; else a kit Sheet on `Modal`. |
+| D-5 | App state | Keep the current pattern (one context store, every change written through repositories); no new state library unless the Cook screen shows re-render cost. |
+| D-6 | Port in place vs side by side | In place: the Capacitor app moves to `legacy/` in T-002; the Expo app lives at the root. 0.2.x hotfixes from a branch off tag `v0.2.0`. Friends stay on 0.2.0 until 0.3.0 reaches parity. |
+| D-7 | Generated `android/` (CNG) | Yes: no hand edits; everything through `app.config.ts`, config plugins and modules. Keeps Expo SDK upgrades tractable. |
+| D-8 | Device test tool | Maestro (YAML flows over adb, works with any RN build); Detox is heavier and needs instrumented builds. Jason installs the Maestro CLI. |
+| D-9 | GitHub Pages for the HA `client_id` | Unchanged: Jason enables Pages when HA work starts. |
+| R-1 | NativeWind 4.2 / Reusables vs RN 0.88 and the New Architecture | Spike in T-004/T-005 before porting screens; fallback: `StyleSheet` with the same tokens inside the kit components (screens unaffected). |
+| R-2 | Import from 0.2.0 fails on a friend's phone | Partial import + fresh-start notice; originals kept as `*.imported` until 0.4.0; emulator upgrade test with the real 0.2.0 APK before release. |
+| R-3 | Alarm regressions in the port | Port the Kotlin nearly verbatim; JUnit tests first; full device alarm test (Doze, locked reboot) before 0.3.0; Saturday cook (T-037). |
+| R-4 | Visual drift from the mockups in a new toolkit | Fidelity screenshots per tab at 115/130% against `docs/mockups/*.png`; Jason approves each tab. |
+| R-5 | The port rewrites the whole UI (about 7,500 lines of Preact) | Port tab by tab, reusing the pure `src/lib` helpers; no new features until parity; HA work starts after 0.3.0. |
+| R-6 | Losing the signing key | Two off-GitHub backups, checked each release. |

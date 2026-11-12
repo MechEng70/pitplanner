@@ -1,22 +1,56 @@
-# Handoff (2026-11-12, end of fourth session)
+# Handoff (2026-11-12, end of fifth session)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
+## START HERE: stack change approved (2026-11-12), T-002 next
+
+Jason decided (2026-11-12) to rebuild the app on **Expo SDK 58 + React Native + TypeScript + NativeWind + React
+Native Reusables + Expo Router + expo-sqlite + expo-secure-store** (development builds, not Expo Go; no server,
+no Redis). This session wrote the plan only, no code. `docs/design/TECH-DESIGN.md`, `TASKS.md` and `WBS.md`
+are rewritten for it; Jason approved the plan on 2026-11-12.
+
+Key points of the plan (details in TECH-DESIGN):
+- `engine/` and `data/` and their tests stay unchanged. Pure helpers the engine tests import
+  (`src/lib/cookView.ts`, `finish.ts`, `historyView.ts`, `sharedPlan.ts`, `timing.ts`, `update.ts`, types in
+  `cook.ts`, `history.ts`) keep their paths and exports.
+- The Capacitor app moves to `legacy/` in T-002 (reference until parity, deleted in T-039); tag `v0.2.0` on
+  `e86d930` keeps it buildable.
+- SQLite schema v1 (`kv`, `cookers`, `rate_overrides`, `active_cook`, `cook_history`, `cook_history_items`),
+  migrations by `PRAGMA user_version` from day one, tested on better-sqlite3 in Jest.
+- **0.2.0 data can be migrated:** same app ID + same key keeps the data dir. Capacitor Preferences is the
+  SharedPreferences file `CapacitorStorage`; history is `files/history.json`. A small `pit-legacy` Expo module
+  reads the prefs once; partial or failed import shows a one-time "fresh start" notice (T-011, T-012).
+- Alarms: `modules/pit-alarms`, a near-verbatim Kotlin port of the 0.2.0 plugin to the Expo Modules API, same
+  receiver class names, plus `setQuiet` (fixes the Quiet/nag gap). iOS later, same TS interface.
+- UI: Reusables + kit themed from the mockup tokens (now in `src/ui/ui.css`, later `src/theme/tokens.ts`);
+  font-scale rule unchanged (lint rule bans truncating `Num`).
+- Gate unchanged in spirit: Prettier, ESLint (expo + React Native rules), typecheck, node:test (engine) + Jest/RNTL
+  + JUnit, Semgrep, Snyk. Device tests move from Playwright/CDP to **Maestro** (Jason installs the CLI).
+- Release: `npx expo prebuild` + Gradle signed with `~/keys/pitplanner.jks`, versionCode 300, GitHub Release
+  `v0.3.0` (not prerelease, so 0.2.0's update check sees it). Upgrade tested on an emulator with the real
+  `release/pitplanner-0.2.0.apk` first.
+- Task IDs were renumbered: old Capacitor-era T-002..T-040 are superseded (mapping table at the end of
+  TASKS.md). SE-001's follow-up is now T-057.
+
+Open decisions in TECH-DESIGN section 13: D-2 TypeScript version (settle in T-002), D-4 bottom sheet library,
+D-5 state (keep context store), D-6 in-place port with `legacy/`, D-7 generated `android/`, D-8 Maestro.
+
 ## Engineering plan and quality gate (2026-11-12)
 
-- `docs/design/`: TECH-DESIGN, TASKS (T-001..T-040), WBS, SECURITY-EXCEPTIONS. CLAUDE.md has the mandatory
-  gate: `npm run check` = Prettier, ESLint (zero warnings), typecheck (TS 7), engine + UI (Vitest) + Android
-  (JUnit) tests, Semgrep, Snyk (open source + code). A task is not done until it passes.
+- `docs/design/`: TECH-DESIGN, TASKS, WBS, SECURITY-EXCEPTIONS. CLAUDE.md has the mandatory gate:
+  `npm run check` = Prettier, ESLint (zero warnings), typecheck, all tests, Semgrep, Snyk (open source + code).
+  A task is not done until it passes. Today it runs on the Capacitor stack (TS 7 typecheck, Vitest, Gradle JUnit);
+  T-003 moves it to the Expo stack.
 - Decisions (Jason): GitHub Releases is the primary channel, Drive an optional mirror (D-1). Snyk Gradle scan
-  limited to `releaseRuntimeClasspath` until T-039 (by 2027-02-01; SE-001). `reference/` and `docs/` excluded
+  limited to `releaseRuntimeClasspath` until T-057 (by 2027-02-01; SE-001). `reference/` and `docs/` excluded
   from Snyk Code and Semgrep (SE-002).
 - Commits: `ef2107b` format/lint cleanup (typed rules schema `engine/rules.ts`), `ed51a0f` tooling,
-  `fc69f5d` plan docs. Pushed; `npm run snyk:monitor` ran after the push.
+  `fc69f5d` plan docs (pushed; `npm run snyk:monitor` ran after the push), `b524245` T-001 (not pushed).
 - `tools/device/run.sh` now turns heads-up notifications off during captures (restored on exit): chat
   banners from other apps had landed in screenshots, and the repo is public.
 
-## Done
+## Done in 0.2.0 (Capacitor; moves to `legacy/` in T-002, behavior is the spec for the port)
 
 - **Scaffold:** Vite + Preact + TS in `src/`, Capacitor 8 Android in `android/`, app ID
   `io.github.mecheng70.pitplanner` (permanent). Launcher icon and splash generated from `assets/`.
@@ -160,12 +194,14 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 
 ## Next
 
-1. Jason: re-pick the smoker as the Sportsman 850 in Gear, then (a) a real cook end to end with alarms through a
-   reboot and (b) Share plan between two phones, opened from Drive or Gmail (only a file:// VIEW is tested).
-2. HA Phase 1: mock the 6 screens in HA-INTEGRATION 4.5 first, then sign-in with the `pitplanner` HA user,
-   discovery, probe per food, live temps. Phase 0 notes: `docs/ha-entities.md`.
-3. Open items below, plus: lane chart squeezes a long cook (see Jason's full-screen idea); a griddle food
-   moved to the smoker by an import can conflict with no fix offered in the sheet.
+1. Done 2026-11-12: Jason approved the stack-change plan; T-001 phone check on 0.2.0 passed.
+2. Jason: push `main` when ready (plan docs and T-001 are local only).
+3. Jason: install the Maestro CLI before T-006 (`curl -fsSL "https://get.maestro.mobile.dev" | bash`).
+4. Then T-002 (scaffold, `legacy/`, tag `v0.2.0`), T-003 (gate on the new stack), T-004 (theme spike, settles
+   R-1), per WBS "Suggested order".
+5. Still open from before (carried into the plan): real cook with alarms through a reboot (now T-037 on the Expo
+   build), two-phone share via Gmail/Drive (T-031), lane chart full screen (T-040), import-made conflict fix
+   (T-030), HA Phase 1 after 0.3.0 (T-042 onward).
 
 ## Decisions from Jason
 

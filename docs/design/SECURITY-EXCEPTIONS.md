@@ -11,7 +11,7 @@ justification, how it is excluded, follow-up task, review date.
 
 ## SE-001 Snyk Open Source: Android build-tool dependencies (AGP test runner)
 
-- **Status:** open, scope limit approved by Jason 2026-11-12. T-039 removes the limit by 2027-02-01.
+- **Status:** open, scope limit approved by Jason 2026-11-12. T-057 removes the limit by 2027-02-01.
 - **Tool:** `snyk test --all-projects` (Gradle projects: `android/app`, the Capacitor plugin modules).
 - **Found (2026-11-12):** 28 unique high/critical issues, mostly `io.netty:netty-codec`, `netty-codec-http`,
   `netty-handler` 4.1.93-4.1.110 (for example SNYK-JAVA-IONETTY-17254120 and -19005879, critical), all
@@ -26,10 +26,10 @@ justification, how it is excluded, follow-up task, review date.
 - **How it is excluded:** `tools/check.sh` passes `--configuration-matching='^releaseRuntimeClasspath$'` to
   `snyk test`. npm projects are scanned unchanged. `npm run snyk:monitor` still monitors all configurations,
   so the findings stay visible in the Snyk dashboard.
-- **Follow-up:** T-039, upgrade AGP/Gradle within Capacitor 8's supported range and re-run the full scan;
+- **Follow-up:** T-057, upgrade AGP/Gradle within what Expo SDK 58 supports and re-run the full scan;
   if clean, remove the `--configuration-matching` flag and close this entry.
 - **Approval:** approved by Jason 2026-11-12 (TECH-DESIGN D-3), on the condition that `snyk:monitor` keeps
-  covering all configurations and T-039 removes the limit by 2027-02-01.
+  covering all configurations and T-057 removes the limit by 2027-02-01.
 
 ## SE-002 Snyk Code: "Hardcoded Non-Cryptographic Secret" in reference/cook-day-planner.html; reference and docs excluded
 
