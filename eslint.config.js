@@ -150,4 +150,10 @@ export default tsConfig(
     files: ['tools/**/*.{js,mjs}', '*.config.{js,ts}', 'jest.*.js'],
     languageOptions: { globals: { ...globals.node } },
   },
+  {
+    // Babel and Metro load their configs synchronously, so these stay CommonJS (package.json is "type": "module").
+    files: ['*.cjs'],
+    languageOptions: { sourceType: 'commonjs', globals: { ...globals.node } },
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
 );

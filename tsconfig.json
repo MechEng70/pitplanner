@@ -5,7 +5,10 @@
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "noUnusedLocals": true,
-    "types": ["node", "jest"]
+    "types": ["node", "jest"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": [
     "app",
@@ -15,6 +18,7 @@
     "app.config.test.ts",
     "jest.setup.ts",
     "expo-env.d.ts",
-    ".expo/types/**/*.ts"
+    ".expo/types/**/*.ts",
+    "nativewind-env.d.ts"
   ]
 }

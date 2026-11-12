@@ -6,9 +6,21 @@
 
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 import pkg from './package.json';
+import { colors } from './src/theme/tokens.ts';
 
 const APP_ID = 'io.github.mecheng70.pitplanner';
-const BG = '#131211'; // --bg in the mockups
+const BG = colors.bg;
+
+/** Roboto as one Android font family: `fontFamily: 'Roboto'` + `fontWeight` picks the file (T-004). */
+const ROBOTO = '/node_modules/@expo-google-fonts/roboto';
+export const robotoFamily = {
+  fontFamily: 'Roboto',
+  fontDefinitions: [
+    { path: `.${ROBOTO}/400Regular/Roboto_400Regular.ttf`, weight: 400 },
+    { path: `.${ROBOTO}/500Medium/Roboto_500Medium.ttf`, weight: 500 },
+    { path: `.${ROBOTO}/700Bold/Roboto_700Bold.ttf`, weight: 700 },
+  ],
+};
 
 export type Variant = 'development' | 'production';
 
@@ -52,6 +64,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     plugins: [
       'expo-router',
       ['expo-status-bar', { style: 'light' }],
+      ['expo-font', { android: { fonts: [robotoFamily] } }],
       ['expo-splash-screen', { backgroundColor: BG, image: './assets/icon-foreground.png', imageWidth: 200 }],
     ],
     experiments: { typedRoutes: true },

@@ -251,11 +251,27 @@ times stay exact. Changes made without asking keep serve only if every food keep
 ## 8. UI, theme and text size
 
 - **Source of truth:** mockup PNGs `docs/mockups/*.png` and sources `docs/mockups/source/*.dc.html`. Their
-  token values were already extracted into the Capacitor kit (`legacy/src/ui/ui.css`: `--bg #131211`,
-  `--surface #1f1d1b`, `--accent #ff8f4a`, `--accent-container #4a2e1c`, `--griddle #8ec2f0`, `--ok #9bd18b`,
-  `--warn #ffd27a`, `--error #ff9a86`, four text levels, the type scale). T-004 moves them to
-  `src/theme/tokens.ts`, used by `tailwind.config.js` (NativeWind) and the Reusables theme variables. Dark
-  only; Roboto; one ember accent; griddle blue.
+  token values were extracted into the Capacitor kit (`legacy/src/ui/ui.css`) and, since T-004, live in
+  `src/theme/tokens.ts` (colors, type scale with line heights, radii, font): the only place values are
+  defined. `tokens.test.ts` checks them against `ui.css` until T-039. Dark only; Roboto; one ember accent;
+  griddle blue.
+- **How the tokens reach the screens (T-004):**
+  - Colors and radii: `tailwind.config.js` builds the NativeWind theme from the tokens and replaces Tailwind's
+    palette, so only token colors exist as classes (`bg-surface`, `text-ink-2`, `bg-ember-container`,
+    `rounded-card`). The shadcn names Reusables components use (`background`, `primary`, `muted`, `accent`,
+    `border`, ...) are aliases of the same tokens; our ember is `ember` / `primary`, and Reusables' `accent` is
+    the subtle pressed surface. ESLint bans color literals and inline styles in components.
+  - Type: the `Text` component (`src/components/ui/text.tsx`) applies family, size, weight and line height
+    as a style computed from the tokens (`textStyle`), not as classes: it follows the system font scale,
+    containers set defaults through `TextContext` (a button's label), and Jest can assert it. Color is a
+    class (`tone`).
+  - Font: Roboto 400/500/700 from `@expo-google-fonts/roboto`, registered natively as one Android font family
+    by the `expo-font` config plugin (`app.config.ts`), so `fontWeight` picks the file and nothing loads at
+    startup.
+  - Navigation colors: `src/theme/navTheme.ts`. `app.config.ts` reads the background color from the tokens.
+  - `cn()` (`src/lib/utils.ts`) uses tailwind-merge 2 (the Tailwind 3 line) taught the token type scale.
+  - Reusables CLI: with `cssVariables: false` it inlines `oklch()` literals, so each component it adds is
+    rewritten onto the token classes (done for `text` and `button`; the rest in T-005).
 - **Components:** Reusables primitives (Button, Text, Switch, Checkbox, RadioGroup, Dialog, Select,
   Separator), themed; the Pit Planner kit on top (Num, Stepper, Chips, Tile/Tiles, ResultCard, InfoBox, Banner,
   ListRow, StatusRow, Lanes chart on `react-native-svg`, Sheet). Screens use the kit only, no one-off styles.
@@ -316,8 +332,9 @@ where the stack does:
      `:<project>:testDebugUnitTest` in the prebuilt `android/` (project names from Expo autolinking). Running
      since 2026-11-12 with a placeholder test in `modules/pit-alarms`; a failing test fails the step.
    Before step 4, `tools/prebuild-if-stale.sh` runs `npx expo prebuild --platform android --no-install` when
-   `android/` is missing or older than `app.config.ts`, `package.json`, `package-lock.json`, `plugins/`,
-   `modules/` or `assets/` (stamp file `android/.prebuild-stamp`).
+   `android/` is missing or any file in `app.config.ts`, `src/theme/tokens.ts`, `package.json`,
+   `package-lock.json`, `plugins/`, `modules/` or `assets/` is newer than the stamp `android/.prebuild-stamp`
+   (Gradle output in `modules/` ignored; `tools/prebuild.test.mjs`).
 5. **Semgrep** (`tools/semgrep.sh`): `p/typescript p/kotlin p/secrets r/generic.secrets` (the last adds GitHub
    tokens, which `p/secrets` misses), ERROR severity, `--no-git-ignore`, over the whole repo minus
    `.semgrepignore`: generated `android/`, module build output, `legacy/`, `reference/`, `docs/` (SE-002). The
@@ -325,7 +342,9 @@ where the stack does:
    license, public repo) and refreshed when older than 7 days, best effort (`npm run semgrep:update` forces it).
    The scan reads only the cache, so steps 1-5 work offline; Snyk (step 6) needs the network.
 6. **Snyk** `snyk test --all-projects --severity-threshold=high` (npm + the prebuilt `android/` Gradle
-   projects; Gradle scope per SE-001; npm dev-tooling ignores per SE-003), then `snyk code test
+   projects, our modules included as `android/` subprojects; `modules/` is excluded from standalone discovery
+   because a module's `build.gradle` has no wrapper and cannot run alone; Gradle scope per SE-001; npm
+   dev-tooling ignores per SE-003), then `snyk code test
    --severity-threshold=high`. If the Gradle part fails, run `cd android && ./gradlew assembleDebug` once and
    retry.
 
@@ -384,7 +403,7 @@ behaviors they cover (e.g. Food details timing) are re-tested in Jest when each 
 | D-7 | Generated `android/` (CNG) | Yes: no hand edits; everything through `app.config.ts`, config plugins and modules. Keeps Expo SDK upgrades tractable. |
 | D-8 | Device test tool | Maestro (YAML flows over adb, works with any RN build); Detox is heavier and needs instrumented builds. Jason installs the Maestro CLI. |
 | D-9 | GitHub Pages for the HA `client_id` | Unchanged: Jason enables Pages when HA work starts. |
-| R-1 | NativeWind 4.2 / Reusables vs RN 0.88 and the New Architecture | Spike in T-004/T-005 before porting screens; fallback: `StyleSheet` with the same tokens inside the kit components (screens unaffected). |
+| R-1 | NativeWind 4.2 / Reusables vs RN 0.88 and the New Architecture | Closed in T-004 (2026-11-12): NativeWind 4.2.7 (react-native-css-interop 0.2.7, Tailwind 3.4.19) and Reusables (`@rn-primitives/slot` 1.5.2) run on RN 0.88.1 with Fabric on the phone; spike at 115/130% in `docs/fidelity/t004-spike-vs-05.png`. Caveat: the Reusables CLI output needs rewriting onto the tokens (section 8). Fallback, if a later component fails: `StyleSheet` with the same tokens inside that kit component. |
 | R-2 | Import from 0.2.0 fails on a friend's phone | Partial import + fresh-start notice; originals kept as `*.imported` until 0.4.0; emulator upgrade test with the real 0.2.0 APK before release. |
 | R-3 | Alarm regressions in the port | Port the Kotlin nearly verbatim; JUnit tests first; full device alarm test (Doze, locked reboot) before 0.3.0; Saturday cook (T-037). |
 | R-4 | Visual drift from the mockups in a new toolkit | Fidelity screenshots per tab at 115/130% against `docs/mockups/*.png`; Jason approves each tab. |

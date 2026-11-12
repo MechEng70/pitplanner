@@ -1,18 +1,19 @@
-// Bottom tabs: Plan, Cook, Gear. Placeholder look; the kit tab bar from the mockups comes in T-005.
+// Bottom tabs: Plan, Cook, Gear. Colors and font from the tokens; the mockup tab bar (icons, active pill)
+// comes with the kit in T-005.
 import { Tabs } from 'expo-router';
-
-const BG = '#131211';
-const NAV = '#1b1917';
+import { textStyle } from '@/components/ui/text';
+import { colors } from '@/theme/tokens';
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        sceneStyle: { backgroundColor: BG },
-        tabBarStyle: { backgroundColor: NAV, borderTopColor: NAV },
-        tabBarActiveTintColor: '#ffb07f',
-        tabBarInactiveTintColor: '#b5aba2',
+        sceneStyle: { backgroundColor: colors.bg },
+        tabBarStyle: { backgroundColor: colors.nav, borderTopColor: colors.nav },
+        tabBarActiveTintColor: colors.text,
+        tabBarInactiveTintColor: colors.text2,
+        tabBarLabelStyle: textStyle('label', '500'),
       }}
     >
       <Tabs.Screen name="plan" options={{ title: 'Plan' }} />

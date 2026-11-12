@@ -136,7 +136,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - Warm `npm run check`: 1 to 2.5 minutes, mostly Snyk's cloud scan (under the 4 minute target).
 
 ### T-004 Theme: tokens, NativeWind, Reusables, Roboto (spike)
-- **Status:** todo
+- **Status:** done (see `git log --grep T-004`); R-1 closed.
 - **Goal:** the mockup look in React Native, and proof that NativeWind and React Native Reusables work on RN
   0.88 with the New Architecture (R-1).
 - **Files:** `src/theme/tokens.ts`, `tailwind.config.js`, `global.css`, `nativewind-env.d.ts`,
@@ -150,6 +150,27 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   RN 0.88, record the fallback (StyleSheet with the same tokens) in TECH-DESIGN and continue.
 - **Tests:** Jest: tokens equal the `ui.css` values; text variants use the right font.
 - **Device testing (Jason):** glance at the spike screenshot.
+- **Notes (done 2026-11-12):**
+  - Tokens: `src/theme/tokens.ts` (colors, type scale with line heights incl. countdown/nextTitle, radii, font).
+    `tailwind.config.js` builds the theme from it and replaces Tailwind's palette; Reusables' shadcn names are
+    aliases (our ember is `ember`/`primary`). `app.config.ts` and `src/theme/navTheme.ts` read it too.
+  - Type is a style from the tokens in `Text` (Jest can assert it; follows font scale), color is a class.
+    `Button` has the four 0.2.0 kinds with their label type via `TextContext`.
+  - Roboto 400/500/700 registered natively by the `expo-font` plugin (one Android family); no runtime load.
+  - Reusables CLI 0.7.1 with `cssVariables: false` writes `oklch()` literals and skips `cn`/deps: `text` and
+    `button` were rewritten by hand; T-005 does the same per component.
+  - Config: `babel.config.cjs` and `metro.config.cjs` (CommonJS because of `"type": "module"`), `@/` alias in
+    tsconfig and Jest, Jest transforms `@rn-primitives`/NativeWind, `cn()` on tailwind-merge 2.
+  - Spike `app/dev/spike.tsx` (dev builds only): `docs/fidelity/t004-spike-vs-05.png` (mockup 05, 115%, 130%).
+    Changing the font scale while the app runs recreates the activity and the dev build logs "configured
+    linking in multiple places" once; a fresh launch at 130% is clean. T-006 should relaunch after each scale.
+  - Gate fixes found on the way: `prebuild-if-stale.sh` treated Gradle output in `modules/` (and folder times)
+    as source changes and prebuilt on every run (regression test `tools/prebuild.test.mjs`, failing first);
+    Snyk tried `modules/pit-alarms/android/build.gradle` as a standalone project and skipped it (`modules`
+    now excluded from discovery; the module is scanned as an `android/` subproject, 22 projects, none skipped).
+  - Tests: tokens equal `ui.css` (colors, type, line heights, radii), Tailwind exposes exactly the token colors,
+    text variants and button labels use Roboto at the token size/weight, no font-scale cap, `cn`, `withAlpha`.
+
 
 ### T-005 Kit components
 - **Status:** todo
@@ -580,7 +601,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ### T-039 Remove `legacy/`
 - **Status:** todo
 - **Goal:** delete the Capacitor reference code once 0.3.0 has been out a week with no rollback.
-- **Files:** `legacy/**`, `.semgrepignore`, `.snyk`, `.prettierignore`, docs that mention it.
+- **Files:** `legacy/**`, `.semgrepignore`, `.snyk`, `.prettierignore`, docs that mention it,
+  `src/theme/tokens.test.ts` (it reads `legacy/src/ui/ui.css`: freeze the expected values in the test first).
 - **Depends on:** T-038 plus one week.
 - **Acceptance:** check passes; tag `v0.2.0` still has the old app.
 - **Tests:** existing.

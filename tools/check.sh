@@ -25,7 +25,9 @@ snyk_scan() {
   command -v snyk >/dev/null || { echo "snyk not found (npm i -g snyk, then snyk auth)"; return 1; }
   # Gradle: only what ships in the APK (releaseRuntimeClasspath). Build-machine tooling findings
   # (AGP test runner) are tracked in docs/design/SECURITY-EXCEPTIONS.md, SE-001.
-  snyk test --all-projects --severity-threshold=high --exclude=reference,release,legacy,docs \
+  # modules/: our Expo modules' build.gradle files are not standalone Gradle projects (no wrapper); their
+  # dependencies are scanned as subprojects of the generated android/ (for example "Pit Planner dev/pit-alarms").
+  snyk test --all-projects --severity-threshold=high --exclude=reference,release,legacy,docs,modules \
     --configuration-matching='^releaseRuntimeClasspath$' \
     && snyk code test --severity-threshold=high
 }
