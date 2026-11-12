@@ -17,14 +17,18 @@ const record: CookRecord = { id: 'r', date: 0, notes: 'windy', pitTempF: 225, la
   { name: 'Chicken breasts', plannedMin: 20, actualMin: 20, log: log('breasts', 'griddle', 4, 20, { discarded: true }) },
 ] };
 
-test('history: one rate row per by-weight food per cooker, cooks until size-adjusted', () => {
-  const rows = rateRows(rules, [brisket, log('breasts', 'griddle', 4, 20)], {});
-  assert.equal(rows.length, 1);
-  assert.equal(rows[0].foodName, 'Brisket');
-  assert.equal(rows[0].cooks, 1);
-  assert.equal(rows[0].untilSize, rules.learning.unlockAfterCooks - 1);
-  assert.ok(rows[0].hrPerLb > 0);
-  assert.equal(rateRows(rules, [{ ...brisket, discarded: true }], {}).length, 0);
+test('history: rate rows list every by-weight food with the rate used and its source', () => {
+  const rows = rateRows(rules, [brisket, log('breasts', 'griddle', 4, 20)], 'pb', {}, { stlribs: 5 });
+  assert.deepEqual(rows.map(r => r.foodId), ['brisket', 'tritip', 'stlribs', 'butt']);
+  const b = rows[0];
+  assert.equal(b.source, 'learned');
+  assert.equal(b.cooks, 1);
+  assert.equal(rows[1].source, 'default');
+  assert.equal(rows[2].hrPerLb, null);
+  assert.equal(rows[2].totalHours, 5);
+  const saved = rateRows(rules, [brisket], 'pb', { brisket: 0.75 }, { brisket: 9 })[0];
+  assert.deepEqual([saved.hrPerLb, saved.source, saved.totalHours], [0.75, 'override', 9]);
+  assert.equal(rateRows(rules, [{ ...brisket, discarded: true }], 'pb', {}, {})[0].source, 'default');
 });
 
 test('history: cook card lines', () => {

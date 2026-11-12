@@ -52,14 +52,13 @@ export function FinishScreen({ cook, onClose }: { cook: ActiveCook; onClose: () 
 }
 
 function RateCard({ r, units }: { r: RateChange; units: Units }) {
-  const unlock = r.cooksLogged >= r.unlockAfter
-    ? 'Size-adjusted timing is now available.'
-    : `${r.cooksLogged} of ${r.unlockAfter} cooks toward size-adjusted timing.`;
   return (
     <Card tone="result" pad="m">
       <Stack gap={4}>
         <Text v="bodyL" weight={500}>Your {r.foodName.toLowerCase()} rate updates</Text>
-        <Text v="bodyM">{fmtRate(r.before, units).split(' ')[0]} to {fmtRate(r.after, units)} at {fmtTemp(225, units)}. {unlock}</Text>
+        <Text v="bodyM">{r.kind === 'waiting'
+          ? `Plans keep your ${fmtRate(r.after, units)}. ${r.cooksLogged} of ${r.learnAfter} logged cooks before it adjusts. Lock it in Gear, Cook rates.`
+          : `${fmtRate(r.before, units).split(' ')[0]} to ${fmtRate(r.after, units)} at ${fmtTemp(225, units)}, from ${r.cooksLogged} ${r.cooksLogged === 1 ? 'cook' : 'cooks'}.`}</Text>
       </Stack>
     </Card>
   );

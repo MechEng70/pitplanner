@@ -1,5 +1,5 @@
 // Export the plan as a .pitplan file (SPEC section 9). No personal data, no history.
-// Opening a received file (intent filter + Shared screen) is a later step.
+// Opening one: src/lib/sharedPlan.ts and the Open shared plan sheet.
 
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
@@ -9,7 +9,9 @@ import type { ItemInput } from '../../engine/types.ts';
 export interface PitPlanFile { app: 'pit-planner'; version: 1; serveAt: string; pitTempF: number; items: ItemInput[] }
 
 export function toPitPlan(serveAt: number, pitTempF: number, items: ItemInput[]): PitPlanFile {
-  return { app: 'pit-planner', version: 1, serveAt: new Date(serveAt).toISOString(), pitTempF, items };
+  // The sender's own rates and total hours stay on their phone; the receiver plans with theirs.
+  const shared = items.map(({ hrPerLb, totalHours, totalHoursAtF, timingModel, ...it }) => it);
+  return { app: 'pit-planner', version: 1, serveAt: new Date(serveAt).toISOString(), pitTempF, items: shared };
 }
 
 export async function sharePlan(file: PitPlanFile): Promise<void> {

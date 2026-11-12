@@ -25,7 +25,7 @@ export interface OvenProfile { id: string; lowestTempF: number; holdIn: 'oven' |
 
 export interface Cookers { smoker?: SmokerProfile; griddle?: GriddleProfile; oven?: OvenProfile; }
 
-export type TimingModel = 'perPound' | 'sizeAdjusted';
+export type TimingModel = 'perPound' | 'sizeAdjusted' | 'totalHours';
 
 export interface ItemInput {
   id: string;
@@ -34,8 +34,14 @@ export interface ItemInput {
   quantity: number;                       // lb or count, per the food's quantity.kind
   options?: Record<string, string>;
   restMin?: number;
-  timingModel?: TimingModel;              // default perPound; sizeAdjusted only once unlocked
+  timingModel?: TimingModel;              // default perPound (weight-based foods) or the rules timing
+  hrPerLb?: number;                       // this cook's hr/lb at 225F; beats the saved and learned rate
+  totalHours?: number;                    // timingModel totalHours: time on heat used as-is (no temp or wrap scaling)
+  totalHoursAtF?: number;                 // pit temp when totalHours was set, to flag a later temp change
 }
+
+/** item: this cook only. override: saved, used as-is. blended: saved rate adjusted by logged cooks. learned: published default adjusted by logged cooks. */
+export type RateSource = 'default' | 'override' | 'blended' | 'learned' | 'item';
 
 export interface CookLog {
   foodId: string;
@@ -56,6 +62,7 @@ export interface PlanInput {
   items: ItemInput[];
   clearPitBeforeHighHeat?: boolean;       // default true
   rateOverrides?: Record<string, number>; // foodId -> hr/lb at 225F set by the user
+  rateLocks?: Record<string, boolean>;    // foodId -> true: the saved rate never blends with logged cooks
   history?: CookLog[];
 }
 
@@ -88,7 +95,7 @@ export interface PlannedItem {
   pullCheckStep: boolean;
   footprintSqIn: number;
   prep: { leadMin: number; label: string }[];
-  rateInfo?: { hrPerLbAt225: number; source: 'default' | 'override' | 'learned'; cooksLogged: number; model: TimingModel; rangeHours?: [number, number] };
+  rateInfo?: { hrPerLbAt225: number; source: RateSource; cooksLogged: number; model: TimingModel; rangeHours?: [number, number] };
 }
 
 export type EventKind = 'prep' | 'fire' | 'setPit' | 'phase' | 'phaseEnd' | 'pull' | 'slice' | 'pitOff' | 'griddleOn' | 'ovenOn' | 'refill' | 'serve';

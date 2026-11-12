@@ -8,9 +8,9 @@
     "trustedRangeF": [200, 300]
   },
   "learning": {
-    "$comment": "Learned rate = (priorWeight * default + sum of observed rates normalized to 225F) / (priorWeight + n). Size-adjusted timing unlocks after unlockAfterCooks logged cooks of that food on that cooker.",
+    "$comment": "Learned rate = (priorWeight * default + sum of observed rates normalized to 225F) / (priorWeight + n). Size-adjusted timing (time ~ weight^sizeExponent, anchored to the hr/lb rate at the food's reference weight) is open from the first cook; learning refines it. A saved rate is used as-is until savedRateLearnsAfter logged cooks, then it becomes the prior the cooks blend with, unless the user locks it. rateHint: soft warning when a user rate is outside this range (hr/lb at 225F).",
     "priorWeight": 3,
-    "unlockAfterCooks": 3,
+    "savedRateLearnsAfter": 3, "rateHint": [0.5, 1.6], "rateLimits": [0.3, 2.5],
     "sizeExponent": 0.67
   },
   "foods": [
@@ -70,7 +70,7 @@
           "label": "Smoked brisket-style (200F)",
           "short": "brisket-style",
           "cooker": "smoker",
-          "timing": { "kind": "perWeightMinutes", "minPerLbAt225": 100, "minMinutes": 210 },
+          "timing": { "kind": "perWeight", "hrPerLbAt225": 1.67, "minHours": 3.5 },
           "phases": [
             { "id": "smoke", "fraction": 0.55, "temp": "pit", "label": "Tri-tip on the smoker, unwrapped.", "short": "Smoke" },
             { "id": "wrap", "fraction": 0.45, "temp": "pit", "label": "Check the tri-tip: wrap at about 160-165F.", "short": "Wrapped", "checkStep": true }

@@ -2,9 +2,12 @@ import { useMemo, useState } from 'preact/hooks';
 import { buildPlan, onHeatSpan } from '../../../engine/plan.ts';
 import { lbToKg, kgToLb } from '../../../engine/units.ts';
 import type { CookerKind, ItemInput, PlanInput, TimingModel } from '../../../engine/types.ts';
-import { Button, Chips, Field, InfoBox, KeepVisible, Num, ResultCard, Segmented, Sheet, Stepper, Text, useSheet } from '../../ui/components.tsx';
+import { Button, CheckRow, Chips, Field, InfoBox, KeepVisible, Num, ResultCard, Sheet, Stepper, Text, useSheet } from '../../ui/components.tsx';
 import { rules, food, method, cookerKinds, cookerName, hasCooker, defaultOptions } from '../../lib/rules.ts';
 import { fmtDuration, fmtRate, fmtTempRange, fmtTime, type Units } from '../../lib/format.ts';
+import { useStore } from '../../lib/store.tsx';
+import { sourceText } from '../../lib/historyView.ts';
+import { HOURS_MAX, HOURS_MIN, hoursText, rateText, rateUnusual, roundHours, stepHours, stepRate } from '../../lib/timing.ts';
 
 const REST_STEP = 5;
 const REST_MAX = 240;
@@ -17,14 +20,30 @@ interface Props {
 
 /** Food details (mockups 08-10): quantity, cooker, method, options, rest, timing model, live result. */
 export function FoodEdit(props: Props) {
+  const { state, setRate, setTotalHours, setFlags } = useStore();
   const [it, setIt] = useState<ItemInput>(props.initial);
+  const [remember, setRemember] = useState(false);
+  // Shown once ever, the first time a by-weight food is added on the published rate.
+  const [showHint] = useState(props.isNew && !state.flags.rateHintShown);
   const preview = usePreview(it, props.base, props.isNew);
   const m = method(it.foodId, it.methodId);
   const blocked = !hasCooker(props.base.cookers, m.cooker) || !!preview.error;
+  const hint = showHint && preview.item?.rateInfo?.source === 'default' && it.timingModel !== 'totalHours';
+  const save = () => {
+    let out = it;
+    if (remember && it.timingModel === 'totalHours' && it.totalHours) setTotalHours(it.foodId, it.totalHours);
+    else if (remember && preview.item?.rateInfo && (it.timingModel ?? 'perPound') === 'perPound') {
+      setRate(it.foodId, preview.item.rateInfo.hrPerLbAt225);
+      out = { ...it, hrPerLb: undefined }; // the saved rate now covers it
+    }
+    // Seen once is enough, even if the user then set a rate and the hint went away.
+    if (showHint && preview.item?.rateInfo) setFlags({ ...state.flags, rateHintShown: true });
+    props.onSave(out);
+  };
   return (
     <Sheet title={food(it.foodId).name} onClose={props.onClose}
-      footer={<Footer isNew={props.isNew} blocked={blocked} onSave={() => props.onSave(it)} onRemove={props.onRemove} />}>
-      <Body {...props} it={it} setIt={setIt} preview={preview} />
+      footer={<Footer isNew={props.isNew} blocked={blocked} onSave={save} onRemove={props.onRemove} />}>
+      <Body {...props} it={it} setIt={setIt} preview={preview} remember={remember} setRemember={setRemember} hint={hint} />
     </Sheet>
   );
 }
@@ -50,7 +69,10 @@ function usePreview(it: ItemInput, base: PlanInput, isNew: boolean) {
   }, [it, base, isNew]);
 }
 
-function Body({ base, units, it, setIt, preview }: Props & { it: ItemInput; setIt: (i: ItemInput) => void; preview: ReturnType<typeof usePreview> }) {
+function Body({ base, units, it, setIt, preview, remember, setRemember, hint }: Props & {
+  it: ItemInput; setIt: (i: ItemInput) => void; preview: ReturnType<typeof usePreview>;
+  remember: boolean; setRemember: (v: boolean) => void; hint: boolean;
+}) {
   const f = food(it.foodId);
   const m = method(it.foodId, it.methodId);
   const q = f.quantity;
@@ -83,8 +105,6 @@ function Body({ base, units, it, setIt, preview }: Props & { it: ItemInput; setI
 
   const rest = it.restMin ?? m.restMin.default;
   const info = preview.item?.rateInfo;
-  const unlockAfter: number = rules.learning.unlockAfterCooks;
-  const sizeUnlocked = !!info && (base.history ?? []).filter(h => !h.discarded && h.foodId === f.id && h.smokerId === (cookers.smoker?.id ?? 'none')).length >= unlockAfter;
 
   const span = preview.item && onHeatSpan(preview.item);
   const cookerMissing = !hasCooker(cookers, m.cooker);
@@ -133,18 +153,14 @@ function Body({ base, units, it, setIt, preview }: Props & { it: ItemInput; setI
           onInc={() => setIt({ ...it, restMin: Math.min(REST_MAX, rest + REST_STEP) })} />
       </Field>
 
-      {m.timing.kind === 'perWeight' && info && (
-        <Field label="Timing" note={<><Num>{fmtRate(info.hrPerLbAt225, units)}</Num> {info.source === 'learned' ? 'from your cooks' : info.source === 'override' ? '(your setting)' : '(default)'}.{sizeUnlocked ? '' : ` Size-adjusted unlocks after ${unlockAfter} ${f.name.toLowerCase()} cooks in your history.`}</>}>
-          <Segmented label="Timing model" value={it.timingModel ?? 'perPound'} onChange={v => setIt({ ...it, timingModel: v as TimingModel })}
-            options={[{ id: 'perPound', label: 'Hours per pound' }, { id: 'sizeAdjusted', label: 'Size-adjusted', disabled: !sizeUnlocked }]} />
-        </Field>
-      )}
+      {span && <Timing f={f} it={it} setIt={setIt} info={info} spanMin={span.minutes} base={base} units={units}
+        remember={remember} setRemember={setRemember} hint={hint} />}
 
       {plan && span && (
         <KeepVisible deps={[it]}><ResultCard overline={<>For serve at <Num>{fmtTime(plan.serveAt)}</Num></>}
           title={<>On <Num>{fmtTime(span.start)}</Num>, off <Num>{fmtTime(preview.item!.finish)}</Num></>}>
           <Text v="label" tone="soft">
-            <Num>{fmtDuration(span.minutes)}</Num> on heat.
+            <Num>{fmtDuration(span.minutes)}</Num> on heat{methodText(it, info, units)}.
             {fire && <> Fire the {fire.what} at <Num>{fmtTime(fire.at)}</Num>.</>}
           </Text>
           {itemWarnings.map(w => <Text key={w.code} v="caption" tone={w.level === 'warn' ? 'warn' : 'secondary'}>{w.message}</Text>)}
@@ -154,4 +170,78 @@ function Body({ base, units, it, setIt, preview }: Props & { it: ItemInput; setI
       {cookerMissing && <Text v="label" tone="warn">Add a {m.cooker} in Gear to cook this.</Text>}
     </>
   );
+}
+
+type RateInfo = NonNullable<ReturnType<typeof usePreview>['item']>['rateInfo'];
+
+/** Result card tail: ", your rate 0.75 hr/lb" */
+function methodText(it: ItemInput, info: RateInfo, units: Units) {
+  if (it.timingModel === 'totalHours') return ', your total hours';
+  if (!info) return '';
+  const rate = <Num>{fmtRate(info.hrPerLbAt225, units)}</Num>;
+  if (info.model === 'sizeAdjusted') return <>, size-adjusted from {rate}</>;
+  const who = info.source === 'item' || info.source === 'override' ? 'your rate' : info.source === 'blended' ? 'your rate, adjusted' : info.source === 'learned' ? 'learned rate' : 'published rate';
+  return <>, {who} {rate}</>;
+}
+
+/** Timing: hours per pound, total hours or size-adjusted (by-weight foods); standard or total hours (others). */
+function Timing({ f, it, setIt, info, spanMin, base, units, remember, setRemember, hint }: {
+  f: ReturnType<typeof food>; it: ItemInput; setIt: (i: ItemInput) => void; info: RateInfo; spanMin: number;
+  base: PlanInput; units: Units; remember: boolean; setRemember: (v: boolean) => void; hint: boolean;
+}) {
+  const { state } = useStore();
+  const byWeight = !!info;
+  const model: TimingModel | 'standard' = it.timingModel === 'totalHours' ? 'totalHours'
+    : byWeight ? it.timingModel ?? 'perPound' : 'standard';
+  const limits: [number, number] = rules.learning.rateLimits;
+  const usual: [number, number] = rules.learning.rateHint;
+  const m = method(it.foodId, it.methodId);
+  const where = cookerName(base.cookers, m.cooker);
+
+  const pick = (v: string) => {
+    if (v === model) return;
+    if (v === 'totalHours') {
+      const hours = it.totalHours ?? state.totalHours[it.foodId] ?? roundHours(spanMin);
+      setIt({ ...it, timingModel: 'totalHours', totalHours: hours, totalHoursAtF: base.pitTempF });
+    } else setIt({ ...it, timingModel: v === 'standard' ? undefined : v as TimingModel });
+    setRemember(false);
+  };
+  const options = byWeight
+    ? [{ id: 'perPound', label: 'Hours per pound' }, { id: 'totalHours', label: 'Total hours' }, { id: 'sizeAdjusted', label: 'Size-adjusted' }]
+    : [{ id: 'standard', label: 'Standard' }, { id: 'totalHours', label: 'Total hours' }];
+  const hours = it.totalHours ?? roundHours(spanMin);
+  const setHours = (h: number) => setIt({ ...it, totalHours: h, totalHoursAtF: base.pitTempF });
+
+  return (
+    <Field label="Timing">
+      <Chips label="Timing" value={model} onChange={pick} options={options} />
+      {model === 'perPound' && info && <>
+        <Stepper label="Hours per pound" value={rateText(info.hrPerLbAt225, units)} unit={`hr/${units.weight}`}
+          decDisabled={info.hrPerLbAt225 <= limits[0] + 1e-9} incDisabled={info.hrPerLbAt225 >= limits[1] - 1e-9}
+          onDec={() => setIt({ ...it, hrPerLb: stepRate(info.hrPerLbAt225, -1, units, limits) })}
+          onInc={() => setIt({ ...it, hrPerLb: stepRate(info.hrPerLbAt225, 1, units, limits) })} />
+        <Text v="caption" tone="secondary">At 225F: {sourceText(info.source, info.cooksLogged)}.</Text>
+        {rateUnusual(info.hrPerLbAt225, usual) && <Text v="caption" tone="warn">Unusual rate. Most cooks land between {rateText(usual[0], units)} and {rateText(usual[1], units)} hr/{units.weight}.</Text>}
+      </>}
+      {model === 'totalHours' && <>
+        <Stepper label="Total hours" value={hoursText(hours)} unit="hr on heat"
+          decDisabled={hours <= HOURS_MIN} incDisabled={hours >= HOURS_MAX}
+          onDec={() => setHours(stepHours(hours, -1))} onInc={() => setHours(stepHours(hours, 1))} />
+        <Text v="caption" tone="secondary">Used as-is. Smoker temp and wrap do not change it.</Text>
+      </>}
+      {model === 'sizeAdjusted' && info && (
+        <Text v="caption" tone="secondary">Estimate. Gets better after a few logged cooks. Based on <Num>{fmtRate(info.hrPerLbAt225, units)}</Num> at {refText(f, units)}.</Text>
+      )}
+      {(model === 'perPound' || model === 'totalHours') && (
+        <CheckRow title={`Use for future ${f.name.toLowerCase()} on ${where}`} checked={remember} onChange={setRemember}
+          subtitle={remember ? 'Saved when you tap Save. Change it in Gear, Cook rates.' : 'Only this cook.'} />
+      )}
+      {hint && <InfoBox>Published estimate. Most pellet smokers run faster. Set your own rate or total hours.</InfoBox>}
+    </Field>
+  );
+}
+
+function refText(f: ReturnType<typeof food>, units: Units) {
+  const w: number = (f.quantity as any).referenceWeight ?? f.quantity.default;
+  return units.weight === 'kg' ? `${+lbToKg(w).toFixed(1)} kg` : `${w} lb`;
 }

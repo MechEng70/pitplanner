@@ -1,4 +1,4 @@
-# Handoff (2026-11-11, third session)
+# Handoff (2026-11-12, fourth session)
 
 Read SPEC.md and CLAUDE.md first. This note is what a fresh session needs on top of them.
 
@@ -71,8 +71,25 @@ release-signed debuggable APK, used once to move Jason's data off the debug inst
 `io.github.mecheng70.pitplanner.debug`, label "Pit Planner dev", own data. `tools/device/` (attach.sh,
 pending.sh, deploy.sh) only touches the dev copy. Never uninstall the release without backing up first.
 
-Next: Open shared plan (11) + `.pitplan` intent filter, update
-check (GitHub Releases, MechEng70/pitplanner).
+## Cook timing (HA-INTEGRATION.md "Do first"): done
+
+Food details Timing: Hours per pound (stepper, 0.05 steps, source shown) / Total hours (any food, used as-is,
+`TOTAL_HOURS_FIXED` info when the temp changes) / Size-adjusted (no lock; anchored at the reference weight).
+"Use for future [food] on [cooker]" saves `rates` or `totalHours`. Rate rule (Jason): a saved rate is exact
+until 3 logged cooks, then blends with them unless locked (`rateLocks`, "Keep my rate exactly" in Gear >
+Cook rates). Brisket-style tri-tip is perWeight (1.67 hr/lb, 3.5 hr floor). `npm run device -- --only timing`.
+
+## Open shared plan (11): done
+
+`.pitplan` VIEW/SEND intent filters, `share/SharedPlanPlugin.kt` reads the content URI (256 KB cap),
+`src/platform/sharedPlan.ts`, pure `src/lib/sharedPlan.ts` (tests `engine/share.test.ts`), `SharedPlanSheet`.
+Export drops the sender's rate and total hours. Tested via a file:// VIEW intent (`--only shared`); Gmail/Drive not yet.
+
+Also: Cook tab with food on the plan and no cook = Start cook. Next up title includes the countdown
+("Fire the smoker to 225F in 45 hr 50 min"). Lane chart runs from the first step's hour to serve.
+`deploy.sh` now stops on a failed build (it used to install the old APK).
+
+Next: HA Phase 0 (read-only entity list to docs/ha-entities.md), then Phase 1.
 
 ## Decisions from Jason
 

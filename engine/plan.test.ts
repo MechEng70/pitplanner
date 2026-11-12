@@ -125,15 +125,67 @@ test('overnight cook across the DST change keeps exact durations', () => {
   assert.equal(Math.round(onHeat), 0.75 * 16 * 60);
 });
 
-test('learned rate blends with the default and size-adjusted needs 3 cooks', () => {
+test('learned rate blends with the default when no rate is saved', () => {
   const log = (min: number) => ({ foodId: 'brisket', methodId: 'smoked', smokerId: 'pb820', quantity: 12, pitTempF: 225, minutesOnHeat: min, options: { wrap: 'paper' } });
-  const base = saturday({ rateOverrides: {}, items: [{ id: 'b', foodId: 'brisket', methodId: 'smoked', quantity: 12, timingModel: 'sizeAdjusted' }] });
-  const two = buildPlan(rules, { ...base, history: [log(540), log(540)] });
-  assert.equal(two.items[0].rateInfo!.model, 'perPound');
+  const p = buildPlan(rules, saturday({ rateOverrides: {}, history: [log(540), log(540)], items: [{ id: 'b', foodId: 'brisket', methodId: 'smoked', quantity: 12 }] }));
   const expected = (3 * 1.25 + 0.75 + 0.75) / 5;
-  assert.ok(Math.abs(two.items[0].rateInfo!.hrPerLbAt225 - expected) < 1e-9);
-  const three = buildPlan(rules, { ...base, history: [log(540), log(540), log(540)] });
-  assert.equal(three.items[0].rateInfo!.model, 'sizeAdjusted');
+  assert.ok(Math.abs(p.items[0].rateInfo!.hrPerLbAt225 - expected) < 1e-9);
+  assert.equal(p.items[0].rateInfo!.source, 'learned');
+});
+
+const brisketOnly = (it: Partial<import('./types.ts').ItemInput>, over: Partial<PlanInput> = {}) =>
+  saturday({ items: [{ id: 'b', foodId: 'brisket', methodId: 'smoked', quantity: 12, options: { wrap: 'paper' }, restMin: 60, ...it }], ...over });
+const heatMin = (p: any) => p.items[0].phases.reduce((a: number, x: any) => a + x.minutes, 0);
+
+test('a 12 lb brisket at 0.75 hr/lb plans 9 hr: on 6:40 AM, fire 6:20 AM for a 5:00 PM serve', () => {
+  const p = buildPlan(rules, brisketOnly({}));
+  assert.equal(Math.round(heatMin(p)), 9 * 60);
+  assert.equal(p.items[0].phases[0].start, local(6, 40));
+  assert.equal(p.fireAt, local(6, 20));
+});
+
+test('total hours are used exactly and ignore pit temp and wrap', () => {
+  for (const pitTempF of [225, 275]) for (const wrap of ['paper', 'none']) {
+    const p = buildPlan(rules, brisketOnly({ timingModel: 'totalHours', totalHours: 9, totalHoursAtF: 225, options: { wrap } }, { pitTempF }));
+    assert.ok(Math.abs(heatMin(p) - 540) < 1e-9, `${pitTempF} ${wrap}`);
+    assert.equal(p.items[0].rateInfo!.model, 'totalHours');
+    assert.equal(p.warnings.some(w => w.code === 'TOTAL_HOURS_FIXED'), pitTempF !== 225);
+  }
+  // Any food: ribs keep their phase shares (3-2-1) inside the total.
+  const r = buildPlan(rules, saturday({ items: [{ id: 'r', foodId: 'stlribs', methodId: '321', quantity: 2, timingModel: 'totalHours', totalHours: 5 }] }));
+  assert.deepEqual(r.items[0].phases.map(x => Math.round(x.minutes)), [150, 100, 50]);
+});
+
+test('a per-item rate beats the saved rate', () => {
+  const p = buildPlan(rules, brisketOnly({ hrPerLb: 0.6 }));
+  assert.equal(p.items[0].rateInfo!.hrPerLbAt225, 0.6);
+  assert.equal(p.items[0].rateInfo!.source, 'item');
+  assert.equal(Math.round(heatMin(p)), Math.round(0.6 * 12 * 60));
+});
+
+test('a saved rate is used as-is until 3 logged cooks, then blends with them unless locked', () => {
+  const log = { foodId: 'brisket', methodId: 'smoked', smokerId: 'pb820', quantity: 12, pitTempF: 225, minutesOnHeat: 12 * 60, options: { wrap: 'paper' } };
+  const two = buildPlan(rules, brisketOnly({}, { history: [log, log] })).items[0].rateInfo!;
+  assert.deepEqual([two.hrPerLbAt225, two.source], [0.75, 'override']);
+  const three = buildPlan(rules, brisketOnly({}, { history: [log, log, log] })).items[0].rateInfo!;
+  assert.equal(three.source, 'blended');
+  assert.ok(Math.abs(three.hrPerLbAt225 - (3 * 0.75 + 3 * 1) / 6) < 1e-9);
+  const locked = buildPlan(rules, brisketOnly({}, { history: [log, log, log], rateLocks: { brisket: true } })).items[0].rateInfo!;
+  assert.deepEqual([locked.hrPerLbAt225, locked.source], [0.75, 'override']);
+});
+
+test('size-adjusted works with no history and matches hr/lb at the reference weight', () => {
+  const p = buildPlan(rules, brisketOnly({ timingModel: 'sizeAdjusted' }, { history: [] }));
+  assert.equal(p.items[0].rateInfo!.model, 'sizeAdjusted');
+  assert.ok(Math.abs(heatMin(p) - 0.75 * 12 * 60) < 1e-9);
+  const big = buildPlan(rules, brisketOnly({ timingModel: 'sizeAdjusted', quantity: 16 }, { history: [] }));
+  assert.ok(Math.abs(heatMin(big) - 0.75 * 12 * Math.pow(16 / 12, 0.67) * 60) < 1e-9);
+});
+
+test('brisket-style tri-tip is by weight with a 3.5 hr floor', () => {
+  const mk = (quantity: number) => buildPlan(rules, saturday({ rateOverrides: {}, items: [{ id: 't', foodId: 'tritip', methodId: 'brisketStyle', quantity }] }));
+  assert.ok(Math.abs(heatMin(mk(1)) - 210) < 1e-9);
+  assert.ok(Math.abs(heatMin(mk(3)) - 1.67 * 3 * 60) < 1e-9);
 });
 
 test('size-adjusted model: a 16 lb brisket takes less time per pound than a 12 lb one', () => {

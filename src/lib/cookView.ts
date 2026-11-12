@@ -71,8 +71,10 @@ function segments(it: PlannedItem, plan: Plan, u: Units) {
 }
 
 /** Chart window: from the top of the current hour to serve (an hour back if serve has passed). */
-export function laneWindow(plan: Plan, now: number): { from: number; to: number } {
-  const d = new Date(Math.min(now, plan.serveAt - HR));
+/** Chart window: the top of the hour of the first step (fire, griddle or first phase) to serve, so the whole cook shows. */
+export function laneWindow(plan: Plan, _now?: number): { from: number; to: number } {
+  const starts = [plan.fireAt, plan.griddleOnAt, ...plan.items.flatMap(it => it.phases.map(p => p.start))].filter((x): x is number => x != null);
+  const d = new Date(Math.min(plan.serveAt - HR, ...starts));
   d.setMinutes(0, 0, 0);
   return { from: d.getTime(), to: plan.serveAt };
 }

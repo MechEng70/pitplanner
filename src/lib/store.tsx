@@ -20,10 +20,12 @@ export interface AppState {
   units: Units;
   draft: Draft;
   rates: Record<string, number>;   // foodId -> hr/lb at 225F set by the user
+  totalHours: Record<string, number>; // foodId -> saved default total hours on heat
+  rateLocks: Record<string, boolean>; // foodId -> saved rate never blends with logged cooks
   history: CookLog[];              // learned-from logs, derived from records
   records: CookRecord[];           // history file
   cook: ActiveCook | null;         // running cook, written on every change (reboot restore reads it)
-  flags: { supportShown?: boolean };
+  flags: { supportShown?: boolean; rateHintShown?: boolean };
   firstRun: boolean;               // no gear saved yet: show Setup
 }
 
@@ -38,7 +40,7 @@ export function defaultServe(now: number): number {
 export function planInput(s: AppState): PlanInput {
   return {
     mode: s.draft.mode, at: s.draft.at, pitTempF: s.draft.pitTempF, cookers: s.gear,
-    items: s.draft.items, rateOverrides: s.rates, history: s.history,
+    items: s.draft.items, rateOverrides: s.rates, rateLocks: s.rateLocks, history: s.history,
   };
 }
 
@@ -52,6 +54,9 @@ interface Store {
   addRecord: (r: CookRecord) => Promise<void>;
   removeRecord: (id: string) => Promise<void>;
   setFlags: (f: AppState['flags']) => void;
+  setRate: (foodId: string, hrPerLb: number | null) => void;
+  setTotalHours: (foodId: string, hours: number | null) => void;
+  setRateLock: (foodId: string, locked: boolean) => void;
 }
 
 const Ctx = createContext<Store | null>(null);
@@ -61,9 +66,9 @@ export function StoreProvider({ now, children }: { now: number; children: Compon
 
   useEffect(() => {
     (async () => {
-      const [gear, units, draft, rates, cook, flags, records] = await Promise.all([
+      const [gear, units, draft, rates, totalHours, rateLocks, cook, flags, records] = await Promise.all([
         load<Cookers>('gear'), load<Units>('settings'), load<Draft>('draft'), load<Record<string, number>>('rates'),
-        load<unknown>('activeCook'), load<AppState['flags']>('flags'), loadHistory(),
+        load<Record<string, number>>('totalHours'), load<Record<string, boolean>>('rateLocks'), load<unknown>('activeCook'), load<AppState['flags']>('flags'), loadHistory(),
       ]);
       setState({
         gear: gear ?? {},
@@ -71,6 +76,8 @@ export function StoreProvider({ now, children }: { now: number; children: Compon
         units: units ?? { temp: 'F', weight: 'lb' },
         draft: draft ?? { mode: 'readyBy', at: defaultServe(now), pitTempF: 225, items: [] },
         rates: rates ?? {},
+        totalHours: totalHours ?? {},
+        rateLocks: rateLocks ?? {},
         history: logsOf(records),
         records,
         cook: normalize(cook),
@@ -96,6 +103,25 @@ export function StoreProvider({ now, children }: { now: number; children: Compon
     return s && { ...s, cook };
   }), []);
   const setFlags = useCallback((flags: AppState['flags']) => setState(s => { save('flags', flags); return s && { ...s, flags }; }), []);
+  const setRate = useCallback((foodId: string, v: number | null) => setState(s => {
+    if (!s) return s;
+    const rates = withValue(s.rates, foodId, v);
+    save('rates', rates);
+    return { ...s, rates };
+  }), []);
+  const setTotalHours = useCallback((foodId: string, v: number | null) => setState(s => {
+    if (!s) return s;
+    const totalHours = withValue(s.totalHours, foodId, v);
+    save('totalHours', totalHours);
+    return { ...s, totalHours };
+  }), []);
+  const setRateLock = useCallback((foodId: string, locked: boolean) => setState(s => {
+    if (!s) return s;
+    const rateLocks = { ...s.rateLocks };
+    if (locked) rateLocks[foodId] = true; else delete rateLocks[foodId];
+    save('rateLocks', rateLocks);
+    return { ...s, rateLocks };
+  }), []);
   const addRecord = useCallback(async (r: CookRecord) => {
     const records = [...(await loadHistory()), r];
     await saveHistory(records);
@@ -109,7 +135,13 @@ export function StoreProvider({ now, children }: { now: number; children: Compon
   }, []);
 
   if (!state) return null;
-  return <Ctx.Provider value={{ state, setDraft, setGear, finishSetup, setUnits, setCook, addRecord, removeRecord, setFlags }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ state, setDraft, setGear, finishSetup, setUnits, setCook, addRecord, removeRecord, setFlags, setRate, setTotalHours, setRateLock }}>{children}</Ctx.Provider>;
+}
+
+function withValue(m: Record<string, number>, k: string, v: number | null): Record<string, number> {
+  const out = { ...m };
+  if (v == null) delete out[k]; else out[k] = v;
+  return out;
 }
 
 export function useStore(): Store {

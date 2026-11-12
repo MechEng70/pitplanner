@@ -21,7 +21,8 @@ export interface FinishRow {
   log: CookLog;              // discarded when the food never came off (cook ended early)
 }
 
-export interface RateChange { foodName: string; before: number; after: number; cooksLogged: number; unlockAfter: number }
+/** learned / blended: the rate plans use moves. waiting: saved rate held until enough cooks. Locked rates get no card. */
+export interface RateChange { foodName: string; before: number; after: number; cooksLogged: number; kind: 'learned' | 'blended' | 'waiting'; learnAfter: number }
 
 export interface FinishSummary { date: number; served: string; lateMin: number | null; rows: FinishRow[]; rates: RateChange[] }
 
@@ -61,10 +62,14 @@ export function summarize(rules: Rules, c: ActiveCook, now: number): FinishSumma
   for (const r of rows) {
     const it = find(c.plan.items, r.itemId)!;
     if (!it.rateInfo || r.log.discarded) continue;
-    const model = it.rateInfo.model;
-    const before = rateFor(rules, it.input, smokerId, c.input.rateOverrides, history, model);
-    const after = rateFor(rules, it.input, smokerId, c.input.rateOverrides, [...history, r.log], model);
-    rates.push({ foodName: it.name, before: before.rate, after: after.rate, cooksLogged: after.cooksLogged, unlockAfter: rules.learning.unlockAfterCooks });
+    // The rate future plans start from (a per-cook rate is not kept); a locked saved rate does not learn.
+    if (c.input.rateLocks?.[it.input.foodId] && c.input.rateOverrides?.[it.input.foodId] != null) continue;
+    const learnFrom = { ...it.input, hrPerLb: undefined };
+    const model = it.rateInfo.model === 'sizeAdjusted' ? 'sizeAdjusted' : 'perPound';
+    const before = rateFor(rules, learnFrom, smokerId, c.input.rateOverrides, history, model, c.input.rateLocks);
+    const after = rateFor(rules, learnFrom, smokerId, c.input.rateOverrides, [...history, r.log], model, c.input.rateLocks);
+    const kind = after.source === 'override' ? 'waiting' : after.source === 'blended' ? 'blended' : 'learned';
+    rates.push({ foodName: it.name, before: before.rate, after: after.rate, cooksLogged: after.cooksLogged, kind, learnAfter: rules.learning.savedRateLearnsAfter });
   }
   return { date: servedAt ?? c.original.serveAt, served, lateMin: servedAt == null ? null : late, rows, rates };
 }

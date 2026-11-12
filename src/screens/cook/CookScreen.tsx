@@ -118,11 +118,11 @@ export function CookScreen({ onGoPlan }: { onGoPlan: () => void }) {
         <Card tone="result" pad="l">
           <Stack gap={12}>
             <Text v="overline" tone={late ? 'warn' : 'accentHi'}><Num>{overline(due, next.event.checkStep, now)}</Num></Text>
-            <Text v="nextTitle" as="h2">{text.title}</Text>
+            {/* One sentence: "Fire the smoker to 225F in 39 hr 57 min". The countdown keeps its warn color when overdue. */}
+            <Text v="nextTitle" as="h2">{text.title.replace(/\.$/, '')}{countdown(due, now).endsWith('overdue') ? ', ' : ' '}<span class={late ? 'tone-warn' : undefined}>{countdown(due, now).split(/(\d+ (?:hr|min))/).map((part, i) => i % 2 ? <Num key={i}>{part}</Num> : part)}</span></Text>
             {(text.body || next.event.checkStep) && (
               <Text v="bodyM" tone="secondary" as="p">{[text.body, next.event.checkStep && 'Not ready? Tap Adjust.'].filter(Boolean).join(' ')}</Text>
             )}
-            <Text v="countdown" tone={late ? 'warn' : undefined}>{countdown(due, now).split(/(?<=hr) /).map((part, i) => <>{i > 0 && ' '}<Num>{part}</Num></>)}</Text>
             <Row gap={12}>
               <Fill><Button block onClick={onDone}>Done</Button></Fill>
               <Button kind="outline" icon={<Timer size={20} />} onClick={() => setOpen('options')}>Adjust</Button>

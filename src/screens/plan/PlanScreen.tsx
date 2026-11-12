@@ -149,7 +149,7 @@ export function PlanScreen({ onStartCook }: { onStartCook: (plan: Plan) => void 
       )}
 
       {layer?.kind === 'pick' && (
-        <FoodPick onClose={close} onPick={fid => setLayer({ kind: 'edit', item: newItem(fid, gear, crypto.randomUUID()), isNew: true })} />
+        <FoodPick onClose={close} onPick={fid => setLayer({ kind: 'edit', item: withSavedHours(newItem(fid, gear, crypto.randomUUID()), state.totalHours, draft.pitTempF), isNew: true })} />
       )}
       {layer?.kind === 'edit' && (
         <FoodEdit initial={layer.item} isNew={layer.isNew} base={input} units={units} onClose={close}
@@ -165,6 +165,12 @@ export function PlanScreen({ onStartCook }: { onStartCook: (plan: Plan) => void 
       )}
     </Screen>
   );
+}
+
+/** A food with saved total hours starts on total hours. */
+function withSavedHours(it: ItemInput, saved: Record<string, number>, pitTempF: number): ItemInput {
+  const h = saved[it.foodId];
+  return h ? { ...it, timingModel: 'totalHours', totalHours: h, totalHoursAtF: pitTempF } : it;
 }
 
 /** Two tiles before Conflicts: first action, then fuel or smoker-off, padded with serve time. */

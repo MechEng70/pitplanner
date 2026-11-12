@@ -391,9 +391,19 @@ export function SearchField({ value, onInput, placeholder }: { value: string; on
 
 /** Outlined dropdown field (Smoker temp). */
 export function SelectField({ label, value, trailing, open, onClick, fieldRef }: {
-  label: string; value: ComponentChildren; trailing?: ComponentChildren; open?: boolean; onClick: () => void;
+  label: string; value: ComponentChildren; trailing?: ComponentChildren; open?: boolean; onClick?: () => void;
   fieldRef?: preact.Ref<HTMLButtonElement>;
 }) {
+  // Without onClick it is a read-only field: same look, not a button.
+  if (!onClick) return (
+    <div class="select">
+      <span class="stack gap-2 fill">
+        <span class="t-caption tone-secondary">{label}</span>
+        <span class="t-select">{value}</span>
+      </span>
+      {trailing}
+    </div>
+  );
   return (
     <button ref={fieldRef} class={cx('select', 'rp', open && 'select-open')} aria-haspopup="listbox" aria-expanded={!!open} onClick={onClick}>
       <span class="stack gap-2 fill">

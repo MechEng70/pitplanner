@@ -59,12 +59,12 @@ test('lanes: phases by cooker, hot phase labelled with temp, rest dashed', () =>
   assert.deepEqual(ls.map(l => l.title), ['Brisket', 'Wings', 'Breasts']);
 });
 
-test('lane window and ticks: top of the hour to serve, at most five hour ticks plus serve', () => {
-  const win = laneWindow(plan, at(10, 23));
-  assert.deepEqual(win, { from: at(10), to: SERVE });
-  assert.deepEqual(laneTicks(win.from, win.to).map(t => t.label), ['10a', '12p', '2p', '4p', '5p']);
+test('lane window and ticks: from the hour of the first step (fire 6:20 AM) to serve, at most five hour ticks plus serve', () => {
+  // Same window two days early, mid-cook and after serve: the whole cook always shows.
+  for (const now of [at(10, 23) - 2 * 24 * 60 * MIN, at(10, 23), at(18)]) assert.deepEqual(laneWindow(plan, now), { from: at(6), to: SERVE });
+  assert.deepEqual(laneTicks(at(6), SERVE).map(t => t.label), ['6a', '9a', '12p', '3p', '5p']);
+  assert.deepEqual(laneTicks(at(10), SERVE).map(t => t.label), ['10a', '12p', '2p', '4p', '5p']);
   assert.ok(laneTicks(at(0), SERVE).length <= 6);
-  assert.equal(laneWindow(plan, at(18)).from, at(16));
   assert.deepEqual(laneTicks(at(15), at(16, 30)).map(t => t.label), ['3p', '4:30p']);
   // 13 hr chart: the 1a tick an hour before a 2a serve is dropped.
   assert.deepEqual(laneTicks(at(13), at(26)).map(t => t.label), ['1p', '5p', '9p', '2a']);
@@ -108,9 +108,14 @@ test('finish: planned vs actual per food, record logs only foods that came off, 
   const w = s.rows.find(r => r.itemId === 'w')!;
   assert.equal(w.log.discarded, true);
   assert.deepEqual(w.verdict, { tone: 'secondary', text: 'Not logged' });
+  // Saved 0.75 hr/lb holds until 3 logged cooks; with no saved rate the learned rate moves.
   assert.equal(s.rates.length, 1);
-  assert.ok(s.rates[0].after < s.rates[0].before);
-  assert.equal(s.rates[0].cooksLogged, 1);
+  assert.deepEqual([s.rates[0].kind, s.rates[0].after, s.rates[0].cooksLogged], ['waiting', 0.75, 1]);
+  const free = summarize(rules, { ...ended, input: { ...input, rateOverrides: {} } }, SERVE).rates[0];
+  assert.equal(free.kind, 'learned');
+  assert.ok(free.after < free.before);
+  const locked = summarize(rules, { ...ended, input: { ...input, rateLocks: { brisket: true } } }, SERVE);
+  assert.equal(locked.rates.length, 0);
   assert.match(summarize(rules, c, at(12)).served, /^Ended at 12:00.PM, before serve\.$/);
   const rec = toRecord(s, ended, '  windy ', 'x');
   assert.equal(rec.notes, 'windy');

@@ -2,7 +2,7 @@
 // smoker temperature conflicts, pellet estimate, grate load, and the event list that
 // drives the timeline and alarms. Pure functions: no clock, no storage, no UI.
 
-import type { CookLog, ItemInput, Phase, Plan, PlanEvent, PlanInput, PlannedItem, Warning, TimingModel } from './types.ts';
+import type { CookLog, ItemInput, RateSource, Phase, Plan, PlanEvent, PlanInput, PlannedItem, Warning, TimingModel } from './types.ts';
 import { isSettable } from './temps.ts';
 
 const MIN = 60_000;
@@ -38,15 +38,22 @@ function optionValue(method: any, input: ItemInput, key: string): string | undef
   return input.options?.[key] ?? opt.default;
 }
 
-/** Learned or overridden rate in hr/lb at 225F, normalized to the reference weight for the size-adjusted model. */
-export function rateFor(rules: Rules, input: ItemInput, smokerId: string, overrides: Record<string, number> | undefined, history: CookLog[] | undefined, model: TimingModel) {
+/**
+ * Rate in hr/lb at 225F (at the reference weight for the size-adjusted model). This cook's own rate wins.
+ * A saved rate is used as-is until savedRateLearnsAfter logged cooks (or always, when locked); after that it
+ * is the prior the cooks blend with. With nothing saved, the published default blends with logged cooks.
+ */
+export function rateFor(rules: Rules, input: ItemInput, smokerId: string, overrides: Record<string, number> | undefined, history: CookLog[] | undefined, model: TimingModel, locks?: Record<string, boolean>) {
   const food = findFood(rules, input.foodId);
   const method = resolveMethod(food, input.methodId);
-  const prior = overrides?.[input.foodId] ?? method.timing.hrPerLbAt225;
-  const source: 'default' | 'override' = overrides?.[input.foodId] != null ? 'override' : 'default';
   const logs = (history ?? []).filter(h => !h.discarded && h.foodId === input.foodId && h.methodId === input.methodId && h.smokerId === smokerId);
+  if (input.hrPerLb != null) return { rate: input.hrPerLb, source: 'item' as const, cooksLogged: logs.length };
+  const saved = overrides?.[input.foodId];
+  if (saved != null && (locks?.[input.foodId] || logs.length < rules.learning.savedRateLearnsAfter))
+    return { rate: saved, source: 'override' as const, cooksLogged: logs.length };
+  const prior = saved ?? method.timing.hrPerLbAt225;
   const { priorWeight, sizeExponent } = rules.learning;
-  const wRef = food.quantity.referenceWeight ?? food.quantity.default;
+  const wRef = refWeight(food);
   const observed = logs.map(h => {
     const tf = tempFactor(rules, h.pitTempF);
     const wrapF = method.options?.wrap ? method.options.wrap.choices[h.options?.wrap ?? method.options.wrap.default].timeFactor : 1;
@@ -54,8 +61,11 @@ export function rateFor(rules: Rules, input: ItemInput, smokerId: string, overri
     return model === 'sizeAdjusted' ? hours / (wRef * Math.pow(h.quantity / wRef, sizeExponent)) : hours / h.quantity;
   });
   const rate = (priorWeight * prior + observed.reduce((a, b) => a + b, 0)) / (priorWeight + observed.length);
-  return { rate, source: logs.length ? 'learned' as const : source, cooksLogged: logs.length };
+  const source: RateSource = saved != null ? 'blended' : logs.length ? 'learned' : 'default';
+  return { rate, source, cooksLogged: logs.length };
 }
+
+const refWeight = (food: any): number => food.quantity.referenceWeight ?? food.quantity.default;
 
 function buildItem(rules: Rules, input: ItemInput, plan: PlanInput): Omit<PlannedItem, 'finish'> {
   const food = findFood(rules, input.foodId);
@@ -76,17 +86,17 @@ function buildItem(rules: Rules, input: ItemInput, plan: PlanInput): Omit<Planne
 
   let totalScaled = 0; // minutes shared out by fraction
   let rateInfo: PlannedItem['rateInfo'];
-  const unlocked = (history: CookLog[] | undefined, smokerId: string) => (history ?? []).filter(h => !h.discarded && h.foodId === input.foodId && h.smokerId === smokerId).length >= rules.learning.unlockAfterCooks;
   const smokerId = plan.cookers.smoker?.id ?? 'none';
+  const totalHours = input.timingModel === 'totalHours' && input.totalHours != null && input.totalHours > 0 ? input.totalHours : null;
 
   if (timing.kind === 'perWeight') {
-    const model: TimingModel = input.timingModel === 'sizeAdjusted' && unlocked(plan.history, smokerId) ? 'sizeAdjusted' : 'perPound';
-    const r = rateFor(rules, input, smokerId, plan.rateOverrides, plan.history, model);
-    const wRef = food.quantity.referenceWeight ?? food.quantity.default;
-    const hours = model === 'sizeAdjusted' ? r.rate * wRef * Math.pow(W / wRef, rules.learning.sizeExponent) : r.rate * W;
+    const model: TimingModel = totalHours ? 'totalHours' : input.timingModel === 'sizeAdjusted' ? 'sizeAdjusted' : 'perPound';
+    const r = rateFor(rules, input, smokerId, plan.rateOverrides, plan.history, model, plan.rateLocks);
+    const wRef = refWeight(food);
+    const hours = Math.max(timing.minHours ?? 0, model === 'sizeAdjusted' ? r.rate * wRef * Math.pow(W / wRef, rules.learning.sizeExponent) : r.rate * W);
     totalScaled = hours * 60 * tf * wrapF;
     rateInfo = { hrPerLbAt225: r.rate, source: r.source, cooksLogged: r.cooksLogged, model,
-      rangeHours: [W * timing.rangeAt225[0] * tf * wrapF, W * timing.rangeAt225[1] * tf * wrapF] };
+      rangeHours: timing.rangeAt225 && [W * timing.rangeAt225[0] * tf * wrapF, W * timing.rangeAt225[1] * tf * wrapF] };
   } else if (timing.kind === 'perWeightMinutes') {
     totalScaled = Math.max(timing.minMinutes, timing.minPerLbAt225 * W) * tf;
   }
@@ -107,6 +117,12 @@ function buildItem(rules: Rules, input: ItemInput, plan: PlanInput): Omit<Planne
       setsPit: !!p.setsPit, anchorToEnd: !!p.anchorToEnd, checkStep: !!p.checkStep,
     };
   });
+
+  // Total hours: the user's time on heat, used as-is; phases keep their normal shares of it.
+  if (totalHours) {
+    const normal = phases.reduce((a, p) => a + p.minutes, 0);
+    if (normal > 0) for (const p of phases) p.minutes = p.minutes * totalHours * 60 / normal;
+  }
 
   const prep = [...(method.prep ?? [])];
   for (const [key, opt] of Object.entries<any>(method.options ?? {})) {
@@ -226,6 +242,12 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
   for (const it of items) for (const p of it.phases) {
     if (p.cooker === 'smoker' && !smoker) warnings.push({ code: 'NO_SMOKER', level: 'warn', message: `${it.name} needs a smoker. Add one in Gear.`, itemIds: [it.input.id] });
     if (p.cooker === 'griddle' && !input.cookers.griddle) warnings.push({ code: 'NO_GRIDDLE', level: 'warn', message: `${it.name} needs a griddle. Add one in Gear or move it to the smoker.`, itemIds: [it.input.id] });
+  }
+
+  for (const it of items) {
+    const i = it.input;
+    if (i.timingModel === 'totalHours' && i.totalHoursAtF != null && i.totalHoursAtF !== pit)
+      warnings.push({ code: 'TOTAL_HOURS_FIXED', level: 'info', itemIds: [i.id], message: `${it.name}: total hours fixed. Temp change does not adjust it.` });
   }
 
   // Smoker temperature conflicts between items

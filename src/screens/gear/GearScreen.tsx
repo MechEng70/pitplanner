@@ -4,9 +4,9 @@ import { lbToKg } from '../../../engine/units.ts';
 import { Avatar, Field, GroupCard, IconAvatar, ListRow, Screen, Segmented, Sheet, Stack, Text } from '../../ui/components.tsx';
 import { Bell, Cup, HomeIcon, Plus, Thermo } from '../../ui/icons.tsx';
 import { useStore } from '../../lib/store.tsx';
-import { fmtRate, fmtTemp, type Units } from '../../lib/format.ts';
+import { fmtTemp, type Units } from '../../lib/format.ts';
 import { defaultGriddle, defaultOven, hasHopper, smokerTypeInfo } from '../../lib/gear.ts';
-import { rateRows } from '../../lib/historyView.ts';
+import { rateRows, ratesSummary } from '../../lib/historyView.ts';
 import { rules } from '../../lib/rules.ts';
 import { allGranted, type AlarmStatus } from '../../platform/alarms.ts';
 import { AlertChecks, TestAlertButton, useAlarmStatus } from '../shared/AlertChecks.tsx';
@@ -33,7 +33,7 @@ export function GearScreen({ onDebug, onHistory }: { onDebug: () => void; onHist
     if (k === 'smoker') return setOpen('picker');
     setOpen(k);
   };
-  const top = rateRows(rules, state.history, state.rates)[0];
+  const rateLine = ratesSummary(rateRows(rules, state.history, gear.smoker?.id ?? 'none', state.rates, state.totalHours, state.rateLocks), units);
 
   return (
     <Screen title="Gear">
@@ -64,7 +64,7 @@ export function GearScreen({ onDebug, onHistory }: { onDebug: () => void; onHist
         <Text v="section" tone="secondary" as="h2">Your numbers</Text>
         <GroupCard>
           <ListRow leading={<IconAvatar tone="ok"><span class="avatar-text">hr</span></IconAvatar>} title="Cook rates" wrap
-            subtitle={top ? `${top.foodName} ${fmtRate(top.hrPerLb, units)} from your cooks` : 'Starting rates until you log a cook'}
+            subtitle={rateLine}
             onClick={onHistory} />
         </GroupCard>
       </Stack>

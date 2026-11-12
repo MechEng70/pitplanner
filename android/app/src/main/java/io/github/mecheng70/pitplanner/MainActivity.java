@@ -11,19 +11,23 @@ import java.util.Collections;
 import io.github.mecheng70.pitplanner.alarms.AlarmStore;
 import io.github.mecheng70.pitplanner.alarms.AlarmsPlugin;
 import io.github.mecheng70.pitplanner.alarms.Notifications;
+import io.github.mecheng70.pitplanner.share.SharedPlanPlugin;
 
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(AlarmsPlugin.class);
+        registerPlugin(SharedPlanPlugin.class);
         super.onCreate(savedInstanceState);
         handleAlarmIntent(getIntent());
+        SharedPlanPlugin.offer(getIntent());
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         handleAlarmIntent(intent);
+        SharedPlanPlugin.offer(intent);
     }
 
     /** Opened from a step alert (tap, Open, or full-screen at night): show over the lock screen. */

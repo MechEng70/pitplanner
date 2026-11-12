@@ -6,5 +6,8 @@ cd "$ROOT"
 npm run build >/dev/null
 npx cap sync android >/dev/null
 cd android
-JAVA_HOME=/usr/lib/jvm/temurin-21-jdk ANDROID_HOME="$HOME/Android/Sdk" ./gradlew assembleDebug -q 2>&1 | grep -iE "^e:|error" || true
+# A failed build must stop here, not install the previous APK.
+if ! LOG=$(JAVA_HOME=/usr/lib/jvm/temurin-21-jdk ANDROID_HOME="$HOME/Android/Sdk" ./gradlew assembleDebug -q 2>&1); then
+  echo "$LOG" | grep -E "^e:|error:|FAILED" | head -20; echo "BUILD FAILED"; exit 1
+fi
 adb -s 5ece07c1 install -r app/build/outputs/apk/debug/app-debug.apk | tail -1

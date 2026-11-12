@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { Capacitor } from '@capacitor/core';
 import { App as CapApp } from '@capacitor/app';
 import type { Plan } from '../engine/types.ts';
+import { buildPlan } from '../engine/plan.ts';
+import { rules } from './lib/rules.ts';
 import { ListIcon, Sliders, Timer } from './ui/icons.tsx';
 import { popBack } from './ui/back.ts';
 import { BottomNav } from './ui/components.tsx';
@@ -15,6 +17,9 @@ import { GearScreen } from './screens/gear/GearScreen.tsx';
 import { HistoryScreen } from './screens/gear/HistoryScreen.tsx';
 import { PitAlarms, allGranted, alarmsAreNative } from './platform/alarms.ts';
 import { applyActions, newCook, syncAlarms } from './lib/cook.ts';
+import { onSharedPlan, takeSharedPlan } from './platform/sharedPlan.ts';
+import { parsePitPlan, type SharedPlan } from './lib/sharedPlan.ts';
+import { SharedPlanError, SharedPlanSheet } from './screens/plan/SharedPlanSheet.tsx';
 
 type Tab = 'plan' | 'cook' | 'gear';
 
@@ -56,6 +61,21 @@ function Shell() {
     return () => { h.then(x => x.remove()); };
   }, []);
 
+  // An opened .pitplan: checked on start, on resume and when Android hands one over while open.
+  const [shared, setShared] = useState<SharedPlan | { error: string } | null>(null);
+  useEffect(() => {
+    const take = async () => {
+      const t = await takeSharedPlan();
+      if (!t) return;
+      setShared(t.text != null ? parsePitPlan(rules, t.text, () => crypto.randomUUID()) : { error: 'Could not read that file.' });
+      setTab('plan');
+    };
+    take();
+    const off = onSharedPlan(take);
+    const h = CapApp.addListener('resume', take);
+    return () => { off(); h.then(x => x.remove()); };
+  }, []);
+
   const [checkPlan, setCheckPlan] = useState<Plan | null>(null);
   const [debug, setDebug] = useState(false);
   // Cook history (mockup 20), opened over the Gear tab.
@@ -73,6 +93,16 @@ function Shell() {
     setCheckPlan(plan);
   };
 
+  // Cook tab with food on the plan and no cook running: same as Start cook.
+  const pickTab = (t: Tab) => {
+    if (t === 'cook' && !state.cook && state.draft.items.length) {
+      let plan: Plan | null = null;
+      try { plan = buildPlan(rules, planInput(state)); } catch { /* unplannable: show the empty Cook tab */ }
+      if (plan) return void startCook(plan);
+    }
+    setTab(t);
+  };
+
   if (state.firstRun) return <div class="app"><Setup /></div>;
   return (
     <div class="app">
@@ -84,9 +114,12 @@ function Shell() {
           <HistoryScreen onBack={() => setGearView(null)} onCookAgain={() => { setGearView(null); setTab('plan'); }} />
         )}
       </main>
+      {shared && ('error' in shared
+        ? <SharedPlanError message={shared.error} onClose={() => setShared(null)} />
+        : <SharedPlanSheet shared={shared} onClose={() => setShared(null)} onUse={() => setTab('plan')} />)}
       {checkPlan && <StartCheckSheet onClose={() => setCheckPlan(null)} onStart={() => beginCook(checkPlan)} />}
       {debug && <DebugScreen onClose={() => setDebug(false)} />}
-      <BottomNav value={tab} onChange={t => setTab(t as Tab)} items={[
+      <BottomNav value={tab} onChange={t => pickTab(t as Tab)} items={[
         { id: 'plan', label: 'Plan', icon: <ListIcon /> },
         { id: 'cook', label: 'Cook', icon: <Timer /> },
         { id: 'gear', label: 'Gear', icon: <Sliders /> },

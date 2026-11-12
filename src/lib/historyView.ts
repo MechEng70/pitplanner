@@ -1,9 +1,9 @@
 // Cook history view (mockup 20): learned rates per food per cooker and the cook list lines.
 // Pure: no storage; rules are passed in. Records come from history.ts.
 
-import type { CookLog, ItemInput } from '../../engine/types.ts';
+import type { CookLog, ItemInput, RateSource } from '../../engine/types.ts';
 import { rateFor, type Rules } from '../../engine/plan.ts';
-import { fmtDuration, fmtWeight, type Units } from './format.ts';
+import { fmtDuration, fmtRate, fmtWeight, type Units } from './format.ts';
 import type { CookRecord } from './history.ts';
 
 /** Within this many minutes reads as on plan / on time (same as Cook finished). */
@@ -23,24 +23,53 @@ function countLine(f: any, n: number): string {
   return name.endsWith(f.quantity.unit.toLowerCase()) ? `${n} ${name}` : `${n} ${f.quantity.unit} ${name}`;
 }
 
-export interface RateRow { foodId: string; methodId: string; smokerId: string; foodName: string; hrPerLb: number; cooks: number; untilSize: number }
+export type { RateSource };
+export interface RateRow {
+  foodId: string; foodName: string;
+  methodId: string | null;          // the by-weight method, null when the food only has saved total hours
+  hrPerLb: number | null;           // rate the planner uses
+  source: RateSource | null;
+  saved: number | null;             // the user's saved rate
+  locked: boolean;                  // saved rate never blends with logged cooks
+  cooks: number;                    // logged cooks of that method on this smoker
+  totalHours: number | null;        // saved default total hours
+}
 
-/** Learned rate per food per cooker, most cooks first. Only by-weight foods have a rate. */
-export function rateRows(rules: Rules, logs: CookLog[], overrides: Record<string, number>): RateRow[] {
-  const groups = new Map<string, CookLog[]>();
-  for (const l of logs) {
-    if (l.discarded) continue;
-    if (methodOf(rules, l.foodId, l.methodId)?.timing?.kind !== 'perWeight') continue;
-    const k = `${l.foodId}|${l.methodId}|${l.smokerId}`;
-    groups.set(k, [...(groups.get(k) ?? []), l]);
+/**
+ * Cook rates (Gear): every by-weight food with the rate the planner will use and where it comes from,
+ * then any other food with saved total hours. Rules order.
+ */
+export function rateRows(rules: Rules, logs: CookLog[], smokerId: string, overrides: Record<string, number>, totalHours: Record<string, number>, locks: Record<string, boolean> = {}): RateRow[] {
+  const rows: RateRow[] = [];
+  for (const f of rules.foods) {
+    const m = f.methods.map((x: any) => methodOf(rules, f.id, x.id)).find((x: any) => x.timing?.kind === 'perWeight');
+    const hours = totalHours[f.id] ?? null;
+    if (m) {
+      const r = rateFor(rules, { id: 'rate', foodId: f.id, methodId: m.id, quantity: f.quantity.default }, smokerId, overrides, logs, 'perPound', locks);
+      rows.push({ foodId: f.id, foodName: f.name, methodId: m.id, hrPerLb: r.rate, source: r.source, saved: overrides[f.id] ?? null, locked: !!locks[f.id], cooks: r.cooksLogged, totalHours: hours });
+    } else if (hours != null) {
+      rows.push({ foodId: f.id, foodName: f.name, methodId: null, hrPerLb: null, source: null, saved: null, locked: false, cooks: 0, totalHours: hours });
+    }
   }
-  const unlock = rules.learning.unlockAfterCooks;
-  return [...groups.values()].map(g => {
-    const { foodId, methodId, smokerId } = g[0];
-    const r = rateFor(rules, { id: 'rate', foodId, methodId, quantity: g[0].quantity }, smokerId, overrides, logs, 'perPound');
-    const sameFood = logs.filter(l => !l.discarded && l.foodId === foodId && l.smokerId === smokerId).length;
-    return { foodId, methodId, smokerId, foodName: foodOf(rules, foodId).name, hrPerLb: r.rate, cooks: r.cooksLogged, untilSize: Math.max(0, unlock - sameFood) };
-  }).sort((a, b) => b.cooks - a.cooks);
+  return rows;
+}
+
+/** Gear row: "Brisket 0.75 hr/lb, your setting", or the published-estimate line when nothing is set or learned. */
+export function ratesSummary(rows: RateRow[], u: Units): string {
+  const mine = rows.find(r => r.source === 'override' || r.source === 'blended') ?? rows.find(r => r.source === 'learned');
+  if (mine) return `${mine.foodName} ${fmtRate(mine.hrPerLb!, u)}, ${sourceText(mine.source!, mine.cooks)}`;
+  const hours = rows.find(r => r.totalHours != null);
+  if (hours) return `${hours.foodName} ${+hours.totalHours!.toFixed(2)} hr total, your setting`;
+  return 'Published estimates. Set your own.';
+}
+
+/** "your setting", "learned from 2 cooks", "published estimate" */
+export function sourceText(source: RateSource, cooks: number): string {
+  if (source === 'item') return 'this cook only';
+  if (source === 'override') return 'your setting';
+  if (source === 'blended') return `your setting, adjusted by ${cooks} ${cooks === 1 ? 'cook' : 'cooks'}`;
+  if (source === 'learned') return `learned from ${cooks} ${cooks === 1 ? 'cook' : 'cooks'}`;
+  return 'published estimate';
 }
 
 /** "Brisket 12 lb, wings 2 lb, 4 chicken breasts" */
