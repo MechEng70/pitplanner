@@ -22,7 +22,7 @@ Task details in [TASKS.md](TASKS.md); architecture in [TECH-DESIGN.md](TECH-DESI
 | 2 | Scaffold and quality gate | T-002, T-003, T-004, T-005, T-006, T-007 | Jason approves the plan | The Expo dev build runs beside the release app with three tabs and the engine; `npm run check` passes all six steps on the new stack; the themed kit exists; Maestro captures at 115/130%; a release-signed alpha installs over 0.2.0 on an emulator. |
 | 3 | Storage | T-008, T-009, T-010, T-011, T-012 | phase 2 (T-003) | SQLite schema v1 with tested migrations; repositories and app store write through; a 0.2.0 install's data (gear, rates, draft, active cook, history) imports on first launch, or the fresh-start notice says what did not. |
 | 4 | Alarm module | T-013, T-014, T-015, T-016 | T-003; T-010 for T-015; T-006 for T-016 | `pit-alarms` Expo module rings on time in Doze and after a locked reboot, every invariant has a JUnit test, Quiet also holds native repeats, and the app reschedules after every change. |
-| 5 | Plan tab | T-017, T-018, T-019, T-058 | T-005, T-010; T-006 for T-058 | Mockups 04-08 rebuilt in React Native, matching at 115/130%, with Food details timing behaving as the T-001 checklist says; a font-size change keeps the screen, and the tab, open screen and unsaved edits survive process death. |
+| 5 | Plan tab | T-017, T-018, T-019, T-059, T-058 | T-005, T-010; T-006 for T-058 | Mockups 04-08 rebuilt in React Native, matching at 115/130%, with Food details timing behaving as the T-001 checklist says; a font-size change keeps the screen, and the tab, open screen and unsaved edits survive process death. |
 | 6 | Cook tab | T-020, T-021, T-022, T-023 | phases 4 and 5 | Mockups 12-15: Start cook, Live cook, Cook options and Cook finished work on the dev build with real notifications, on top of a tested `engine/cookState.ts`. |
 | 7 | Setup | T-024, T-025 | T-005, T-010, T-015 | First run (mockups 01-03, 17) sets up cookers and alerts; the test alert rings in Doze through setAlarmClock. |
 | 8 | Gear and history | T-026, T-027, T-028 | phase 7, T-009 | Mockups 16-20, including editing or excluding a past cook (failure mode 14). |
@@ -90,7 +90,7 @@ regressions in the port (T-014 tests, T-016 device run, T-037 real cook).
 2. T-002, then T-003 (gate first, so every later task is gated), then T-004 (spike: settles R-1).
 3. In parallel threads of work: T-005/T-006/T-007 and T-008 -> T-009 -> T-010 -> T-011 -> T-012.
 4. T-013 -> T-014 -> T-015 -> T-016 (alarms solid before the Cook tab).
-5. Plan tab T-017 -> T-018 -> T-019 -> T-058, then T-020 -> T-021 -> T-022 -> T-023.
+5. Plan tab T-017 -> T-018 -> T-019 -> T-059 -> T-058, then T-020 -> T-021 -> T-022 -> T-023.
 6. Setup T-024/T-025, Gear T-026..T-028, Share T-029..T-031.
 7. Beta T-032..T-038; T-039 a week later.
 8. T-040/T-041, then Home Assistant; T-057 before 2027-02-01 whenever a prebuild shows the AGP state.

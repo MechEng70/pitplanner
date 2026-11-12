@@ -1,8 +1,11 @@
 # stable-controls targets (TASKS T-006, T-017 PR-3), tab separated.
-# target	route	expect	label	times
+# target	route	start	expect	label	times
 # expect: stays (nothing may move) or moves (detector self-test: the target must report a move).
-# The spike stepper jumps (Jason's T-004 review), so it proves the check catches a jump.
-spike	dev/spike	moves	More	5
-spike	dev/spike	moves	Less	5
-spike	dev/spike	moves	250F	1
-spike	dev/spike	moves	Start at	1
+# spike: the temp chips and the mode toggle shift when selected; spike-bottom: the unusual-rate warning under
+# the stepper goes away at 1.00 hr/lb, the content shrinks and the view clamps (Jason's T-004 review).
+# start: top (as opened) or bottom (scrolled to the end first: content shrinking below a control makes the view clamp and jump).
+spike	dev/spike	top	moves	More	5
+spike	dev/spike	top	moves	Less	5
+spike	dev/spike	top	moves	250F	1
+spike	dev/spike	top	moves	Start at	1
+spike-bottom	dev/spike	bottom	moves	More	5

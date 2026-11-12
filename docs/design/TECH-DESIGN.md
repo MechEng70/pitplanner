@@ -75,6 +75,8 @@ Rules:
 1. **The engine stays pure and is not touched by the port.** Every function takes `now` and `rules` as
    parameters; `engine/*.test.ts` keep running with `node --test`.
 2. **Rules are data** (`data/foods.json`, schema `engine/rules.ts`, checked by `engine/rules.test.ts`).
+   Food-safety numbers cite a primary source (USDA FSIS page, quoted) in the food's `sources`, starting with
+   whole turkey (T-059); `rules.test.ts` checks it.
 3. **Pure helpers keep their paths.** `engine/*.test.ts` import `src/lib/cookView.ts`, `finish.ts`,
    `historyView.ts`, `sharedPlan.ts`, `timing.ts`, `update.ts`, and types from `cook.ts` and `history.ts`. These
    stay at the same paths with the same exports, so the engine tests do not change; only their storage and

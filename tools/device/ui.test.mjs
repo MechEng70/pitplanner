@@ -80,6 +80,42 @@ test('stable-controls: a value in the same row changing width fails (proportiona
   assert.deepEqual(moved, ['moved: 0.75 [600,520][840,580] -> [596,520][844,580]']);
 });
 
+test('stable-controls: a clamp jump names the nodes that really moved, even when the tree shifts', () => {
+  // Scrolled to the end; the content shrinks, the view clamps and everything drops 188 px. A node that was cut
+  // off at the top comes back into the tree first, so tree paths no longer line up.
+  const before = dump(
+    node(
+      { b: '[0,0][1440,3168]' },
+      node({ text: 'Plan', b: '[64,160][1376,200]' }) +
+        node({ desc: 'Less', click: true, b: '[64,1382][200,1574]' }) +
+        node({ desc: 'More', click: true, b: '[1096,1382][1288,1574]' }),
+    ),
+  );
+  const after = dump(
+    node(
+      { b: '[0,0][1440,3168]' },
+      node({ text: 'Smoker temp', b: '[64,160][1376,240]' }) +
+        node({ text: 'Plan', b: '[64,348][1376,388]' }) +
+        node({ desc: 'Less', click: true, b: '[64,1570][200,1762]' }) +
+        node({ desc: 'More', click: true, b: '[1096,1570][1288,1762]' }),
+    ),
+  );
+  assert.deepEqual(movedAbove(parseDump(before), parseDump(after), 'More'), [
+    'moved: Plan [64,160][1376,200] -> [64,348][1376,388]',
+    'moved: Less [64,1382][200,1574] -> [64,1570][200,1762]',
+    'moved: More [1096,1382][1288,1574] -> [1096,1570][1288,1762]',
+    'new: Smoker temp [64,160][1376,240]',
+  ]);
+});
+
+test('stable-controls: an unlabeled view moving (an empty avatar) still fails, as one line', () => {
+  const before = dump(
+    node({ b: '[64,100][200,200]' }) + node({ desc: 'More', click: true, b: '[1240,500][1376,600]' }),
+  );
+  const after = dump(node({ b: '[64,120][200,220]' }) + node({ desc: 'More', click: true, b: '[1240,500][1376,600]' }));
+  assert.deepEqual(movedAbove(parseDump(before), parseDump(after), 'More'), ['moved: 1 unlabeled view(s)']);
+});
+
 test('stable-controls: a control that is not on screen is reported', () => {
   assert.deepEqual(movedAbove(parseDump(screen()), parseDump(screen()), 'Nope'), ['"Nope" is not on screen']);
 });

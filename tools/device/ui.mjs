@@ -64,22 +64,41 @@ export const fullyVisible = (n, topPx, bottomPx) => n.b.t >= topPx && n.b.b <= b
 export function movedAbove(before, after, label) {
   const ctl = findByLabel(before, label);
   if (!ctl) return [`"${label}" is not on screen`];
-  const byPath = new Map(after.map(n => [n.path, n]));
   const name = n => n.desc || n.text || n.cls.split('.').pop();
+  // Labeled nodes match by class and label when that is unique on both screens (nodes scrolled off the top
+  // leave the tree, so paths shift); the rest, like a value whose text changed, match by path and class.
+  const key = n => (n.desc || n.text ? `${n.cls}|${n.desc}|${n.text}` : null);
+  const count = list => list.reduce((m, n) => (key(n) ? m.set(key(n), (m.get(key(n)) ?? 0) + 1) : m), new Map());
+  const [inBefore, inAfter] = [count(before), count(after)];
+  const byKey = new Map(after.filter(n => key(n) && inAfter.get(key(n)) === 1).map(n => [key(n), n]));
+  const byPath = new Map(after.map(n => [n.path, n]));
+  const matchOf = n => {
+    const k = key(n);
+    if (k && inBefore.get(k) === 1 && byKey.has(k)) return byKey.get(k);
+    const m = byPath.get(n.path);
+    // Not a node that is already some other labeled node's match.
+    const taken = m && key(m) && inBefore.get(key(m)) === 1 && byKey.get(key(m)) === m;
+    return m && m.cls === n.cls && !taken ? m : undefined;
+  };
   const out = [];
+  const matched = new Set();
+  let unlabeled = 0;
   for (const n of before) {
     if (n.b.t >= ctl.b.b) continue;
-    const m = byPath.get(n.path);
+    const m = matchOf(n);
     if (!m) {
-      out.push(`gone: ${name(n)} ${fmt(n.b)}`);
+      if (key(n)) out.push(`gone: ${name(n)} ${fmt(n.b)}`);
       continue;
     }
+    matched.add(m);
     const edges = ['t', 'l', 'r'];
     if (n.b.b <= ctl.b.b) edges.push('b');
-    if (edges.some(e => n.b[e] !== m.b[e])) out.push(`moved: ${name(n)} ${fmt(n.b)} -> ${fmt(m.b)}`);
+    if (!edges.some(e => n.b[e] !== m.b[e])) continue;
+    if (key(n)) out.push(`moved: ${name(n)} ${fmt(n.b)} -> ${fmt(m.b)}`);
+    else unlabeled++;
   }
-  const seen = new Set(before.map(n => n.path));
-  for (const m of after) if (!seen.has(m.path) && m.b.t < ctl.b.b) out.push(`new: ${name(m)} ${fmt(m.b)}`);
+  if (unlabeled) out.push(`moved: ${unlabeled} unlabeled view(s)`);
+  for (const m of after) if (!matched.has(m) && key(m) && m.b.t < ctl.b.b) out.push(`new: ${name(m)} ${fmt(m.b)}`);
   return out;
 }
 

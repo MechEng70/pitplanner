@@ -39,7 +39,10 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
   New screens add their controls to `tools/device/targets.tsv` (`stable-controls`, T-017 PR-3).
 - D-4 confirmed by Jason on condition of the `sheet-keyboard` device test; it passes (Sheet lifts by the
   keyboard height, `FooterScroll` reveals the focused field above the footer). Kit `InputField` added.
-- T-017 has PR-4 (equal-width tiles, mockup 05; try `flex: 1` first).
+- T-017 has PR-4 (equal-width tiles, mockup 05; try `flex: 1` first) and two PR-3 fixes to make: selected
+  chips reserve their bold width, and nothing jumps when content below shrinks while scrolled to the bottom.
+- Tab bar is the kit `BottomNav` (0.2.0 icon pills); T-059 (whole turkey, cited FSIS numbers) follows T-019.
+  fsis.usda.gov answers automated fetches with 403: read it in a browser.
 - SE-003 (Snyk, `braces`/`open` in Metro and dev-middleware, not shipped): approved with conditions; override
   failed (open 11 is ESM-only), ignores expire 2027-02-10. Re-check triggers are in SECURITY-EXCEPTIONS.
 
@@ -269,8 +272,6 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 - Font size changed while the app is open (or in the background) recreates the Android activity: the React tree
   remounts, the app returns to the Plan tab, and open sheets, the selected tab and unsaved edits are lost.
   Checked on a release build 2026-11-12. Now task T-058 (Jason, 2026-11-12), done before the Cook screen.
-- Release builds show a missing-glyph box for the tab bar icons (no icons set yet); the kit tab bar (T-005)
-  replaces them.
 
 - Quiet alerts holds scheduled steps but native repeats of an already-overdue step still ring.
 - History entries can be removed but not edited (SPEC failure mode 14 says editable).

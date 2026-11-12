@@ -32,7 +32,6 @@ for t in "${TESTS[@]}"; do
 done
 
 mkdir -p "$OUT"
-rm -rf "$OUT/maestro" # last run's Maestro debug output (logs, uncropped failure screenshots)
 REPORT="$OUT/report.txt"
 : >"$REPORT"
 log() { echo "$*" | tee -a "$REPORT"; }
@@ -77,15 +76,31 @@ if ! curl -s "localhost:$METRO_PORT/status" | grep -q running; then
 fi
 BACKUP=$(./db.sh backup) || { log "backup failed"; exit 1; }
 log "data backed up to $BACKUP"
+# Keep the two newest backups (Jason, 2026-11-12); this run's is the newest.
+# Names are data-YYYYMMDD-HHMMSS.tar, so the glob's order is oldest first.
+backups=("$OUT"/data-*.tar)
+if [ ${#backups[@]} -gt 2 ]; then
+  rm -f -- "${backups[@]:0:${#backups[@]}-2}" && log "removed $((${#backups[@]} - 2)) older backup(s)"
+fi
 
 SCREEN_H=$(A shell wm size | grep -oE '[0-9]+$')
 RESULTS=()
 result() { RESULTS+=("$1"); log "$1"; }
 
-# Screenshot of the phone, cropped below the status bar.
+# Screenshot of the phone, cropped below the status bar. The keyboard never shows: its banners ("Emoji size
+# updated") and clipboard suggestions are not the app. By default an open keyboard is closed first (back closes
+# only the keyboard); with --cut-keyboard (sheet-keyboard, where the open keyboard is the point) the image ends
+# at the keyboard's top edge instead.
 shot() {
-  A exec-out screencap -p >"$1"
-  python3 -I crop.py "$(status_bar_px)" "$1"
+  local file="$1" ime
+  ime=$(ime_top)
+  if [ -n "$ime" ] && [ "${2:-}" != --cut-keyboard ]; then
+    A shell input keyevent KEYCODE_BACK
+    sleep 1
+    ime=""
+  fi
+  A exec-out screencap -p >"$file"
+  python3 -I crop.py "$(status_bar_px)" "$file" ${ime:+--bottom "$ime"}
 }
 
 # Scroll LABEL into view unless it is already fully on screen (above the keyboard when it is open). Scrolls
@@ -103,14 +118,14 @@ on_screen() {
 }
 
 # --- tests ------------------------------------------------------------------------------------------------
-# The app opens on Plan and each tab opens: tap the tab, check its title is on screen, take a screenshot.
+# The app opens on Plan and each tab opens: tap the tab, check it is the selected tab, take a screenshot.
 test_smoke() {
   local s="$1" dir="$2" tab ok=1
   launch "" || { result "FAIL  smoke $s: app did not open"; return; }
   for tab in Plan Cook Gear; do
     tap "$tab" 1 | tee -a "$REPORT"
-    # The open tab's tab bar button (label "<icon>, Plan") is selected.
-    if dump >"$dir/$tab.xml" && grep -q "content-desc=\"[^\"]*, $tab\"[^>]*selected=\"true\"" "$dir/$tab.xml"; then
+    # The kit BottomNav: each tab is labelled with its name and the open one is selected.
+    if dump >"$dir/$tab.xml" && grep -q "content-desc=\"$tab\"[^>]*selected=\"true\"" "$dir/$tab.xml"; then
       shot "$dir/${tab,,}.png"
     else
       ok=0
@@ -141,15 +156,15 @@ test_sheet_keyboard() {
       ok=0
       while IFS= read -r line; do log "    $field: $line"; done <<<"$out"
     fi
-    shot "$dir/sheet-keyboard-$field.png"
+    shot "$dir/sheet-keyboard-$field.png" --cut-keyboard
   done
   if [ $ok = 1 ]; then result "PASS  sheet-keyboard $s"; else result "FAIL  sheet-keyboard $s"; fi
 }
 
-# T-017 PR-3: tapping a control moves neither it nor anything above it. Targets in targets.tsv. Each step
-# compares the screen just before and just after its taps.
+# T-017 PR-3: tapping a control moves neither it nor anything above it. Targets in targets.tsv (start at the
+# top or scrolled to the bottom). Each step compares the screen just before and just after its taps.
 test_stable_controls() {
-  local s="$1" dir="$2" target route expect label times cur="" cur_expect="" moved_any="" broken="" n=0 out line
+  local s="$1" dir="$2" target route start expect label times cur="" cur_expect="" moved_any="" broken="" n=0 out line
   local before after
   finish_target() {
     [ -n "$cur" ] || return 0
@@ -161,12 +176,15 @@ test_stable_controls() {
     else result "PASS  stable-controls $s $cur"; fi
   }
   # fd 3: nothing inside the loop may read the targets file by accident.
-  while IFS=$'\t' read -r target route expect label times <&3; do
+  while IFS=$'\t' read -r target route start expect label times <&3; do
     [[ -z "$target" || "$target" == \#* ]] && continue
     if [ "$target" != "$cur" ]; then
       finish_target
       cur="$target" cur_expect="$expect" moved_any="" broken="" n=0
       launch "$route" || { result "FAIL  stable-controls $s $target: app did not open"; cur=""; continue; }
+      # Scrolled to the end, content that shrinks below a control makes the view clamp and jump (Jason's T-004
+      # review): those targets start at the bottom.
+      if [ "$start" = bottom ]; then scroll_bottom | tee -a "$REPORT"; fi
     fi
     n=$((n + 1))
     before="$dir/stable-$target-$n-before.xml" after="$dir/stable-$target-$n-after.xml"

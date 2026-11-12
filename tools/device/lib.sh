@@ -69,11 +69,18 @@ wait_for_app() {
 # Run a Maestro flow file. Flows are written per step (tap, scroll_to) into out/: Maestro 2.12's
 # `repeat: times: ${N}` runs "indefinitely" for N=1 and takeScreenshot ignores the path it is given.
 # Maestro reads stdin, so it gets /dev/null (otherwise it swallows the rest of a file a caller's loop reads).
-# Its debug output (logs, uncropped failure screenshots) goes to out/maestro, never into the repo.
+# Maestro's debug and test output include the phone's whole logcat, i.e. every app's log (one held another
+# app's access token, 2026-11-12). It goes to a fresh temp dir outside the repo that is deleted when the flow
+# ends; only the flow's step lines are kept (in the report).
 flow() {
-  "$MAESTRO" --device "$ANDROID_SERIAL" test --debug-output "$OUT/maestro" "$1" </dev/null 2>&1 |
+  local tmp rc
+  tmp="$(mktemp -d)"
+  "$MAESTRO" --device "$ANDROID_SERIAL" test --debug-output "$tmp/debug" --test-output-dir "$tmp/test" \
+    --flatten-debug-output "$1" </dev/null 2>&1 |
     grep -E 'COMPLETED|FAILED|WARNED|SKIPPED|Error|error' | sed 's/^/    /'
-  return "${PIPESTATUS[0]}"
+  rc="${PIPESTATUS[0]}"
+  rm -rf -- "$tmp"
+  return "$rc"
 }
 
 # Tap the control labelled $1 (accessibility label or text), $2 times.
@@ -82,6 +89,13 @@ tap() {
   { printf 'appId: %s\n---\n' "$PKG"
     for ((i = 0; i < $2; i++)); do printf -- '- tapOn:\n    text: "%s"\n    waitToSettleTimeoutMs: 500\n' "$1"; done
     printf -- '- waitForAnimationToEnd\n'; } >"$f"
+  flow "$f"
+}
+
+# Scroll the screen to its end (more swipes than any screen needs; extra ones do nothing).
+scroll_bottom() {
+  local f="$OUT/.bottom.yaml"
+  printf 'appId: %s\n---\n- scroll\n- scroll\n- scroll\n- scroll\n- scroll\n- waitForAnimationToEnd\n' "$PKG" >"$f"
   flow "$f"
 }
 

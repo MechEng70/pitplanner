@@ -277,6 +277,23 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     `expect stays`).
   - `db.sh restore` only replaces the dirs the backup holds and refuses an empty or unreadable tar; round trip
     checked on the phone.
+  - Follow-ups after Jason's review (2026-11-12):
+    - Tab bar icons were empty boxes: T-005 never ported the 0.2.0 `BottomNav`, so the default tab bar drew a
+      missing glyph. Now kit `BottomNav` (icon pill over the label, at least 80 dp, grows with the font) is the
+      tab bar. The old default bar had a fixed height and its labels ended at the screen's bottom edge
+      (uiautomator bounds), so they were likely cut at 130%; now whole at both scales. Smoke checks the
+      selected tab by its label.
+    - `stable-controls` targets can start scrolled to the bottom (`start` column). The spike shows the 0.2.0
+      "Unusual rate" warning under its stepper (brisket's usual range from `foods.json`); scrolled to the end,
+      More x5 removes it and the screen jumps 188 px at 130%: `spike-bottom` fails as Jason asked (detector
+      self-test). Moved nodes are matched by class and label first, so the list names what really moved.
+    - Screenshots never show the keyboard: it is closed first, or for `sheet-keyboard` the image ends at its
+      top edge (no IME banners like "Emoji size updated", no clipboard suggestions).
+    - `run.sh` keeps only the two newest data backups in `out/`.
+    - Privacy fix: Maestro's debug and test output hold the phone's whole logcat (every app's log). Semgrep
+      found another app's access token in one such copy under `out/maestro` (git-ignored, never committed).
+      Each Maestro call now writes to a temp dir outside the repo that is deleted when the flow ends; nothing
+      from Maestro but its step lines is kept. Semgrep keeps scanning `tools/device/out/` as a safety net.
 
 ### T-007 Release build: signing plugin, versionCode, release script
 - **Status:** todo
@@ -442,6 +459,16 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     font scale; warnings and info appear below the control or in the Conflicts tile, never above it; no
     automatic scrolling after a change. Fail: the T-006 `stable-controls` flow reports a moved bound at 115% or
     130%.
+    - Selected chips and toggles reserve their bold width (Jason, 2026-11-12): the T-006 run found the spike's
+      temp chips and Ready by / Start at toggle shift 5 to 7 px when selected, because the selected label is
+      medium weight and wider. Each chip is as wide as its label in the selected weight whether selected or not
+      (for example an invisible medium-weight copy of the label sizing the chip, the visible label over it), so
+      selecting one moves nothing.
+    - Scrolled to the bottom, content that shrinks below a control (a warning going away) makes the view clamp
+      and jump (Jason's T-004 review; T-006 `spike-bottom` reproduces it: 188 px at 130%). Add Plan targets
+      with start `bottom` to `tools/device/targets.tsv`; the fix keeps the content from getting shorter while
+      the user is changing values (for example reserve the warning's line, or keep a minimum content height).
+      Fail: a `bottom` target reports a move.
   - **PR-4 The tiles are equal width.** Fire smoker, Pellets and Conflicts share the row in equal thirds
     (mockup 05) at 100%, 115% and 130%, whatever their values. Try `flex: 1` (with `flex-basis: 0`) on each
     tile before measuring anything. Fail: any two tiles in the row differ in width by more than 1 dp
@@ -477,6 +504,44 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Tests:** RNTL versions of the nine legacy FoodEdit cases (three/two models, source line, saves, hint once,
   result card text).
 - **Device testing (Jason):** add brisket, set 0.75, read the result card at his usual font size.
+
+### T-059 Whole turkey in `data/foods.json`
+- **Status:** todo
+- **Goal:** whole turkey on the smoker, planned and learned like every other food (Jason, 2026-11-12).
+- **Files:** `data/foods.json`, `engine/rules.ts` (schema: sources, a minimum smoker temp per method, a size
+  warning), `engine/plan.ts` (issues), `engine/rules.test.ts`, `engine/plan.test.ts`, kit icon in
+  `src/components/kit/icons.tsx` (or the food-icon set PR-2 uses), SPEC.md section 3 if behavior is added.
+- **Depends on:** T-019 (Food details shows the rate, warnings and the icon).
+- **Requirements (pass/fail):**
+  - **Sources.** Every food-safety number (done temp, smoker temp floor, size limit, any time or rate)
+    cites a primary source: the current USDA FSIS page, by URL, page title and its "last updated" date, with
+    the sentence quoted, in a `sources` entry on the food in `foods.json`. No blogs. `rules.test.ts` fails if
+    turkey has a food-safety number without a source. The starting rate also cites its source; if FSIS gives
+    no smoking rate, ask Jason which source to use before picking one.
+  - **Smoker temp no lower than 225F** for turkey. A plan with turkey on the smoker below 225F reports an
+    issue (Conflicts tile and Issues sheet, as other conflicts do); the temp is never changed silently.
+  - **Done at 165F.** No stuffed option (no choice for it anywhere).
+  - **Size warning, not a block.** Above the FSIS size limit for smoking a whole turkey, Food details shows a
+    warning and the plan still builds. Sources conflict (12 or 16 lb), so the limit comes from the FSIS page
+    itself, quoted and cited in `sources`; the warning text names the limit.
+  - **Rate.** A starting hr/lb at 225F with its cited source; adjustable in Food details like every other food
+    (stepper, total hours, "Use for future") and learned from logged cooks the same way (`learning` in
+    `foods.json`). No turkey-specific code paths for timing.
+  - **Icon** in the 0.2.0 style (PR-2): line icon, 24 dp grid, 2 dp stroke, on the food avatar; checked on the
+    phone at 100%, 115% and 130%.
+  - **Engine tests:** turkey on the smoker below 225F gives the issue and at 225F does not; above the size
+    limit gives the warning and still builds a plan; a 12 lb turkey plan at 225F has the expected time on heat
+    (rate x 12, plus rest), fire time and pull at 165F.
+  - Any UI element not in the mockups (for example a new kind of warning row) needs Jason's yes first. The
+    existing patterns to reuse: the warn-tone caption under a control (0.2.0 "Unusual rate") and the Issues
+    sheet.
+- **Note (2026-11-12):** fsis.usda.gov refuses automated fetches (HTTP 403 for "Turkey: Alternate Routes to
+  the Table", "Smoking Meat and Poultry" and "Let's Talk Turkey"). Open the pages in a browser (Claude in
+  Chrome or Jason pastes them) and quote from there. No turkey numbers are in this plan on purpose: none could
+  be cited yet.
+- **Tests:** engine (above), `rules.test.ts` sources check, RNTL for the warning and the icon.
+- **Device testing (Jason):** add a 12 lb turkey and an 18 lb turkey at 225F; read the warning wording and
+  the icon at 100/115/130%; compare with the FSIS quote in `foods.json`.
 
 ### T-058 Survive font-size changes and process death
 - **Status:** todo

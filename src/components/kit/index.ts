@@ -5,6 +5,7 @@ export { Text, TextContext, type TextProps, type TextTone, type TextVariant } fr
 export { Chips, Field, IconButton, Segmented, Stepper, type ChipOpt } from './controls';
 export * from './icons';
 export { Divider, Fill, Fixed, Row, Spacer, Stack, type Gap } from './layout';
+export { BottomNav, type NavItem } from './nav';
 export { Num, type NumProps } from './num';
 export { CheckRow, ListRow, StatusRow } from './rows';
 export { InputField } from './input';

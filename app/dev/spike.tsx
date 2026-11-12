@@ -52,6 +52,13 @@ function Tile({ label, value, tone }: { label: string; value: string; tone?: 'ok
   );
 }
 
+/** Brisket's usual smoked rate at 225F, from data/foods.json. */
+function brisketRange(): readonly [number, number] {
+  const m = rules.foods.find(f => f.id === 'brisket')?.methods[0];
+  const r = m?.timing?.kind === 'perWeight' ? m.timing.rangeAt225 : undefined;
+  return r ?? [1, 1.5];
+}
+
 function Spike() {
   const plan = buildPlan(rules, saturday);
   const brisket = plan.items[0];
@@ -59,6 +66,7 @@ function Spike() {
   const [mode, setMode] = useState<'readyBy' | 'startAt'>('readyBy');
   const [temp, setTemp] = useState(225);
   const [rate, setRate] = useState(0.75);
+  const usual = brisketRange();
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right', 'bottom']}>
@@ -144,6 +152,13 @@ function Spike() {
               <Text variant="select">+</Text>
             </Button>
           </View>
+          {/* 0.2.0 Food details: the unusual-rate warning under the stepper. It comes and goes with the value,
+              so content below the stepper changes height (T-006 stable-controls, scrolled to the bottom). */}
+          {(rate < usual[0] - 1e-9 || rate > usual[1] + 1e-9) && (
+            <Text variant="caption" tone="warn">
+              Unusual rate. Most cooks land between {usual[0].toFixed(2)} and {usual[1].toFixed(2)} hr/lb.
+            </Text>
+          )}
         </View>
 
         <Button kind="outline" block>
