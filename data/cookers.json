@@ -22,7 +22,10 @@
   "smokers": [
     { "id": "pitboss-820", "brand": "Pit Boss", "model": "820", "type": "pellet", "verified": true,
       "minTempF": 180, "maxTempF": 500, "tempStepF": 5, "hopperLb": 21, "mainGrateSqIn": 593, "upperRackSqIn": 256,
-      "sources": ["Pit Boss PB820D3 spec sheet: 849 sq in total, 593 main, 256 secondary, 21 lb hopper, 180-500F", "tempStepF 5: owner (Jason) on his unit; older dial controllers use fixed presets"] },
+      "sources": ["Pit Boss PB820D3 spec sheet: 849 sq in total, 593 main, 256 secondary, 21 lb hopper, 180-500F", "tempStepF 5: not confirmed on an 820; same as the Sportsman 850 owner check. Older dial controllers use fixed presets"] },
+    { "id": "pitboss-sportsman-850", "brand": "Pit Boss", "model": "Sportsman 850", "type": "pellet", "verified": true,
+      "minTempF": 180, "maxTempF": 500, "tempStepF": 5, "hopperLb": 21, "mainGrateSqIn": 593, "upperRackSqIn": 256,
+      "sources": ["Pit Boss Canada, Sportsman 850 with Wi-Fi (PB850SPW2): 849 sq in, 21 lb hopper, 180-500F (https://pitboss-grills.ca/products/sportsman-850-pellet-grill-with-wifi)", "BBQGuys model 11106: 593 sq in main, 256 sq in secondary (https://www.bbqguys.com/i/3189271/pit-boss/sportsman-850-pellet-grill-w-wifi-11106)", "tempStepF 5: owner (Jason) on his PB850SPW2; Home Assistant reports model PB850SPW2"] },
     { "id": "pitboss-850", "brand": "Pit Boss", "model": "850", "type": "pellet", "verified": false },
     { "id": "traeger-pro-780", "brand": "Traeger", "model": "Pro 780", "type": "pellet", "verified": false },
     { "id": "traeger-ironwood", "brand": "Traeger", "model": "Ironwood", "type": "pellet", "verified": false },

@@ -175,7 +175,7 @@ Engine stays pure: add `engine/probe.ts` with functions like `nextTempEvent(plan
 ## 7. Open items for Jason
 
 - HA address for Claude Code's MCP connection and for testing the app: https://ha.glithero.icu.
-- Create the `pitplanner` HA user (4.1) before Phase 1 testing.
-- ha-pitboss connection mode on the 820 (`wss`, `local` or `ble`).
+- The `pitplanner` HA user (4.1) exists (done 2026-11-12, credentials kept by Jason, never in the repo).
+- ha-pitboss connection mode on the Sportsman 850 (`wss`, `local` or `ble`).
 - Which phone(s) have the HA Companion app (notify service names).
 - Chef iQ probe model(s) (the core integration documents the CQ60).

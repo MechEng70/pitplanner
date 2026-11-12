@@ -60,7 +60,7 @@ const HOT_OVER_F = 50;
 function segments(it: PlannedItem, plan: Plan, u: Units) {
   let smoke = 0;
   const out: ViewLane['segments'] = it.phases.map(p => {
-    const label = /^\d+F$/.test(p.short) ? fmtTemp(p.tempF, u) : p.short.toLowerCase();
+    const label = /^\d+F$/.test(p.short) ? fmtTemp(p.tempF, u, true) : p.short.toLowerCase();
     if (p.cooker === 'griddle' || p.cooker === 'oven') return { start: p.start, end: p.end, tone: p.cooker, label };
     const tone: Tone = p.tempF > plan.pitTempF + HOT_OVER_F ? 'hot' : smoke++ ? 'smoke2' : 'smoke';
     return { start: p.start, end: p.end, tone, label };
@@ -135,12 +135,12 @@ export function overlapNote(plan: Plan, now: number, u: Units): OverlapNote | nu
   const temp = Math.min(...o.tempsF);
   const a = fmtTime(o.start), b = fmtTime(o.end);
   const span = `${a.slice(-2) === b.slice(-2) ? a.slice(0, -3) : a} to ${b}`;
-  const lead = `${span}: ${list(names)} share the smoker at ${fmtTemp(temp, u)}.`;
+  const lead = `${span}: ${list(names)} share the smoker at ${fmtTemp(temp, u, true)}.`;
   // One food comes off where the stretch ends, and another later needs the pit hotter.
   const leaving = items.find(i => Math.abs(i.finish - o.end) < MIN);
   const climbing = items.filter(i => i !== leaving).flatMap(i => i.phases)
     .filter(p => p.cooker === 'smoker' && p.start >= o.end - MIN && p.tempF > temp).sort((x, y) => x.start - y.start)[0];
-  const rest = leaving && climbing ? `${cap(leaving.name.toLowerCase())} comes off before the pit climbs to ${fmtTemp(climbing.tempF, u)}.` : '';
+  const rest = leaving && climbing ? `${cap(leaving.name.toLowerCase())} comes off before the pit climbs to ${fmtTemp(climbing.tempF, u, true)}.` : '';
   return { band: { start: o.start, end: o.end, laneIds: o.itemIds }, lead, rest };
 }
 

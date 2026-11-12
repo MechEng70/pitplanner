@@ -60,3 +60,14 @@ test('onHeatSpan: first phase start to off-heat, matches the Plan cards', () => 
   assert.equal(onHeatSpan(p.items[1]).minutes, 100);
   assert.equal(onHeatSpan(p.items[2]).minutes, 12);
 });
+
+test('localizeText: F and lb inside rules and engine text follow the user units', async () => {
+  const { localizeText } = await import('./units.ts');
+  assert.equal(localizeText('Check tenderness: pull at 200-205F.', 'F', 'lb'), 'Check tenderness: pull at 200-205F.');
+  assert.equal(localizeText('Check tenderness: pull at 200-205F.', 'C', 'lb'), 'Check tenderness: pull at 93-96C.');
+  assert.equal(localizeText('Fire the smoker to 225F.', 'C', 'lb'), 'Fire the smoker to 105C.');
+  assert.equal(localizeText('Confirm 165F in the thickest part.', 'C', 'lb'), 'Confirm 74C in the thickest part.');
+  assert.equal(localizeText('400F', 'C', 'lb'), '205C');
+  assert.equal(localizeText('About 26 lb of pellets, more than the 21 lb hopper. 0.75 hr/lb.', 'F', 'kg'), 'About 11.8 kg of pellets, more than the 9.5 kg hopper. 0.75 hr/lb.');
+  assert.equal(localizeText('PB850SPW2 at 5 min', 'C', 'kg'), 'PB850SPW2 at 5 min');
+});

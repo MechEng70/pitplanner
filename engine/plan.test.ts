@@ -50,6 +50,17 @@ test('Saturday plan matches the mockups', () => {
   assert.ok(!p.warnings.some(w => w.code === 'PIT_CONFLICT'));
   assert.ok(p.pelletsLb > 15 && p.pelletsLb < 21, `pellets ${p.pelletsLb}`);
   assert.ok(!p.events.some(e => e.kind === 'refill'));
+  assert.ok(!p.warnings.some(w => w.code === 'PELLETS_OVER_HOPPER'));
+});
+
+test('a cook that burns more than the hopper holds: refill alert plus an info warning', () => {
+  const p = buildPlan(rules, saturday({ rateOverrides: {} })); // 15 hr brisket at the published rate
+  assert.ok(p.pelletsLb > 21, `pellets ${p.pelletsLb}`);
+  const refill = p.events.find(e => e.kind === 'refill')!;
+  assert.equal(refill.label, 'Top off the hopper. It runs low in about 30 min.');
+  const w = p.warnings.find(x => x.code === 'PELLETS_OVER_HOPPER')!;
+  assert.equal(w.level, 'info');
+  assert.match(w.message, /about \d+ lb of pellets, more than the 21 lb hopper/);
 });
 
 test('no-wrap brisket has no wrap check and takes 15% longer', () => {

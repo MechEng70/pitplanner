@@ -6,7 +6,8 @@ import { alarmsFromPlan, keyedEvents, type KeyedEvent } from '../../engine/alarm
 import type { Plan, PlanInput } from '../../engine/types.ts';
 import { rules } from './rules.ts';
 import { PitAlarms, type NotificationAction } from '../platform/alarms.ts';
-import { fmtTime } from './format.ts';
+import { fmtTime, tx, type Units } from './format.ts';
+import { load } from './storage.ts';
 
 const MIN = 60_000;
 export const QUIET_MIN = 30;
@@ -109,8 +110,9 @@ export async function syncAlarms(c: ActiveCook, now: number) {
     id: 'pitcheck', keys: ['pitcheck'], at: now + PIT_RECOVERY_MIN * MIN, critical: false,
     title: 'Pit back up to temp?', body: 'Tap Back up to temp in Pit Planner so the steps re-time.',
   }] });
+  const units = (await load<Units>('settings')) ?? { temp: 'F', weight: 'lb' };
   return PitAlarms.setAlarms({ alarms: alarmsFromPlan(c.plan, now, undefined, {
-    done, reminders: c.reminders, quietUntil: c.quietUntil ?? undefined,
+    done, reminders: c.reminders, quietUntil: c.quietUntil ?? undefined, text: s => tx(s, units),
   }) });
 }
 

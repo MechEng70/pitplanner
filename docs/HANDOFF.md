@@ -35,7 +35,7 @@ Fixed from that test:
 - +15 on a fixed step (fire, refill) reminds from now, and not at all if its own alarm is later.
 - Alert notices append instead of replacing each other.
 
-Open: times after an early Done are not rounded (Check at 6:41 PM). Banner "OK" sometimes reads as
+Open: Banner "OK" sometimes reads as
 not stable to Playwright (only matters for scripts).
 
 ## Setup (mockups 01-03, plus Add a cooker 17): done
@@ -89,7 +89,18 @@ Also: Cook tab with food on the plan and no cook = Start cook. Next up title inc
 ("Fire the smoker to 225F in 45 hr 50 min"). Lane chart runs from the first step's hour to serve.
 `deploy.sh` now stops on a failed build (it used to install the old APK).
 
-Next: HA Phase 0 (read-only entity list to docs/ha-entities.md), then Phase 1.
+HA Phase 0 done: `docs/ha-entities.md` (read-only survey). Jason's smoker is a Pit Boss Sportsman 850
+(PB850SPW2), new verified catalog entry `pitboss-sportsman-850`; he re-picks it in Gear. The `pitplanner` HA
+user exists. Probe batteries were dead at the survey. Next: HA Phase 1 (needs the 6 mockups in HA-INTEGRATION 4.5 first).
+
+Fixed 2026-11-12: Plan warns (info, orange Pellets tile) when a cook burns more pellets than the hopper holds;
+refill alert reads "Top off the hopper. It runs low in about 30 min." (fires 30 min before 10%). Rules and
+engine wording converts to C / kg on display (`localizeText` in engine/units.ts, `tx` in format.ts; alarms
+via `AlarmOptions.text`). Live changes (Done early/late, Not yet, Pit went out, +15) round scheduled times to
+5 minutes; actual past times (pulled at) stay exact.
+
+Idea from Jason (not built): tapping the lane chart opens it full screen in landscape until tapped again
+(or a close button), so a long cook's short steps are readable.
 
 ## Decisions from Jason
 
@@ -105,8 +116,6 @@ Next: HA Phase 0 (read-only entity list to docs/ha-entities.md), then Phase 1.
 
 ## Known open items
 
-- Pellets can exceed the hopper with no Plan warning; refill label says "under 25%" but triggers at 10% (engine).
-- Step labels in `data/foods.json` contain F temperatures that do not convert in Celsius mode.
 - Quiet alerts holds scheduled steps but native repeats of an already-overdue step still ring.
 - History entries can be removed but not edited (SPEC failure mode 14 says editable).
 - Oven `warmingDrawer` is stored but unused by the planner.

@@ -4,7 +4,7 @@ import { lbToKg, kgToLb } from '../../../engine/units.ts';
 import type { CookerKind, ItemInput, PlanInput, TimingModel } from '../../../engine/types.ts';
 import { Button, CheckRow, Chips, Field, InfoBox, KeepVisible, Num, ResultCard, Sheet, Stepper, Text, useSheet } from '../../ui/components.tsx';
 import { rules, food, method, cookerKinds, cookerName, hasCooker, defaultOptions } from '../../lib/rules.ts';
-import { fmtDuration, fmtRate, fmtTempRange, fmtTime, type Units } from '../../lib/format.ts';
+import { tx, fmtDuration, fmtRate, fmtTempRange, fmtTime, type Units } from '../../lib/format.ts';
 import { useStore } from '../../lib/store.tsx';
 import { sourceText } from '../../lib/historyView.ts';
 import { HOURS_MAX, HOURS_MIN, hoursText, rateText, rateUnusual, roundHours, stepHours, stepRate } from '../../lib/timing.ts';
@@ -127,8 +127,8 @@ function Body({ base, units, it, setIt, preview, remember, setRemember, hint }: 
       </Field>
 
       {methodsHere.length > 1 && (
-        <Field label="Method" note={m.note}>
-          <Chips label="Method" value={m.id} onChange={pickMethod} options={methodsHere.map(x => ({ id: x.id, label: x.label }))} />
+        <Field label="Method" note={m.note && tx(m.note, units)}>
+          <Chips label="Method" value={m.id} onChange={pickMethod} options={methodsHere.map(x => ({ id: x.id, label: tx(x.label, units) }))} />
         </Field>
       )}
 
@@ -138,9 +138,9 @@ function Body({ base, units, it, setIt, preview, remember, setRemember, hint }: 
         return (
           <Field key={key} label={opt.label}>
             <Chips label={opt.label} value={val} onChange={v => setIt({ ...it, options: { ...it.options, [key]: v } })}
-              options={Object.entries(opt.choices).map(([id, c]) => ({ id, label: c.label }))} />
+              options={Object.entries(opt.choices).map(([id, c]) => ({ id, label: tx(c.label, units) }))} />
             {(choice?.pullF || choice?.note) && (
-              <InfoBox lead={choice.pullF && <>Pull at <Num>{fmtTempRange(choice.pullF, units)}</Num>.</>}>{choice.note}</InfoBox>
+              <InfoBox lead={choice.pullF && <>Pull at <Num>{fmtTempRange(choice.pullF, units)}</Num>.</>}>{choice.note && tx(choice.note, units)}</InfoBox>
             )}
           </Field>
         );
@@ -163,7 +163,7 @@ function Body({ base, units, it, setIt, preview, remember, setRemember, hint }: 
             <Num>{fmtDuration(span.minutes)}</Num> on heat{methodText(it, info, units)}.
             {fire && <> Fire the {fire.what} at <Num>{fmtTime(fire.at)}</Num>.</>}
           </Text>
-          {itemWarnings.map(w => <Text key={w.code} v="caption" tone={w.level === 'warn' ? 'warn' : 'secondary'}>{w.message}</Text>)}
+          {itemWarnings.map(w => <Text key={w.code} v="caption" tone={w.level === 'warn' ? 'warn' : 'secondary'}>{tx(w.message, units)}</Text>)}
         </ResultCard></KeepVisible>
       )}
       {preview.error && <InfoBox>Could not plan this item: {preview.error}</InfoBox>}

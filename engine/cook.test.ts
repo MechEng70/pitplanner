@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { buildPlan } from './plan.ts';
-import { markPullDone, extendCook, postponeStep, smokerOverlaps, holdsCover } from './live.ts';
+import { markPullDone, markStepDone, extendCook, pitOutage, postponeStep, smokerOverlaps, holdsCover } from './live.ts';
 import { alarmsFromPlan, keyedEvents } from './alarms.ts';
 import type { PlanInput, SmokerProfile } from './types.ts';
 
@@ -68,8 +68,26 @@ test('postponeStep on a fixed step (fire the smoker) only sets a reminder', () =
   const fire = keyedEvents(p).find(k => k.event.kind === 'fire')!;
   const now = fire.event.at + 2 * MIN;
   const r = postponeStep(rules, input, p, fire.key, now, 15, true);
-  assert.equal(r.reminderAt, now + 15 * MIN);
+  // +15 at fire + 2 min reminds at fire + 15 (on the 5-minute grid), not fire + 17.
+  assert.equal(r.reminderAt, fire.event.at + 15 * MIN);
   assert.equal(r.plan, p);
+});
+
+test('live changes keep every scheduled time on the 5-minute grid', () => {
+  const p = plan();
+  const grid = (pl: any) => pl.items.every((it: any) => it.phases.every((ph: any) => ph.start % (5 * MIN) === 0));
+  const b = p.items.find(i => i.input.id === 'b')!;
+  const wrap = b.phases.find(x => x.id === 'wrap')!;
+  // Wrap done 19 min early (6:41 for a 7:00 check): the rest of the brisket moves 20 min, onto the grid.
+  const early = markStepDone(rules, input, p, 'b', 'wrap', wrap.start - 19 * MIN, true);
+  assert.equal(early.deltaMin, -20);
+  assert.ok(grid(early.plan));
+  // Not yet at the pull check, tapped at an odd minute: the new off time is on the grid.
+  const late = extendCook(rules, input, p, 'b', b.finish + 7 * MIN, 30, true);
+  assert.equal(late.items.find(i => i.input.id === 'b')!.finish % (5 * MIN), 0);
+  // Pit out 23 min + 15 recovery = 38 -> 40 min.
+  const out = pitOutage(rules, input, p, wrap.start - 60 * MIN, wrap.start - 37 * MIN, 15, false);
+  assert.equal(out.serveAt - p.serveAt, 40 * MIN);
 });
 
 test('smokerOverlaps finds brisket and wings sharing the pit 3:15-3:40', () => {

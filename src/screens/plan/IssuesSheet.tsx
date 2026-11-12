@@ -2,11 +2,12 @@ import type { Cookers, ItemInput, Plan } from '../../../engine/types.ts';
 import { Button, Card, Row, Sheet, Stack, Text, useSheet } from '../../ui/components.tsx';
 import { Warn } from '../../ui/icons.tsx';
 import { food, method } from '../../lib/rules.ts';
+import { tx, type Units } from '../../lib/format.ts';
 
 const TEMP_CODES = new Set(['PIT_CONFLICT', 'TEMP_UNTRUSTED', 'TEMP_NOT_SETTABLE']);
 
 interface Props {
-  plan: Plan; items: ItemInput[]; cookers: Cookers;
+  plan: Plan; items: ItemInput[]; cookers: Cookers; units: Units;
   onMoveToGriddle: (itemId: string, methodId: string) => void;
   onEdit: (itemId: string) => void; onChangeTemp: () => void; onClose: () => void;
 }
@@ -16,7 +17,7 @@ export function IssuesSheet(props: Props) {
   return <Sheet title="Conflicts" onClose={props.onClose}><Issues {...props} /></Sheet>;
 }
 
-function Issues({ plan, items, cookers, onMoveToGriddle, onEdit, onChangeTemp }: Props) {
+function Issues({ plan, items, cookers, units, onMoveToGriddle, onEdit, onChangeTemp }: Props) {
   const { close } = useSheet();
   const list = [...plan.warnings].sort((a, b) => (a.level === b.level ? 0 : a.level === 'warn' ? -1 : 1));
   const name = (it: ItemInput) => food(it.foodId).name.toLowerCase();
@@ -37,7 +38,7 @@ function Issues({ plan, items, cookers, onMoveToGriddle, onEdit, onChangeTemp }:
             <Stack gap={10}>
               <Row gap={10} align="start">
                 <Warn size={18} color={w.level === 'warn' ? 'var(--warn)' : 'var(--text-2)'} />
-                <Text v="body" tone={w.level === 'warn' ? 'primary' : 'soft'}>{w.message}</Text>
+                <Text v="body" tone={w.level === 'warn' ? 'primary' : 'soft'}>{tx(w.message, units)}</Text>
               </Row>
               <Row gap={8} wrap>
                 {its.map(it => {

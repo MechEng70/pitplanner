@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'preact/hooks';
 import { Button, Card, Chips, Field, InfoBox, Num, SelectField, Sheet, Stack, Text, useSheet } from '../../ui/components.tsx';
 import { useStore } from '../../lib/store.tsx';
 import { rules, food, countText } from '../../lib/rules.ts';
-import { fmtTemp, fmtTime, fmtWeight, fromLocalInput, toLocalInput } from '../../lib/format.ts';
+import { tx, fmtTemp, fmtTime, fmtWeight, fromLocalInput, toLocalInput } from '../../lib/format.ts';
 import { fitPitTemp, mapToCookers, sharedLine, suggestServe, type SharedPlan } from '../../lib/sharedPlan.ts';
 import type { CookerKind } from '../../../engine/types.ts';
 
@@ -48,7 +48,7 @@ export function SharedPlanSheet({ shared, onClose, onUse }: { shared: SharedPlan
         <Card tone="result" pad="m">
           <Stack gap={8}>
             <Text v="overline" tone="accentHi">Serve at <Num>{fmtTime(shared.serveAt)}</Num></Text>
-            {shared.items.map(it => <Text key={it.id} v="bodyL">{sharedLine(rules, it, qty(it.foodId, it.quantity))}</Text>)}
+            {shared.items.map(it => <Text key={it.id} v="bodyL">{tx(sharedLine(rules, it, qty(it.foodId, it.quantity)), units)}</Text>)}
             {shared.dropped > 0 && <Text v="label" tone="secondary">{shared.dropped} more {shared.dropped === 1 ? 'food' : 'foods'} this app does not know.</Text>}
           </Stack>
         </Card>

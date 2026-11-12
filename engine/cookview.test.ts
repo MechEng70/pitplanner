@@ -53,7 +53,7 @@ test('lanes: phases by cooker, hot phase labelled with temp, rest dashed', () =>
   assert.deepEqual(b.segments.map(s => [s.tone, s.label]), [['smoke', 'smoke'], ['smoke2', 'wrapped'], ['hold', 'rest']]);
   assert.equal(w.segments.at(-1)!.tone, 'hot');
   assert.equal(w.segments.at(-1)!.label, '400F');
-  assert.equal(lanes(plan, { temp: 'C', weight: 'kg' }, k => k).find(l => l.id === 'w')!.segments.at(-1)!.label, '204C');
+  assert.equal(lanes(plan, { temp: 'C', weight: 'kg' }, k => k).find(l => l.id === 'w')!.segments.at(-1)!.label, '205C');
   assert.equal(c.segments[0].tone, 'griddle');
   assert.equal(c.subtitle, 'griddle');
   assert.deepEqual(ls.map(l => l.title), ['Brisket', 'Wings', 'Breasts']);

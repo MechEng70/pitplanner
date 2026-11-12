@@ -24,7 +24,7 @@ Reference implementation of the scheduling rules: `reference/cook-day-planner.ht
 | Scheduling | Plan to finish on time (no deliberate early cushion). The rest/hold is the only buffer. |
 | Timing model | Per food, three choices: Hours per pound (default for by-weight foods), Total hours (any food: the user's time on heat, used as-is) and Size-adjusted (time ~ weight^0.67, open from the first cook). The rate or total can apply to one cook or be saved for future cooks (Gear, Cook rates). New users start on published rates with a one-time hint that most pellet smokers run faster. |
 | Units | Fahrenheit and Celsius, pounds and kilograms. Stored as F and lb; converted at display. |
-| Smoker temp | Dropdown in the cooker's own steps (5F on Jason's Pit Boss 820), not three fixed buttons. Each option shows its fire time. |
+| Smoker temp | Dropdown in the cooker's own steps (5F on Jason's Pit Boss Sportsman 850), not three fixed buttons. Each option shows its fire time. |
 | Pause | No "pause". Instead: Running behind/ahead, Quiet alerts, Pit went out, Start over, End cook. |
 
 ## 2. Architecture
@@ -79,7 +79,7 @@ Artboard names refer to the mockup canvas.
 - **Holds.** Warn when a hold exceeds the food's limit (brisket/butt 240 min, ribs 60, breasts 20, wings 30) or falls under the food's minimum rest.
 - **Settable temp.** Warn when the chosen temp is not in the cooker's steps or presets.
 - **Grate load.** Peak footprint estimate vs main grate and upper rack; info when the upper rack is needed, warn when over.
-- **Fuel.** Pellet/gravity: simulate burn at low/high rates; refill alert 30 min before the hopper is estimated under 10%. Offset/electric: interval fuel checks. Kamado/drum: none.
+- **Fuel.** Pellet/gravity: simulate burn at low/high rates; refill alert 30 min before the hopper is estimated under 10%; info warning (orange Pellets tile) when the cook burns more than the hopper holds. Offset/electric: interval fuel checks. Kamado/drum: none.
 - **Events.** Every step becomes an event with `alarm`, `checkStep` and `critical` flags. The UI and the alarm scheduler both read `plan.events`.
 
 ## 5. Live cook rules (`engine/live.ts`)
@@ -94,7 +94,7 @@ Artboard names refer to the mockup canvas.
 | Start over | UI | Back to Plan with the same menu. |
 | End cook | UI + history | Save logs actual minutes on heat per food (feeds rates) or Discard (logs nothing). Cancels all alarms. |
 
-After every change: re-run `derive`, cancel every scheduled alarm, schedule the new set from `plan.events`. Never patch alarms one at a time.
+Scheduled times set by these changes round to 5 minutes (actual times, like when food came off, stay exact). After every change: re-run `derive`, cancel every scheduled alarm, schedule the new set from `plan.events`. Never patch alarms one at a time.
 
 ## 6. Alarms (the part that must not fail)
 
@@ -157,7 +157,7 @@ After every change: re-run `derive`, cancel every scheduled alarm, schedule the 
 ## 12. Open items
 
 - Confirm the GitHub repo name. Assumed: github.com/MechEng70/pitplanner (update check reads its latest release).
-- Verified specs (hopper, grate, temp step or presets, range) for every picker entry except the Pit Boss 820. Until verified, fields stay blank for the user to fill in.
+- Verified specs (hopper, grate, temp step or presets, range) for every picker entry except the Pit Boss Sportsman 850 and 820 (the 820's 5F step is not confirmed). Until verified, fields stay blank for the user to fill in.
 - App icon.
 - Pellet burn rates (1.5 and 3 lb/hr) are estimates; learn them from logged refills.
 

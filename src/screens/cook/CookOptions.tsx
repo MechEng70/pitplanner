@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'preact/hooks';
 import { ActionRow, Button, Card, Divider, ChoiceCards, Num, Sheet, Stack, Stepper, Text, useSheet } from '../../ui/components.tsx';
 import { BellOff, FlameOff, Restart, StopSquare, Timer } from '../../ui/icons.tsx';
-import { fmtTime } from '../../lib/format.ts';
+import { fmtTime, tx } from '../../lib/format.ts';
+import { useStore } from '../../lib/store.tsx';
 import { pending, pitDown, postpone, keepServeIfCovered, quiet, QUIET_MIN, shift, stepText, type ActiveCook } from '../../lib/cook.ts';
 import { shiftImpact } from '../../lib/cookView.ts';
 
@@ -11,6 +12,7 @@ const STEP = 15, LIMIT = 180, NOT_YET_MIN = 30;
 export function CookOptions({ cook, onChange, onStartOver, onEnd, onClose }: {
   cook: ActiveCook; onChange: (c: ActiveCook) => void; onStartOver: () => void; onEnd: () => void; onClose: () => void;
 }) {
+  const { units } = useStore().state;
   const [delta, setDelta] = useState(0);
   const [pick, setPick] = useState<'keep' | 'move'>('keep');
   // Preview against the time the sheet opened, so the numbers hold still while you tap.
@@ -47,7 +49,7 @@ export function CookOptions({ cook, onChange, onStartOver, onEnd, onClose }: {
           const later = keepServeIfCovered(keep => postpone(cook, next.key, Date.now(), NOT_YET_MIN, keep));
           const moved = later.plan.serveAt !== cook.plan.serveAt;
           return <Row icon={<Timer />} title={`Not yet, check again in ${NOT_YET_MIN} min`}
-            subtitle={`${stepText(next.event.label).title}. Serve ${moved ? `moves to ${fmtTime(later.plan.serveAt)}` : `stays at ${serve}`}.`}
+            subtitle={`${stepText(tx(next.event.label, units)).title}. Serve ${moved ? `moves to ${fmtTime(later.plan.serveAt)}` : `stays at ${serve}`}.`}
             run={() => onChange(later)} />;
         })()}
         {quietNow

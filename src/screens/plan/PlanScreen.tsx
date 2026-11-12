@@ -7,7 +7,7 @@ import {
 import { Calendar, ChevronDown, Plus, ShareIcon } from '../../ui/icons.tsx';
 import { useStore, planInput } from '../../lib/store.tsx';
 import { rules, method, food, newItem, itemSummary, countText } from '../../lib/rules.ts';
-import { fmtDuration, fmtPellets, fmtTemp, fmtTime, fmtWeight, fromLocalInput, toLocalInput, type Units } from '../../lib/format.ts';
+import { tx, fmtDuration, fmtPellets, fmtTemp, fmtTime, fmtWeight, fromLocalInput, toLocalInput, type Units } from '../../lib/format.ts';
 import { sharePlan, toPitPlan } from '../../lib/share.ts';
 import { FoodPick } from './FoodPick.tsx';
 import { FoodEdit } from './FoodEdit.tsx';
@@ -121,7 +121,7 @@ export function PlanScreen({ onStartCook }: { onStartCook: (plan: Plan) => void 
                 <Fill>
                   <Stack gap={2}>
                     <Text v="bodyL" weight={500}>{food(it.foodId).name}</Text>
-                    <Text v="label" tone="secondary" clamp>{itemSummary(it, qtyText(it))}</Text>
+                    <Text v="label" tone="secondary" clamp>{tx(itemSummary(it, qtyText(it)), units)}</Text>
                   </Stack>
                 </Fill>
                 {span && (
@@ -140,7 +140,7 @@ export function PlanScreen({ onStartCook }: { onStartCook: (plan: Plan) => void 
 
           {plan && (
             <Tiles>
-              {summaryTiles(plan, gear.smoker, units).map(t => <Tile key={t.label} {...t} />)}
+              {summaryTiles(plan, gear.smoker, units).map(({ over, ...t }) => <Tile key={t.label} {...t} onClick={over ? () => setLayer({ kind: 'issues' }) : undefined} />)}
               <Tile label="Conflicts" value={warnCount ? String(warnCount) : 'None'} tone={warnCount ? 'warn' : 'ok'} onClick={() => setLayer({ kind: 'issues' })} />
             </Tiles>
           )}
@@ -160,7 +160,7 @@ export function PlanScreen({ onStartCook }: { onStartCook: (plan: Plan) => void 
           onPick={t => { setDraft(d => ({ ...d, pitTempF: t })); close(); }} />
       )}
       {layer?.kind === 'issues' && plan && (
-        <IssuesSheet plan={plan} items={draft.items} cookers={gear} onClose={close} onEdit={editItem} onChangeTemp={openTemp}
+        <IssuesSheet plan={plan} items={draft.items} cookers={gear} units={units} onClose={close} onEdit={editItem} onChangeTemp={openTemp}
           onMoveToGriddle={(id, methodId) => setDraft(d => ({ ...d, items: d.items.map(x => x.id === id ? { ...x, methodId, restMin: method(x.foodId, methodId).restMin.default } : x) }))} />
       )}
     </Screen>
@@ -174,11 +174,15 @@ function withSavedHours(it: ItemInput, saved: Record<string, number>, pitTempF: 
 }
 
 /** Two tiles before Conflicts: first action, then fuel or smoker-off, padded with serve time. */
-function summaryTiles(plan: Plan, smoker: SmokerProfile | undefined, units: Units): { label: string; value: string }[] {
-  const out: { label: string; value: string }[] = [];
+function summaryTiles(plan: Plan, smoker: SmokerProfile | undefined, units: Units): { label: string; value: string; tone?: 'warn'; over?: boolean }[] {
+  const out: { label: string; value: string; tone?: 'warn'; over?: boolean }[] = [];
   if (plan.fireAt != null) out.push({ label: 'Fire smoker', value: fmtTime(plan.fireAt) });
   else if (plan.griddleOnAt != null) out.push({ label: 'Fire griddle', value: fmtTime(plan.griddleOnAt) });
-  if (smoker?.hopperLb && plan.fireAt != null) out.push({ label: smoker.type === 'gravity' ? 'Charcoal' : 'Pellets', value: fmtPellets(plan.pelletsLb, units) });
+  if (smoker?.hopperLb && plan.fireAt != null) {
+    // More than the hopper holds: orange, and tapping it explains the refill (PELLETS_OVER_HOPPER).
+    const over = plan.pelletsLb > smoker.hopperLb;
+    out.push({ label: smoker.type === 'gravity' ? 'Charcoal' : 'Pellets', value: fmtPellets(plan.pelletsLb, units), tone: over ? 'warn' : undefined, over });
+  }
   else if (plan.pitOffAt != null) out.push({ label: 'Smoker off', value: fmtTime(plan.pitOffAt) });
   if (out.length < 2) out.push({ label: 'Serve', value: fmtTime(plan.serveAt) });
   return out;

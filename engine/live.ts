@@ -6,6 +6,10 @@ import { derive, type Rules } from './plan.ts';
 import { keyedEvents } from './alarms.ts';
 
 const MIN = 60_000;
+const STEP_MIN = 5;
+/** Live changes keep scheduled times on the 5-minute grid (Done at 6:41 moves the next check to 6:40, not 6:41). */
+const roundMin = (min: number) => Math.round(min / STEP_MIN) * STEP_MIN;
+const roundAt = (t: number) => Math.round(t / (STEP_MIN * MIN)) * STEP_MIN * MIN;
 
 function clone(plan: Plan): Plan { return structuredClone(plan); }
 
@@ -37,7 +41,7 @@ export function markStepDone(rules: Rules, input: PlanInput, plan: Plan, itemId:
   const it = plan.items.find(i => i.input.id === itemId);
   const p = it?.phases.find(x => x.id === phaseId);
   if (!it || !p) throw new Error('Unknown step');
-  const deltaMin = Math.round((doneAt - p.start) / MIN);
+  const deltaMin = roundMin((doneAt - p.start) / MIN);
   if (deltaMin === 0) return { plan, deltaMin };
   // Phases from this one on move by the difference; the phase before it ends when the step was done.
   const next = clone(plan);
@@ -53,7 +57,7 @@ export function markStepDone(rules: Rules, input: PlanInput, plan: Plan, itemId:
 
 /** Pit went out at downAt and was back to temp at upAt. Smoker items lose that time plus a recovery allowance. */
 export function pitOutage(rules: Rules, input: PlanInput, plan: Plan, downAt: number, upAt: number, recoveryMin: number, keepServe: boolean): Plan {
-  const lost = Math.round((upAt - downAt) / MIN) + recoveryMin;
+  const lost = roundMin((upAt - downAt) / MIN + recoveryMin);
   const next = clone(plan);
   for (const it of next.items) {
     if (!it.phases.some(p => p.cooker === 'smoker' && p.end > downAt)) continue;
@@ -92,7 +96,7 @@ export function extendCook(rules: Rules, input: PlanInput, plan: Plan, itemId: s
   const next = clone(plan);
   const it = next.items.find(i => i.input.id === itemId);
   if (!it) throw new Error('Unknown item');
-  const newFinish = Math.max(it.finish, now) + minutes * MIN;
+  const newFinish = roundAt(Math.max(it.finish, now) + minutes * MIN);
   const d = newFinish - it.finish;
   // Phases not started yet move whole; the one running (or last finished) stretches to meet them.
   for (const p of it.phases) if (p.start >= now) { p.start += d; p.end += d; }
@@ -114,7 +118,7 @@ export function postponeStep(rules: Rules, input: PlanInput, plan: Plan, key: st
   if (e.kind === 'phase' && e.itemId && e.phaseId) return { plan: markStepDone(rules, input, plan, e.itemId, e.phaseId, at, keepServe).plan, reminderAt: null };
   if (e.kind === 'pull' && e.itemId) return { plan: extendCook(rules, input, plan, e.itemId, now, minutes, keepServe), reminderAt: null };
   // Fixed step (fire, refill...): ring again `minutes` from now, unless its own alarm comes later anyway.
-  const remind = now + minutes * MIN;
+  const remind = roundAt(now + minutes * MIN);
   return { plan, reminderAt: remind > e.at ? remind : null };
 }
 

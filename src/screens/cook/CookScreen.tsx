@@ -4,7 +4,7 @@ import {
 } from '../../ui/components.tsx';
 import { MoreVert, Timer } from '../../ui/icons.tsx';
 import { useStore } from '../../lib/store.tsx';
-import { fmtDuration, fmtTemp, fmtTime } from '../../lib/format.ts';
+import { fmtDuration, fmtTemp, fmtTime, tx } from '../../lib/format.ts';
 import { doneStep, driftMin, dueAt, pending, pitUp, stepText, steps, syncAlarms, type ActiveCook } from '../../lib/cook.ts';
 import { cookStatus, countdown, dayWord, holdImpact, holdMin, hourText, laneTicks, laneWindow, lanes, overlapNote, overline } from '../../lib/cookView.ts';
 import { holdsCover } from '../../../engine/live.ts';
@@ -94,7 +94,7 @@ export function CookScreen({ onGoPlan }: { onGoPlan: () => void }) {
 
   const win = laneWindow(plan, now);
   const note = overlapNote(plan, now, state.units);
-  const text = next && stepText(next.event.label);
+  const text = next && stepText(tx(next.event.label, state.units));
   const late = due != null && now > due;
 
   return (
@@ -111,7 +111,7 @@ export function CookScreen({ onGoPlan }: { onGoPlan: () => void }) {
         </Banner>
       )}
       {cook.notice && (
-        <Banner tone="warn" action={<Button kind="small" onClick={() => setCook({ ...cook, notice: null })}>OK</Button>}>{cook.notice}</Banner>
+        <Banner tone="warn" action={<Button kind="small" onClick={() => setCook({ ...cook, notice: null })}>OK</Button>}>{tx(cook.notice, state.units)}</Banner>
       )}
 
       {next && text && due != null && (
@@ -149,7 +149,7 @@ export function CookScreen({ onGoPlan }: { onGoPlan: () => void }) {
             <Text v="section" as="h3">After that</Text>
             <Button kind="text" tone="accent" onClick={() => setOpen('timeline')}>Full timeline</Button>
           </Row>
-          {todo.slice(1, 4).map(k => <StepRow key={k.key} at={dueAt(cook, k)} label={k.event.label} />)}
+          {todo.slice(1, 4).map(k => <StepRow key={k.key} at={dueAt(cook, k)} label={tx(k.event.label, state.units)} />)}
         </Stack>
       )}
       {todo.length <= 1 && (
@@ -179,10 +179,11 @@ function StepRow({ at, label, done }: { at: number; label: string; done?: boolea
 }
 
 function TimelineSheet({ cook, onClose }: { cook: ActiveCook; onClose: () => void }) {
+  const { state } = useStore();
   return (
     <Sheet title="Full timeline" onClose={onClose}>
       <Stack gap={10}>
-        {steps(cook).map(k => <StepRow key={k.key} at={cook.done[k.key] ?? dueAt(cook, k)} label={k.event.label} done={k.key in cook.done} />)}
+        {steps(cook).map(k => <StepRow key={k.key} at={cook.done[k.key] ?? dueAt(cook, k)} label={tx(k.event.label, state.units)} done={k.key in cook.done} />)}
       </Stack>
     </Sheet>
   );

@@ -308,11 +308,14 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
         const use = (temp >= 325 ? smoker.pelletLbPerHrHigh : smoker.pelletLbPerHrLow) * 5 / 60;
         pellets += use; level -= use;
         if (level < smoker.hopperLb * REFILL_AT_FRACTION) {
-          add({ at: t - 30 * MIN, kind: 'refill', label: 'Top off the hopper (estimated under 25% left).', alarm: true, critical: true });
+          add({ at: t - 30 * MIN, kind: 'refill', label: 'Top off the hopper. It runs low in about 30 min.', alarm: true, critical: true });
           level = smoker.hopperLb;
         }
       }
     }
+    if (smoker.hopperLb && pellets > smoker.hopperLb)
+      warnings.push({ code: 'PELLETS_OVER_HOPPER', level: 'info',
+        message: `This cook burns about ${Math.round(pellets)} lb of pellets, more than the ${smoker.hopperLb} lb hopper holds. Top off when the refill alert rings.` });
     add({ at: pitOffAt, kind: 'pitOff', label: 'Smoker done. Run the shutdown cycle.' });
   }
 

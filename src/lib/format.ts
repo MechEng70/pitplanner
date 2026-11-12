@@ -1,7 +1,7 @@
 // Display formatting. The engine works in epoch ms, F and lb; this is the only place
 // those become wall-clock strings, and units.ts is the only place they change units.
 
-import { showTemp, showWeight, lbToKg, type TempUnit, type WeightUnit } from '../../engine/units.ts';
+import { showTemp, showWeight, lbToKg, localizeText, type TempUnit, type WeightUnit } from '../../engine/units.ts';
 
 export type Units = { temp: TempUnit; weight: WeightUnit };
 
@@ -53,3 +53,6 @@ export function fmtTempRange([a, b]: [number, number], u: Units): string {
 /** Cook rate in the user's weight unit: "0.75 hr/lb" or "1.65 hr/kg". */
 export const fmtRate = (hrPerLb: number, u: Units) =>
   u.weight === 'lb' ? `${hrPerLb.toFixed(2)} hr/lb` : `${(hrPerLb / lbToKg(1)).toFixed(2)} hr/kg`;
+
+/** Rules and engine wording in the user's units ("pull at 93-96C"). */
+export const tx = (s: string, u: Units) => localizeText(s, u.temp, u.weight);

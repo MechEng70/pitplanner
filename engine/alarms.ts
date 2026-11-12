@@ -37,6 +37,7 @@ export interface AlarmOptions {
   done?: Iterable<string>;               // step keys already done: never scheduled
   reminders?: Record<string, number>;    // key -> ring again at (overdue steps after +15 / Not yet)
   quietUntil?: number;                   // Quiet alerts: nothing rings before this; one summary at the end
+  text?: (s: string) => string;          // display units for step labels (localizeText); default as written
 }
 
 /**
@@ -47,6 +48,7 @@ export function alarmsFromPlan(plan: Plan, now: number, nameOf?: (itemId: string
   const names = new Map(plan.items.map(it => [it.input.id, it.name]));
   const title = (e: PlanEvent) => (e.itemId && (nameOf?.(e.itemId) ?? names.get(e.itemId))) || KIND_TITLE[e.kind] || 'Pit Planner';
   const done = new Set(opts.done ?? []);
+  const tx = opts.text ?? ((s: string) => s);
 
   // Each step rings at its plan time, or at its reminder time if one is set and later.
   let steps = keyedEvents(plan)
@@ -62,7 +64,7 @@ export function alarmsFromPlan(plan: Plan, now: number, nameOf?: (itemId: string
     steps = steps.filter(s => s.at >= q);
     if (held.length) summary = {
       id: 'quiet|' + held.map(s => s.key).join('|'), at: q, title: 'Quiet time is over',
-      body: held.map(s => s.event.label).join('\n'), critical: true, keys: held.map(s => s.key),
+      body: held.map(s => tx(s.event.label)).join('\n'), critical: true, keys: held.map(s => s.key),
     };
   }
 
@@ -75,7 +77,7 @@ export function alarmsFromPlan(plan: Plan, now: number, nameOf?: (itemId: string
     id: g.map(s => s.key).join('|'),
     at: g[0].at,
     title: [...new Set(g.map(s => title(s.event)))].join(' + '),
-    body: g.map(s => s.event.label).join('\n'),
+    body: g.map(s => tx(s.event.label)).join('\n'),
     critical: g.some(s => s.event.critical),
     keys: g.map(s => s.key),
   }));
