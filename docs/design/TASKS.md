@@ -316,10 +316,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
       "Refreshing..." banner to clear (and retake if it came up during the capture).
 
 ### T-007 Release build: signing plugin, versionCode, release script
-- **Status:** todo
+- **Status:** done (see `git log --grep T-007`)
 - **Goal:** `npm run release` produces an APK signed with the existing key that Android accepts as an update to
   0.2.0.
-- **Files:** `plugins/withReleaseSigning.js`, `keystore.properties.example` (repo root), `tools/release.sh`,
+- **Files:** `plugins/withReleaseSigning.ts`, `releaseSigning.ts`, `version.ts` (+ tests, fixture), `keystore.properties.example` (repo root), `tools/release.sh`,
   `app.config.ts`.
 - **Depends on:** T-002.
 - **Approach:** the plugin reads the git-ignored root `keystore.properties` (path to `~/keys/pitplanner.jks`,
@@ -330,6 +330,29 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   installs over `release/pitplanner-0.2.0.apk` on an emulator without uninstalling.
 - **Tests:** node:test for the versionCode helper; release script dry run.
 - **Device testing (Jason):** none (emulator).
+- **Notes (done 2026-11-12):**
+  - `plugins/withReleaseSigning.ts` (TypeScript, applied in `app.config.ts`) uses the pure
+    `plugins/releaseSigning.ts`: Gradle reads the root `keystore.properties` at build time (no secret is
+    written into `android/`), release builds use `signingConfigs.release`, and a release build without the
+    file fails instead of falling back to the debug key. Tested on a copy of the generated `build.gradle`
+    (`plugins/fixtures/app-build.gradle`); a template change it does not recognize fails at prebuild.
+  - `plugins/version.ts`: versionCode with prereleases (`0.3.0-alpha.1` -> 300), shared by `app.config.ts` and
+    `release.sh`; `APP_VERSION` sets the version for an internal prerelease.
+  - `npm run release [-- --version x.y.z-alpha.N] [--dry-run] [--verify <apk>]`. A real release (no
+    `--version`) needs clean `main`; `--version` only takes prereleases. It never overwrites an APK in
+    `release/`, verifies cert, app ID, versionCode and versionName, prints the APK's SHA-256, and generates
+    the development `android/` again on exit.
+  - Root `keystore.properties` created from the legacy one (store path made absolute; Gradle does not expand
+    `~`), git-ignored, mode 600. `keystore.properties.example` documents it.
+  - Bug found: the first full run died after the build at `aapt2 dump badging | head -1` (SIGPIPE under
+    pipefail, exit 141); the cleanup then removed the APK. Fixed with `sed -n 1p`; regression test with stub
+    build tools that print a long dump (`tools/release.test.mjs`, failed first).
+  - Result: `release/pitplanner-0.3.0-alpha.1.apk` (internal, not distributed), cert SHA-256
+    `b6c32d12...0a29`, versionCode 300, SHA-256 `43f6ef64...5110`. On the emulator over
+    `release/pitplanner-0.2.0.apk` (run once first): `adb install -r` succeeded, versionCode 200 -> 300,
+    firstInstallTime unchanged (same install, same data dir), the app opens on Plan, no crash.
+  - A full release run takes about 20 minutes here (the release JS bundle was 8.5 minutes cold). The emulator
+    crashed once during a build under memory load (23 of 30 GB in use); it restarts with its data.
 
 ---
 

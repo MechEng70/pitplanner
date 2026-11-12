@@ -10,7 +10,7 @@
     "android": "APP_VARIANT=development expo run:android",
     "test": "npm run test:engine && npm run test:gate && npm run test:app",
     "test:engine": "node --test engine/*.test.ts",
-    "test:gate": "node --test tools/*.test.mjs tools/device/*.test.mjs eslint-rules/*.test.mjs",
+    "test:gate": "node --test tools/*.test.mjs tools/device/*.test.mjs plugins/*.test.ts eslint-rules/*.test.mjs",
     "test:app": "jest",
     "test:android": "tools/test-android.sh",
     "test:all": "npm test && npm run test:android",
@@ -20,6 +20,7 @@
     "format:check": "prettier --check .",
     "check": "tools/check.sh",
     "device": "tools/device/run.sh",
+    "release": "tools/release.sh",
     "semgrep:update": "tools/semgrep.sh --update-rules",
     "snyk:monitor": "snyk monitor --all-projects --exclude=reference,release,legacy,docs,modules"
   },

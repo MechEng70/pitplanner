@@ -1,22 +1,33 @@
-import getConfig, { variantOf, versionCode } from './app.config';
+import getConfig, { variantOf } from './app.config';
 
-const build = (variant?: string) => {
-  const old = process.env.APP_VARIANT;
-  if (variant == null) delete process.env.APP_VARIANT;
-  else process.env.APP_VARIANT = variant;
+// versionCode itself is tested in plugins/version.test.ts (node:test, used by tools/release.sh too).
+const build = (variant?: string, version?: string) => {
+  const old = { variant: process.env.APP_VARIANT, version: process.env.APP_VERSION };
+  const set = (k: 'APP_VARIANT' | 'APP_VERSION', v: string | undefined) => {
+    if (v == null) delete process.env[k];
+    else process.env[k] = v;
+  };
+  set('APP_VARIANT', variant);
+  set('APP_VERSION', version);
   try {
     return getConfig({ config: {} } as Parameters<typeof getConfig>[0]);
   } finally {
-    process.env.APP_VARIANT = old;
+    set('APP_VARIANT', old.variant);
+    set('APP_VERSION', old.version);
   }
 };
 
-test('versionCode is major*10000 + minor*100 + patch, so 0.3.0 upgrades 0.2.0 (200)', () => {
-  expect(versionCode('0.2.0')).toBe(200);
-  expect(versionCode('0.3.0')).toBe(300);
-  expect(versionCode('1.2.3')).toBe(10203);
-  expect(() => versionCode('0.3')).toThrow();
-  expect(() => versionCode('0.100.0')).toThrow();
+test('the version comes from package.json; release.sh --version builds an internal prerelease', () => {
+  expect(build('production').version).toBe(process.env.npm_package_version ?? require('./package.json').version);
+  const alpha = build('production', '0.3.0-alpha.1');
+  expect(alpha.version).toBe('0.3.0-alpha.1');
+  expect(alpha.android?.versionCode).toBe(300);
+  expect(() => build('production', '0.3')).toThrow();
+});
+
+test('release signing is applied at prebuild (plugins/withReleaseSigning)', () => {
+  const mods = (build('production') as { mods?: { android?: Record<string, unknown> } }).mods;
+  expect(mods?.android?.appBuildGradle).toBeDefined();
 });
 
 test('development is the default variant; only "production" builds the release app ID', () => {

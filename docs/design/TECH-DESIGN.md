@@ -403,7 +403,9 @@ behaviors they cover (e.g. Food details timing) are re-tested in Jest when each 
   2. Bump `package.json` version (0.3.0 for the first Expo release).
   3. `npm run release`: `APP_VARIANT=production npx expo prebuild --platform android --clean`, then
      `cd android && ./gradlew assembleRelease` (signing from `plugins/withReleaseSigning`), then verify the cert
-     SHA-256 with `apksigner` and print versionCode/versionName -> `release/pitplanner-<version>.apk`.
+     SHA-256 with `apksigner` and print versionCode/versionName -> `release/pitplanner-<version>.apk`. It
+     regenerates the development `android/` on exit. `--version x.y.z-alpha.N` builds an internal prerelease;
+     `--dry-run` prints the steps; `--verify <apk>` checks an APK.
   4. Upgrade test on an emulator: install `release/pitplanner-0.2.0.apk`, add data, install the new APK over
      it, check the import (by hand in T-038; a Maestro flow after that).
   5. Commit the version bump; tag `v<version>`; push `main` and the tag (Jason approves).

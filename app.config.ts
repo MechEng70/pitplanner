@@ -6,6 +6,8 @@
 
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 import pkg from './package.json';
+import { appVersion, versionCode } from './plugins/version.ts';
+import { withReleaseSigning } from './plugins/withReleaseSigning.ts';
 import { colors } from './src/theme/tokens.ts';
 
 const APP_ID = 'io.github.mecheng70.pitplanner';
@@ -28,23 +30,16 @@ export function variantOf(env: string | undefined): Variant {
   return env === 'production' ? 'production' : 'development';
 }
 
-/** 0.3.0 -> 300. Must stay above 0.2.0's 200 so the release upgrades in place. */
-export function versionCode(version: string): number {
-  const m = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
-  if (!m) throw new Error(`package.json version must be major.minor.patch, got ${version}`);
-  const [major, minor, patch] = m.slice(1).map(Number);
-  if (minor > 99 || patch > 99) throw new Error(`minor and patch must be under 100, got ${version}`);
-  return major * 10000 + minor * 100 + patch;
-}
-
 export default ({ config }: ConfigContext): ExpoConfig => {
   const variant = variantOf(process.env.APP_VARIANT);
   const dev = variant === 'development';
-  return {
+  // package.json's version, or APP_VERSION for an internal prerelease (tools/release.sh --version).
+  const version = appVersion(pkg.version, process.env.APP_VERSION);
+  return withReleaseSigning({
     ...config,
     name: dev ? 'Pit Planner dev' : 'Pit Planner',
     slug: 'pitplanner',
-    version: pkg.version,
+    version,
     scheme: 'pitplanner',
     orientation: 'portrait',
     userInterfaceStyle: 'dark',
@@ -53,7 +48,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     platforms: ['android'],
     android: {
       package: dev ? `${APP_ID}.debug` : APP_ID,
-      versionCode: versionCode(pkg.version),
+      versionCode: versionCode(version),
       adaptiveIcon: {
         foregroundImage: './assets/icon-foreground.png',
         backgroundImage: './assets/icon-background.png',
@@ -69,5 +64,5 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ],
     experiments: { typedRoutes: true },
     extra: { variant },
-  };
+  });
 };
