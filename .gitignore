@@ -27,3 +27,8 @@ coverage/
 
 # legacy/ (the Capacitor app, reference only): local build output and device captures
 legacy/tools/device/out/
+
+# Expo modules: Gradle output when the prebuilt android/ builds them
+modules/*/android/build/
+modules/*/android/.gradle/
+modules/*/android/.cxx/

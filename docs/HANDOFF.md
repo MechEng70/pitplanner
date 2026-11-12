@@ -16,8 +16,10 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
 - Gate on the new stack (T-003): `npm run check` prebuilds `android/` when stale, lints with expo + React Native
   rules and the layer rules (TECH-DESIGN section 3; color literals and inline styles are errors, so use
   `StyleSheet` until T-004's tokens), and `npm run test:gate` proves the gate catches layer breaks, lint
-  errors and planted secrets. Warm run about 1 minute. Native JUnit runs once `modules/*/android/src/test`
-  exists (first real run in T-013/T-014).
+  errors and planted secrets. Warm run 1 to 2.5 minutes (mostly Snyk). Native JUnit runs through Gradle for every
+  `modules/*/android/src/test` (placeholder test in `modules/pit-alarms` until T-013/T-014). Semgrep reads
+  rules cached in `~/.cache/pitplanner/semgrep-rules/` (refreshed weekly; `npm run semgrep:update`), so only
+  Snyk needs the network.
 - Destructive actions (uninstalling apps, deleting data, anything destructive on the phone or in the repo)
   need Jason's explicit yes (CLAUDE.md). Don't read consent into an unclear reply.
 - TypeScript is 6.0.3 (D-2 decided); `typescript7` is gone.

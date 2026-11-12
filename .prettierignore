@@ -4,6 +4,7 @@ ios/
 .expo/
 expo-env.d.ts
 legacy/
+modules/*/android/build/
 release/
 reference/
 docs/

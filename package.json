@@ -19,6 +19,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "tools/check.sh",
+    "semgrep:update": "tools/semgrep.sh --update-rules",
     "snyk:monitor": "snyk monitor --all-projects --exclude=reference,release,legacy,docs"
   },
   "engines": {

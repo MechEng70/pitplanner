@@ -1,0 +1,6 @@
+{
+  "name": "pit-alarms",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pit Planner step alarms (AlarmManager.setAlarmClock). Placeholder until T-013 ports the 0.2.0 plugin."
+}

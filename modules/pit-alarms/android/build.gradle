@@ -1,0 +1,21 @@
+// pit-alarms: Expo module for step alarms (TECH-DESIGN section 6). Placeholder until T-013.
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'io.github.mecheng70.pitplanner'
+version = '0.0.0'
+
+android {
+  // Same package as the 0.2.0 alarm code, so T-013 can keep the receiver class names.
+  namespace "io.github.mecheng70.pitplanner.alarms"
+  defaultConfig {
+    versionCode 1
+    versionName '0.0.0'
+  }
+}
+
+dependencies {
+  testImplementation 'junit:junit:4.13.2'
+}

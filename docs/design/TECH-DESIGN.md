@@ -313,20 +313,26 @@ where the stack does:
    - app logic, repositories, migrations, UI: Jest (`jest-expo`, `jest.setup.ts` mocks safe-area insets and
      fonts) + React Native Testing Library; SQLite code against `better-sqlite3`;
    - native: JUnit (+ Robolectric) in `modules/*/android/src/test`, run by `tools/test-android.sh` as
-     `:<project>:testDebugUnitTest` in the prebuilt `android/` (project names from Expo autolinking).
+     `:<project>:testDebugUnitTest` in the prebuilt `android/` (project names from Expo autolinking). Running
+     since 2026-11-12 with a placeholder test in `modules/pit-alarms`; a failing test fails the step.
    Before step 4, `tools/prebuild-if-stale.sh` runs `npx expo prebuild --platform android --no-install` when
    `android/` is missing or older than `app.config.ts`, `package.json`, `package-lock.json`, `plugins/`,
    `modules/` or `assets/` (stamp file `android/.prebuild-stamp`).
 5. **Semgrep** (`tools/semgrep.sh`): `p/typescript p/kotlin p/secrets r/generic.secrets` (the last adds GitHub
    tokens, which `p/secrets` misses), ERROR severity, `--no-git-ignore`, over the whole repo minus
-   `.semgrepignore`: generated `android/`, `legacy/`, `reference/`, `docs/` (SE-002).
+   `.semgrepignore`: generated `android/`, module build output, `legacy/`, `reference/`, `docs/` (SE-002). The
+   rulesets are cached as YAML in `~/.cache/pitplanner/semgrep-rules/` (outside the repo: Semgrep's rules
+   license, public repo) and refreshed when older than 7 days, best effort (`npm run semgrep:update` forces it).
+   The scan reads only the cache, so steps 1-5 work offline; Snyk (step 6) needs the network.
 6. **Snyk** `snyk test --all-projects --severity-threshold=high` (npm + the prebuilt `android/` Gradle
    projects; Gradle scope per SE-001; npm dev-tooling ignores per SE-003), then `snyk code test
    --severity-threshold=high`. If the Gradle part fails, run `cd android && ./gradlew assembleDebug` once and
    retry.
 
-A warm run takes 1 to 2 minutes (63 s and 94 s on 2026-11-12; Snyk is about 40 s, the Semgrep self-test fetches
-rules over the network).
+A warm run takes 1 to 2.5 minutes: Snyk 40-105 s (cloud scan, varies with the network), native tests about
+20 s, the rest about 15 s. Before the rule cache, Semgrep fetched its rules from
+semgrep.dev on every run: 503s and slow responses stretched the tests step from 9 s to 42 s once, and with the
+registry unreachable a scan took 97 s and failed.
 
 `npm run snyk:monitor` runs after a release or a push to main (not in the gate).
 

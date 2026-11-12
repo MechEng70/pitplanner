@@ -125,11 +125,15 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - Jest: `jest.setup.ts` (safe-area and `expo-font` mocks); `src/test/jestSetup.test.tsx` fails without it.
     Added `expo-font` (T-004 uses it for Roboto).
   - `tools/prebuild-if-stale.sh` (stamp `android/.prebuild-stamp`) runs before step 4. `tools/test-android.sh`
-    gets Gradle project names from Expo autolinking; its Gradle branch first runs for real when T-013/T-014 add
-    `modules/pit-alarms/android/src/test` (check it there).
+    gets Gradle project names from Expo autolinking.
+  - Follow-ups after review (2026-11-12, before T-004): a placeholder `modules/pit-alarms` (module name only,
+    Kotlin package `io.github.mecheng70.pitplanner.alarms`) with one JUnit test, so the native path runs now
+    (`:pit-alarms:testDebugUnitTest`, 18 s; a broken assertion fails the step). T-013 builds on it. Semgrep
+    rules cached outside the repo (`tools/semgrep.sh`), so the gate no longer depends on semgrep.dev (it
+    returned 503s while this was built). SE-001 rewritten for the SDK 58 count.
   - SE-001 re-checked on SDK 58 (AGP 9.2.1): 53 high/critical, all build-machine configurations; release
     classpath 0. Scope limit unchanged.
-  - Warm `npm run check`: 63 to 94 s (under the 4 minute target).
+  - Warm `npm run check`: 1 to 2.5 minutes, mostly Snyk's cloud scan (under the 4 minute target).
 
 ### T-004 Theme: tokens, NativeWind, Reusables, Roboto (spike)
 - **Status:** todo
