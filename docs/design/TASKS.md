@@ -45,8 +45,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ## Phase 2: Scaffold and quality gate
 
 ### T-002 Expo scaffold; Capacitor app to `legacy/`
-- **Status:** in progress: code done and `npm run check` passes (`git log --grep T-002`); dev build built but
-  not yet installed (phone disconnected); SE-003 waits for Jason's approval.
+- **Status:** done (`a8a8ad6`, close-out in the next commit). Dev build on the phone 2026-11-12: three tabs, Plan
+  shows "Fire the smoker at 6:20 AM" (`docs/fidelity/t002-expo-dev-build.png`). SE-003 waits for Jason's approval.
 - **Goal:** an Expo SDK 58 app with Expo Router tabs (Plan, Cook, Gear placeholders) runs as a development
   build on the phone and imports the engine; the Capacitor app is kept as reference.
 - **Files:** `package.json`, `app.config.ts`, `app/_layout.tsx`, `app/(tabs)/{_layout,plan,cook,gear}.tsx`,
@@ -92,7 +92,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - Added `expo-dev-client` (development builds) and `expo-system-ui` (dark root background).
   - The old Capacitor dev copy on the phone was backed up to
     `legacy/tools/device/out/dev-copy-backup-2026-11-12/data.tar` (git-ignored). The Expo dev build has the same
-    package ID but a different debug key, so installing it means uninstalling that dev copy first.
+    package ID but a different debug key, so the old dev copy was uninstalled (release app untouched).
   - First Snyk scan of the Expo stack: two high npm findings in dev tooling (`braces` via Metro, `open` via
     dev-middleware), not in the app bundle; ignored path by path in `.snyk`, written up as SE-003 (pending
     Jason's approval).
