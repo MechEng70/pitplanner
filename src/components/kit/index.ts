@@ -7,5 +7,6 @@ export * from './icons';
 export { Divider, Fill, Fixed, Row, Spacer, Stack, type Gap } from './layout';
 export { Num, type NumProps } from './num';
 export { CheckRow, ListRow, StatusRow } from './rows';
-export { FooterScroll, Sheet, useSheet } from './sheet';
+export { InputField } from './input';
+export { FooterScroll, Sheet, useReveal, useSheet } from './sheet';
 export { Avatar, Banner, Card, EmptyState, GroupCard, IconAvatar, InfoBox, ResultCard, Tile, Tiles } from './surfaces';

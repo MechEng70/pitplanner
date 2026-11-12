@@ -1,9 +1,9 @@
-# Handoff (2026-11-12, sixth session: T-002, T-003)
+# Handoff (2026-11-12, seventh session: T-006)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## START HERE: scaffold, gate, theme and kit in place (T-002..T-005 done), T-006 next
+## START HERE: scaffold, gate, theme, kit and device tests in place (T-002..T-006 done), T-007 next
 
 - Root is now the Expo app: `app.config.ts` (variants by `APP_VARIANT`, versionCode from package.json),
   `app/` routes (tabs Plan, Cook, Gear placeholders), `src/lib/` pure helpers, `src/platform/types.ts`
@@ -34,6 +34,12 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
   kit `Sheet` on `Modal` (D-4). Tailwind spacing is now true dp (`inlineRem: 16`). Gallery
   `pitplanner://dev/kit`. Not ported until their screen needs them: AppBar/Screen, Lanes, Menu/SelectField
   and the Setup form pieces (list in TASKS T-005).
+- Device tests (T-006): `npm run device` (Maestro + uiautomator dumps, 115% and 130%, data backed up and
+  restored, screenshots cropped). Read `tools/device/out/report.txt` first. `tools/device/README.md`.
+  New screens add their controls to `tools/device/targets.tsv` (`stable-controls`, T-017 PR-3).
+- D-4 confirmed by Jason on condition of the `sheet-keyboard` device test; it passes (Sheet lifts by the
+  keyboard height, `FooterScroll` reveals the focused field above the footer). Kit `InputField` added.
+- T-017 has PR-4 (equal-width tiles, mockup 05; try `flex: 1` first).
 - SE-003 (Snyk, `braces`/`open` in Metro and dev-middleware, not shipped): approved with conditions; override
   failed (open 11 is ESM-only), ignores expire 2027-02-10. Re-check triggers are in SECURITY-EXCEPTIONS.
 
@@ -230,8 +236,8 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 
 1. Done 2026-11-12: Jason approved the stack-change plan; T-001 phone check on 0.2.0 passed.
 2. Jason: push `main` when ready (plan docs and T-001 are local only).
-3. Jason: install the Maestro CLI before T-006 (`curl -fsSL "https://get.maestro.mobile.dev" | bash`).
-4. T-002..T-005 done (R-1 closed, D-4 decided). Next: T-006 (Maestro; Jason installs the CLI first),
+3. Done: Maestro CLI installed (2.12.1, `~/.maestro/bin`).
+4. T-002..T-006 done (R-1 closed, D-4 decided and confirmed). Next: T-007,
    per WBS "Suggested order" (T-058 now sits between T-019 and the Cook screen).
    Push the `v0.2.0` tag only when Jason says.
 5. Still open from before (carried into the plan): real cook with alarms through a reboot (now T-037 on the Expo

@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { Pressable } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, type ViewStyle } from 'react-native';
 import { Sheet, SHEET_OUT_MS, useSheet } from './sheet';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
@@ -88,4 +88,32 @@ test('the footer and body both render; a flush sheet still has its title', async
   );
   expect(screen.getByText('Rows')).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: 'Start cook' })).toBeOnTheScreen();
+});
+
+// Regression (T-006 device test sheet-keyboard): edge-to-edge, the Modal window does not resize for the
+// keyboard, so a focused field low in the sheet and the pinned footer ended up under it.
+test('the open keyboard lifts the sheet and shortens it by the keyboard height', async () => {
+  const handlers: Record<string, (e: { endCoordinates: { height: number } }) => void> = {};
+  const spy = jest.spyOn(Keyboard, 'addListener').mockImplementation((name, fn) => {
+    handlers[name] = fn as (typeof handlers)[string];
+    return { remove: () => {} } as ReturnType<typeof Keyboard.addListener>;
+  });
+  await render(
+    <Sheet title="Griddle" onClose={() => {}} footer={<Text>Save</Text>}>
+      <Text>Body</Text>
+    </Sheet>,
+  );
+  const frameOf = () => StyleSheet.flatten(screen.getByLabelText('Griddle').props.style) as ViewStyle;
+  const maxOf = () => (StyleSheet.flatten(screen.getByTestId('sheet-frame').props.style) as ViewStyle).maxHeight;
+  expect(frameOf().marginBottom ?? 0).toBe(0);
+  const closedMax = maxOf() as number;
+
+  await act(() => handlers.keyboardDidShow({ endCoordinates: { height: 278 } }));
+  expect(frameOf().marginBottom).toBe(278);
+  expect(maxOf()).toBe(closedMax - 278);
+
+  await act(() => handlers.keyboardDidHide({ endCoordinates: { height: 0 } }));
+  expect(frameOf().marginBottom ?? 0).toBe(0);
+  expect(maxOf()).toBe(closedMax);
+  spy.mockRestore();
 });

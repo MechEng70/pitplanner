@@ -1,6 +1,6 @@
 // Kit gallery (T-005, dev builds only): every kit component once, with sample values from the mockups.
 // Open with: adb shell am start -d pitplanner://dev/kit <dev package>. Not a screen of the app.
-import { Redirect } from 'expo-router';
+import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,6 +23,7 @@ import {
   GroupCard,
   IconAvatar,
   IconButton,
+  InputField,
   InfoBox,
   ListRow,
   MoreVert,
@@ -76,7 +77,11 @@ function Gallery() {
   const [rate, setRate] = useState(0.75);
   const [griddle, setGriddle] = useState(true);
   const [oven, setOven] = useState(false);
-  const [sheet, setSheet] = useState<null | 'one' | 'two'>(null);
+  // `pitplanner://dev/kit?sheet=form` opens the form sheet directly (T-006 device test sheet-keyboard).
+  const { sheet: start } = useLocalSearchParams<{ sheet?: string }>();
+  const [sheet, setSheet] = useState<null | 'one' | 'two' | 'form'>(start === 'form' ? 'form' : null);
+  const [name, setName] = useState('');
+  const [weight, setWeight] = useState('');
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'left', 'right', 'bottom']}>
@@ -314,6 +319,9 @@ function Gallery() {
           <Button kind="outline" onPress={() => setSheet('one')}>
             <Text>Open sheet</Text>
           </Button>
+          <Button kind="outline" onPress={() => setSheet('form')}>
+            <Text>Open form sheet</Text>
+          </Button>
           <Card col>
             <EmptyState icon={<Flame size={48} />} title="Nothing planned" body="Add food to plan a cook.">
               <Button block>
@@ -335,6 +343,16 @@ function Gallery() {
           {Array.from({ length: 12 }, (_, i) => (
             <Text key={i}>Row {i + 1}</Text>
           ))}
+        </Sheet>
+      )}
+      {sheet === 'form' && (
+        // T-006 device test sheet-keyboard: a field at the top and one under a long body, footer pinned.
+        <Sheet title="Griddle" onClose={() => setSheet(null)} footer={<SheetSave />}>
+          <InputField label="Name" value={name} placeholder="Griddle" onInput={setName} />
+          {Array.from({ length: 10 }, (_, i) => (
+            <Text key={i}>Row {i + 1}</Text>
+          ))}
+          <InputField label="Weight" value={weight} numeric placeholder="12" onInput={setWeight} />
         </Sheet>
       )}
       {sheet === 'two' && (

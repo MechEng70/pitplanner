@@ -230,10 +230,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - Gallery: `app/dev/kit.tsx`, `pitplanner://dev/kit` (dev builds only).
 
 ### T-006 Device test tooling (Maestro)
-- **Status:** todo
+- **Status:** done (see `git log --grep T-006`)
 - **Goal:** unattended device passes for the React Native app, replacing the WebView/CDP scripts.
-- **Files:** `tools/device/run.sh` (rewritten), `tools/device/flows/*.yaml`, `tools/device/compose.py` (kept),
-  `tools/device/db.sh` (back up and restore the dev build's SQLite via `run-as`), `tools/device/README.md`.
+- **Files:** `tools/device/run.sh` (rewritten), `tools/device/lib.sh`, `tools/device/check.mjs`, `ui.mjs`,
+  `ui.test.mjs`, `targets.tsv`, `crop.py`, `tools/device/compose.py` (kept), `tools/device/db.sh` (back up and
+  restore the dev build's data via `run-as`), `tools/device/README.md`.
 - **Depends on:** T-002; Jason has installed the Maestro CLI.
 - **Approach:** keep today's safety in `run.sh`: wake and refuse if locked, back up data, heads-up banners off,
   font scale 1.15 then 1.3, restore everything on exit. Flows tap by accessibility label; `adb exec-out
@@ -246,8 +247,36 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   five times; a temp choice; a mode toggle), dump again, and fail listing any element whose bounds changed.
   Targets: the `app/dev/spike` stepper now (it jumps per Jason's T-004 review, so the flow must fail there:
   that proves it detects a jump), then Plan (T-017) and Food details (T-019).
+- **Device test `sheet-keyboard` (D-4 condition, Jason 2026-11-12):** a kit Sheet with a text field and the
+  keyboard open keeps the focused field and the pinned footer visible, at 115% and 130%. If `Modal` cannot
+  pass it, stop and tell Jason.
 - **Tests:** n/a (tooling); `shellcheck` clean.
 - **Device testing (Jason):** phone unlocked and plugged in during the run.
+- **Notes (done 2026-11-12):**
+  - `npm run device -- [--no-build] [--only smoke,sheet-keyboard,stable-controls]`; full pass with build about
+    8.5 minutes. Starts Metro if it is not running (and stops it after), cold-starts the dev build through the
+    dev-client link (a plain deep link on a cold start opens the dev launcher) and then opens the route.
+  - Maestro 2.12 quirks: it reads stdin (it swallowed the rest of `targets.tsv`), `repeat: times: ${N}` runs
+    "indefinitely" for N=1, and `takeScreenshot` ignores the path. So tap and scroll flows are written per
+    step into `out/`, Maestro gets `/dev/null` as stdin, and screenshots are adb screencap, cropped below the
+    status bar. Maestro's debug output goes to `out/maestro`.
+  - Privacy guard: in one early run at 130% the notification shade was open after a tap and the dump held
+    other apps' notifications. `dump` now refuses any window that is not the app (collapses the shade, fails
+    the step, writes nothing). Not seen again in two full runs.
+  - `sheet-keyboard` failed first, as expected for Modal edge-to-edge: keyboard top at 2056 px, focused Weight
+    field at 2512-2720 and Save at 2880-3104, both under the keyboard. Fix in the kit: the Sheet lifts itself
+    by the keyboard height (`Keyboard` events; regression test in `sheet.test.tsx`), then the field sat behind
+    the floating footer, so `FooterScroll` reveals the focused field above the footer (`reveal.ts`, unit
+    tested). Now passes at both scales (Weight at the bottom, then Name at the top with the keyboard open).
+    Kit `InputField` ported for it (legacy InputField, ui.css `.input`); gallery `pitplanner://dev/kit?sheet=form`.
+  - `stable-controls` checks the control, its row and everything above it (any node starting above the
+    control's bottom edge). Spike result at both scales: the temp chips and the Ready by / Start at toggle
+    move 5 to 7 px when selected (the selected label is bolder, so wider): detected, so the detector self-test
+    passes. The spike stepper itself did not move: Roboto's digits are already equal width, so "0.75 hr/lb"
+    and "1.00 hr/lb" have the same bounds. Targets live in `targets.tsv` (T-017 and T-019 add theirs with
+    `expect stays`).
+  - `db.sh restore` only replaces the dirs the backup holds and refuses an empty or unreadable tar; round trip
+    checked on the phone.
 
 ### T-007 Release build: signing plugin, versionCode, release script
 - **Status:** todo
@@ -413,6 +442,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     font scale; warnings and info appear below the control or in the Conflicts tile, never above it; no
     automatic scrolling after a change. Fail: the T-006 `stable-controls` flow reports a moved bound at 115% or
     130%.
+  - **PR-4 The tiles are equal width.** Fire smoker, Pellets and Conflicts share the row in equal thirds
+    (mockup 05) at 100%, 115% and 130%, whatever their values. Try `flex: 1` (with `flex-basis: 0`) on each
+    tile before measuring anything. Fail: any two tiles in the row differ in width by more than 1 dp
+    (`uiautomator dump` bounds), or a tile value is cut (Jason, 2026-11-12).
 
 ### T-018 Smoker temp menu, Add food, Issues sheet (06, 07)
 - **Status:** todo

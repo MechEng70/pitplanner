@@ -8,17 +8,22 @@ import {
   AccessibilityInfo,
   Animated,
   Easing,
+  Keyboard,
   Modal,
   Pressable,
   ScrollView,
   StyleSheet,
+  TextInput,
   View,
   useWindowDimensions,
+  type HostInstance,
   type LayoutChangeEvent,
+  type ScrollViewInstance,
 } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IconButton } from '@/components/kit/controls';
+import { revealOffset } from '@/components/kit/reveal';
 import { Close } from '@/components/kit/icons';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
@@ -38,6 +43,23 @@ const SheetContext = React.createContext<SheetCtl>({ close: after => after?.() }
 /** Inside a Sheet: close it (slide down), then run `after`. */
 export const useSheet = () => React.useContext(SheetContext);
 
+/**
+ * Height of the open soft keyboard in dp, 0 when closed. Edge-to-edge, Android does not resize a Modal's
+ * window for the keyboard (adjustResize has no effect), so the sheet lifts itself by this much.
+ */
+function useKeyboardHeight() {
+  const [h, setH] = React.useState(0);
+  React.useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', e => setH(e.endCoordinates.height));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setH(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+  return h;
+}
+
 /** Vertical fade from transparent to `color`, for the top edge of a pinned footer or the end of a list. */
 function Fade({ color, height }: { color: string; height: number }) {
   const id = `fade${React.useId().replace(/[^a-zA-Z0-9]/g, '')}`;
@@ -53,6 +75,12 @@ function Fade({ color, height }: { color: string; height: number }) {
     </Svg>
   );
 }
+
+const RevealContext = React.createContext<(field: HostInstance | null | undefined) => void>(() => {});
+/** Inside a FooterScroll: scroll so `field` is visible above the footer (InputField calls it on focus). */
+export const useReveal = () => React.useContext(RevealContext);
+/** Space kept between a revealed field and the edge or footer (dp). */
+const REVEAL_MARGIN = 16;
 
 /**
  * The legacy ScrollWithFooter rule: the footer floats over the bottom of the scroll area behind a fade, and
@@ -80,11 +108,49 @@ export function FooterScroll({
   const [footH, setFootH] = React.useState(0);
   const onFootLayout = (e: LayoutChangeEvent) => setFootH(e.nativeEvent.layout.height);
   const pad = React.useMemo(() => ({ paddingBottom: (footer ? footH : 0) + BODY_END }), [footer, footH]);
+  const scroll = React.useRef<ScrollViewInstance>(null);
+  const covered = footer ? footH : 0;
+  // Android scrolls a focused field only to the scroll view's bottom edge, which the footer covers, so the
+  // focused field is revealed again on focus and whenever the view resizes (the keyboard opening).
+  const reveal = React.useCallback(
+    (field: HostInstance | null | undefined) => {
+      const sv = scroll.current;
+      const inner = sv?.getInnerViewRef();
+      if (!sv || !inner || !field) return;
+      requestAnimationFrame(() => {
+        field.measureLayout(
+          inner,
+          (_x, contentTop, _w, height) =>
+            field.measureInWindow((_wx, winTop) =>
+              sv.measureInWindow((_sx, top, _sw, svHeight) => {
+                const y = revealOffset(
+                  { contentTop, winTop, height },
+                  { top, visibleHeight: svHeight - covered },
+                  REVEAL_MARGIN,
+                );
+                if (y != null) sv.scrollTo({ y, animated: true });
+              }),
+            ),
+          () => {}, // not inside this scroll view
+        );
+      });
+    },
+    [covered],
+  );
+  const onLayout = React.useCallback(() => reveal(TextInput.State.currentlyFocusedInput()), [reveal]);
   return (
     <View className="min-h-0 shrink">
-      <ScrollView className="shrink grow-0" contentContainerClassName={contentClassName} contentContainerStyle={pad}>
-        {children}
-      </ScrollView>
+      <RevealContext.Provider value={reveal}>
+        <ScrollView
+          ref={scroll}
+          onLayout={onLayout}
+          className="shrink grow-0"
+          contentContainerClassName={contentClassName}
+          contentContainerStyle={pad}
+        >
+          {children}
+        </ScrollView>
+      </RevealContext.Provider>
       {footer ? (
         <View onLayout={onFootLayout} style={styles.foot}>
           <Fade color={to.color} height={FADE} />
@@ -114,6 +180,7 @@ export function Sheet({
 }) {
   const { height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const kb = useKeyboardHeight();
   const [shown] = React.useState(() => new Animated.Value(0)); // 0 = off screen, 1 = up
   const [closing, setClosing] = React.useState(false);
   const after = React.useRef<(() => void) | undefined>(undefined);
@@ -160,14 +227,19 @@ export function Sheet({
   }, [closing]);
 
   const ctl = React.useMemo(() => ({ close }), [close]);
+  // With the keyboard open the sheet sits on top of it and gets shorter by its height, so the focused field
+  // (the ScrollView keeps it in view as it shrinks) and the pinned footer stay above the keyboard.
   const slide = React.useMemo(
-    () => ({ transform: [{ translateY: shown.interpolate({ inputRange: [0, 1], outputRange: [height, 0] }) }] }),
-    [shown, height],
+    () => ({
+      marginBottom: kb,
+      transform: [{ translateY: shown.interpolate({ inputRange: [0, 1], outputRange: [height, 0] }) }],
+    }),
+    [shown, height, kb],
   );
   const fade = React.useMemo(() => ({ opacity: shown }), [shown]);
   const frame = React.useMemo(
-    () => ({ maxHeight: height - insets.top - TOP_GAP, paddingBottom: insets.bottom }),
-    [height, insets.top, insets.bottom],
+    () => ({ maxHeight: height - insets.top - TOP_GAP - kb, paddingBottom: kb > 0 ? 0 : insets.bottom }),
+    [height, insets.top, insets.bottom, kb],
   );
 
   return (
@@ -185,7 +257,7 @@ export function Sheet({
             <Pressable className="flex-1 bg-scrim" aria-label="Close sheet" onPress={() => close()} />
           </Animated.View>
           <Animated.View role="dialog" aria-modal aria-label={title} style={slide}>
-            <View className="overflow-hidden rounded-t-primary bg-surface" style={frame}>
+            <View testID="sheet-frame" className="overflow-hidden rounded-t-primary bg-surface" style={frame}>
               <View className="items-center pb-1 pt-2.5">
                 <View className="h-1 w-8 rounded-full bg-outline-2" />
               </View>

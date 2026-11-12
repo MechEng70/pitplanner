@@ -52,7 +52,7 @@ engine/  data/          unchanged
 legacy/                 the Capacitor app (old src/ UI, android/ sources, capacitor.config.ts, vite config,
                         WebView device scripts) as reference until parity; not built, linted or tested;
                         deleted after 0.3.0 ships (T-039)
-tools/                  check.sh, release scripts, device/ (Maestro flows + adb helpers)
+tools/                  check.sh, release scripts, device/ (Maestro + adb device tests)
 ```
 
 The Capacitor build stays reproducible from tag `v0.2.0` (created in T-002 on commit `e86d930`, the commit the
@@ -280,6 +280,10 @@ times stay exact. Changes made without asking keep serve only if every food keep
   Close, scrim tap and Android back (the system sends it to the top `Modal`, so stacked sheets close top
   first), `useSheet().close(after)`. The footer floats over the scroll area behind a 14 dp fade and the
   content gets its measured height as bottom padding (the 0.2.0 ScrollWithFooter rule, `FooterScroll`).
+  Keyboard (Jason's D-4 condition, T-006): edge-to-edge, Android does not resize a `Modal` window for the
+  keyboard, so the sheet lifts itself by the keyboard height and gets that much shorter; `FooterScroll`
+  scrolls a focused field above the footer (`InputField` asks on focus, and again when the view resizes).
+  Device test `sheet-keyboard` passes at 115% and 130%.
 - **Kit (T-005):** `src/components/kit` (index re-exports `Text` and `Button` from `src/components/ui`).
   `Num` is a `Text` with tabular digits whose spaces become no-break spaces (CSS `nowrap`); it does not
   accept `numberOfLines`, `clamp`, `adjustsFontSizeToFit`, `ellipsizeMode`, `maxFontSizeMultiplier` or
@@ -377,7 +381,7 @@ registry unreachable a scan took 97 s and failed.
 | App logic, repositories, migrations | Jest + `better-sqlite3` | `src/**/*.test.ts` |
 | UI components and screens | Jest + React Native Testing Library | `src/**/*.test.tsx` |
 | Native | JUnit, Robolectric | `modules/*/android/src/test/` |
-| Device | Maestro flows (`tools/device/flows/`) + adb screencap at 115/130%, heads-up banners off | dev build `io.github.mecheng70.pitplanner.debug` |
+| Device | `npm run device`: Maestro taps by label, `uiautomator dump` checks, adb screencap at 115/130%, heads-up banners off (`tools/device/README.md`) | dev build `io.github.mecheng70.pitplanner.debug` |
 | Regression | any level | one per fixed bug, failing first |
 
 The Playwright-over-CDP device scripts only work with the WebView; they move to `legacy/` and are replaced by
@@ -413,7 +417,7 @@ behaviors they cover (e.g. Food details timing) are re-tested in Jest when each 
 | D-1 | Distribution | Decided 2026-11-12: GitHub Releases primary, Google Drive optional mirror. |
 | D-2 | TypeScript version | Decided in T-002: TypeScript 6.0.3 (`~6.0.3`, what SDK 58 pins). The `typescript7` alias and the 6/7 split are gone; `npm run typecheck` is `tsc --noEmit` over `tsconfig.json` (extends `expo/tsconfig.base`, adds `strict`, `allowImportingTsExtensions`, `noUnusedLocals`). Metro and `jest-expo` resolve the engine's explicit `.ts` imports with no resolver config, so there is no `metro.config.js` or `babel.config.js` yet (NativeWind adds them in T-004). |
 | D-3 | Snyk Gradle scope (SE-001) | Approved: `releaseRuntimeClasspath` only until T-057, deadline 2027-02-01. Re-check after the first prebuild: SDK 58 brings its own AGP, so the findings may change. |
-| D-4 | Bottom sheets | Decided in T-005 (2026-11-12): kit Sheet on React Native `Modal`. `@gorhom/bottom-sheet` 5.2.14 (May 2026) predates RN 0.88, needs `react-native-gesture-handler` as a second native dependency, and gives drag-to-dismiss, which the 0.2.0 sheet never had (its handle is visual only). `Modal` gives parity, native back handling per sheet and plain Jest tests. Revisit only if a screen needs drag or snap points. |
+| D-4 | Bottom sheets | Decided in T-005 (2026-11-12): kit Sheet on React Native `Modal`. Confirmed by Jason on the condition that a sheet with a text field and the keyboard open keeps the focused field and the pinned footer visible: passes since T-006 (device test `sheet-keyboard`). `@gorhom/bottom-sheet` 5.2.14 (May 2026) predates RN 0.88, needs `react-native-gesture-handler` as a second native dependency, and gives drag-to-dismiss, which the 0.2.0 sheet never had (its handle is visual only). `Modal` gives parity, native back handling per sheet and plain Jest tests. Revisit only if a screen needs drag or snap points. |
 | D-5 | App state | Keep the current pattern (one context store, every change written through repositories); no new state library unless the Cook screen shows re-render cost. |
 | D-6 | Port in place vs side by side | In place: the Capacitor app moves to `legacy/` in T-002; the Expo app lives at the root. 0.2.x hotfixes from a branch off tag `v0.2.0`. Friends stay on 0.2.0 until 0.3.0 reaches parity. |
 | D-7 | Generated `android/` (CNG) | Yes: no hand edits; everything through `app.config.ts`, config plugins and modules. Keeps Expo SDK upgrades tractable. |
