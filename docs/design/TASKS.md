@@ -45,7 +45,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ## Phase 2: Scaffold and quality gate
 
 ### T-002 Expo scaffold; Capacitor app to `legacy/`
-- **Status:** todo
+- **Status:** in progress: code done and `npm run check` passes (`git log --grep T-002`); dev build built but
+  not yet installed (phone disconnected); SE-003 waits for Jason's approval.
 - **Goal:** an Expo SDK 58 app with Expo Router tabs (Plan, Cook, Gear placeholders) runs as a development
   build on the phone and imports the engine; the Capacitor app is kept as reference.
 - **Files:** `package.json`, `app.config.ts`, `app/_layout.tsx`, `app/(tabs)/{_layout,plan,cook,gear}.tsx`,
@@ -71,6 +72,30 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   app and shows three tabs and the fire time; `npm run test:engine` unchanged and green; tag exists locally.
 - **Tests:** engine suite unchanged; one Jest smoke test rendering the Plan placeholder.
 - **Device testing (Jason):** none (Claude installs the dev build).
+- **Notes (done 2026-11-12):**
+  - Versions: `expo` ~58.0.24, `react-native` 0.88.1, `react` 19.3.0, `expo-router` ~58.0.31, TypeScript ~6.0.3
+    (D-2 decided: `typescript7` dropped). Metro and Jest resolve the engine's `.ts` imports with no config, so
+    no `metro.config.js` or `babel.config.js` yet (T-004 adds them for NativeWind).
+  - Kept in `src/lib/` (copied; the originals stay in `legacy/src/lib/` with the rest of the old UI): the
+    listed helpers plus `gear.ts` (pure, used by Setup and Gear). `cook.ts` `syncAlarms(cook, now, alarms,
+    units)` now takes an `AlarmService` (`src/platform/types.ts`, TECH-DESIGN section 4) and the display units
+    instead of calling the Capacitor plugin and Preferences. `history.ts` keeps `CookRecord` and `logsOf`; its
+    file I/O stays in legacy (SQLite in T-009). `share.ts`, `storage.ts`, `store.tsx` and `src/platform/*.ts`
+    (Capacitor bridges) are legacy only.
+  - Moved whole: `tools/device/` to `legacy/tools/device/` (except `compose.py`, kept for T-006) and
+    `tools/release.sh` to `legacy/tools/` (T-007 writes the Expo one).
+  - Pulled forward from T-003 so `npm run check` passes now: Capacitor, Preact, Vite and Vitest deps and configs
+    removed; minimal ESLint config (`@eslint/js` + typescript-eslint; T-003 adds expo, React Native and layer
+    rules); minimal `jest.config.js` (jest-expo, TZ America/New_York for fixtures); `legacy/` and generated
+    `android/` excluded from Semgrep/Snyk (SE-002 extended); `tools/test-android.sh` reports no native tests
+    until `modules/` has some. T-003 still owns the prebuild step in `check.sh` and running module JUnit.
+  - Added `expo-dev-client` (development builds) and `expo-system-ui` (dark root background).
+  - The old Capacitor dev copy on the phone was backed up to
+    `legacy/tools/device/out/dev-copy-backup-2026-11-12/data.tar` (git-ignored). The Expo dev build has the same
+    package ID but a different debug key, so installing it means uninstalling that dev copy first.
+  - First Snyk scan of the Expo stack: two high npm findings in dev tooling (`braces` via Metro, `open` via
+    dev-middleware), not in the app bundle; ignored path by path in `.snyk`, written up as SE-003 (pending
+    Jason's approval).
 
 ### T-003 Quality gate on the new stack
 - **Status:** todo

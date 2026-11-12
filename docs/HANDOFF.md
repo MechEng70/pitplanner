@@ -1,9 +1,26 @@
-# Handoff (2026-11-12, end of fifth session)
+# Handoff (2026-11-12, sixth session: T-002)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## START HERE: stack change approved (2026-11-12), T-002 next
+## START HERE: Expo scaffold in place (T-002 code done; device install and SE-003 approval open)
+
+- Root is now the Expo app: `app.config.ts` (variants by `APP_VARIANT`, versionCode from package.json),
+  `app/` routes (tabs Plan, Cook, Gear placeholders), `src/lib/` pure helpers, `src/platform/types.ts`
+  (service interfaces), `src/screens/` (placeholders). The Plan placeholder plans the Saturday fixture and
+  shows "Fire the smoker at 6:20 AM": the engine runs in Metro unchanged.
+- The Capacitor app is in `legacy/` (reference only). Tag `v0.2.0` on `e86d930` exists locally (not pushed).
+- Dev build: `npm run android` (prebuild + Gradle + install + Metro). It is `io.github.mecheng70.pitplanner.debug`,
+  "Pit Planner dev", beside the release. JAVA_HOME must be temurin-21. Without Metro running (and
+  `adb reverse tcp:8081 tcp:8081`) the dev build opens the dev launcher instead of the app.
+- `npm run check` passes on the new stack with T-003 work pulled forward minimally (see T-002 notes in
+  TASKS.md). T-003 finishes the gate: eslint-config-expo, React Native and layer rules, prebuild in check.sh.
+- TypeScript is 6.0.3 (D-2 decided); `typescript7` is gone.
+- Open in T-002: install the dev build on the phone (it was disconnected; the APK is built in
+  `android/app/build/outputs/apk/debug/`); the old Capacitor dev copy must be uninstalled first (data backed up
+  in `legacy/tools/device/out/dev-copy-backup-2026-11-12/`). SE-003 (Snyk, dev tooling) needs Jason's approval.
+
+## Stack change plan (approved 2026-11-12)
 
 Jason decided (2026-11-12) to rebuild the app on **Expo SDK 58 + React Native + TypeScript + NativeWind + React
 Native Reusables + Expo Router + expo-sqlite + expo-secure-store** (development builds, not Expo Go; no server,
@@ -33,7 +50,7 @@ Key points of the plan (details in TECH-DESIGN):
 - Task IDs were renumbered: old Capacitor-era T-002..T-040 are superseded (mapping table at the end of
   TASKS.md). SE-001's follow-up is now T-057.
 
-Open decisions in TECH-DESIGN section 13: D-2 TypeScript version (settle in T-002), D-4 bottom sheet library,
+Open decisions in TECH-DESIGN section 13: D-4 bottom sheet library,
 D-5 state (keep context store), D-6 in-place port with `legacy/`, D-7 generated `android/`, D-8 Maestro.
 
 ## Engineering plan and quality gate (2026-11-12)
@@ -197,8 +214,8 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 1. Done 2026-11-12: Jason approved the stack-change plan; T-001 phone check on 0.2.0 passed.
 2. Jason: push `main` when ready (plan docs and T-001 are local only).
 3. Jason: install the Maestro CLI before T-006 (`curl -fsSL "https://get.maestro.mobile.dev" | bash`).
-4. Then T-002 (scaffold, `legacy/`, tag `v0.2.0`), T-003 (gate on the new stack), T-004 (theme spike, settles
-   R-1), per WBS "Suggested order".
+4. T-002 nearly done (see START HERE). Next: T-003 (gate on the new stack), T-004 (theme spike, settles R-1), per WBS "Suggested order".
+   Push the `v0.2.0` tag only when Jason says.
 5. Still open from before (carried into the plan): real cook with alarms through a reboot (now T-037 on the Expo
    build), two-phone share via Gmail/Drive (T-031), lane chart full screen (T-040), import-made conflict fix
    (T-030), HA Phase 1 after 0.3.0 (T-042 onward).

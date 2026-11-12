@@ -1,7 +1,6 @@
-// Cook history: one JSON file in app data (SPEC sections 2 and 9). Exportable, survives app updates.
-// Only Save on Cook finished writes here; Discard logs nothing.
+// Cook history records (SPEC section 9). Only Save on Cook finished writes one; Discard logs nothing.
+// Storage moves to SQLite (src/db, T-009); 0.2.0 kept them in files/history.json (imported in T-012).
 
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import type { CookLog } from '../../engine/types.ts';
 
 export interface CookRecord {
@@ -11,27 +10,6 @@ export interface CookRecord {
   pitTempF: number;
   lateMin?: number | null; // served this many minutes after the planned serve; null when ended before serve
   items: { name: string; plannedMin: number; actualMin: number; log: CookLog }[];
-}
-
-const FILE = 'history.json';
-
-export async function loadHistory(): Promise<CookRecord[]> {
-  try {
-    const r = await Filesystem.readFile({ path: FILE, directory: Directory.Data, encoding: Encoding.UTF8 });
-    const parsed = JSON.parse(typeof r.data === 'string' ? r.data : await r.data.text());
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return []; // no file yet
-  }
-}
-
-export async function saveHistory(records: CookRecord[]): Promise<void> {
-  await Filesystem.writeFile({
-    path: FILE,
-    directory: Directory.Data,
-    encoding: Encoding.UTF8,
-    data: JSON.stringify(records, null, 1),
-  });
 }
 
 /** The logs the engine learns from (rates, size-adjusted unlock). */

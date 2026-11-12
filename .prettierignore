@@ -1,13 +1,15 @@
 # Code only. Markdown docs, rules data and generated or binary output keep their hand layout.
-dist/
 android/
+ios/
+.expo/
+expo-env.d.ts
+legacy/
 release/
 reference/
 docs/
 assets/
 public/
 node_modules/
-tools/device/out/
 coverage/
 data/
 package-lock.json

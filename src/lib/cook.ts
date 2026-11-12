@@ -5,9 +5,8 @@ import { markStepDone, shiftRemaining, pitOutage, markPullDone, postponeStep, ho
 import { alarmsFromPlan, keyedEvents, type KeyedEvent } from '../../engine/alarms.ts';
 import type { Plan, PlanInput } from '../../engine/types.ts';
 import { rules } from './rules.ts';
-import { PitAlarms, type NotificationAction } from '../platform/alarms.ts';
+import type { AlarmService, NotificationAction } from '../platform/types.ts';
 import { fmtTime, tx, type Units } from './format.ts';
-import { load } from './storage.ts';
 
 const MIN = 60_000;
 export const QUIET_MIN = 30;
@@ -134,33 +133,33 @@ export function pitUp(c: ActiveCook, now: number, keepServe: boolean): ActiveCoo
 
 export const quiet = (c: ActiveCook, now: number): ActiveCook => ({ ...c, quietUntil: now + QUIET_MIN * MIN });
 
-/** Replace the phone's alarm set with what this cook still needs, and stop nagging finished steps. */
-export async function syncAlarms(c: ActiveCook, now: number) {
+/**
+ * Replace the phone's alarm set with what this cook still needs, and stop nagging finished steps.
+ * `units` are the display settings, so alert text reads in C / kg when chosen.
+ */
+export async function syncAlarms(c: ActiveCook, now: number, alarms: AlarmService, units: Units) {
   const done = Object.keys(c.done);
-  if (done.length) await PitAlarms.acknowledge({ keys: done });
+  if (done.length) await alarms.acknowledge(done);
   // Pit out stops the clock: step alerts wait, one reminder asks whether it is back up.
   if (c.pitDownAt != null)
-    return PitAlarms.setAlarms({
-      alarms: [
-        {
-          id: 'pitcheck',
-          keys: ['pitcheck'],
-          at: now + PIT_RECOVERY_MIN * MIN,
-          critical: false,
-          title: 'Pit back up to temp?',
-          body: 'Tap Back up to temp in Pit Planner so the steps re-time.',
-        },
-      ],
-    });
-  const units = (await load<Units>('settings')) ?? { temp: 'F', weight: 'lb' };
-  return PitAlarms.setAlarms({
-    alarms: alarmsFromPlan(c.plan, now, undefined, {
+    return alarms.replaceAll([
+      {
+        id: 'pitcheck',
+        keys: ['pitcheck'],
+        at: now + PIT_RECOVERY_MIN * MIN,
+        critical: false,
+        title: 'Pit back up to temp?',
+        body: 'Tap Back up to temp in Pit Planner so the steps re-time.',
+      },
+    ]);
+  return alarms.replaceAll(
+    alarmsFromPlan(c.plan, now, undefined, {
       done,
       reminders: c.reminders,
       quietUntil: c.quietUntil ?? undefined,
       text: s => tx(s, units),
     }),
-  });
+  );
 }
 
 /** For changes made without asking: keep serve if the holds absorb it, else move serve. */

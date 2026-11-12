@@ -6,6 +6,24 @@ exclude:
     - reference/**
     # SE-002: design docs, mockup sources (.dc.html) and screenshots. Not built, not shipped.
     - docs/**
-    # Build output and release artifacts: generated from scanned sources.
-    - dist/**
+    # SE-002 (extended in T-002): the Capacitor app kept as reference until parity. Not built, not shipped.
+    - legacy/**
+    # Release artifacts: built from scanned sources.
     - release/**
+ignore:
+  # SE-003: build-machine dev tooling (Metro file watcher, React Native dev-middleware), not in the app
+  # bundle. Path-specific so a new path into shipped code still fails the gate.
+  SNYK-JS-BRACES-19963945:
+    - 'react-native > @react-native/community-cli-plugin > metro > metro-file-map > micromatch > braces':
+        reason: 'SE-003: Metro bundler file watcher, build machine only; no fixed braces release exists'
+        expires: 2027-02-01T00:00:00.000Z
+    - 'expo > @expo/cli > @expo/metro > metro > metro-file-map > micromatch > braces':
+        reason: 'SE-003: Metro bundler file watcher, build machine only; no fixed braces release exists'
+        expires: 2027-02-01T00:00:00.000Z
+  SNYK-JS-OPEN-22112123:
+    - 'expo > @expo/cli > @react-native/dev-middleware > open':
+        reason: 'SE-003: dev server opens the debugger in a local browser, build machine only; fix is ESM-only open 11'
+        expires: 2027-02-01T00:00:00.000Z
+    - 'react-native > @react-native/community-cli-plugin > @react-native/dev-middleware > open':
+        reason: 'SE-003: dev server opens the debugger in a local browser, build machine only; fix is ESM-only open 11'
+        expires: 2027-02-01T00:00:00.000Z

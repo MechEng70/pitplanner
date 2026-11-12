@@ -15,7 +15,7 @@ Reference implementation of the scheduling rules: `reference/cook-day-planner.ht
 
 | Topic | Decision |
 |---|---|
-| Platform | Android only. Capacitor wrapping a web UI. No iOS. |
+| Platform | Android first: Expo + React Native (0.1.0 and 0.2.0 were Capacitor + Preact). iOS later, behind the same interfaces. |
 | Distribution | App ID io.github.mecheng70.pitplanner (permanent). Signed APK on GitHub Releases (MechEng70/pitplanner). In-app "new version available" check. No Play Store in v1. |
 | Accounts / backend | None. All data on the phone. |
 | Look | Dark only, stock Android feel (Material 3 patterns, Roboto, one ember-orange accent, blue for griddle). Must not look like a web page. |
@@ -29,12 +29,16 @@ Reference implementation of the scheduling rules: `reference/cook-day-planner.ht
 
 ## 2. Architecture
 
-- **UI:** Vite + TypeScript. Use a small component library or framework (Preact recommended for size). Plain CSS with tokens matching the mockups.
-- **Engine:** `engine/` is pure TypeScript with no DOM, clock or storage access. The UI calls it and stores results. Keep it that way so it stays unit-testable.
+How it is built in detail: `docs/design/TECH-DESIGN.md`. In short:
+
+- **App:** Expo (SDK 58, development builds, never Expo Go) + React Native + TypeScript (strict), Expo Router for navigation (tabs Plan, Cook, Gear; Setup on first run). Styling with NativeWind; components from React Native Reusables themed to the mockup tokens. Dark only.
+- **Engine:** `engine/` is pure TypeScript with no React Native, Expo, clock or storage access. The app calls it and stores results. Keep it that way so it stays unit-testable (`node --test`).
 - **Rules:** `data/foods.json` (foods, methods, phases, timing) and `data/cookers.json` (picker list). Adding a food should need no code change.
-- **Storage:** `@capacitor/preferences` for settings and gear; cook history as a JSON file via `@capacitor/filesystem` (exportable, survives app updates).
-- **Alarms:** a small custom Capacitor plugin (Kotlin) wrapping `AlarmManager.setAlarmClock()`. See section 6. Do not rely on `@capacitor/local-notifications` scheduling for step alarms unless you confirm it uses `setAlarmClock` (as of writing it does not appear to).
+- **Storage:** `expo-sqlite` (one database, versioned migrations) for settings, gear, rates, the active cook and cook history; `expo-secure-store` for secrets (Home Assistant token). 0.2.0 data (Capacitor Preferences and `history.json`) is imported once on upgrade.
+- **Platform access:** only through the interfaces in `src/platform/` (alarms, permissions, share, links, secrets), so iOS can be added later behind the same API.
+- **Alarms:** the `pit-alarms` Expo module (Kotlin) wrapping `AlarmManager.setAlarmClock()`. See section 6. Do not use `expo-notifications` scheduling for step alarms: it does not use `setAlarmClock`.
 - **Time:** every instant is epoch milliseconds. Never store wall-clock strings for scheduled steps.
+- **0.2.0 reference:** the Capacitor app lives in `legacy/` until 0.3.0 reaches parity; tag `v0.2.0` rebuilds it.
 
 ## 3. Screens
 

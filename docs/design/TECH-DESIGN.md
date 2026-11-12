@@ -19,7 +19,7 @@ mentions in CLAUDE.md are rewritten to match this file in T-002.
 
 | Concern | Choice | Notes |
 |---|---|---|
-| App framework | Expo SDK 58 (current at planning: `expo` 58.0.x), React Native 0.88, TypeScript | Development builds (`npx expo run:android`), never Expo Go. New Architecture (default). Pin the exact SDK at T-002; SDK upgrades are their own tasks. |
+| App framework | Expo SDK 58 (current at planning: `expo` 58.0.x), React Native 0.88, TypeScript | Development builds (`npx expo run:android`, `expo-dev-client`), never Expo Go. New Architecture (default). Pinned in T-002: `expo` ~58.0.24, `react-native` 0.88.1, `react` 19.3.0, `expo-router` ~58.0.31; SDK upgrades are their own tasks. |
 | Navigation | Expo Router (file-based, `app/`) | Tabs: Plan, Cook, Gear. Setup as a stack shown on first run. Sheets as kit components. |
 | Styling | NativeWind 4.2 (Tailwind classes) | Theme from the design tokens (section 8). Dark only. |
 | Components | React Native Reusables (shadcn-style source copied into `src/components/ui/`, built on `@rn-primitives`) | Themed to the mockups; we own the copied code. |
@@ -358,7 +358,7 @@ behaviors they cover (e.g. Food details timing) are re-tested in Jest when each 
 | ID | Decision or risk | Recommendation |
 |---|---|---|
 | D-1 | Distribution | Decided 2026-11-12: GitHub Releases primary, Google Drive optional mirror. |
-| D-2 | TypeScript version | Use the version Expo SDK 58 supports. If below 7, drop the `typescript7` alias and the 6/7 split. The engine's explicit `.ts` imports need `allowImportingTsExtensions`; verify Metro and Jest resolve them in T-002 (resolver config if needed, never an engine change). |
+| D-2 | TypeScript version | Decided in T-002: TypeScript 6.0.3 (`~6.0.3`, what SDK 58 pins). The `typescript7` alias and the 6/7 split are gone; `npm run typecheck` is `tsc --noEmit` over `tsconfig.json` (extends `expo/tsconfig.base`, adds `strict`, `allowImportingTsExtensions`, `noUnusedLocals`). Metro and `jest-expo` resolve the engine's explicit `.ts` imports with no resolver config, so there is no `metro.config.js` or `babel.config.js` yet (NativeWind adds them in T-004). |
 | D-3 | Snyk Gradle scope (SE-001) | Approved: `releaseRuntimeClasspath` only until T-057, deadline 2027-02-01. Re-check after the first prebuild: SDK 58 brings its own AGP, so the findings may change. |
 | D-4 | Bottom sheets | `@gorhom/bottom-sheet` if it supports RN 0.88 at T-005; else a kit Sheet on `Modal`. |
 | D-5 | App state | Keep the current pattern (one context store, every change written through repositories); no new state library unless the Cook screen shows re-render cost. |

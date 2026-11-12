@@ -1,19 +1,11 @@
 {
+  "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "jsx": "react-jsx",
-    "jsxImportSource": "preact",
     "strict": true,
-    "noEmit": true,
     "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
     "isolatedModules": true,
     "noUnusedLocals": true,
-    "types": ["node", "vite/client"]
+    "types": ["node", "jest"]
   },
-  "include": ["src", "engine", "vite.config.ts", "vitest.config.ts", "capacitor.config.ts"]
+  "include": ["app", "src", "engine", "app.config.ts", "app.config.test.ts", "expo-env.d.ts", ".expo/types/**/*.ts"]
 }
