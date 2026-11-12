@@ -70,17 +70,22 @@ justification, how it is excluded, follow-up task, review date.
 
 ## SE-003 Snyk Open Source: `braces` and `open` in Expo / React Native dev tooling
 
-- **Status:** open, pending Jason's approval (written in T-002, 2026-11-12). Review by 2027-02-01 (the `.snyk`
-  ignores expire then) or at the next Expo SDK upgrade, whichever is first.
+- **Status:** open, approved with conditions by Jason 2026-11-12. Expires 2027-02-10 (90 days); re-check
+  earlier on any trigger below.
 - **Tool:** `snyk test --all-projects` (npm, `package-lock.json`).
 - **Found (2026-11-12, first scan of the Expo stack):**
   - SNYK-JS-BRACES-19963945, high, Uncontrolled Recursion in `braces@3.0.3`, via `metro > metro-file-map >
-    micromatch@4.0.8` (from `react-native` and from `expo > @expo/cli > @expo/metro`). No fixed `braces`
-    release exists.
+    micromatch@4.0.8` (from `react-native` and from `expo > @expo/cli > @expo/metro`).
   - SNYK-JS-OPEN-22112123, high, Improper Encoding or Escaping of Output in `open@8.4.2`, via
     `@react-native/dev-middleware` (from `expo > @expo/cli` and from `react-native > community-cli-plugin`).
-    Fixed in `open@11`, which is ESM-only; dev-middleware `require()`s it, so an override would break the dev
-    server.
+- **Override tried first (Jason's condition), 2026-11-12, in a scratch copy of the project:**
+  - `braces`: no fixed release exists (3.0.3 is the latest, and it is the vulnerable version; `micromatch`
+    4.0.8 is also the latest). Nothing to override to.
+  - `open`: the only fix is `open@11`, which is ESM-only. With `"overrides": { "open": "^11.0.4" }`,
+    `require("open")` in `@react-native/dev-middleware` (`DefaultToolLauncher.js`) returns the module
+    namespace, not a function: its fallback `await open(url)` throws `TypeError: open is not a function`
+    whenever launching the debugger in Chrome fails. That breaks a dev-tool path, so the override was not
+    applied.
 - **Decision:** not shipped. Metro (the bundler and its file watcher) and dev-middleware (the dev server that
   opens the JS debugger in a browser) run on the build machine only. Checked: the source map of the Android
   bundle (`npx expo export --platform android --source-maps`) lists 1116 modules, none from `braces`,
@@ -88,12 +93,19 @@ justification, how it is excluded, follow-up task, review date.
 - **Exposure:** `braces` would need an attacker-controlled glob pattern fed to Metro's watcher; `open` would
   need an attacker-controlled URL passed to the dev server's "open debugger" endpoint, which listens on the
   local machine during development only.
-- **How it is excluded:** `.snyk` `ignore` entries for exactly the four dependency paths above, with reasons and
-  `expires: 2027-02-01`. Any other path to these packages (for example into shipped code) still fails the gate.
+- **How it is excluded:** `.snyk` `ignore` entries for only these two issue IDs, each only on its two
+  dependency paths (metro / dev-middleware from `expo` and from `react-native`), with a reason and
+  `expires: 2027-02-10`. Any other path to these packages, or any other issue in them, still fails the gate.
   `snyk monitor` keeps reporting them.
-- **Follow-up:** re-run `snyk test` after each Expo SDK upgrade; remove the ignores when Metro and
-  dev-middleware ship fixed versions. If the ignores expire first, re-check and re-approve here.
-- **Approval:** pending Jason.
+- **Re-check (run `snyk test`, retry the override) when any of these happens:**
+  - an Expo SDK, `react-native`, `@expo/cli` or Metro upgrade;
+  - a `braces` release above 3.0.3, or a `micromatch` release that drops it;
+  - `@react-native/dev-middleware` switching to `import()` of `open` or to `open` 11+;
+  - Snyk reporting a new path to either package, or a new issue in either;
+  - the ignores expiring on 2027-02-10 (the gate fails again then; re-approve or remove).
+  If a re-check clears both, delete the `.snyk` ignores and mark this entry closed.
+- **Approval:** Jason, 2026-11-12, with conditions: try npm overrides first (done, above); if they fail, ignore
+  only these two packages on these paths, 90-day expiry, re-check triggers written down.
 
 ---
 

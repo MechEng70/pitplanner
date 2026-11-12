@@ -19,7 +19,8 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
 - The Expo dev build is on the phone (replaced the Capacitor dev copy; its data is backed up in
   `legacy/tools/device/out/dev-copy-backup-2026-11-12/`). To run it: `npm start`, then
   `adb reverse tcp:8081 tcp:8081` and open "Pit Planner dev". First launch shows the Expo dev menu intro.
-- SE-003 (Snyk, `braces`/`open` in Metro and dev-middleware, not shipped) needs Jason's approval.
+- SE-003 (Snyk, `braces`/`open` in Metro and dev-middleware, not shipped): approved with conditions; override
+  failed (open 11 is ESM-only), ignores expire 2027-02-10. Re-check triggers are in SECURITY-EXCEPTIONS.
 
 ## Stack change plan (approved 2026-11-12)
 

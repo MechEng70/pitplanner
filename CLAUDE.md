@@ -9,6 +9,8 @@
 - All instants are epoch milliseconds. All stored temps are F, weights lb; convert only for display (`engine/units.ts`).
 - Alarms: use the `pit-alarms` Expo module (setAlarmClock) described in SPEC.md section 6, through `src/platform/`. After any plan change, cancel all alarms and reschedule from `plan.events`.
 - Never commit signing keys (`*.jks`, `*.keystore`, `keystore.properties`).
+- Destructive actions need an explicit yes from Jason first: uninstalling apps, deleting data, or anything else
+  destructive on a device or in the repo. Don't read consent into an unclear reply; ask again.
 - Do not fill in smoker specs without a source; leave `verified: false` entries blank.
 - UI copy: plain, short, no exclamation marks except greetings. Straight apostrophes.
 

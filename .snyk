@@ -16,14 +16,14 @@ ignore:
   SNYK-JS-BRACES-19963945:
     - 'react-native > @react-native/community-cli-plugin > metro > metro-file-map > micromatch > braces':
         reason: 'SE-003: Metro bundler file watcher, build machine only; no fixed braces release exists'
-        expires: 2027-02-01T00:00:00.000Z
+        expires: 2027-02-10T00:00:00.000Z
     - 'expo > @expo/cli > @expo/metro > metro > metro-file-map > micromatch > braces':
         reason: 'SE-003: Metro bundler file watcher, build machine only; no fixed braces release exists'
-        expires: 2027-02-01T00:00:00.000Z
+        expires: 2027-02-10T00:00:00.000Z
   SNYK-JS-OPEN-22112123:
     - 'expo > @expo/cli > @react-native/dev-middleware > open':
         reason: 'SE-003: dev server opens the debugger in a local browser, build machine only; fix is ESM-only open 11'
-        expires: 2027-02-01T00:00:00.000Z
+        expires: 2027-02-10T00:00:00.000Z
     - 'react-native > @react-native/community-cli-plugin > @react-native/dev-middleware > open':
         reason: 'SE-003: dev server opens the debugger in a local browser, build machine only; fix is ESM-only open 11'
-        expires: 2027-02-01T00:00:00.000Z
+        expires: 2027-02-10T00:00:00.000Z
