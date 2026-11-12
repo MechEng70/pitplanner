@@ -1,4 +1,4 @@
-# Handoff (2026-11-12, fourth session)
+# Handoff (2026-11-12, end of fourth session)
 
 Read SPEC.md and CLAUDE.md first. This note is what a fresh session needs on top of them.
 
@@ -71,6 +71,29 @@ release-signed debuggable APK, used once to move Jason's data off the debug inst
 `io.github.mecheng70.pitplanner.debug`, label "Pit Planner dev", own data. `tools/device/` (attach.sh,
 pending.sh, deploy.sh) only touches the dev copy. Never uninstall the release without backing up first.
 
+Distribution: Jason uploads `release/pitplanner-<version>.apk` to his Google Drive and shares the link; no
+GitHub Releases. The in-app update check (`src/lib/update.ts`, GitHub API) therefore finds nothing (the repo
+answers 404 anonymously); Jason chose to leave it as is for now.
+
+## Release 0.2.0: built, not yet on Jason's phone
+
+`release/pitplanner-0.2.0.apk` (versionCode 200) is rebuilt from `e86d930`, so it has everything up to the
+Sportsman 850 entry. Jason has not sent it to the team yet. His real app is still 0.1.0.
+
+Pending, waiting for Jason's go: install 0.2.0 over his real app with a backup. The release is not
+debuggable (`run-as` refused) and targets SDK 36, so `adb backup` skips its data and its WebView has no
+DevTools socket. Agreed approach, not yet approved:
+1. Build 0.2.0 with `-PdebuggableRelease` (release-signed, debuggable).
+2. `adb install -r` it over 0.1.0 and do not open it (data stays as 0.1.0 left it; no new app code runs).
+3. Copy the app data out with `run-as io.github.mecheng70.pitplanner` (shared_prefs, files) to `tools/device/out/`.
+4. `adb install -r release/pitplanner-0.2.0.apk` (same versionCode is allowed with -r), open it, check gear
+   and history on screen. Then Jason re-picks his smoker as the Pit Boss Sportsman 850 in Gear.
+Shell note: in zsh, `A="adb -s 5ece07c1"; $A shell ...` does not word-split and prints nothing. Write the
+full command or use the bash scripts in tools/device/.
+
+The dev copy is one step behind: it lacks the Sportsman 850 catalog entry and the 105C/205C set-point
+fix in the shared-smoker note (both made after the last device run). Any `npm run device` run reinstalls it.
+
 ## Cook timing (HA-INTEGRATION.md "Do first"): done
 
 Food details Timing: Hours per pound (stepper, 0.05 steps, source shown) / Total hours (any food, used as-is,
@@ -101,6 +124,18 @@ via `AlarmOptions.text`). Live changes (Done early/late, Not yet, Pit went out, 
 
 Idea from Jason (not built): tapping the lane chart opens it full screen in landscape until tapped again
 (or a close button), so a long cook's short steps are readable.
+
+Device scripts added this session (all via `npm run device -- --only <name>`): `timing`, `shared`, `update`,
+`units` (Celsius + kg pass over Plan, Conflicts, Cook, Full timeline).
+
+## Next
+
+1. Jason: install 0.2.0 (see above), re-pick the smoker, then (a) a real cook end to end with alarms through a
+   reboot and (b) Share plan between two phones, opened from Drive or Gmail (only a file:// VIEW is tested).
+2. HA Phase 1: mock the 6 screens in HA-INTEGRATION 4.5 first, then sign-in with the `pitplanner` HA user,
+   discovery, probe per food, live temps. Phase 0 notes: `docs/ha-entities.md`.
+3. Open items below, plus: lane chart squeezes a long cook (see Jason's full-screen idea); a griddle food
+   moved to the smoker by an import can conflict with no fix offered in the sheet.
 
 ## Decisions from Jason
 
