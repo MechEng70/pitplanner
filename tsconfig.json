@@ -7,5 +7,14 @@
     "noUnusedLocals": true,
     "types": ["node", "jest"]
   },
-  "include": ["app", "src", "engine", "app.config.ts", "app.config.test.ts", "expo-env.d.ts", ".expo/types/**/*.ts"]
+  "include": [
+    "app",
+    "src",
+    "engine",
+    "app.config.ts",
+    "app.config.test.ts",
+    "jest.setup.ts",
+    "expo-env.d.ts",
+    ".expo/types/**/*.ts"
+  ]
 }

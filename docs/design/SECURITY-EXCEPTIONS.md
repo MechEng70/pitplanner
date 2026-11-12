@@ -12,7 +12,8 @@ justification, how it is excluded, follow-up task, review date.
 ## SE-001 Snyk Open Source: Android build-tool dependencies (AGP test runner)
 
 - **Status:** open, scope limit approved by Jason 2026-11-12. T-057 removes the limit by 2027-02-01.
-- **Tool:** `snyk test --all-projects` (Gradle projects: `android/app`, the Capacitor plugin modules).
+- **Tool:** `snyk test --all-projects` (Gradle projects: `android/app` and the autolinked module projects; was
+  the Capacitor plugin modules before T-002).
 - **Found (2026-11-12):** 28 unique high/critical issues, mostly `io.netty:netty-codec`, `netty-codec-http`,
   `netty-handler` 4.1.93-4.1.110 (for example SNYK-JAVA-IONETTY-17254120 and -19005879, critical), all
   introduced by `com.android.tools.utp:android-test-plugin-*@31.13.0` and
@@ -22,7 +23,7 @@ justification, how it is excluded, follow-up task, review date.
   and instrumented tests on the build machine. They are not in the APK. The same scan limited to
   `releaseRuntimeClasspath` (exactly what is packaged) reports 0 vulnerable paths in all 9 projects.
 - **Exposure:** the netty code would run only during `connectedAndroidTest` / managed-device runs on Jason's
-  machine, which this project does not use (device testing goes through `tools/device/`, adb and CDP).
+  machine, which this project does not use (device testing goes through `tools/device/`: adb, and Maestro from T-006).
 - **How it is excluded:** `tools/check.sh` passes `--configuration-matching='^releaseRuntimeClasspath$'` to
   `snyk test`. npm projects are scanned unchanged. `npm run snyk:monitor` still monitors all configurations,
   so the findings stay visible in the Snyk dashboard.
@@ -30,6 +31,14 @@ justification, how it is excluded, follow-up task, review date.
   if clean, remove the `--configuration-matching` flag and close this entry.
 - **Approval:** approved by Jason 2026-11-12 (TECH-DESIGN D-3), on the condition that `snyk:monitor` keeps
   covering all configurations and T-057 removes the limit by 2027-02-01.
+
+- **Re-checked in T-003 (2026-11-12) after the first Expo prebuild** (SDK 58: AGP 9.2.1, Gradle 9.4.1; 20
+  Gradle projects in the generated `android/`): the full-scope scan finds 53 unique high/critical issues
+  (critical: SNYK-JAVA-IONETTY-17254120 and -19005879, several ORGBOUNCYCASTLE). All come from build-machine
+  configurations: the AGP Unified Test Platform 32.2.1 (`grpc-netty` -> netty 4.1.93/4.1.110; `sdk-common` ->
+  guava, bouncycastle 1.79), `lint-gradle` 32.2.1, and Robolectric 4.16 test dependencies of `expo`,
+  `expo-modules-core`, `expo-dev-launcher` and `expo-dev-menu` (bouncycastle). `releaseRuntimeClasspath`:
+  0 vulnerable paths in all 20 projects. Decision unchanged; the scope limit stays until T-057.
 
 ## SE-002 Snyk Code: "Hardcoded Non-Cryptographic Secret" in reference/cook-day-planner.html; reference and docs excluded
 

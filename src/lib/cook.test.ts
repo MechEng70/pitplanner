@@ -1,7 +1,7 @@
 // syncAlarms talks to the AlarmService interface (no native plugin), so it runs against a recording fake.
 import { keyedEvents, type AlarmSpec } from '../../engine/alarms.ts';
 import { buildPlan } from '../../engine/plan.ts';
-import { saturday } from '../screens/plan/PlanPlaceholder';
+import { saturday } from './fixtures/saturday.ts';
 import type { AlarmService } from '../platform/types.ts';
 import { rules } from './rules.ts';
 import { newCook, syncAlarms, PIT_RECOVERY_MIN } from './cook.ts';

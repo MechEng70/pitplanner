@@ -1,9 +1,9 @@
-# Handoff (2026-11-12, sixth session: T-002)
+# Handoff (2026-11-12, sixth session: T-002, T-003)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## START HERE: Expo scaffold in place (T-002 done), T-003 next
+## START HERE: Expo scaffold and gate in place (T-002, T-003 done), T-004 next
 
 - Root is now the Expo app: `app.config.ts` (variants by `APP_VARIANT`, versionCode from package.json),
   `app/` routes (tabs Plan, Cook, Gear placeholders), `src/lib/` pure helpers, `src/platform/types.ts`
@@ -13,8 +13,13 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
 - Dev build: `npm run android` (prebuild + Gradle + install + Metro). It is `io.github.mecheng70.pitplanner.debug`,
   "Pit Planner dev", beside the release. JAVA_HOME must be temurin-21. Without Metro running (and
   `adb reverse tcp:8081 tcp:8081`) the dev build opens the dev launcher instead of the app.
-- `npm run check` passes on the new stack with T-003 work pulled forward minimally (see T-002 notes in
-  TASKS.md). T-003 finishes the gate: eslint-config-expo, React Native and layer rules, prebuild in check.sh.
+- Gate on the new stack (T-003): `npm run check` prebuilds `android/` when stale, lints with expo + React Native
+  rules and the layer rules (TECH-DESIGN section 3; color literals and inline styles are errors, so use
+  `StyleSheet` until T-004's tokens), and `npm run test:gate` proves the gate catches layer breaks, lint
+  errors and planted secrets. Warm run about 1 minute. Native JUnit runs once `modules/*/android/src/test`
+  exists (first real run in T-013/T-014).
+- Destructive actions (uninstalling apps, deleting data, anything destructive on the phone or in the repo)
+  need Jason's explicit yes (CLAUDE.md). Don't read consent into an unclear reply.
 - TypeScript is 6.0.3 (D-2 decided); `typescript7` is gone.
 - The Expo dev build is on the phone (replaced the Capacitor dev copy; its data is backed up in
   `legacy/tools/device/out/dev-copy-backup-2026-11-12/`). To run it: `npm start`, then
@@ -216,7 +221,7 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 1. Done 2026-11-12: Jason approved the stack-change plan; T-001 phone check on 0.2.0 passed.
 2. Jason: push `main` when ready (plan docs and T-001 are local only).
 3. Jason: install the Maestro CLI before T-006 (`curl -fsSL "https://get.maestro.mobile.dev" | bash`).
-4. T-002 done. Next: T-003 (gate on the new stack), T-004 (theme spike, settles R-1), per WBS "Suggested order".
+4. T-002 and T-003 done. Next: T-004 (theme spike, settles R-1), then T-005, per WBS "Suggested order".
    Push the `v0.2.0` tag only when Jason says.
 5. Still open from before (carried into the plan): real cook with alarms through a reboot (now T-037 on the Expo
    build), two-phone share via Gmail/Drive (T-031), lane chart full screen (T-040), import-made conflict fix

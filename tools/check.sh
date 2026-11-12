@@ -6,7 +6,6 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 export JAVA_HOME="${JAVA_HOME:-/usr/lib/jvm/temurin-21-jdk}" ANDROID_HOME="${ANDROID_HOME:-$HOME/Android/Sdk}"
-export PATH="$HOME/.local/bin:$PATH"   # pipx installs semgrep here
 
 SUMMARY=()
 step() {
@@ -22,12 +21,6 @@ step() {
 }
 report() { echo; echo "=== check summary ==="; printf '%s\n' "${SUMMARY[@]}"; }
 
-semgrep_scan() {
-  command -v semgrep >/dev/null || { echo "semgrep not found (pipx install semgrep)"; return 1; }
-  # --no-git-ignore: also scan new files not yet committed. Exclusions live in .semgrepignore.
-  semgrep scan --metrics=off --quiet --error --severity ERROR --no-git-ignore \
-    --config p/typescript --config p/kotlin --config p/secrets .
-}
 snyk_scan() {
   command -v snyk >/dev/null || { echo "snyk not found (npm i -g snyk, then snyk auth)"; return 1; }
   # Gradle: only what ships in the APK (releaseRuntimeClasspath). Build-machine tooling findings
@@ -40,7 +33,9 @@ snyk_scan() {
 step "1 Prettier (write, then check)" bash -c 'npx prettier --write --log-level warn . && npx prettier --check --log-level warn .'
 step "2 ESLint (zero warnings)" npx eslint --max-warnings 0 .
 step "3 TypeScript typecheck" npm run --silent typecheck
-step "4 Tests (engine, UI, Android)" npm run --silent test:all
-step "5 Semgrep (typescript, kotlin, secrets)" semgrep_scan
+# Not a gate step: steps 4 and 6 need the generated android/ (native tests, Snyk's Gradle scan).
+tools/prebuild-if-stale.sh || { SUMMARY+=("FAIL  prebuild android/"); report; exit 1; }
+step "4 Tests (engine, gate, app, Android)" npm run --silent test:all
+step "5 Semgrep (typescript, kotlin, secrets)" tools/semgrep.sh
 step "6 Snyk (open source + code, high+)" snyk_scan
 report

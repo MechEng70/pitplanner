@@ -30,7 +30,7 @@
   1. Prettier (format, then check)
   2. ESLint (TypeScript and React Native rules, zero warnings)
   3. TypeScript typecheck
-  4. The full test suite: engine + UI + Android (unit and regression, not only new tests)
+  4. The full test suite: engine + gate self-test + app (Jest) + Android (unit and regression, not only new tests)
   5. Semgrep (TypeScript, Kotlin and secrets rulesets)
   6. Snyk: `snyk test --all-projects --severity-threshold=high`, then `snyk code test --severity-threshold=high`
 - A task is not done until `npm run check` passes. Report its summary (the "check summary" block) at the end

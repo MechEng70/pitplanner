@@ -98,7 +98,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     dev-middleware), not in the app bundle; ignored path by path in `.snyk`, written up as SE-003.
 
 ### T-003 Quality gate on the new stack
-- **Status:** todo
+- **Status:** done (see `git log --grep T-003`)
 - **Goal:** `npm run check` runs all six steps against the Expo app (TECH-DESIGN section 11).
 - **Files:** `tools/check.sh`, `tools/test-android.sh`, `eslint.config.js`, `.prettierignore`, `.semgrepignore`,
   `.snyk`, `jest.config.js`, `jest.setup.ts`, `package.json` scripts, `docs/design/SECURITY-EXCEPTIONS.md`
@@ -112,6 +112,24 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   warm run under 4 minutes.
 - **Tests:** the gate itself; a Jest test proving the setup (font and safe-area mocks).
 - **Device testing (Jason):** none.
+- **Notes (done 2026-11-12):**
+  - ESLint: `eslint-config-expo/flat` + typescript-eslint + `eslint-plugin-react-native` (color literals and
+    inline styles banned, so the T-002 placeholders now use `StyleSheet`); layer rules per path from TECH-DESIGN
+    section 3, plus no `Date.now()`/`new Date()`/`fetch`/`node:*` in `engine/`. The rule caught a real
+    violation: `src/lib/cook.test.ts` imported the fixture from `screens/`; the fixture moved to
+    `src/lib/fixtures/saturday.ts`. `Num` text-size rule stays with T-005.
+  - Gate self-test `tools/gate.test.mjs` (`npm run test:gate`, part of `test:all`): 24 ESLint cases on virtual
+    files (nothing written to the repo), the `--max-warnings 0` exit code, and planted Stripe, GitHub and PEM
+    secrets in a temp dir outside the repo failing `tools/semgrep.sh`.
+  - Semgrep gained `r/generic.secrets`: `p/secrets` alone did not flag a GitHub token. No new findings in the repo.
+  - Jest: `jest.setup.ts` (safe-area and `expo-font` mocks); `src/test/jestSetup.test.tsx` fails without it.
+    Added `expo-font` (T-004 uses it for Roboto).
+  - `tools/prebuild-if-stale.sh` (stamp `android/.prebuild-stamp`) runs before step 4. `tools/test-android.sh`
+    gets Gradle project names from Expo autolinking; its Gradle branch first runs for real when T-013/T-014 add
+    `modules/pit-alarms/android/src/test` (check it there).
+  - SE-001 re-checked on SDK 58 (AGP 9.2.1): 53 high/critical, all build-machine configurations; release
+    classpath 0. Scope limit unchanged.
+  - Warm `npm run check`: 63 to 94 s (under the 4 minute target).
 
 ### T-004 Theme: tokens, NativeWind, Reusables, Roboto (spike)
 - **Status:** todo

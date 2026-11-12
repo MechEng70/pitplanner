@@ -299,22 +299,34 @@ where the stack does:
 
 1. **Prettier** write, then check (TS/TSX/JS/JSON/CSS; markdown, `data/`, `docs/`, `legacy/` and generated
    `android/` excluded).
-2. **ESLint**, zero warnings: `eslint-config-expo` (flat) + `typescript-eslint` + React, React Hooks and React
-   Native rules (`eslint-plugin-react-native`), `no-restricted-imports` for the layer rules, a local rule for
-   `Num` text size.
-3. **Typecheck** `tsc --noEmit` with the TypeScript version the Expo SDK supports (D-2).
+2. **ESLint**, zero warnings (`eslint.config.js`): `eslint-config-expo` (flat: React, React Hooks, import, Expo)
+   + `typescript-eslint` recommended + `eslint-plugin-react-native` (`no-color-literals` and `no-inline-styles`
+   enforce theme tokens; `no-raw-text`, `no-unused-styles`, `split-platform-components`), and the section 3
+   layer rules as `no-restricted-imports` per path (plus no clock, network or storage in `engine/`). The local
+   rule for `Num` text size comes with the kit (T-005).
+3. **Typecheck** `tsc --noEmit`, TypeScript 6.0.3 (D-2).
 4. **Tests** `npm run test:all`:
    - engine: `node --test engine/*.test.ts` (unchanged);
-   - app logic, repositories, migrations, UI: Jest (`jest-expo`) + React Native Testing Library; SQLite code
-     against `better-sqlite3`;
-   - native: JUnit (+ Robolectric) in `modules/*/android/src/test`, run through Gradle in the prebuilt
-     `android/`. `check.sh` runs `npx expo prebuild --platform android --no-install` first when `android/` is
-     missing or older than `app.config.ts`, `plugins/` or `modules/`.
-5. **Semgrep** `p/typescript p/kotlin p/secrets`, `--no-git-ignore`, over `app/ src/ engine/ data/ modules/
-   plugins/ tools/`; generated `android/` and `legacy/` excluded (SE-002 extended in T-003).
+   - gate self-test: `node --test tools/*.test.mjs`: every layer rule fires on a virtual file (ESLint
+     `lintText`), a lint error fails `eslint --max-warnings 0`, and planted secrets (Stripe, GitHub, PEM key,
+     built at runtime in a temp dir outside the repo) fail `tools/semgrep.sh`;
+   - app logic, repositories, migrations, UI: Jest (`jest-expo`, `jest.setup.ts` mocks safe-area insets and
+     fonts) + React Native Testing Library; SQLite code against `better-sqlite3`;
+   - native: JUnit (+ Robolectric) in `modules/*/android/src/test`, run by `tools/test-android.sh` as
+     `:<project>:testDebugUnitTest` in the prebuilt `android/` (project names from Expo autolinking).
+   Before step 4, `tools/prebuild-if-stale.sh` runs `npx expo prebuild --platform android --no-install` when
+   `android/` is missing or older than `app.config.ts`, `package.json`, `package-lock.json`, `plugins/`,
+   `modules/` or `assets/` (stamp file `android/.prebuild-stamp`).
+5. **Semgrep** (`tools/semgrep.sh`): `p/typescript p/kotlin p/secrets r/generic.secrets` (the last adds GitHub
+   tokens, which `p/secrets` misses), ERROR severity, `--no-git-ignore`, over the whole repo minus
+   `.semgrepignore`: generated `android/`, `legacy/`, `reference/`, `docs/` (SE-002).
 6. **Snyk** `snyk test --all-projects --severity-threshold=high` (npm + the prebuilt `android/` Gradle
-   projects; Gradle scope per SE-001), then `snyk code test --severity-threshold=high`. If the Gradle part
-   fails, run `cd android && ./gradlew assembleDebug` once and retry.
+   projects; Gradle scope per SE-001; npm dev-tooling ignores per SE-003), then `snyk code test
+   --severity-threshold=high`. If the Gradle part fails, run `cd android && ./gradlew assembleDebug` once and
+   retry.
+
+A warm run takes 1 to 2 minutes (63 s and 94 s on 2026-11-12; Snyk is about 40 s, the Semgrep self-test fetches
+rules over the network).
 
 `npm run snyk:monitor` runs after a release or a push to main (not in the gate).
 
