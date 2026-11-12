@@ -5,10 +5,19 @@
   "type": "module",
   "description": "Pit Planner: cook-day scheduling for smokers and griddles (Android, Capacitor)",
   "scripts": {
-    "test": "node --test engine/*.test.ts",
-    "typecheck": "tsc --noEmit",
+    "test": "npm run test:engine && npm run test:ui",
+    "test:engine": "node --test engine/*.test.ts",
+    "test:ui": "vitest run",
+    "test:android": "tools/test-android.sh",
+    "test:all": "npm test && npm run test:android",
+    "typecheck": "node node_modules/typescript7/bin/tsc --noEmit",
+    "lint": "eslint --max-warnings 0 .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "tools/check.sh",
+    "snyk:monitor": "snyk monitor --all-projects --exclude=reference,release,dist",
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "npm run typecheck && vite build",
     "sync": "npm run build && cap sync android",
     "device": "tools/device/run.sh",
     "release": "tools/release.sh"
@@ -29,10 +38,22 @@
   "devDependencies": {
     "@capacitor/assets": "^4.0.0",
     "@capacitor/cli": "^8.6.0",
+    "@eslint/js": "^9.39.5",
     "@preact/preset-vite": "^2.10.6",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/preact": "^3.2.6",
+    "@testing-library/user-event": "^14.6.10",
     "@types/node": "^26.6.6",
+    "eslint": "^9.39.5",
+    "eslint-config-preact": "^2.0.0",
+    "globals": "^17.14.0",
+    "jsdom": "^31.0.0",
     "playwright-core": "^1.65.0",
-    "typescript": "^7.0.2",
-    "vite": "^8.3.8"
+    "prettier": "^3.10.1",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.2",
+    "typescript7": "npm:typescript@^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
   }
 }

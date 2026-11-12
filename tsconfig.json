@@ -15,5 +15,5 @@
     "noUnusedLocals": true,
     "types": ["node", "vite/client"]
   },
-  "include": ["src", "engine", "vite.config.ts", "capacitor.config.ts"]
+  "include": ["src", "engine", "vite.config.ts", "vitest.config.ts", "capacitor.config.ts"]
 }

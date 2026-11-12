@@ -1,0 +1,11 @@
+# Snyk policy. Exclusions here are documented in docs/design/SECURITY-EXCEPTIONS.md.
+version: v1.25.0
+exclude:
+  global:
+    # SE-002: the old HTML planner kept for reference (SPEC header). Not built, not shipped.
+    - reference/**
+    # SE-002: design docs, mockup sources (.dc.html) and screenshots. Not built, not shipped.
+    - docs/**
+    # Build output and release artifacts: generated from scanned sources.
+    - dist/**
+    - release/**
