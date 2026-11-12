@@ -24,7 +24,11 @@ import { SharedPlanError, SharedPlanSheet } from './screens/plan/SharedPlanSheet
 type Tab = 'plan' | 'cook' | 'gear';
 
 export function App() {
-  return <StoreProvider now={Date.now()}><Shell /></StoreProvider>;
+  return (
+    <StoreProvider now={Date.now()}>
+      <Shell />
+    </StoreProvider>
+  );
 }
 
 function Shell() {
@@ -48,7 +52,10 @@ function Shell() {
     };
     drain();
     const hs = [CapApp.addListener('resume', drain), PitAlarms.addListener('alarmAction', drain)];
-    return () => { hs.forEach(h => h.then(x => x.remove())); };
+    return () => {
+      hs.forEach(h => h.then(x => x.remove()));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- listeners are added once; drain reads the latest cook from cookRef.
   }, []);
 
   // Android back: close the top sheet or menu, else go to Plan, else leave the app.
@@ -56,9 +63,15 @@ function Shell() {
     if (!Capacitor.isNativePlatform()) return;
     const h = CapApp.addListener('backButton', () => {
       if (popBack()) return;
-      setTab(t => { if (t !== 'plan') return 'plan'; CapApp.minimizeApp(); return t; });
+      setTab(t => {
+        if (t !== 'plan') return 'plan';
+        CapApp.minimizeApp();
+        return t;
+      });
     });
-    return () => { h.then(x => x.remove()); };
+    return () => {
+      h.then(x => x.remove());
+    };
   }, []);
 
   // An opened .pitplan: checked on start, on resume and when Android hands one over while open.
@@ -67,13 +80,20 @@ function Shell() {
     const take = async () => {
       const t = await takeSharedPlan();
       if (!t) return;
-      setShared(t.text != null ? parsePitPlan(rules, t.text, () => crypto.randomUUID()) : { error: 'Could not read that file.' });
+      setShared(
+        t.text != null
+          ? parsePitPlan(rules, t.text, () => crypto.randomUUID())
+          : { error: 'Could not read that file.' },
+      );
       setTab('plan');
     };
     take();
     const off = onSharedPlan(take);
     const h = CapApp.addListener('resume', take);
-    return () => { off(); h.then(x => x.remove()); };
+    return () => {
+      off();
+      h.then(x => x.remove());
+    };
   }, []);
 
   const [checkPlan, setCheckPlan] = useState<Plan | null>(null);
@@ -97,33 +117,57 @@ function Shell() {
   const pickTab = (t: Tab) => {
     if (t === 'cook' && !state.cook && state.draft.items.length) {
       let plan: Plan | null = null;
-      try { plan = buildPlan(rules, planInput(state)); } catch { /* unplannable: show the empty Cook tab */ }
+      try {
+        plan = buildPlan(rules, planInput(state));
+      } catch {
+        /* unplannable: show the empty Cook tab */
+      }
       if (plan) return void startCook(plan);
     }
     setTab(t);
   };
 
-  if (state.firstRun) return <div class="app"><Setup /></div>;
+  if (state.firstRun)
+    return (
+      <div class="app">
+        <Setup />
+      </div>
+    );
   return (
     <div class="app">
       <main class="app-body">
         {tab === 'plan' && <PlanScreen onStartCook={startCook} />}
         {tab === 'cook' && <CookScreen onGoPlan={() => setTab('plan')} />}
-        {tab === 'gear' && !gearView && <GearScreen onDebug={() => setDebug(true)} onHistory={() => setGearView('history')} />}
+        {tab === 'gear' && !gearView && (
+          <GearScreen onDebug={() => setDebug(true)} onHistory={() => setGearView('history')} />
+        )}
         {tab === 'gear' && gearView === 'history' && (
-          <HistoryScreen onBack={() => setGearView(null)} onCookAgain={() => { setGearView(null); setTab('plan'); }} />
+          <HistoryScreen
+            onBack={() => setGearView(null)}
+            onCookAgain={() => {
+              setGearView(null);
+              setTab('plan');
+            }}
+          />
         )}
       </main>
-      {shared && ('error' in shared
-        ? <SharedPlanError message={shared.error} onClose={() => setShared(null)} />
-        : <SharedPlanSheet shared={shared} onClose={() => setShared(null)} onUse={() => setTab('plan')} />)}
+      {shared &&
+        ('error' in shared ? (
+          <SharedPlanError message={shared.error} onClose={() => setShared(null)} />
+        ) : (
+          <SharedPlanSheet shared={shared} onClose={() => setShared(null)} onUse={() => setTab('plan')} />
+        ))}
       {checkPlan && <StartCheckSheet onClose={() => setCheckPlan(null)} onStart={() => beginCook(checkPlan)} />}
       {debug && <DebugScreen onClose={() => setDebug(false)} />}
-      <BottomNav value={tab} onChange={t => pickTab(t as Tab)} items={[
-        { id: 'plan', label: 'Plan', icon: <ListIcon /> },
-        { id: 'cook', label: 'Cook', icon: <Timer /> },
-        { id: 'gear', label: 'Gear', icon: <Sliders /> },
-      ]} />
+      <BottomNav
+        value={tab}
+        onChange={t => pickTab(t as Tab)}
+        items={[
+          { id: 'plan', label: 'Plan', icon: <ListIcon /> },
+          { id: 'cook', label: 'Cook', icon: <Timer /> },
+          { id: 'gear', label: 'Gear', icon: <Sliders /> },
+        ]}
+      />
     </div>
   );
 }

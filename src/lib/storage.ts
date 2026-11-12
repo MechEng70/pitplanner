@@ -3,12 +3,17 @@
 
 import { Preferences } from '@capacitor/preferences';
 
-export type Key = 'gear' | 'settings' | 'draft' | 'rates' | 'totalHours' | 'rateLocks' | 'update' | 'activeCook' | 'flags';
+export type Key =
+  'gear' | 'settings' | 'draft' | 'rates' | 'totalHours' | 'rateLocks' | 'update' | 'activeCook' | 'flags';
 
 export async function load<T>(key: Key): Promise<T | null> {
   const { value } = await Preferences.get({ key });
   if (value == null) return null;
-  try { return JSON.parse(value) as T; } catch { return null; }
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return null;
+  }
 }
 
 export async function save(key: Key, value: unknown): Promise<void> {

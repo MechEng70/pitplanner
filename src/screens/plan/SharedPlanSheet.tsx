@@ -1,5 +1,17 @@
 import { useMemo, useRef, useState } from 'preact/hooks';
-import { Button, Card, Chips, Field, InfoBox, Num, SelectField, Sheet, Stack, Text, useSheet } from '../../ui/components.tsx';
+import {
+  Button,
+  Card,
+  Chips,
+  Field,
+  InfoBox,
+  Num,
+  SelectField,
+  Sheet,
+  Stack,
+  Text,
+  useSheet,
+} from '../../ui/components.tsx';
 import { useStore } from '../../lib/store.tsx';
 import { rules, food, countText } from '../../lib/rules.ts';
 import { tx, fmtTemp, fmtTime, fmtWeight, fromLocalInput, toLocalInput } from '../../lib/format.ts';
@@ -11,7 +23,15 @@ const weekdayFmt = new Intl.DateTimeFormat('en-US', { weekday: 'long' });
 const NAMES: Record<CookerKind, string> = { smoker: 'smoker', griddle: 'griddle', oven: 'oven' };
 
 /** Open shared plan (mockup 11): the sender's menu, a serve date, the receiver's cookers, then Use this plan. */
-export function SharedPlanSheet({ shared, onClose, onUse }: { shared: SharedPlan; onClose: () => void; onUse: () => void }) {
+export function SharedPlanSheet({
+  shared,
+  onClose,
+  onUse,
+}: {
+  shared: SharedPlan;
+  onClose: () => void;
+  onUse: () => void;
+}) {
   const { state, setDraft } = useStore();
   const { gear, units } = state;
   const suggested = useMemo(() => suggestServe(shared.serveAt, Date.now()), [shared]);
@@ -29,10 +49,20 @@ export function SharedPlanSheet({ shared, onClose, onUse }: { shared: SharedPlan
     const el = dateRef.current;
     if (!el) return;
     el.value = toLocalInput(serveAt);
-    try { el.showPicker(); } catch { el.focus(); el.click(); }
+    try {
+      el.showPicker();
+    } catch {
+      el.focus();
+      el.click();
+    }
   };
   const use = () => {
-    setDraft(() => ({ mode: 'readyBy', at: serveAt, pitTempF, items: mapped.items.map(it => ({ ...it, id: crypto.randomUUID() })) }));
+    setDraft(() => ({
+      mode: 'readyBy',
+      at: serveAt,
+      pitTempF,
+      items: mapped.items.map(it => ({ ...it, id: crypto.randomUUID() })),
+    }));
     onUse();
   };
 
@@ -43,30 +73,62 @@ export function SharedPlanSheet({ shared, onClose, onUse }: { shared: SharedPlan
     <Sheet title="Open shared plan" onClose={onClose} footer={<UseButton onUse={use} />}>
       <Stack gap={16}>
         <Text v="bodyL" tone="secondary" as="p">
-          Someone shared a {weekdayFmt.format(shared.serveAt)} plan. Times will be worked out for your gear and your cook rates.
+          Someone shared a {weekdayFmt.format(shared.serveAt)} plan. Times will be worked out for your gear and your
+          cook rates.
         </Text>
         <Card tone="result" pad="m">
           <Stack gap={8}>
-            <Text v="overline" tone="accentHi">Serve at <Num>{fmtTime(shared.serveAt)}</Num></Text>
-            {shared.items.map(it => <Text key={it.id} v="bodyL">{tx(sharedLine(rules, it, qty(it.foodId, it.quantity)), units)}</Text>)}
-            {shared.dropped > 0 && <Text v="label" tone="secondary">{shared.dropped} more {shared.dropped === 1 ? 'food' : 'foods'} this app does not know.</Text>}
+            <Text v="overline" tone="accentHi">
+              Serve at <Num>{fmtTime(shared.serveAt)}</Num>
+            </Text>
+            {shared.items.map(it => (
+              <Text key={it.id} v="bodyL">
+                {tx(sharedLine(rules, it, qty(it.foodId, it.quantity)), units)}
+              </Text>
+            ))}
+            {shared.dropped > 0 && (
+              <Text v="label" tone="secondary">
+                {shared.dropped} more {shared.dropped === 1 ? 'food' : 'foods'} this app does not know.
+              </Text>
+            )}
           </Stack>
         </Card>
 
         <Field label="Serve on">
-          <Chips label="Serve on" value={picked ? 'pick' : 'suggested'}
-            onChange={v => v === 'suggested' ? setServeAt(suggested) : openDate()}
+          <Chips
+            label="Serve on"
+            value={picked ? 'pick' : 'suggested'}
+            onChange={v => (v === 'suggested' ? setServeAt(suggested) : openDate())}
             options={[
               { id: 'suggested', label: dayFmt.format(suggested) },
               { id: 'pick', label: picked ? `${dayFmt.format(serveAt)}, ${fmtTime(serveAt)}` : 'Pick a date' },
-            ]} />
-          <input ref={dateRef} type="datetime-local" class="hidden-input" tabIndex={-1} aria-hidden="true"
-            onChange={e => { const t = fromLocalInput(e.currentTarget.value); if (t != null) setServeAt(t); }} />
+            ]}
+          />
+          <input
+            ref={dateRef}
+            type="datetime-local"
+            class="hidden-input"
+            tabIndex={-1}
+            aria-hidden="true"
+            onChange={e => {
+              const t = fromLocalInput(e.currentTarget.value);
+              if (t != null) setServeAt(t);
+            }}
+          />
         </Field>
 
         {gear.smoker && (
-          <Field label="Cook the smoker items on"
-            note={pitTempF !== shared.pitTempF ? <>Smoker set to <Num>{fmtTemp(pitTempF, units, true)}</Num>, the closest your smoker allows to <Num>{fmtTemp(shared.pitTempF, units, true)}</Num>.</> : undefined}>
+          <Field
+            label="Cook the smoker items on"
+            note={
+              pitTempF !== shared.pitTempF ? (
+                <>
+                  Smoker set to <Num>{fmtTemp(pitTempF, units, true)}</Num>, the closest your smoker allows to{' '}
+                  <Num>{fmtTemp(shared.pitTempF, units, true)}</Num>.
+                </>
+              ) : undefined
+            }
+          >
             <SelectField label="Your smoker" value={gear.smoker.name} />
           </Field>
         )}
@@ -77,13 +139,19 @@ export function SharedPlanSheet({ shared, onClose, onUse }: { shared: SharedPlan
           const names = (xs: { foodName: string }[]) => xs.map(x => x.foodName).join(' and ');
           return (
             <InfoBox key={k} lead={`No ${NAMES[k]} set up.`}>
-              {moves.length > 0 && `${names(moves)} will move to the ${NAMES[moves[0].to as CookerKind]}, or add a ${NAMES[k]} in Gear.`}
-              {gaps.length > 0 && ` ${names(gaps)} ${gaps.length === 1 ? 'needs' : 'need'} a ${NAMES[k]}. Add one in Gear.`}
+              {moves.length > 0 &&
+                `${names(moves)} will move to the ${NAMES[moves[0].to as CookerKind]}, or add a ${NAMES[k]} in Gear.`}
+              {gaps.length > 0 &&
+                ` ${names(gaps)} ${gaps.length === 1 ? 'needs' : 'need'} a ${NAMES[k]}. Add one in Gear.`}
             </InfoBox>
           );
         })}
 
-        {state.draft.items.length > 0 && <Text v="label" tone="secondary">Replaces the plan you have now.</Text>}
+        {state.draft.items.length > 0 && (
+          <Text v="label" tone="secondary">
+            Replaces the plan you have now.
+          </Text>
+        )}
       </Stack>
     </Sheet>
   );
@@ -91,19 +159,29 @@ export function SharedPlanSheet({ shared, onClose, onUse }: { shared: SharedPlan
 
 function UseButton({ onUse }: { onUse: () => void }) {
   const { close } = useSheet();
-  return <Button block onClick={() => close(onUse)}>Use this plan</Button>;
+  return (
+    <Button block onClick={() => close(onUse)}>
+      Use this plan
+    </Button>
+  );
 }
 
 /** A file that could not be opened: says why, nothing else. */
 export function SharedPlanError({ message, onClose }: { message: string; onClose: () => void }) {
   return (
     <Sheet title="Open shared plan" onClose={onClose} footer={<CloseButton />}>
-      <Text v="bodyL" tone="secondary" as="p">{message}</Text>
+      <Text v="bodyL" tone="secondary" as="p">
+        {message}
+      </Text>
     </Sheet>
   );
 }
 
 function CloseButton() {
   const { close } = useSheet();
-  return <Button block kind="outline" onClick={() => close(() => {})}>Close</Button>;
+  return (
+    <Button block kind="outline" onClick={() => close(() => {})}>
+      Close
+    </Button>
+  );
 }

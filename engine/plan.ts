@@ -2,17 +2,35 @@
 // smoker temperature conflicts, pellet estimate, grate load, and the event list that
 // drives the timeline and alarms. Pure functions: no clock, no storage, no UI.
 
-import type { CookLog, ItemInput, RateSource, Phase, Plan, PlanEvent, PlanInput, PlannedItem, Warning, TimingModel } from './types.ts';
+import type {
+  CookLog,
+  ItemInput,
+  RateSource,
+  Phase,
+  Plan,
+  PlanEvent,
+  PlanInput,
+  PlannedItem,
+  Warning,
+  TimingModel,
+} from './types.ts';
 import { isSettable } from './temps.ts';
+import {
+  resolveMethod as mergeShared,
+  type ResolvedMethod,
+  type RuleFood,
+  type RulePhase,
+  type Rules,
+} from './rules.ts';
+
+export type { Rules } from './rules.ts';
 
 const MIN = 60_000;
-const HIGH_HEAT_DELTA_F = 50;     // a smoker phase this far above the pit set point is "high heat"
-const CONFLICT_TOLERANCE_F = 25;  // two smoker phases further apart than this cannot share the pit
-const PIT_CLIMB_MIN = 15;         // time to raise the pit before a high-heat phase
+const HIGH_HEAT_DELTA_F = 50; // a smoker phase this far above the pit set point is "high heat"
+const CONFLICT_TOLERANCE_F = 25; // two smoker phases further apart than this cannot share the pit
+const PIT_CLIMB_MIN = 15; // time to raise the pit before a high-heat phase
 const OVEN_LEAD_MIN = 15;
-const REFILL_AT_FRACTION = 0.1;   // top-off alert when the hopper is estimated under 10%
-
-export type Rules = any; // data/foods.json; typed loosely so the rules file can grow without code changes
+const REFILL_AT_FRACTION = 0.1; // top-off alert when the hopper is estimated under 10%
 
 export function tempFactor(rules: Rules, tempF: number): number {
   const m = rules.tempModel;
@@ -20,19 +38,18 @@ export function tempFactor(rules: Rules, tempF: number): number {
 }
 
 function findFood(rules: Rules, foodId: string) {
-  const food = rules.foods.find((f: any) => f.id === foodId);
+  const food = rules.foods.find(f => f.id === foodId);
   if (!food) throw new Error(`Unknown food ${foodId}`);
   return food;
 }
 
-function resolveMethod(food: any, methodId: string) {
-  const method = food.methods.find((m: any) => m.id === methodId);
+function resolveMethod(food: RuleFood, methodId: string): ResolvedMethod {
+  const method = food.methods.find(m => m.id === methodId);
   if (!method) throw new Error(`Unknown method ${methodId} for ${food.id}`);
-  const shared = food.shared ?? {};
-  return { ...shared, ...method, options: { ...(shared.options ?? {}), ...(method.options ?? {}) } };
+  return mergeShared(food, method);
 }
 
-function optionValue(method: any, input: ItemInput, key: string): string | undefined {
+function optionValue(method: ResolvedMethod, input: ItemInput, key: string): string | undefined {
   const opt = method.options?.[key];
   if (!opt) return undefined;
   return input.options?.[key] ?? opt.default;
@@ -43,20 +60,32 @@ function optionValue(method: any, input: ItemInput, key: string): string | undef
  * A saved rate is used as-is until savedRateLearnsAfter logged cooks (or always, when locked); after that it
  * is the prior the cooks blend with. With nothing saved, the published default blends with logged cooks.
  */
-export function rateFor(rules: Rules, input: ItemInput, smokerId: string, overrides: Record<string, number> | undefined, history: CookLog[] | undefined, model: TimingModel, locks?: Record<string, boolean>) {
+export function rateFor(
+  rules: Rules,
+  input: ItemInput,
+  smokerId: string,
+  overrides: Record<string, number> | undefined,
+  history: CookLog[] | undefined,
+  model: TimingModel,
+  locks?: Record<string, boolean>,
+) {
   const food = findFood(rules, input.foodId);
   const method = resolveMethod(food, input.methodId);
-  const logs = (history ?? []).filter(h => !h.discarded && h.foodId === input.foodId && h.methodId === input.methodId && h.smokerId === smokerId);
+  const logs = (history ?? []).filter(
+    h => !h.discarded && h.foodId === input.foodId && h.methodId === input.methodId && h.smokerId === smokerId,
+  );
   if (input.hrPerLb != null) return { rate: input.hrPerLb, source: 'item' as const, cooksLogged: logs.length };
   const saved = overrides?.[input.foodId];
   if (saved != null && (locks?.[input.foodId] || logs.length < rules.learning.savedRateLearnsAfter))
     return { rate: saved, source: 'override' as const, cooksLogged: logs.length };
-  const prior = saved ?? method.timing.hrPerLbAt225;
+  const prior = saved ?? method.timing.hrPerLbAt225!;
   const { priorWeight, sizeExponent } = rules.learning;
   const wRef = refWeight(food);
   const observed = logs.map(h => {
     const tf = tempFactor(rules, h.pitTempF);
-    const wrapF = method.options?.wrap ? method.options.wrap.choices[h.options?.wrap ?? method.options.wrap.default].timeFactor : 1;
+    const wrapF = method.options?.wrap
+      ? method.options.wrap.choices[h.options?.wrap ?? method.options.wrap.default].timeFactor!
+      : 1;
     const hours = h.minutesOnHeat / 60 / tf / wrapF;
     return model === 'sizeAdjusted' ? hours / (wRef * Math.pow(h.quantity / wRef, sizeExponent)) : hours / h.quantity;
   });
@@ -65,7 +94,7 @@ export function rateFor(rules: Rules, input: ItemInput, smokerId: string, overri
   return { rate, source, cooksLogged: logs.length };
 }
 
-const refWeight = (food: any): number => food.quantity.referenceWeight ?? food.quantity.default;
+const refWeight = (food: RuleFood): number => food.quantity.referenceWeight ?? food.quantity.default;
 
 function buildItem(rules: Rules, input: ItemInput, plan: PlanInput): Omit<PlannedItem, 'finish'> {
   const food = findFood(rules, input.foodId);
@@ -75,57 +104,80 @@ function buildItem(rules: Rules, input: ItemInput, plan: PlanInput): Omit<Planne
   const W = input.quantity;
   const timing = method.timing;
   const wrapChoice = optionValue(method, input, 'wrap');
-  const wrapF = wrapChoice ? method.options.wrap.choices[wrapChoice].timeFactor : 1;
+  const wrapF = wrapChoice ? method.options.wrap.choices[wrapChoice].timeFactor! : 1;
 
   // Pick phases, dropping ones whose skipIf matches (e.g. no-wrap brisket has no wrap check).
-  let rawPhases: any[] = method.phases.filter((p: any) => !p.skipIf || Object.entries(p.skipIf).every(([k, v]) => optionValue(method, input, k) !== v));
+  let rawPhases: RulePhase[] = method.phases.filter(
+    p => !p.skipIf || Object.entries(p.skipIf).every(([k, v]) => optionValue(method, input, k) !== v),
+  );
   if (rawPhases.length < method.phases.length) {
-    const kept = rawPhases.reduce((a: number, p: any) => a + (p.fraction ?? 0), 0);
-    rawPhases = rawPhases.map((p: any) => p.fraction != null ? { ...p, fraction: p.fraction / kept } : p);
+    const kept = rawPhases.reduce((a, p) => a + (p.fraction ?? 0), 0);
+    rawPhases = rawPhases.map(p => (p.fraction != null ? { ...p, fraction: p.fraction / kept } : p));
   }
 
   let totalScaled = 0; // minutes shared out by fraction
   let rateInfo: PlannedItem['rateInfo'];
   const smokerId = plan.cookers.smoker?.id ?? 'none';
-  const totalHours = input.timingModel === 'totalHours' && input.totalHours != null && input.totalHours > 0 ? input.totalHours : null;
+  const totalHours =
+    input.timingModel === 'totalHours' && input.totalHours != null && input.totalHours > 0 ? input.totalHours : null;
 
   if (timing.kind === 'perWeight') {
-    const model: TimingModel = totalHours ? 'totalHours' : input.timingModel === 'sizeAdjusted' ? 'sizeAdjusted' : 'perPound';
+    const model: TimingModel = totalHours
+      ? 'totalHours'
+      : input.timingModel === 'sizeAdjusted'
+        ? 'sizeAdjusted'
+        : 'perPound';
     const r = rateFor(rules, input, smokerId, plan.rateOverrides, plan.history, model, plan.rateLocks);
     const wRef = refWeight(food);
-    const hours = Math.max(timing.minHours ?? 0, model === 'sizeAdjusted' ? r.rate * wRef * Math.pow(W / wRef, rules.learning.sizeExponent) : r.rate * W);
+    const hours = Math.max(
+      timing.minHours ?? 0,
+      model === 'sizeAdjusted' ? r.rate * wRef * Math.pow(W / wRef, rules.learning.sizeExponent) : r.rate * W,
+    );
     totalScaled = hours * 60 * tf * wrapF;
-    rateInfo = { hrPerLbAt225: r.rate, source: r.source, cooksLogged: r.cooksLogged, model,
-      rangeHours: timing.rangeAt225 && [W * timing.rangeAt225[0] * tf * wrapF, W * timing.rangeAt225[1] * tf * wrapF] };
+    rateInfo = {
+      hrPerLbAt225: r.rate,
+      source: r.source,
+      cooksLogged: r.cooksLogged,
+      model,
+      rangeHours: timing.rangeAt225 && [W * timing.rangeAt225[0] * tf * wrapF, W * timing.rangeAt225[1] * tf * wrapF],
+    };
   } else if (timing.kind === 'perWeightMinutes') {
-    totalScaled = Math.max(timing.minMinutes, timing.minPerLbAt225 * W) * tf;
+    totalScaled = Math.max(timing.minMinutes!, timing.minPerLbAt225! * W) * tf;
   }
 
-  const phases: Phase[] = rawPhases.map((p: any) => {
+  const phases: Phase[] = rawPhases.map(p => {
     const cooker = p.cooker ?? method.cooker;
     let minutes: number;
     if (p.fraction != null) minutes = totalScaled * p.fraction;
-    else if (timing.kind === 'fixedScaled') minutes = p.fixedMin * tf;
+    else if (timing.kind === 'fixedScaled') minutes = p.fixedMin! * tf;
     else if (timing.kind === 'byOption' || timing.kind === 'byOptionScaled') {
-      const choice = method.options[timing.option].choices[optionValue(method, input, timing.option)!];
-      minutes = choice.minutes[method.cooker] * (timing.kind === 'byOptionScaled' ? tf : 1);
-    } else minutes = p.fixedMin * (p.scaleWithPit ? tf : 1);
+      const key = timing.option!;
+      const choice = method.options[key].choices[optionValue(method, input, key)!];
+      minutes = choice.minutes![method.cooker]! * (timing.kind === 'byOptionScaled' ? tf : 1);
+    } else minutes = p.fixedMin! * (p.scaleWithPit ? tf : 1);
     return {
-      id: p.id, label: p.label, short: p.short, cooker,
+      id: p.id,
+      label: p.label,
+      short: p.short,
+      cooker,
       tempF: p.temp === 'pit' ? pit : p.temp,
-      minutes, start: 0, end: 0,
-      setsPit: !!p.setsPit, anchorToEnd: !!p.anchorToEnd, checkStep: !!p.checkStep,
+      minutes,
+      start: 0,
+      end: 0,
+      setsPit: !!p.setsPit,
+      anchorToEnd: !!p.anchorToEnd,
+      checkStep: !!p.checkStep,
     };
   });
 
   // Total hours: the user's time on heat, used as-is; phases keep their normal shares of it.
   if (totalHours) {
     const normal = phases.reduce((a, p) => a + p.minutes, 0);
-    if (normal > 0) for (const p of phases) p.minutes = p.minutes * totalHours * 60 / normal;
+    if (normal > 0) for (const p of phases) p.minutes = (p.minutes * totalHours * 60) / normal;
   }
 
   const prep = [...(method.prep ?? [])];
-  for (const [key, opt] of Object.entries<any>(method.options ?? {})) {
+  for (const [key, opt] of Object.entries(method.options)) {
     const choice = opt.choices[optionValue(method, input, key)!];
     if (choice?.prep) prep.push(choice.prep);
   }
@@ -134,17 +186,25 @@ function buildItem(rules: Rules, input: ItemInput, plan: PlanInput): Omit<Planne
   let pullLabel = method.pull.label;
   const thickness = optionValue(method, input, 'thickness');
   if (thickness) {
-    const t = method.options.thickness.choices[thickness].pullF;
+    const t = method.options.thickness.choices[thickness].pullF!;
     pullLabel = `Pull chicken breasts at ${t[0]}-${t[1]}F and tent 5-10 min. Confirm 165F in the thickest part.`;
   }
 
   return {
-    input, name: food.name, holdsPoorly: !!food.holdsPoorly, phases,
+    input,
+    name: food.name,
+    holdsPoorly: !!food.holdsPoorly,
+    phases,
     restMin: Math.max(method.restMin.min, input.restMin ?? method.restMin.default),
     restFloorMin: method.restMin.min,
-    sliceMin: method.sliceMin ?? 0, extraHoldMin: 0,
-    holdLimitMin: method.holdLimitMin, pullLabel, pullCheckStep: !!method.pull.checkStep,
-    footprintSqIn: (perUnit ?? 0) * W, prep, rateInfo,
+    sliceMin: method.sliceMin ?? 0,
+    extraHoldMin: 0,
+    holdLimitMin: method.holdLimitMin,
+    pullLabel,
+    pullCheckStep: !!method.pull.checkStep,
+    footprintSqIn: (perUnit ?? 0) * W,
+    prep,
+    rateInfo,
   };
 }
 
@@ -160,11 +220,14 @@ function layBackward(item: PlannedItem) {
   // Exact boundaries are laid back from finish, then each one snaps earlier onto the 5-minute
   // grid. Snapping each boundary once (not each phase) keeps the drift under 5 min per item:
   // the screen and the alarms show the same round times and the cook is never shorter overall.
-  let exact = item.finish, end = item.finish;
+  let exact = item.finish,
+    end = item.finish;
   for (let i = item.phases.length - 1; i >= 0; i--) {
     const p = item.phases[i];
     exact -= p.minutes * MIN;
-    p.end = end; p.start = floorToStep(exact); end = p.start;
+    p.end = end;
+    p.start = floorToStep(exact);
+    end = p.start;
   }
 }
 
@@ -186,7 +249,13 @@ export function buildPlan(rules: Rules, input: PlanInput): Plan {
     // Start-at: the earliest action (fire the smoker or first phase) lands on input.at.
     const first = earliestAction(items, input);
     const offset = input.at - first;
-    for (const it of items) { it.finish += offset; it.phases.forEach(p => { p.start += offset; p.end += offset; }); }
+    for (const it of items) {
+      it.finish += offset;
+      it.phases.forEach(p => {
+        p.start += offset;
+        p.end += offset;
+      });
+    }
     serveAt = draftServe + offset;
   }
   return derive(rules, input, items, serveAt);
@@ -194,15 +263,21 @@ export function buildPlan(rules: Rules, input: PlanInput): Plan {
 
 function earliestAction(items: PlannedItem[], input: PlanInput): number {
   let t = Infinity;
-  for (const it of items) for (const p of it.phases) {
-    const pre = p.cooker === 'smoker' ? input.cookers.smoker?.preheatMin ?? 20 : p.cooker === 'griddle' ? input.cookers.griddle?.preheatMin ?? 15 : 0;
-    t = Math.min(t, p.start - pre * MIN);
-  }
+  for (const it of items)
+    for (const p of it.phases) {
+      const pre =
+        p.cooker === 'smoker'
+          ? (input.cookers.smoker?.preheatMin ?? 20)
+          : p.cooker === 'griddle'
+            ? (input.cookers.griddle?.preheatMin ?? 15)
+            : 0;
+      t = Math.min(t, p.start - pre * MIN);
+    }
   return t;
 }
 
 const isHigh = (pit: number, p: Phase) => p.cooker === 'smoker' && p.tempF >= pit + HIGH_HEAT_DELTA_F;
-const needStart = (p: Phase) => p.setsPit ? p.start : p.start - PIT_CLIMB_MIN * MIN;
+const needStart = (p: Phase) => (p.setsPit ? p.start : p.start - PIT_CLIMB_MIN * MIN);
 
 /** Low-and-slow smoker items finish before any high-heat phase; the difference goes into their hold. */
 export function applyClearPitRule(items: PlannedItem[], input: PlanInput) {
@@ -217,7 +292,12 @@ export function applyClearPitRule(items: PlannedItem[], input: PlanInput) {
     const lastEnd = Math.max(...sm.map(p => p.end));
     if (lastEnd <= H) continue;
     const delta = Math.ceil((lastEnd - H) / (5 * MIN)) * 5 * MIN;
-    it.phases.forEach(p => { if (!p.anchorToEnd) { p.start -= delta; p.end -= delta; } });
+    it.phases.forEach(p => {
+      if (!p.anchorToEnd) {
+        p.start -= delta;
+        p.end -= delta;
+      }
+    });
     if (!it.phases.some(p => p.anchorToEnd)) it.finish -= delta;
     it.extraHoldMin += delta / MIN;
   }
@@ -233,44 +313,94 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
     events.push({ id: `e${seq++}`, alarm: false, checkStep: false, critical: false, ...e });
 
   const [lo, hi] = rules.tempModel.trustedRangeF;
-  if (pit < lo || pit > hi) warnings.push({ code: 'TEMP_UNTRUSTED', level: 'warn', message: `Times at ${pit}F are a rough guess. The timing model is built on ${lo}-${hi}F.` });
+  if (pit < lo || pit > hi)
+    warnings.push({
+      code: 'TEMP_UNTRUSTED',
+      level: 'warn',
+      message: `Times at ${pit}F are a rough guess. The timing model is built on ${lo}-${hi}F.`,
+    });
 
   const smoker = input.cookers.smoker;
   if (smoker) {
-    if (!isSettable(smoker, pit)) warnings.push({ code: 'TEMP_NOT_SETTABLE', level: 'warn', message: `${smoker.name} cannot be set to ${pit}F.` });
+    if (!isSettable(smoker, pit))
+      warnings.push({ code: 'TEMP_NOT_SETTABLE', level: 'warn', message: `${smoker.name} cannot be set to ${pit}F.` });
   }
-  for (const it of items) for (const p of it.phases) {
-    if (p.cooker === 'smoker' && !smoker) warnings.push({ code: 'NO_SMOKER', level: 'warn', message: `${it.name} needs a smoker. Add one in Gear.`, itemIds: [it.input.id] });
-    if (p.cooker === 'griddle' && !input.cookers.griddle) warnings.push({ code: 'NO_GRIDDLE', level: 'warn', message: `${it.name} needs a griddle. Add one in Gear or move it to the smoker.`, itemIds: [it.input.id] });
-  }
+  for (const it of items)
+    for (const p of it.phases) {
+      if (p.cooker === 'smoker' && !smoker)
+        warnings.push({
+          code: 'NO_SMOKER',
+          level: 'warn',
+          message: `${it.name} needs a smoker. Add one in Gear.`,
+          itemIds: [it.input.id],
+        });
+      if (p.cooker === 'griddle' && !input.cookers.griddle)
+        warnings.push({
+          code: 'NO_GRIDDLE',
+          level: 'warn',
+          message: `${it.name} needs a griddle. Add one in Gear or move it to the smoker.`,
+          itemIds: [it.input.id],
+        });
+    }
 
   for (const it of items) {
     const i = it.input;
     if (i.timingModel === 'totalHours' && i.totalHoursAtF != null && i.totalHoursAtF !== pit)
-      warnings.push({ code: 'TOTAL_HOURS_FIXED', level: 'info', itemIds: [i.id], message: `${it.name}: total hours fixed. Temp change does not adjust it.` });
+      warnings.push({
+        code: 'TOTAL_HOURS_FIXED',
+        level: 'info',
+        itemIds: [i.id],
+        message: `${it.name}: total hours fixed. Temp change does not adjust it.`,
+      });
   }
 
   // Smoker temperature conflicts between items
-  const sm = items.flatMap(it => it.phases.filter(p => p.cooker === 'smoker').map(p => ({ it, p }))).sort((a, b) => a.p.start - b.p.start);
+  const sm = items
+    .flatMap(it => it.phases.filter(p => p.cooker === 'smoker').map(p => ({ it, p })))
+    .sort((a, b) => a.p.start - b.p.start);
   const seen = new Set<string>();
-  for (let i = 0; i < sm.length; i++) for (let j = i + 1; j < sm.length; j++) {
-    const a = sm[i], b = sm[j];
-    if (a.it === b.it) continue;
-    if (a.p.start < b.p.end && b.p.start < a.p.end && Math.abs(a.p.tempF - b.p.tempF) > CONFLICT_TOLERANCE_F) {
-      const key = [a.it.input.id, b.it.input.id].sort().join('|');
-      if (seen.has(key)) continue; seen.add(key);
-      warnings.push({ code: 'PIT_CONFLICT', level: 'warn', itemIds: [a.it.input.id, b.it.input.id],
-        message: `${a.it.name} needs ${a.p.tempF}F while ${b.it.name} needs ${b.p.tempF}F at the same time.` });
+  for (let i = 0; i < sm.length; i++)
+    for (let j = i + 1; j < sm.length; j++) {
+      const a = sm[i],
+        b = sm[j];
+      if (a.it === b.it) continue;
+      if (a.p.start < b.p.end && b.p.start < a.p.end && Math.abs(a.p.tempF - b.p.tempF) > CONFLICT_TOLERANCE_F) {
+        const key = [a.it.input.id, b.it.input.id].sort().join('|');
+        if (seen.has(key)) continue;
+        seen.add(key);
+        warnings.push({
+          code: 'PIT_CONFLICT',
+          level: 'warn',
+          itemIds: [a.it.input.id, b.it.input.id],
+          message: `${a.it.name} needs ${a.p.tempF}F while ${b.it.name} needs ${b.p.tempF}F at the same time.`,
+        });
+      }
     }
-  }
 
   // Holds
   for (const it of items) {
-    const hold = (serveAt - (it.sliceMin * MIN) - it.finish) / MIN;
-    if (hold > it.holdLimitMin) warnings.push({ code: 'HOLD_TOO_LONG', level: it.holdsPoorly ? 'warn' : 'info', itemIds: [it.input.id],
-      message: `${it.name} holds ${Math.round(hold)} min, past its ${it.holdLimitMin} min limit.${it.holdsPoorly ? ' Move it to the griddle or start it later.' : ''}` });
-    if (hold < it.restFloorMin - 0.5) warnings.push({ code: 'REST_SHORT', level: 'warn', itemIds: [it.input.id], message: `${it.name} only gets ${Math.max(0, Math.round(hold))} min of rest, under the ${it.restFloorMin} min minimum.` });
-    else if (hold < it.restMin - 0.5) warnings.push({ code: 'REST_REDUCED', level: 'info', itemIds: [it.input.id], message: `${it.name} rest drops to ${Math.round(hold)} min. Still OK.` });
+    const hold = (serveAt - it.sliceMin * MIN - it.finish) / MIN;
+    if (hold > it.holdLimitMin)
+      warnings.push({
+        code: 'HOLD_TOO_LONG',
+        level: it.holdsPoorly ? 'warn' : 'info',
+        itemIds: [it.input.id],
+        message: `${it.name} holds ${Math.round(hold)} min, past its ${it.holdLimitMin} min limit.${it.holdsPoorly ? ' Move it to the griddle or start it later.' : ''}`,
+      });
+    if (hold < it.restFloorMin - 0.5)
+      warnings.push({
+        code: 'REST_SHORT',
+        level: 'warn',
+        itemIds: [it.input.id],
+        message: `${it.name} only gets ${Math.max(0, Math.round(hold))} min of rest, under the ${it.restFloorMin} min minimum.`,
+      });
+    else if (hold < it.restMin - 0.5)
+      warnings.push({
+        code: 'REST_REDUCED',
+        level: 'info',
+        itemIds: [it.input.id],
+        message: `${it.name} rest drops to ${Math.round(hold)} min. Still OK.`,
+      });
   }
 
   // Grate load (estimate)
@@ -278,16 +408,31 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
   for (const x of sm) {
     const t = x.p.start;
     const active = new Set(sm.filter(y => y.p.start <= t && t < y.p.end).map(y => y.it));
-    peak = Math.max(peak, [...active].reduce((a, it) => a + it.footprintSqIn, 0));
+    peak = Math.max(
+      peak,
+      [...active].reduce((a, it) => a + it.footprintSqIn, 0),
+    );
   }
   if (smoker?.mainGrateSqIn) {
     const total = smoker.mainGrateSqIn + (smoker.upperRackSqIn ?? 0);
-    if (peak > total) warnings.push({ code: 'SPACE_OVER', level: 'warn', message: `About ${Math.round(peak)} sq in of food at once, more than the ${total} sq in available.` });
-    else if (peak > smoker.mainGrateSqIn * 0.95) warnings.push({ code: 'SPACE_UPPER', level: 'info', message: `About ${Math.round(peak)} sq in at once. Plan on the upper rack.` });
+    if (peak > total)
+      warnings.push({
+        code: 'SPACE_OVER',
+        level: 'warn',
+        message: `About ${Math.round(peak)} sq in of food at once, more than the ${total} sq in available.`,
+      });
+    else if (peak > smoker.mainGrateSqIn * 0.95)
+      warnings.push({
+        code: 'SPACE_UPPER',
+        level: 'info',
+        message: `About ${Math.round(peak)} sq in at once. Plan on the upper rack.`,
+      });
   }
 
   // Smoker events and pellets
-  let fireAt: number | null = null, pitOffAt: number | null = null, pellets = 0;
+  let fireAt: number | null = null,
+    pitOffAt: number | null = null,
+    pellets = 0;
   if (sm.length && smoker) {
     const first = sm[0].p;
     fireAt = first.start - smoker.preheatMin * MIN;
@@ -296,7 +441,14 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
     let cur = first.tempF;
     for (const x of sm) {
       if (x.p.tempF !== cur) {
-        if (!x.p.setsPit) add({ at: needStart(x.p), kind: 'setPit', label: `Set the smoker to ${x.p.tempF}F.`, alarm: true, critical: true });
+        if (!x.p.setsPit)
+          add({
+            at: needStart(x.p),
+            kind: 'setPit',
+            label: `Set the smoker to ${x.p.tempF}F.`,
+            alarm: true,
+            critical: true,
+          });
         cur = x.p.tempF;
       }
     }
@@ -305,17 +457,27 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
       for (let t = fireAt; t < pitOffAt; t += 5 * MIN) {
         const act = sm.filter(x => x.p.start <= t && t < x.p.end);
         const temp = act.length ? Math.max(...act.map(x => x.p.tempF)) : pit;
-        const use = (temp >= 325 ? smoker.pelletLbPerHrHigh : smoker.pelletLbPerHrLow) * 5 / 60;
-        pellets += use; level -= use;
+        const use = ((temp >= 325 ? smoker.pelletLbPerHrHigh : smoker.pelletLbPerHrLow) * 5) / 60;
+        pellets += use;
+        level -= use;
         if (level < smoker.hopperLb * REFILL_AT_FRACTION) {
-          add({ at: t - 30 * MIN, kind: 'refill', label: 'Top off the hopper. It runs low in about 30 min.', alarm: true, critical: true });
+          add({
+            at: t - 30 * MIN,
+            kind: 'refill',
+            label: 'Top off the hopper. It runs low in about 30 min.',
+            alarm: true,
+            critical: true,
+          });
           level = smoker.hopperLb;
         }
       }
     }
     if (smoker.hopperLb && pellets > smoker.hopperLb)
-      warnings.push({ code: 'PELLETS_OVER_HOPPER', level: 'info',
-        message: `This cook burns about ${Math.round(pellets)} lb of pellets, more than the ${smoker.hopperLb} lb hopper holds. Top off when the refill alert rings.` });
+      warnings.push({
+        code: 'PELLETS_OVER_HOPPER',
+        level: 'info',
+        message: `This cook burns about ${Math.round(pellets)} lb of pellets, more than the ${smoker.hopperLb} lb hopper holds. Top off when the refill alert rings.`,
+      });
     add({ at: pitOffAt, kind: 'pitOff', label: 'Smoker done. Run the shutdown cycle.' });
   }
 
@@ -323,7 +485,12 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
   let griddleOnAt: number | null = null;
   if (gp.length) {
     griddleOnAt = Math.min(...gp.map(p => p.start)) - (input.cookers.griddle?.preheatMin ?? 15) * MIN;
-    add({ at: griddleOnAt, kind: 'griddleOn', label: 'Fire the griddle. Set a hot zone and a cooler zone.', alarm: true });
+    add({
+      at: griddleOnAt,
+      kind: 'griddleOn',
+      label: 'Fire the griddle. Set a hot zone and a cooler zone.',
+      alarm: true,
+    });
   }
 
   const holders = items.filter(it => it.restMin >= 15 || it.extraHoldMin > 0);
@@ -336,18 +503,73 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
     const start = Math.min(...it.phases.map(p => p.start));
     for (const pr of it.prep) add({ at: start - pr.leadMin * MIN, kind: 'prep', label: pr.label, itemId: it.input.id });
     it.phases.forEach((p, i) => {
-      add({ at: p.start, kind: 'phase', label: p.label, itemId: it.input.id, phaseId: p.id, alarm: true,
-        checkStep: p.checkStep, critical: isHigh(pit, p) || i === 0 });
+      add({
+        at: p.start,
+        kind: 'phase',
+        label: p.label,
+        itemId: it.input.id,
+        phaseId: p.id,
+        alarm: true,
+        checkStep: p.checkStep,
+        critical: isHigh(pit, p) || i === 0,
+      });
       const next = it.phases[i + 1];
-      if (next && next.start > p.end) add({ at: p.end, kind: 'phaseEnd', label: `${it.name} off the smoker. Tent and hold until the next step.`, itemId: it.input.id, phaseId: p.id, alarm: true });
+      if (next && next.start > p.end)
+        add({
+          at: p.end,
+          kind: 'phaseEnd',
+          label: `${it.name} off the smoker. Tent and hold until the next step.`,
+          itemId: it.input.id,
+          phaseId: p.id,
+          alarm: true,
+        });
     });
-    add({ at: it.finish, kind: 'pull', label: it.pullLabel, itemId: it.input.id, alarm: true, checkStep: it.pullCheckStep, critical: true });
-    if (it.sliceMin) add({ at: serveAt - it.sliceMin * MIN, kind: 'slice', label: `Slice or plate the ${it.name.toLowerCase()}.`, itemId: it.input.id, alarm: true });
+    add({
+      at: it.finish,
+      kind: 'pull',
+      label: it.pullLabel,
+      itemId: it.input.id,
+      alarm: true,
+      checkStep: it.pullCheckStep,
+      critical: true,
+    });
+    if (it.sliceMin)
+      add({
+        at: serveAt - it.sliceMin * MIN,
+        kind: 'slice',
+        label: `Slice or plate the ${it.name.toLowerCase()}.`,
+        itemId: it.input.id,
+        alarm: true,
+      });
   }
   add({ at: serveAt, kind: 'serve', label: 'Serve.', alarm: true, critical: true });
 
-  const order: Record<string, number> = { prep: 0, ovenOn: 1, griddleOn: 1, fire: 1, setPit: 2, refill: 2, phase: 3, phaseEnd: 3, pull: 4, slice: 5, pitOff: 6, serve: 7 };
-  events.sort((a, b) => (a.at - b.at) || (order[a.kind] - order[b.kind]));
+  const order: Record<string, number> = {
+    prep: 0,
+    ovenOn: 1,
+    griddleOn: 1,
+    fire: 1,
+    setPit: 2,
+    refill: 2,
+    phase: 3,
+    phaseEnd: 3,
+    pull: 4,
+    slice: 5,
+    pitOff: 6,
+    serve: 7,
+  };
+  events.sort((a, b) => a.at - b.at || order[a.kind] - order[b.kind]);
 
-  return { serveAt, pitTempF: pit, items, events, warnings, fireAt, pitOffAt, griddleOnAt, pelletsLb: pellets, peakFootprintSqIn: peak };
+  return {
+    serveAt,
+    pitTempF: pit,
+    items,
+    events,
+    warnings,
+    fireAt,
+    pitOffAt,
+    griddleOnAt,
+    pelletsLb: pellets,
+    peakFootprintSqIn: peak,
+  };
 }

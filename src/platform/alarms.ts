@@ -5,9 +5,26 @@ import { Capacitor, registerPlugin, type PluginListenerHandle } from '@capacitor
 import { alarmsFromPlan, type AlarmSpec } from '../../engine/alarms.ts';
 import type { Plan } from '../../engine/types.ts';
 
-export interface AlarmStatus { notifications: boolean; exactAlarms: boolean; batteryUnrestricted: boolean; fullScreen: boolean }
-export interface NotificationAction { type: 'done' | 'snooze15' | 'open'; alarmId: string; keys: string[]; at: number }
-export interface StoredNag { alarmId: string; keys: string[]; title: string; body: string; count: number; nextAt: number }
+export interface AlarmStatus {
+  notifications: boolean;
+  exactAlarms: boolean;
+  batteryUnrestricted: boolean;
+  fullScreen: boolean;
+}
+export interface NotificationAction {
+  type: 'done' | 'snooze15' | 'open';
+  alarmId: string;
+  keys: string[];
+  at: number;
+}
+export interface StoredNag {
+  alarmId: string;
+  keys: string[];
+  title: string;
+  body: string;
+  count: number;
+  nextAt: number;
+}
 
 interface PitAlarmsPlugin {
   setAlarms(o: { alarms: AlarmSpec[] }): Promise<{ scheduled: number; exact: boolean }>;
@@ -22,24 +39,47 @@ interface PitAlarmsPlugin {
   requestBatteryExemption(): Promise<void>;
   openFullScreenSettings(): Promise<void>;
   openNotificationSettings(): Promise<void>;
-  addListener(event: 'alarmFired' | 'alarmAction', fn: (e: { alarmId: string; keys: string[]; action?: string }) => void): Promise<PluginListenerHandle>;
+  addListener(
+    event: 'alarmFired' | 'alarmAction',
+    fn: (e: { alarmId: string; keys: string[]; action?: string }) => void,
+  ): Promise<PluginListenerHandle>;
 }
 
 /** Browser dev fallback: no alarms, all permissions reported missing so the UI shows its warnings. */
 const web: PitAlarmsPlugin = {
-  async setAlarms(o) { console.info('[alarms:web] would schedule', o.alarms); return { scheduled: 0, exact: false }; },
+  async setAlarms(o) {
+    console.info('[alarms:web] would schedule', o.alarms);
+    return { scheduled: 0, exact: false };
+  },
   async cancelAll() {},
   async acknowledge() {},
-  async testAlarm() { return { at: Date.now() + 10_000, exact: false }; },
-  async getScheduled() { return { alarms: [], nags: [] }; },
-  async drainActions() { return { actions: [] }; },
-  async status() { return { notifications: false, exactAlarms: false, batteryUnrestricted: false, fullScreen: false }; },
-  async requestNotifications() { return this.status(); },
-  async openExactAlarmSettings() {}, async requestBatteryExemption() {}, async openFullScreenSettings() {}, async openNotificationSettings() {},
-  async addListener() { return { remove: async () => {} }; },
+  async testAlarm() {
+    return { at: Date.now() + 10_000, exact: false };
+  },
+  async getScheduled() {
+    return { alarms: [], nags: [] };
+  },
+  async drainActions() {
+    return { actions: [] };
+  },
+  async status() {
+    return { notifications: false, exactAlarms: false, batteryUnrestricted: false, fullScreen: false };
+  },
+  async requestNotifications() {
+    return this.status();
+  },
+  async openExactAlarmSettings() {},
+  async requestBatteryExemption() {},
+  async openFullScreenSettings() {},
+  async openNotificationSettings() {},
+  async addListener() {
+    return { remove: async () => {} };
+  },
 };
 
-export const PitAlarms: PitAlarmsPlugin = Capacitor.isNativePlatform() ? registerPlugin<PitAlarmsPlugin>('PitAlarms') : web;
+export const PitAlarms: PitAlarmsPlugin = Capacitor.isNativePlatform()
+  ? registerPlugin<PitAlarmsPlugin>('PitAlarms')
+  : web;
 export const alarmsAreNative = Capacitor.isNativePlatform();
 
 /** Cancel every scheduled alarm and schedule the plan's future steps. */

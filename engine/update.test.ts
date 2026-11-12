@@ -22,8 +22,14 @@ test('update: at most daily', () => {
 });
 
 test('update: release json gives the APK link, else the release page', () => {
-  const rel = { tag_name: 'v0.2.0', html_url: 'https://github.com/MechEng70/pitplanner/releases/tag/v0.2.0',
-    assets: [{ name: 'notes.txt', browser_download_url: 'x' }, { name: 'pitplanner-0.2.0.apk', browser_download_url: 'https://example/apk' }] };
+  const rel = {
+    tag_name: 'v0.2.0',
+    html_url: 'https://github.com/MechEng70/pitplanner/releases/tag/v0.2.0',
+    assets: [
+      { name: 'notes.txt', browser_download_url: 'x' },
+      { name: 'pitplanner-0.2.0.apk', browser_download_url: 'https://example/apk' },
+    ],
+  };
   assert.deepEqual(fromRelease(rel, 5), { checkedAt: 5, latest: 'v0.2.0', url: 'https://example/apk' });
   assert.equal(fromRelease({ tag_name: 'v0.2.0', html_url: 'h', assets: [] }, 5).url, 'h');
   assert.equal(fromRelease({}, 5).url, RELEASES_PAGE);

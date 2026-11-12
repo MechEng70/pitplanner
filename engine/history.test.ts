@@ -8,18 +8,38 @@ import type { CookRecord } from '../src/lib/history.ts';
 
 const rules = JSON.parse(readFileSync(new URL('../data/foods.json', import.meta.url), 'utf8'));
 const U = { temp: 'F', weight: 'lb' } as const;
-const log = (foodId: string, methodId: string, quantity: number, minutes: number, extra: Partial<CookLog> = {}): CookLog =>
-  ({ foodId, methodId, smokerId: 'pb', quantity, pitTempF: 225, minutesOnHeat: minutes, ...extra });
+const log = (
+  foodId: string,
+  methodId: string,
+  quantity: number,
+  minutes: number,
+  extra: Partial<CookLog> = {},
+): CookLog => ({ foodId, methodId, smokerId: 'pb', quantity, pitTempF: 225, minutesOnHeat: minutes, ...extra });
 const brisket = log('brisket', 'smoked', 12, 12 * 60, { options: { wrap: 'paper' } });
-const record: CookRecord = { id: 'r', date: 0, notes: 'windy', pitTempF: 225, lateMin: 0, items: [
-  { name: 'Brisket', plannedMin: 700, actualMin: 675, log: brisket },
-  { name: 'Chicken wings', plannedMin: 90, actualMin: 91, log: log('wings', 'smokeCrisp', 2, 91) },
-  { name: 'Chicken breasts', plannedMin: 20, actualMin: 20, log: log('breasts', 'griddle', 4, 20, { discarded: true }) },
-] };
+const record: CookRecord = {
+  id: 'r',
+  date: 0,
+  notes: 'windy',
+  pitTempF: 225,
+  lateMin: 0,
+  items: [
+    { name: 'Brisket', plannedMin: 700, actualMin: 675, log: brisket },
+    { name: 'Chicken wings', plannedMin: 90, actualMin: 91, log: log('wings', 'smokeCrisp', 2, 91) },
+    {
+      name: 'Chicken breasts',
+      plannedMin: 20,
+      actualMin: 20,
+      log: log('breasts', 'griddle', 4, 20, { discarded: true }),
+    },
+  ],
+};
 
 test('history: rate rows list every by-weight food with the rate used and its source', () => {
   const rows = rateRows(rules, [brisket, log('breasts', 'griddle', 4, 20)], 'pb', {}, { stlribs: 5 });
-  assert.deepEqual(rows.map(r => r.foodId), ['brisket', 'tritip', 'stlribs', 'butt']);
+  assert.deepEqual(
+    rows.map(r => r.foodId),
+    ['brisket', 'tritip', 'stlribs', 'butt'],
+  );
   const b = rows[0];
   assert.equal(b.source, 'learned');
   assert.equal(b.cooks, 1);
@@ -43,5 +63,12 @@ test('history: cook card lines', () => {
 test('history: Cook again copies foods, sizes and options with default rest', () => {
   const items = cookAgainItems(rules, record, i => `n${i}`);
   assert.equal(items.length, 3);
-  assert.deepEqual(items[0], { id: 'n0', foodId: 'brisket', methodId: 'smoked', quantity: 12, options: { wrap: 'paper' }, restMin: 60 });
+  assert.deepEqual(items[0], {
+    id: 'n0',
+    foodId: 'brisket',
+    methodId: 'smoked',
+    quantity: 12,
+    options: { wrap: 'paper' },
+    restMin: 60,
+  });
 });

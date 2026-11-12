@@ -8,9 +8,26 @@ import type { SmokerProfile } from './types.ts';
 const rules = JSON.parse(readFileSync(new URL('../data/foods.json', import.meta.url), 'utf8'));
 const MIN = 60_000;
 
-const pitBoss: SmokerProfile = { id: 'pb820', name: 'Pit Boss 820', type: 'pellet', tempStepF: 5, minTempF: 180, maxTempF: 500,
-  hopperLb: 21, mainGrateSqIn: 593, upperRackSqIn: 256, pelletLbPerHrLow: 1.5, pelletLbPerHrHigh: 3, preheatMin: 20 };
-const dial: SmokerProfile = { ...pitBoss, id: 'dial', tempStepF: null, tempPresetsF: [180, 200, 225, 250, 300, 350, 400, 450, 500] };
+const pitBoss: SmokerProfile = {
+  id: 'pb820',
+  name: 'Pit Boss 820',
+  type: 'pellet',
+  tempStepF: 5,
+  minTempF: 180,
+  maxTempF: 500,
+  hopperLb: 21,
+  mainGrateSqIn: 593,
+  upperRackSqIn: 256,
+  pelletLbPerHrLow: 1.5,
+  pelletLbPerHrHigh: 3,
+  preheatMin: 20,
+};
+const dial: SmokerProfile = {
+  ...pitBoss,
+  id: 'dial',
+  tempStepF: null,
+  tempPresetsF: [180, 200, 225, 250, 300, 350, 400, 450, 500],
+};
 
 test('settableTemps: 5F steps inside the trusted range by default', () => {
   const t = settableTemps(pitBoss, [200, 300]);
@@ -46,8 +63,14 @@ test('isSettable agrees with TEMP_NOT_SETTABLE', () => {
 test('onHeatSpan: first phase start to off-heat, matches the Plan cards', () => {
   const serve = Date.UTC(2026, 10, 14, 22, 0);
   const p = buildPlan(rules, {
-    mode: 'readyBy', at: serve, pitTempF: 225, rateOverrides: { brisket: 0.75 },
-    cookers: { smoker: pitBoss, griddle: { id: 'g', name: 'Griddle', sizeIn: 36, burners: 4, hasDome: true, preheatMin: 15 } },
+    mode: 'readyBy',
+    at: serve,
+    pitTempF: 225,
+    rateOverrides: { brisket: 0.75 },
+    cookers: {
+      smoker: pitBoss,
+      griddle: { id: 'g', name: 'Griddle', sizeIn: 36, burners: 4, hasDome: true, preheatMin: 15 },
+    },
     items: [
       { id: 'b', foodId: 'brisket', methodId: 'smoked', quantity: 12, options: { wrap: 'paper' }, restMin: 60 },
       { id: 'w', foodId: 'wings', methodId: 'smokeCrisp', quantity: 2 },
@@ -68,6 +91,9 @@ test('localizeText: F and lb inside rules and engine text follow the user units'
   assert.equal(localizeText('Fire the smoker to 225F.', 'C', 'lb'), 'Fire the smoker to 105C.');
   assert.equal(localizeText('Confirm 165F in the thickest part.', 'C', 'lb'), 'Confirm 74C in the thickest part.');
   assert.equal(localizeText('400F', 'C', 'lb'), '205C');
-  assert.equal(localizeText('About 26 lb of pellets, more than the 21 lb hopper. 0.75 hr/lb.', 'F', 'kg'), 'About 11.8 kg of pellets, more than the 9.5 kg hopper. 0.75 hr/lb.');
+  assert.equal(
+    localizeText('About 26 lb of pellets, more than the 21 lb hopper. 0.75 hr/lb.', 'F', 'kg'),
+    'About 11.8 kg of pellets, more than the 9.5 kg hopper. 0.75 hr/lb.',
+  );
   assert.equal(localizeText('PB850SPW2 at 5 min', 'C', 'kg'), 'PB850SPW2 at 5 min');
 });

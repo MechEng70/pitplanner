@@ -8,7 +8,10 @@ const stack: (() => void)[] = [];
 export function useBack(onBack: () => void) {
   useEffect(() => {
     stack.push(onBack);
-    return () => { const i = stack.lastIndexOf(onBack); if (i >= 0) stack.splice(i, 1); };
+    return () => {
+      const i = stack.lastIndexOf(onBack);
+      if (i >= 0) stack.splice(i, 1);
+    };
   }, [onBack]);
 }
 

@@ -4,7 +4,8 @@ import type { Plan, PlannedItem } from '../../engine/types.ts';
 import { smokerOverlaps } from '../../engine/live.ts';
 import { fmtDuration, fmtTemp, fmtTime, type Units } from './format.ts';
 
-const MIN = 60_000, HR = 60 * MIN;
+const MIN = 60_000,
+  HR = 60 * MIN;
 /** Five minutes or more off the original plan reads as Behind or Ahead. */
 export const DRIFT_MIN = 5;
 
@@ -43,8 +44,10 @@ export const holdMin = (p: Plan, itemId: string): number => {
 export function holdImpact(before: Plan, after: Plan, itemId: string): string {
   const name = before.items.find(i => i.input.id === itemId)?.name ?? 'Food';
   const serveMoved = Math.round((after.serveAt - before.serveAt) / MIN);
-  if (serveMoved) return `Serve ${fmtTime(after.serveAt)}, ${serveMoved > 0 ? 'later' : 'earlier'} by ${fmtDuration(Math.abs(serveMoved))}.`;
-  const a = holdMin(before, itemId), b = holdMin(after, itemId);
+  if (serveMoved)
+    return `Serve ${fmtTime(after.serveAt)}, ${serveMoved > 0 ? 'later' : 'earlier'} by ${fmtDuration(Math.abs(serveMoved))}.`;
+  const a = holdMin(before, itemId),
+    b = holdMin(after, itemId);
   if (b < 0) return `${name}: off heat ${fmtDuration(-b)} after serve.`;
   if (a === b) return `${name} holds ${fmtDuration(b)}, as planned.`;
   return `${name} holds ${fmtDuration(Math.max(0, b))} instead of ${fmtDuration(Math.max(0, a))}.`;
@@ -53,7 +56,12 @@ export function holdImpact(before: Plan, after: Plan, itemId: string): string {
 /* ---------- Lane chart ---------- */
 
 type Tone = 'smoke' | 'smoke2' | 'hot' | 'griddle' | 'oven' | 'hold';
-export interface ViewLane { id: string; title: string; subtitle: string; segments: { start: number; end: number; label?: string; tone: Tone }[] }
+export interface ViewLane {
+  id: string;
+  title: string;
+  subtitle: string;
+  segments: { start: number; end: number; label?: string; tone: Tone }[];
+}
 
 const HOT_OVER_F = 50;
 
@@ -66,14 +74,17 @@ function segments(it: PlannedItem, plan: Plan, u: Units) {
     return { start: p.start, end: p.end, tone, label };
   });
   const holdEnd = plan.serveAt - it.sliceMin * MIN;
-  if (holdEnd - it.finish >= 10 * MIN) out.push({ start: it.finish, end: holdEnd, tone: 'hold', label: it.restMin ? 'rest' : 'hold' });
+  if (holdEnd - it.finish >= 10 * MIN)
+    out.push({ start: it.finish, end: holdEnd, tone: 'hold', label: it.restMin ? 'rest' : 'hold' });
   return out;
 }
 
 /** Chart window: from the top of the current hour to serve (an hour back if serve has passed). */
 /** Chart window: the top of the hour of the first step (fire, griddle or first phase) to serve, so the whole cook shows. */
 export function laneWindow(plan: Plan, _now?: number): { from: number; to: number } {
-  const starts = [plan.fireAt, plan.griddleOnAt, ...plan.items.flatMap(it => it.phases.map(p => p.start))].filter((x): x is number => x != null);
+  const starts = [plan.fireAt, plan.griddleOnAt, ...plan.items.flatMap(it => it.phases.map(p => p.start))].filter(
+    (x): x is number => x != null,
+  );
   const d = new Date(Math.min(plan.serveAt - HR, ...starts));
   d.setMinutes(0, 0, 0);
   return { from: d.getTime(), to: plan.serveAt };
@@ -81,12 +92,17 @@ export function laneWindow(plan: Plan, _now?: number): { from: number; to: numbe
 
 export function lanes(plan: Plan, u: Units, cookerName: (kind: string) => string): ViewLane[] {
   return plan.items.map(it => ({
-    id: it.input.id, title: shortName(it.name), subtitle: cookerName(it.phases[0]?.cooker ?? 'smoker'), segments: segments(it, plan, u),
+    id: it.input.id,
+    title: shortName(it.name),
+    subtitle: cookerName(it.phases[0]?.cooker ?? 'smoker'),
+    segments: segments(it, plan, u),
   }));
 }
 
 const shortHour = (ms: number) => {
-  const d = new Date(ms), h = d.getHours(), m = d.getMinutes();
+  const d = new Date(ms),
+    h = d.getHours(),
+    m = d.getMinutes();
   return `${h % 12 || 12}${m ? `:${String(m).padStart(2, '0')}` : ''}${h < 12 ? 'a' : 'p'}`;
 };
 
@@ -103,7 +119,11 @@ export function laneTicks(from: number, to: number): { at: number; label: string
 
 /** "Today", "Tomorrow" or "Sat". */
 export function dayWord(ms: number, now: number): string {
-  const day = (t: number) => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
+  const day = (t: number) => {
+    const d = new Date(t);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  };
   const diff = Math.round((day(ms) - day(now)) / (24 * HR));
   if (diff === 0) return 'Today';
   if (diff === 1) return 'Tomorrow';
@@ -115,12 +135,20 @@ export const hourText = (ms: number) => fmtTime(ms).replace(':00', '');
 
 /* ---------- Shared smoker note ---------- */
 
-export interface OverlapNote { band: { start: number; end: number; laneIds: string[] }; lead: string; rest: string }
+export interface OverlapNote {
+  band: { start: number; end: number; laneIds: string[] };
+  lead: string;
+  rest: string;
+}
 
 /** "Chicken wings" -> "Wings": lane labels and notes are narrow. */
-export const shortName = (name: string) => { const n = name.replace(/^Chicken /, ''); return n.charAt(0).toUpperCase() + n.slice(1); };
+export const shortName = (name: string) => {
+  const n = name.replace(/^Chicken /, '');
+  return n.charAt(0).toUpperCase() + n.slice(1);
+};
 
-const list = (names: string[]) => names.length < 3 ? names.join(' and ') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+const list = (names: string[]) =>
+  names.length < 3 ? names.join(' and ') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /**
@@ -133,14 +161,21 @@ export function overlapNote(plan: Plan, now: number, u: Units): OverlapNote | nu
   const items = plan.items.filter(i => o.itemIds.includes(i.input.id));
   const names = items.map(i => shortName(i.name).toLowerCase());
   const temp = Math.min(...o.tempsF);
-  const a = fmtTime(o.start), b = fmtTime(o.end);
+  const a = fmtTime(o.start),
+    b = fmtTime(o.end);
   const span = `${a.slice(-2) === b.slice(-2) ? a.slice(0, -3) : a} to ${b}`;
   const lead = `${span}: ${list(names)} share the smoker at ${fmtTemp(temp, u, true)}.`;
   // One food comes off where the stretch ends, and another later needs the pit hotter.
   const leaving = items.find(i => Math.abs(i.finish - o.end) < MIN);
-  const climbing = items.filter(i => i !== leaving).flatMap(i => i.phases)
-    .filter(p => p.cooker === 'smoker' && p.start >= o.end - MIN && p.tempF > temp).sort((x, y) => x.start - y.start)[0];
-  const rest = leaving && climbing ? `${cap(leaving.name.toLowerCase())} comes off before the pit climbs to ${fmtTemp(climbing.tempF, u, true)}.` : '';
+  const climbing = items
+    .filter(i => i !== leaving)
+    .flatMap(i => i.phases)
+    .filter(p => p.cooker === 'smoker' && p.start >= o.end - MIN && p.tempF > temp)
+    .sort((x, y) => x.start - y.start)[0];
+  const rest =
+    leaving && climbing
+      ? `${cap(leaving.name.toLowerCase())} comes off before the pit climbs to ${fmtTemp(climbing.tempF, u, true)}.`
+      : '';
   return { band: { start: o.start, end: o.end, laneIds: o.itemIds }, lead, rest };
 }
 
@@ -153,8 +188,10 @@ export function overlapNote(plan: Plan, now: number, u: Units): OverlapNote | nu
 export function shiftImpact(before: Plan, after: Plan): { tone: 'ok' | 'warn'; text: string } | null {
   const moved = Math.round((after.serveAt - before.serveAt) / MIN);
   if (moved) return { tone: 'ok', text: `Serve moves to ${fmtTime(after.serveAt)}. Holds stay as planned.` };
-  const changes = before.items.map(it => ({ it, a: holdMin(before, it.input.id), b: holdMin(after, it.input.id) }))
-    .filter(x => x.a !== x.b).sort((x, y) => Math.abs(y.b - y.a) - Math.abs(x.b - x.a));
+  const changes = before.items
+    .map(it => ({ it, a: holdMin(before, it.input.id), b: holdMin(after, it.input.id) }))
+    .filter(x => x.a !== x.b)
+    .sort((x, y) => Math.abs(y.b - y.a) - Math.abs(x.b - x.a));
   const top = changes[0];
   if (!top) return null;
   const name = shortName(top.it.name);
@@ -162,5 +199,8 @@ export function shiftImpact(before: Plan, after: Plan): { tone: 'ok' | 'warn'; t
   const verb = b < top.a ? 'drops' : 'grows';
   const floor = top.it.restFloorMin;
   const short = b < floor;
-  return { tone: short ? 'warn' : 'ok', text: `${name} hold ${verb} from ${fmtDuration(top.a)} to ${fmtDuration(b)}. ${short ? `Under its ${fmtDuration(floor)} minimum rest.` : 'Still OK.'}` };
+  return {
+    tone: short ? 'warn' : 'ok',
+    text: `${name} hold ${verb} from ${fmtDuration(top.a)} to ${fmtDuration(b)}. ${short ? `Under its ${fmtDuration(floor)} minimum rest.` : 'Still OK.'}`,
+  };
 }

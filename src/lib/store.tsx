@@ -12,7 +12,7 @@ import { loadHistory, saveHistory, logsOf, type CookRecord } from './history.ts'
 
 export interface Draft {
   mode: 'readyBy' | 'startAt';
-  at: number;               // serve time (readyBy) or first-step time (startAt), epoch ms
+  at: number; // serve time (readyBy) or first-step time (startAt), epoch ms
   pitTempF: number;
   items: ItemInput[];
 }
@@ -21,15 +21,15 @@ export interface AppState {
   gear: Cookers;
   units: Units;
   draft: Draft;
-  rates: Record<string, number>;   // foodId -> hr/lb at 225F set by the user
+  rates: Record<string, number>; // foodId -> hr/lb at 225F set by the user
   totalHours: Record<string, number>; // foodId -> saved default total hours on heat
   rateLocks: Record<string, boolean>; // foodId -> saved rate never blends with logged cooks
-  update: UpdateInfo | null;       // last update check (SPEC section 10)
-  history: CookLog[];              // learned-from logs, derived from records
-  records: CookRecord[];           // history file
-  cook: ActiveCook | null;         // running cook, written on every change (reboot restore reads it)
+  update: UpdateInfo | null; // last update check (SPEC section 10)
+  history: CookLog[]; // learned-from logs, derived from records
+  records: CookRecord[]; // history file
+  cook: ActiveCook | null; // running cook, written on every change (reboot restore reads it)
   flags: { supportShown?: boolean; rateHintShown?: boolean };
-  firstRun: boolean;               // no gear saved yet: show Setup
+  firstRun: boolean; // no gear saved yet: show Setup
 }
 
 /** Next Saturday at 5:00 PM local, at least an hour out. Only used for a fresh draft. */
@@ -42,8 +42,14 @@ export function defaultServe(now: number): number {
 
 export function planInput(s: AppState): PlanInput {
   return {
-    mode: s.draft.mode, at: s.draft.at, pitTempF: s.draft.pitTempF, cookers: s.gear,
-    items: s.draft.items, rateOverrides: s.rates, rateLocks: s.rateLocks, history: s.history,
+    mode: s.draft.mode,
+    at: s.draft.at,
+    pitTempF: s.draft.pitTempF,
+    cookers: s.gear,
+    items: s.draft.items,
+    rateOverrides: s.rates,
+    rateLocks: s.rateLocks,
+    history: s.history,
   };
 }
 
@@ -70,8 +76,16 @@ export function StoreProvider({ now, children }: { now: number; children: Compon
   useEffect(() => {
     (async () => {
       const [gear, units, draft, rates, totalHours, rateLocks, update, cook, flags, records] = await Promise.all([
-        load<Cookers>('gear'), load<Units>('settings'), load<Draft>('draft'), load<Record<string, number>>('rates'),
-        load<Record<string, number>>('totalHours'), load<Record<string, boolean>>('rateLocks'), load<UpdateInfo>('update'), load<unknown>('activeCook'), load<AppState['flags']>('flags'), loadHistory(),
+        load<Cookers>('gear'),
+        load<Units>('settings'),
+        load<Draft>('draft'),
+        load<Record<string, number>>('rates'),
+        load<Record<string, number>>('totalHours'),
+        load<Record<string, boolean>>('rateLocks'),
+        load<UpdateInfo>('update'),
+        load<unknown>('activeCook'),
+        load<AppState['flags']>('flags'),
+        loadHistory(),
       ]);
       setState({
         gear: gear ?? {},
@@ -84,10 +98,11 @@ export function StoreProvider({ now, children }: { now: number; children: Compon
         update: update ?? null,
         history: logsOf(records),
         records,
-        cook: normalize(cook),
+        cook: normalize(cook as Partial<ActiveCook> | null),
         flags: flags ?? {},
       });
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load from storage once, on mount.
   }, []);
 
   // Update check on launch and on resume, at most daily.
@@ -108,45 +123,96 @@ export function StoreProvider({ now, children }: { now: number; children: Compon
     if (!loaded) return;
     checkUpdate(updateRef.current);
     const h = CapApp.addListener('resume', () => checkUpdate(updateRef.current));
-    return () => { h.then(x => x.remove()); };
+    return () => {
+      h.then(x => x.remove());
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once after load; checkUpdate reads the latest state through updateRef.
   }, [loaded]);
 
-  const setDraft = useCallback((fn: (d: Draft) => Draft) => setState(s => {
-    if (!s) return s;
-    const draft = fn(s.draft);
-    save('draft', draft);
-    return { ...s, draft };
-  }), []);
-  const setGear = useCallback((gear: Cookers) => setState(s => { save('gear', gear); return s && { ...s, gear }; }), []);
-  const finishSetup = useCallback((gear: Cookers, units: Units) => setState(s => {
-    save('gear', gear); save('settings', units);
-    return s && { ...s, gear, units, firstRun: false };
-  }), []);
-  const setUnits = useCallback((units: Units) => setState(s => { save('settings', units); return s && { ...s, units }; }), []);
-  const setCook = useCallback((cook: ActiveCook | null) => setState(s => {
-    if (cook) save('activeCook', cook); else remove('activeCook');
-    return s && { ...s, cook };
-  }), []);
-  const setFlags = useCallback((flags: AppState['flags']) => setState(s => { save('flags', flags); return s && { ...s, flags }; }), []);
-  const setRate = useCallback((foodId: string, v: number | null) => setState(s => {
-    if (!s) return s;
-    const rates = withValue(s.rates, foodId, v);
-    save('rates', rates);
-    return { ...s, rates };
-  }), []);
-  const setTotalHours = useCallback((foodId: string, v: number | null) => setState(s => {
-    if (!s) return s;
-    const totalHours = withValue(s.totalHours, foodId, v);
-    save('totalHours', totalHours);
-    return { ...s, totalHours };
-  }), []);
-  const setRateLock = useCallback((foodId: string, locked: boolean) => setState(s => {
-    if (!s) return s;
-    const rateLocks = { ...s.rateLocks };
-    if (locked) rateLocks[foodId] = true; else delete rateLocks[foodId];
-    save('rateLocks', rateLocks);
-    return { ...s, rateLocks };
-  }), []);
+  const setDraft = useCallback(
+    (fn: (d: Draft) => Draft) =>
+      setState(s => {
+        if (!s) return s;
+        const draft = fn(s.draft);
+        save('draft', draft);
+        return { ...s, draft };
+      }),
+    [],
+  );
+  const setGear = useCallback(
+    (gear: Cookers) =>
+      setState(s => {
+        save('gear', gear);
+        return s && { ...s, gear };
+      }),
+    [],
+  );
+  const finishSetup = useCallback(
+    (gear: Cookers, units: Units) =>
+      setState(s => {
+        save('gear', gear);
+        save('settings', units);
+        return s && { ...s, gear, units, firstRun: false };
+      }),
+    [],
+  );
+  const setUnits = useCallback(
+    (units: Units) =>
+      setState(s => {
+        save('settings', units);
+        return s && { ...s, units };
+      }),
+    [],
+  );
+  const setCook = useCallback(
+    (cook: ActiveCook | null) =>
+      setState(s => {
+        if (cook) save('activeCook', cook);
+        else remove('activeCook');
+        return s && { ...s, cook };
+      }),
+    [],
+  );
+  const setFlags = useCallback(
+    (flags: AppState['flags']) =>
+      setState(s => {
+        save('flags', flags);
+        return s && { ...s, flags };
+      }),
+    [],
+  );
+  const setRate = useCallback(
+    (foodId: string, v: number | null) =>
+      setState(s => {
+        if (!s) return s;
+        const rates = withValue(s.rates, foodId, v);
+        save('rates', rates);
+        return { ...s, rates };
+      }),
+    [],
+  );
+  const setTotalHours = useCallback(
+    (foodId: string, v: number | null) =>
+      setState(s => {
+        if (!s) return s;
+        const totalHours = withValue(s.totalHours, foodId, v);
+        save('totalHours', totalHours);
+        return { ...s, totalHours };
+      }),
+    [],
+  );
+  const setRateLock = useCallback(
+    (foodId: string, locked: boolean) =>
+      setState(s => {
+        if (!s) return s;
+        const rateLocks = { ...s.rateLocks };
+        if (locked) rateLocks[foodId] = true;
+        else delete rateLocks[foodId];
+        save('rateLocks', rateLocks);
+        return { ...s, rateLocks };
+      }),
+    [],
+  );
   const addRecord = useCallback(async (r: CookRecord) => {
     const records = [...(await loadHistory()), r];
     await saveHistory(records);
@@ -160,12 +226,32 @@ export function StoreProvider({ now, children }: { now: number; children: Compon
   }, []);
 
   if (!state) return null;
-  return <Ctx.Provider value={{ state, setDraft, setGear, finishSetup, setUnits, setCook, addRecord, removeRecord, setFlags, setRate, setTotalHours, setRateLock }}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider
+      value={{
+        state,
+        setDraft,
+        setGear,
+        finishSetup,
+        setUnits,
+        setCook,
+        addRecord,
+        removeRecord,
+        setFlags,
+        setRate,
+        setTotalHours,
+        setRateLock,
+      }}
+    >
+      {children}
+    </Ctx.Provider>
+  );
 }
 
 function withValue(m: Record<string, number>, k: string, v: number | null): Record<string, number> {
   const out = { ...m };
-  if (v == null) delete out[k]; else out[k] = v;
+  if (v == null) delete out[k];
+  else out[k] = v;
   return out;
 }
 

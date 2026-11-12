@@ -1,34 +1,28 @@
-// UI-side view of data/foods.json and data/cookers.json. The engine reads the rules
-// loosely (Rules = any); these types cover only the fields the UI shows.
+// UI-side view of data/foods.json. The schema lives in engine/rules.ts; FoodDef and MethodDef are the
+// resolved forms the screens read (shared fields merged into each method).
 
 import foodsJson from '../../data/foods.json';
-import cookersJson from '../../data/cookers.json';
 import type { CookerKind, Cookers, ItemInput } from '../../engine/types.ts';
+import {
+  resolveMethod,
+  type ResolvedMethod,
+  type RuleChoice,
+  type RuleFood,
+  type RuleOption,
+  type Rules,
+} from '../../engine/rules.ts';
 
-export const rules: any = foodsJson;
-export const catalog: any = cookersJson;
+export const rules = foodsJson as unknown as Rules;
 
-export interface Choice { label: string; short?: string; note?: string; pullF?: [number, number] }
-export interface OptionDef { label: string; default: string; choices: Record<string, Choice> }
-export interface MethodDef {
-  id: string; label: string; short?: string; note?: string; cooker: CookerKind;
-  timing: { kind: string };
-  options: Record<string, OptionDef>;
-  restMin: { default: number; min: number };
-}
-export interface FoodDef {
-  id: string; name: string; group: string; blurb?: string;
-  quantity: { kind: 'weight' | 'count'; unit: string; label?: string; default: number; min: number; max: number; step: number };
-  methods: MethodDef[];
-}
+export type Choice = RuleChoice;
+export type OptionDef = RuleOption;
+export type MethodDef = ResolvedMethod;
+export type FoodDef = Omit<RuleFood, 'methods'> & { methods: MethodDef[] };
 
-export const foods: FoodDef[] = rules.foods.map((f: any) => ({ ...f, methods: f.methods.map((m: any) => resolve(f, m)) }));
-
-/** Same merge as the engine: shared fields, then the method's own. */
-function resolve(food: any, method: any): MethodDef {
-  const shared = food.shared ?? {};
-  return { ...shared, ...method, options: { ...(shared.options ?? {}), ...(method.options ?? {}) } };
-}
+export const foods: FoodDef[] = rules.foods.map((f: RuleFood) => ({
+  ...f,
+  methods: f.methods.map(m => resolveMethod(f, m)),
+}));
 
 export function food(id: string): FoodDef {
   const f = foods.find(x => x.id === id);
@@ -70,7 +64,14 @@ export function foodBlurb(f: FoodDef): string {
 export function newItem(foodId: string, cookers: Cookers, id: string): ItemInput {
   const f = food(foodId);
   const m = f.methods.find(x => hasCooker(cookers, x.cooker)) ?? f.methods[0];
-  return { id, foodId, methodId: m.id, quantity: f.quantity.default, options: defaultOptions(m), restMin: m.restMin.default };
+  return {
+    id,
+    foodId,
+    methodId: m.id,
+    quantity: f.quantity.default,
+    options: defaultOptions(m),
+    restMin: m.restMin.default,
+  };
 }
 
 export function defaultOptions(m: MethodDef): Record<string, string> {

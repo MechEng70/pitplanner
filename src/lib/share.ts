@@ -6,7 +6,13 @@ import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import type { ItemInput } from '../../engine/types.ts';
 
-export interface PitPlanFile { app: 'pit-planner'; version: 1; serveAt: string; pitTempF: number; items: ItemInput[] }
+export interface PitPlanFile {
+  app: 'pit-planner';
+  version: 1;
+  serveAt: string;
+  pitTempF: number;
+  items: ItemInput[];
+}
 
 export function toPitPlan(serveAt: number, pitTempF: number, items: ItemInput[]): PitPlanFile {
   // The sender's own rates and total hours stay on their phone; the receiver plans with theirs.
@@ -25,6 +31,11 @@ export async function sharePlan(file: PitPlanFile): Promise<void> {
     URL.revokeObjectURL(a.href);
     return;
   }
-  const { uri } = await Filesystem.writeFile({ path: name, data: body, directory: Directory.Cache, encoding: Encoding.UTF8 });
+  const { uri } = await Filesystem.writeFile({
+    path: name,
+    data: body,
+    directory: Directory.Cache,
+    encoding: Encoding.UTF8,
+  });
   await Share.share({ title: 'Pit Planner plan', files: [uri], dialogTitle: 'Share plan' });
 }

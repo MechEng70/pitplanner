@@ -9,7 +9,15 @@ const ROWS: { kind: CookerKind; title: string; subtitle: string }[] = [
 ];
 
 /** Add a cooker (mockup 17). Setup and Gear decide what each choice opens. */
-export function AddCooker({ onPick, onClose, hide = [] }: { onPick: (k: CookerKind) => void; onClose: () => void; hide?: CookerKind[] }) {
+export function AddCooker({
+  onPick,
+  onClose,
+  hide = [],
+}: {
+  onPick: (k: CookerKind) => void;
+  onClose: () => void;
+  hide?: CookerKind[];
+}) {
   return (
     <Sheet title="Add a cooker" onClose={onClose}>
       <Rows onPick={onPick} hide={hide} />
@@ -21,14 +29,20 @@ function Rows({ onPick, hide }: { onPick: (k: CookerKind) => void; hide: CookerK
   const { close } = useSheet();
   return (
     <Stack gap={12}>
-      <Text v="bodyM" tone="secondary">What are you adding?</Text>
+      <Text v="bodyM" tone="secondary">
+        What are you adding?
+      </Text>
       {ROWS.filter(r => !hide.includes(r.kind)).map(r => (
         <Card key={r.kind} tone="inset" onClick={() => close(() => onPick(r.kind))} label={r.title}>
           <Avatar kind={r.kind} />
           <Fill>
             <Stack gap={2}>
-              <Text v="bodyL" weight={500}>{r.title}</Text>
-              <Text v="label" tone="secondary">{r.subtitle}</Text>
+              <Text v="bodyL" weight={500}>
+                {r.title}
+              </Text>
+              <Text v="label" tone="secondary">
+                {r.subtitle}
+              </Text>
             </Stack>
           </Fill>
           <ChevronRight color="var(--text-2)" />

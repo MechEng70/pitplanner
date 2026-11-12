@@ -9,7 +9,7 @@ const timeFmt = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-d
 const dayFmt = new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 
 /** "6:40 AM" */
-export const fmtTime = (ms: number) => timeFmt.format(ms).replace(/ /g, ' ');
+export const fmtTime = (ms: number) => timeFmt.format(ms).replace(/\u202f/g, ' ');
 
 /** "Sat, Nov 14 at 5:00 PM" */
 export const fmtDayTime = (ms: number) => `${dayFmt.format(ms)} at ${fmtTime(ms)}`;
@@ -18,7 +18,8 @@ export const fmtDayTime = (ms: number) => `${dayFmt.format(ms)} at ${fmtTime(ms)
 export function fmtDuration(min: number): string {
   const m = Math.round(min);
   if (m < 60) return `${m} min`;
-  const h = Math.floor(m / 60), r = m % 60;
+  const h = Math.floor(m / 60),
+    r = m % 60;
   return r ? `${h} hr ${r} min` : `${h} hr`;
 }
 

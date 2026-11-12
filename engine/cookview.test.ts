@@ -2,11 +2,20 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { buildPlan } from './plan.ts';
+import { buildPlan, onHeatSpan } from './plan.ts';
 import type { PlanInput, SmokerProfile } from './types.ts';
-import { cookStatus, countdown, overline, holdImpact, lanes, laneTicks, laneWindow, overlapNote, shiftImpact } from '../src/lib/cookView.ts';
+import {
+  cookStatus,
+  countdown,
+  overline,
+  holdImpact,
+  lanes,
+  laneTicks,
+  laneWindow,
+  overlapNote,
+  shiftImpact,
+} from '../src/lib/cookView.ts';
 import { shiftRemaining } from './live.ts';
-import { onHeatSpan } from './plan.ts';
 import { summarize, toRecord } from '../src/lib/finish.ts';
 import type { ActiveCook } from '../src/lib/cook.ts';
 
@@ -15,11 +24,30 @@ const SERVE = new Date(2026, 10, 14, 17, 0).getTime();
 const MIN = 60_000;
 const at = (h: number, m = 0) => new Date(2026, 10, 14, h, m).getTime();
 const units = { temp: 'F', weight: 'lb' } as const;
-const pitBoss: SmokerProfile = { id: 'pb820', name: 'Pit Boss 820', type: 'pellet', tempStepF: 5, minTempF: 180, maxTempF: 500,
-  hopperLb: 21, mainGrateSqIn: 593, upperRackSqIn: 256, pelletLbPerHrLow: 1.5, pelletLbPerHrHigh: 3, preheatMin: 20 };
+const pitBoss: SmokerProfile = {
+  id: 'pb820',
+  name: 'Pit Boss 820',
+  type: 'pellet',
+  tempStepF: 5,
+  minTempF: 180,
+  maxTempF: 500,
+  hopperLb: 21,
+  mainGrateSqIn: 593,
+  upperRackSqIn: 256,
+  pelletLbPerHrLow: 1.5,
+  pelletLbPerHrHigh: 3,
+  preheatMin: 20,
+};
 const input: PlanInput = {
-  mode: 'readyBy', at: SERVE, pitTempF: 225, rateOverrides: { brisket: 0.75 },
-  cookers: { smoker: pitBoss, griddle: { id: 'g', name: 'Griddle', sizeIn: 36, burners: 4, hasDome: true, preheatMin: 15 }, oven: { id: 'o', lowestTempF: 170, holdIn: 'oven' } },
+  mode: 'readyBy',
+  at: SERVE,
+  pitTempF: 225,
+  rateOverrides: { brisket: 0.75 },
+  cookers: {
+    smoker: pitBoss,
+    griddle: { id: 'g', name: 'Griddle', sizeIn: 36, burners: 4, hasDome: true, preheatMin: 15 },
+    oven: { id: 'o', lowestTempF: 170, holdIn: 'oven' },
+  },
   items: [
     { id: 'b', foodId: 'brisket', methodId: 'smoked', quantity: 12, options: { wrap: 'paper' }, restMin: 60 },
     { id: 'w', foodId: 'wings', methodId: 'smokeCrisp', quantity: 2 },
@@ -39,7 +67,7 @@ test('status: overdue or 5+ min late is Behind, 5+ early is Ahead', () => {
 
 test('countdown: whole minutes, overdue counts up', () => {
   assert.equal(countdown(at(11, 35), at(10, 23)), 'in 1 hr 12 min');
-  assert.equal(countdown(at(11, 35), at(11, 34, ) + 30_000), 'in 1 min');
+  assert.equal(countdown(at(11, 35), at(11, 34) + 30_000), 'in 1 min');
   assert.equal(countdown(at(11, 35), at(11, 35)), 'now');
   assert.equal(countdown(at(11, 35), at(11, 47)), '12 min overdue');
   assert.match(overline(at(11, 35), true, at(10)), /^Check at 11:35.AM$/);
@@ -49,25 +77,55 @@ test('countdown: whole minutes, overdue counts up', () => {
 
 test('lanes: phases by cooker, hot phase labelled with temp, rest dashed', () => {
   const ls = lanes(plan, units, k => k);
-  const b = ls.find(l => l.id === 'b')!, w = ls.find(l => l.id === 'w')!, c = ls.find(l => l.id === 'c')!;
-  assert.deepEqual(b.segments.map(s => [s.tone, s.label]), [['smoke', 'smoke'], ['smoke2', 'wrapped'], ['hold', 'rest']]);
+  const b = ls.find(l => l.id === 'b')!,
+    w = ls.find(l => l.id === 'w')!,
+    c = ls.find(l => l.id === 'c')!;
+  assert.deepEqual(
+    b.segments.map(s => [s.tone, s.label]),
+    [
+      ['smoke', 'smoke'],
+      ['smoke2', 'wrapped'],
+      ['hold', 'rest'],
+    ],
+  );
   assert.equal(w.segments.at(-1)!.tone, 'hot');
   assert.equal(w.segments.at(-1)!.label, '400F');
-  assert.equal(lanes(plan, { temp: 'C', weight: 'kg' }, k => k).find(l => l.id === 'w')!.segments.at(-1)!.label, '205C');
+  assert.equal(
+    lanes(plan, { temp: 'C', weight: 'kg' }, k => k)
+      .find(l => l.id === 'w')!
+      .segments.at(-1)!.label,
+    '205C',
+  );
   assert.equal(c.segments[0].tone, 'griddle');
   assert.equal(c.subtitle, 'griddle');
-  assert.deepEqual(ls.map(l => l.title), ['Brisket', 'Wings', 'Breasts']);
+  assert.deepEqual(
+    ls.map(l => l.title),
+    ['Brisket', 'Wings', 'Breasts'],
+  );
 });
 
 test('lane window and ticks: from the hour of the first step (fire 6:20 AM) to serve, at most five hour ticks plus serve', () => {
   // Same window two days early, mid-cook and after serve: the whole cook always shows.
-  for (const now of [at(10, 23) - 2 * 24 * 60 * MIN, at(10, 23), at(18)]) assert.deepEqual(laneWindow(plan, now), { from: at(6), to: SERVE });
-  assert.deepEqual(laneTicks(at(6), SERVE).map(t => t.label), ['6a', '9a', '12p', '3p', '5p']);
-  assert.deepEqual(laneTicks(at(10), SERVE).map(t => t.label), ['10a', '12p', '2p', '4p', '5p']);
+  for (const now of [at(10, 23) - 2 * 24 * 60 * MIN, at(10, 23), at(18)])
+    assert.deepEqual(laneWindow(plan, now), { from: at(6), to: SERVE });
+  assert.deepEqual(
+    laneTicks(at(6), SERVE).map(t => t.label),
+    ['6a', '9a', '12p', '3p', '5p'],
+  );
+  assert.deepEqual(
+    laneTicks(at(10), SERVE).map(t => t.label),
+    ['10a', '12p', '2p', '4p', '5p'],
+  );
   assert.ok(laneTicks(at(0), SERVE).length <= 6);
-  assert.deepEqual(laneTicks(at(15), at(16, 30)).map(t => t.label), ['3p', '4:30p']);
+  assert.deepEqual(
+    laneTicks(at(15), at(16, 30)).map(t => t.label),
+    ['3p', '4:30p'],
+  );
   // 13 hr chart: the 1a tick an hour before a 2a serve is dropped.
-  assert.deepEqual(laneTicks(at(13), at(26)).map(t => t.label), ['1p', '5p', '9p', '2a']);
+  assert.deepEqual(
+    laneTicks(at(13), at(26)).map(t => t.label),
+    ['1p', '5p', '9p', '2a'],
+  );
 });
 
 test('overlap note: brisket and wings share the pit, brisket off before it climbs', () => {
@@ -95,7 +153,19 @@ test('shift impact: keep serve names the hold change, move serve names the new t
 });
 
 test('finish: planned vs actual per food, record logs only foods that came off, rate moves', () => {
-  const c: ActiveCook = { input, original: plan, plan, startedAt: at(5), done: {}, reminders: {}, onAt: {}, offAt: {}, pitDownAt: null, quietUntil: null, notice: null };
+  const c: ActiveCook = {
+    input,
+    original: plan,
+    plan,
+    startedAt: at(5),
+    done: {},
+    reminders: {},
+    onAt: {},
+    offAt: {},
+    pitDownAt: null,
+    quietUntil: null,
+    notice: null,
+  };
   const b = plan.items.find(i => i.input.id === 'b')!;
   const span = onHeatSpan(b);
   const ended = { ...c, onAt: { b: span.start }, offAt: { b: span.end - 25 * MIN }, done: { 'serve::': SERVE } };

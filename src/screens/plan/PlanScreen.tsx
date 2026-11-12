@@ -2,12 +2,37 @@ import { useMemo, useRef, useState } from 'preact/hooks';
 import { buildPlan, onHeatSpan } from '../../../engine/plan.ts';
 import type { ItemInput, Plan, SmokerProfile } from '../../../engine/types.ts';
 import {
-  Avatar, Button, Card, Chips, EmptyState, Fill, Fixed, IconButton, Num, Row, Screen, SelectField, Stack, Text, Tile, Tiles,
+  Avatar,
+  Button,
+  Card,
+  Chips,
+  EmptyState,
+  Fill,
+  Fixed,
+  IconButton,
+  Num,
+  Row,
+  Screen,
+  SelectField,
+  Stack,
+  Text,
+  Tile,
+  Tiles,
 } from '../../ui/components.tsx';
 import { Calendar, ChevronDown, Plus, ShareIcon } from '../../ui/icons.tsx';
 import { useStore, planInput } from '../../lib/store.tsx';
 import { rules, method, food, newItem, itemSummary, countText } from '../../lib/rules.ts';
-import { tx, fmtDuration, fmtPellets, fmtTemp, fmtTime, fmtWeight, fromLocalInput, toLocalInput, type Units } from '../../lib/format.ts';
+import {
+  tx,
+  fmtDuration,
+  fmtPellets,
+  fmtTemp,
+  fmtTime,
+  fmtWeight,
+  fromLocalInput,
+  toLocalInput,
+  type Units,
+} from '../../lib/format.ts';
 import { sharePlan, toPitPlan } from '../../lib/share.ts';
 import { FoodPick } from './FoodPick.tsx';
 import { FoodEdit } from './FoodEdit.tsx';
@@ -41,9 +66,12 @@ export function PlanScreen({ onStartCook }: { onStartCook: (plan: Plan) => void 
   const input = useMemo(() => planInput(state), [state]);
   const built = useMemo(() => {
     if (!draft.items.length) return { plan: null, error: null };
-    try { return { plan: buildPlan(rules, input), error: null }; }
-    catch (e) { return { plan: null, error: String(e) }; }
-  }, [input]);
+    try {
+      return { plan: buildPlan(rules, input), error: null };
+    } catch (e) {
+      return { plan: null, error: String(e) };
+    }
+  }, [input, draft.items.length]);
   const plan = built.plan;
   const empty = !draft.items.length;
 
@@ -57,12 +85,23 @@ export function PlanScreen({ onStartCook }: { onStartCook: (plan: Plan) => void 
     const el = dateRef.current;
     if (!el) return;
     el.value = toLocalInput(draft.at);
-    try { el.showPicker(); } catch { el.focus(); el.click(); }
+    try {
+      el.showPicker();
+    } catch {
+      el.focus();
+      el.click();
+    }
   };
   const openTemp = () => tempRef.current && setLayer({ kind: 'temp', anchor: tempRef.current.getBoundingClientRect() });
   const saveItem = (it: ItemInput) =>
-    setDraft(d => ({ ...d, items: d.items.some(x => x.id === it.id) ? d.items.map(x => x.id === it.id ? it : x) : [...d.items, it] }));
-  const editItem = (id: string) => { const it = draft.items.find(x => x.id === id); if (it) setLayer({ kind: 'edit', item: it, isNew: false }); };
+    setDraft(d => ({
+      ...d,
+      items: d.items.some(x => x.id === it.id) ? d.items.map(x => (x.id === it.id ? it : x)) : [...d.items, it],
+    }));
+  const editItem = (id: string) => {
+    const it = draft.items.find(x => x.id === id);
+    if (it) setLayer({ kind: 'edit', item: it, isNew: false });
+  };
   const qtyText = (it: ItemInput) => {
     const f = food(it.foodId);
     return f.quantity.kind === 'weight' ? fmtWeight(it.quantity, units) : countText(f, it.quantity);
@@ -73,42 +112,111 @@ export function PlanScreen({ onStartCook }: { onStartCook: (plan: Plan) => void 
     <Card tone="surface" pad="l">
       <Stack gap={empty ? 8 : 4} grow>
         <Row justify="between" align="center">
-          <Chips label="Plan from" small={!empty} value={draft.mode} onChange={setMode}
-            options={[{ id: 'readyBy', label: 'Ready by' }, { id: 'startAt', label: 'Start at' }]} />
-          {!empty && <IconButton bleed label="Pick date and time" onClick={openDate}><Calendar color="var(--text-2)" /></IconButton>}
+          <Chips
+            label="Plan from"
+            small={!empty}
+            value={draft.mode}
+            onChange={setMode}
+            options={[
+              { id: 'readyBy', label: 'Ready by' },
+              { id: 'startAt', label: 'Start at' },
+            ]}
+          />
+          {!empty && (
+            <IconButton bleed label="Pick date and time" onClick={openDate}>
+              <Calendar color="var(--text-2)" />
+            </IconButton>
+          )}
         </Row>
         <button class="rp when-btn" onClick={openDate} aria-label="Change date and time">
           {/* Day and time are separate units: at big font sizes the line breaks between them, never inside one. */}
-          <Text v="when"><Num>{dayFmt.format(draft.at)}</Num> at <Num>{fmtTime(draft.at)}</Num></Text>
+          <Text v="when">
+            <Num>{dayFmt.format(draft.at)}</Num> at <Num>{fmtTime(draft.at)}</Num>
+          </Text>
         </button>
       </Stack>
-      <input ref={dateRef} type="datetime-local" class="hidden-input" tabIndex={-1} aria-hidden="true"
-        onChange={e => { const t = fromLocalInput(e.currentTarget.value); if (t != null) setDraft(d => ({ ...d, at: t })); }} />
+      <input
+        ref={dateRef}
+        type="datetime-local"
+        class="hidden-input"
+        tabIndex={-1}
+        aria-hidden="true"
+        onChange={e => {
+          const t = fromLocalInput(e.currentTarget.value);
+          if (t != null) setDraft(d => ({ ...d, at: t }));
+        }}
+      />
     </Card>
   );
 
   return (
-    <Screen title="Plan" footer={!empty && <Button block disabled={!plan} onClick={() => plan && onStartCook(plan)}>Start cook</Button>} actions={!empty && plan &&
-      <IconButton label="Share plan" onClick={() => sharePlan(toPitPlan(plan.serveAt, draft.pitTempF, draft.items))}><ShareIcon /></IconButton>}>
+    <Screen
+      title="Plan"
+      footer={
+        !empty && (
+          <Button block disabled={!plan} onClick={() => plan && onStartCook(plan)}>
+            Start cook
+          </Button>
+        )
+      }
+      actions={
+        !empty &&
+        plan && (
+          <IconButton
+            label="Share plan"
+            onClick={() => sharePlan(toPitPlan(plan.serveAt, draft.pitTempF, draft.items))}
+          >
+            <ShareIcon />
+          </IconButton>
+        )
+      }
+    >
       {when}
 
       {empty ? (
-        <EmptyState icon={<Avatar kind="smoker" size={72} />} title="What are we cooking?"
-          body="Add each food and Pit Planner works back from serve time to tell you when to fire the smoker.">
-          <Button block onClick={() => setLayer({ kind: 'pick' })}>Add food</Button>
+        <EmptyState
+          icon={<Avatar kind="smoker" size={72} />}
+          title="What are we cooking?"
+          body="Add each food and Pit Planner works back from serve time to tell you when to fire the smoker."
+        >
+          <Button block onClick={() => setLayer({ kind: 'pick' })}>
+            Add food
+          </Button>
           {/* TODO(history): opens Cook history (mockup 20) once Gear and history exist. */}
-          <Button kind="text" block disabled={!state.history.length}>Cook a past plan again</Button>
+          <Button kind="text" block disabled={!state.history.length}>
+            Cook a past plan again
+          </Button>
         </EmptyState>
       ) : (
         <>
           {gear.smoker && (
-            <SelectField fieldRef={tempRef} label="Smoker temp" value={<Num>{fmtTemp(draft.pitTempF, units, true)}</Num>} onClick={openTemp}
-              trailing={<Row gap={10}>{plan?.fireAt != null && <Text v="label" tone="secondary"><Num>Fire {fmtTime(plan.fireAt)}</Num></Text>}<ChevronDown size={20} color="var(--text-1)" /></Row>} />
+            <SelectField
+              fieldRef={tempRef}
+              label="Smoker temp"
+              value={<Num>{fmtTemp(draft.pitTempF, units, true)}</Num>}
+              onClick={openTemp}
+              trailing={
+                <Row gap={10}>
+                  {plan?.fireAt != null && (
+                    <Text v="label" tone="secondary">
+                      <Num>Fire {fmtTime(plan.fireAt)}</Num>
+                    </Text>
+                  )}
+                  <ChevronDown size={20} color="var(--text-1)" />
+                </Row>
+              }
+            />
           )}
 
           <Row justify="between" align="baseline">
-            <Text v="section" as="h2">On the menu</Text>
-            <Text v="label" tone="secondary"><Num>{draft.items.length} {draft.items.length === 1 ? 'item' : 'items'}</Num></Text>
+            <Text v="section" as="h2">
+              On the menu
+            </Text>
+            <Text v="label" tone="secondary">
+              <Num>
+                {draft.items.length} {draft.items.length === 1 ? 'item' : 'items'}
+              </Num>
+            </Text>
           </Row>
 
           {draft.items.map(it => {
@@ -120,48 +228,116 @@ export function PlanScreen({ onStartCook }: { onStartCook: (plan: Plan) => void 
                 <Avatar kind={m.cooker} />
                 <Fill>
                   <Stack gap={2}>
-                    <Text v="bodyL" weight={500}>{food(it.foodId).name}</Text>
-                    <Text v="label" tone="secondary" clamp>{tx(itemSummary(it, qtyText(it)), units)}</Text>
+                    <Text v="bodyL" weight={500}>
+                      {food(it.foodId).name}
+                    </Text>
+                    <Text v="label" tone="secondary" clamp>
+                      {tx(itemSummary(it, qtyText(it)), units)}
+                    </Text>
                   </Stack>
                 </Fill>
                 {span && (
                   <Fixed>
-                    <Text v="body" weight={500}><Num>{fmtTime(span.start)}</Num></Text>
-                    <Text v="caption" tone="secondary"><Num>{fmtDuration(span.minutes)}</Num>{m.timing.kind === 'perWeight' ? ' on heat' : ''}</Text>
+                    <Text v="body" weight={500}>
+                      <Num>{fmtTime(span.start)}</Num>
+                    </Text>
+                    <Text v="caption" tone="secondary">
+                      <Num>{fmtDuration(span.minutes)}</Num>
+                      {m.timing.kind === 'perWeight' ? ' on heat' : ''}
+                    </Text>
                   </Fixed>
                 )}
               </Card>
             );
           })}
 
-          <Button kind="outline" tone="accent" block icon={<Plus size={18} />} onClick={() => setLayer({ kind: 'pick' })}>Add food</Button>
+          <Button
+            kind="outline"
+            tone="accent"
+            block
+            icon={<Plus size={18} />}
+            onClick={() => setLayer({ kind: 'pick' })}
+          >
+            Add food
+          </Button>
 
-          {built.error && <Text v="label" tone="error">Could not build the plan: {built.error}</Text>}
+          {built.error && (
+            <Text v="label" tone="error">
+              Could not build the plan: {built.error}
+            </Text>
+          )}
 
           {plan && (
             <Tiles>
-              {summaryTiles(plan, gear.smoker, units).map(({ over, ...t }) => <Tile key={t.label} {...t} onClick={over ? () => setLayer({ kind: 'issues' }) : undefined} />)}
-              <Tile label="Conflicts" value={warnCount ? String(warnCount) : 'None'} tone={warnCount ? 'warn' : 'ok'} onClick={() => setLayer({ kind: 'issues' })} />
+              {summaryTiles(plan, gear.smoker, units).map(({ over, ...t }) => (
+                <Tile key={t.label} {...t} onClick={over ? () => setLayer({ kind: 'issues' }) : undefined} />
+              ))}
+              <Tile
+                label="Conflicts"
+                value={warnCount ? String(warnCount) : 'None'}
+                tone={warnCount ? 'warn' : 'ok'}
+                onClick={() => setLayer({ kind: 'issues' })}
+              />
             </Tiles>
           )}
-
         </>
       )}
 
       {layer?.kind === 'pick' && (
-        <FoodPick onClose={close} onPick={fid => setLayer({ kind: 'edit', item: withSavedHours(newItem(fid, gear, crypto.randomUUID()), state.totalHours, draft.pitTempF), isNew: true })} />
+        <FoodPick
+          onClose={close}
+          onPick={fid =>
+            setLayer({
+              kind: 'edit',
+              item: withSavedHours(newItem(fid, gear, crypto.randomUUID()), state.totalHours, draft.pitTempF),
+              isNew: true,
+            })
+          }
+        />
       )}
       {layer?.kind === 'edit' && (
-        <FoodEdit initial={layer.item} isNew={layer.isNew} base={input} units={units} onClose={close}
-          onSave={saveItem} onRemove={() => setDraft(d => ({ ...d, items: d.items.filter(x => x.id !== layer.item.id) }))} />
+        <FoodEdit
+          initial={layer.item}
+          isNew={layer.isNew}
+          base={input}
+          units={units}
+          onClose={close}
+          onSave={saveItem}
+          onRemove={() => setDraft(d => ({ ...d, items: d.items.filter(x => x.id !== layer.item.id) }))}
+        />
       )}
       {layer?.kind === 'temp' && gear.smoker && (
-        <TempMenu smoker={gear.smoker} input={input} plan={plan} anchor={layer.anchor} units={units} onClose={close}
-          onPick={t => { setDraft(d => ({ ...d, pitTempF: t })); close(); }} />
+        <TempMenu
+          smoker={gear.smoker}
+          input={input}
+          plan={plan}
+          anchor={layer.anchor}
+          units={units}
+          onClose={close}
+          onPick={t => {
+            setDraft(d => ({ ...d, pitTempF: t }));
+            close();
+          }}
+        />
       )}
       {layer?.kind === 'issues' && plan && (
-        <IssuesSheet plan={plan} items={draft.items} cookers={gear} units={units} onClose={close} onEdit={editItem} onChangeTemp={openTemp}
-          onMoveToGriddle={(id, methodId) => setDraft(d => ({ ...d, items: d.items.map(x => x.id === id ? { ...x, methodId, restMin: method(x.foodId, methodId).restMin.default } : x) }))} />
+        <IssuesSheet
+          plan={plan}
+          items={draft.items}
+          cookers={gear}
+          units={units}
+          onClose={close}
+          onEdit={editItem}
+          onChangeTemp={openTemp}
+          onMoveToGriddle={(id, methodId) =>
+            setDraft(d => ({
+              ...d,
+              items: d.items.map(x =>
+                x.id === id ? { ...x, methodId, restMin: method(x.foodId, methodId).restMin.default } : x,
+              ),
+            }))
+          }
+        />
       )}
     </Screen>
   );
@@ -174,17 +350,24 @@ function withSavedHours(it: ItemInput, saved: Record<string, number>, pitTempF: 
 }
 
 /** Two tiles before Conflicts: first action, then fuel or smoker-off, padded with serve time. */
-function summaryTiles(plan: Plan, smoker: SmokerProfile | undefined, units: Units): { label: string; value: string; tone?: 'warn'; over?: boolean }[] {
+function summaryTiles(
+  plan: Plan,
+  smoker: SmokerProfile | undefined,
+  units: Units,
+): { label: string; value: string; tone?: 'warn'; over?: boolean }[] {
   const out: { label: string; value: string; tone?: 'warn'; over?: boolean }[] = [];
   if (plan.fireAt != null) out.push({ label: 'Fire smoker', value: fmtTime(plan.fireAt) });
   else if (plan.griddleOnAt != null) out.push({ label: 'Fire griddle', value: fmtTime(plan.griddleOnAt) });
   if (smoker?.hopperLb && plan.fireAt != null) {
     // More than the hopper holds: orange, and tapping it explains the refill (PELLETS_OVER_HOPPER).
     const over = plan.pelletsLb > smoker.hopperLb;
-    out.push({ label: smoker.type === 'gravity' ? 'Charcoal' : 'Pellets', value: fmtPellets(plan.pelletsLb, units), tone: over ? 'warn' : undefined, over });
-  }
-  else if (plan.pitOffAt != null) out.push({ label: 'Smoker off', value: fmtTime(plan.pitOffAt) });
+    out.push({
+      label: smoker.type === 'gravity' ? 'Charcoal' : 'Pellets',
+      value: fmtPellets(plan.pelletsLb, units),
+      tone: over ? 'warn' : undefined,
+      over,
+    });
+  } else if (plan.pitOffAt != null) out.push({ label: 'Smoker off', value: fmtTime(plan.pitOffAt) });
   if (out.length < 2) out.push({ label: 'Serve', value: fmtTime(plan.serveAt) });
   return out;
 }
-

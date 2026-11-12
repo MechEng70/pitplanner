@@ -2,7 +2,11 @@
 // has nothing to receive.
 import { Capacitor, registerPlugin, type PluginListenerHandle } from '@capacitor/core';
 
-interface Taken { text?: string; name?: string; error?: string }
+interface Taken {
+  text?: string;
+  name?: string;
+  error?: string;
+}
 interface PitSharedPlanPlugin {
   take(): Promise<Taken>;
   addListener(event: 'sharedPlan', fn: () => void): Promise<PluginListenerHandle>;
@@ -21,5 +25,7 @@ export async function takeSharedPlan(): Promise<Taken | null> {
 export function onSharedPlan(fn: () => void): () => void {
   if (!plugin) return () => {};
   const h = plugin.addListener('sharedPlan', fn);
-  return () => { h.then(x => x.remove()); };
+  return () => {
+    h.then(x => x.remove());
+  };
 }

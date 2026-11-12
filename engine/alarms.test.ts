@@ -11,11 +11,29 @@ const MIN = 60_000;
 const SERVE = Date.UTC(2026, 10, 14, 22, 0);
 const local = (h: number, m: number) => Date.UTC(2026, 10, 14, h + 5, m);
 
-const pitBoss: SmokerProfile = { id: 'pb820', name: 'Pit Boss 820', type: 'pellet', tempStepF: 5, minTempF: 180, maxTempF: 500,
-  hopperLb: 21, mainGrateSqIn: 593, upperRackSqIn: 256, pelletLbPerHrLow: 1.5, pelletLbPerHrHigh: 3, preheatMin: 20 };
+const pitBoss: SmokerProfile = {
+  id: 'pb820',
+  name: 'Pit Boss 820',
+  type: 'pellet',
+  tempStepF: 5,
+  minTempF: 180,
+  maxTempF: 500,
+  hopperLb: 21,
+  mainGrateSqIn: 593,
+  upperRackSqIn: 256,
+  pelletLbPerHrLow: 1.5,
+  pelletLbPerHrHigh: 3,
+  preheatMin: 20,
+};
 const input: PlanInput = {
-  mode: 'readyBy', at: SERVE, pitTempF: 225, rateOverrides: { brisket: 0.75 },
-  cookers: { smoker: pitBoss, griddle: { id: 'g', name: 'Griddle', sizeIn: 36, burners: 4, hasDome: true, preheatMin: 15 } },
+  mode: 'readyBy',
+  at: SERVE,
+  pitTempF: 225,
+  rateOverrides: { brisket: 0.75 },
+  cookers: {
+    smoker: pitBoss,
+    griddle: { id: 'g', name: 'Griddle', sizeIn: 36, burners: 4, hasDome: true, preheatMin: 15 },
+  },
   items: [
     { id: 'b', foodId: 'brisket', methodId: 'smoked', quantity: 12, options: { wrap: 'paper' }, restMin: 60 },
     { id: 'w', foodId: 'wings', methodId: 'smokeCrisp', quantity: 2 },
@@ -23,8 +41,28 @@ const input: PlanInput = {
   ],
 };
 
-const ev = (over: Partial<PlanEvent>): PlanEvent => ({ id: 'x', at: 0, kind: 'phase', label: 'L', alarm: true, checkStep: false, critical: false, ...over });
-const planWith = (events: PlanEvent[]): Plan => ({ serveAt: 0, pitTempF: 225, items: [], events, warnings: [], fireAt: null, pitOffAt: null, griddleOnAt: null, pelletsLb: 0, peakFootprintSqIn: 0 });
+const ev = (over: Partial<PlanEvent>): PlanEvent => ({
+  id: 'x',
+  at: 0,
+  kind: 'phase',
+  label: 'L',
+  alarm: true,
+  checkStep: false,
+  critical: false,
+  ...over,
+});
+const planWith = (events: PlanEvent[]): Plan => ({
+  serveAt: 0,
+  pitTempF: 225,
+  items: [],
+  events,
+  warnings: [],
+  fireAt: null,
+  pitOffAt: null,
+  griddleOnAt: null,
+  pelletsLb: 0,
+  peakFootprintSqIn: 0,
+});
 
 test('every alarm event in the future becomes an alarm; non-alarm and past events do not', () => {
   const p = buildPlan(rules, input);
@@ -35,7 +73,10 @@ test('every alarm event in the future becomes an alarm; non-alarm and past event
   assert.equal(covered.length, expected.length);
   for (const e of expected) assert.ok(covered.includes(eventKey(e)), e.label);
   assert.ok(!alarms.some(a => a.at <= now));
-  assert.ok(alarms.every((a, i) => i === 0 || alarms[i - 1].at < a.at), 'sorted, one alarm per minute');
+  assert.ok(
+    alarms.every((a, i) => i === 0 || alarms[i - 1].at < a.at),
+    'sorted, one alarm per minute',
+  );
 });
 
 test('two alarms in the same minute become one notification listing both', () => {
@@ -45,7 +86,7 @@ test('two alarms in the same minute become one notification listing both', () =>
     ev({ id: 'e2', at: t + 20_000, kind: 'phase', itemId: 'w', phaseId: 'smoke', label: 'Wings on.' }),
     ev({ id: 'e3', at: t + MIN, kind: 'serve', label: 'Serve.' }),
   ]);
-  const a = alarmsFromPlan(p, 0, id => ({ b: 'Brisket', w: 'Chicken wings' } as Record<string, string>)[id]);
+  const a = alarmsFromPlan(p, 0, id => (({ b: 'Brisket', w: 'Chicken wings' }) as Record<string, string>)[id]);
   assert.equal(a.length, 2);
   assert.equal(a[0].at, t);
   assert.equal(a[0].title, 'Brisket + Chicken wings');
