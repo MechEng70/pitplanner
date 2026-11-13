@@ -112,6 +112,11 @@ off the battery allowlist); the debug screen's test alert rings and leaves the s
   a phone cannot.)
 - Once idle, Android ends the idle period ahead of the next alarm clock: forced in with a test alarm 45 s
   out, the state read back was `IDLE_MAINTENANCE`, and the alarm rang on time.
+Checked directly on the emulator (no root, the one-hour window as shipped): with no alarm clock, or one 65
+minutes out, `force-idle` reaches `IDLE` and stays there; with one 2 minutes out it stops at `INACTIVE`; and
+setting one 60 s out on a device already in `IDLE` takes it to `INACTIVE` within seconds. Both alarms rang on
+time.
+
 So a step alarm does not have to break through deep Doze: the system keeps the phone out of it around alarm
 clocks. A forced-idle check with an alarm a minute out therefore shows "screen off, unplugged, off the
 allowlist", not deep idle. The real case, a step hours away with the phone idle overnight, is the Saturday

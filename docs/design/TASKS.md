@@ -740,8 +740,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     opens the debug screen and rings its test alert.
 
 ### T-016 Device alarm tests on the Expo build
-- **Status:** in progress: emulator half done (`b9b5d7d`); phone half waiting on Jason (his real app has a
-  cook's alarms set for Sat 2026-11-14, found by the read-only check; nothing was done to the phone).
+- **Status:** emulator half done (`b9b5d7d`); phone half blocked until Jason says his Saturday cook
+  (2026-11-14) is done. Until then nothing runs against the phone: no adb commands, no installs, no reads
+  (Jason, 2026-11-13). `tools/device/PHONE-BLOCKED` makes the device tools refuse it; only Jason lifts it.
+  A task that needs the phone skips that step and notes it.
 - **Goal:** re-run `docs/alarm-testing.md` on the dev build: Doze, screen off, locked reboot, app update, time
   zone change, notification actions with the app dead.
 - **Files:** `docs/alarm-testing.md` (Expo results), `tools/device/flows/alarms.yaml`.
@@ -760,12 +762,24 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - Doze: see "How Doze treats these alarms" in `docs/alarm-testing.md`. Android 16 will not enter deep idle
     within an hour of an alarm clock, so the forced-idle check works on the emulator only (window shortened
     as root). The `alarm` device test now includes it.
+  - **Does `adb shell dumpsys deviceidle force-idle` reach deep idle despite the one-hour alarm-clock rule?
+    No** (asked by Jason; emulator only, API 36, dev build off the battery allowlist, battery reported
+    unplugged, screen off, `min_time_to_alarm=+1h0m0s0ms`, 2026-11-13):
+    - No alarm clock pending: "Now forced in to deep idle mode", state `IDLE`, still `IDLE` 10 s later.
+    - An alarm clock 65 minutes out (outside the window): forced in, `IDLE`, still `IDLE` 20 s later.
+    - An alarm clock 2 minutes out: "Unable to go deep idle; stopped at INACTIVE". The alarm rang on time.
+    - Forced idle first, then an alarm clock set 60 s out: the state went from `IDLE` to `INACTIVE` within
+      5 s of setting it. The alarm rang on time.
+    So inside the hour before an alarm clock the device cannot be put, or kept, in deep idle; the command
+    obeys the same rule as the system. A forced-Doze check on the phone with a test alarm a minute out can
+    only show "screen off, unplugged, off the allowlist". To have a step come due in deep idle it must be
+    set more than an hour ahead and the phone left idle that long: the Saturday cook (T-037) does that.
+    Not run on the phone.
   - Tools added: `upgrade020.sh live` and `alarms`; dev route `pitplanner://dev/alarm?cook=3` (a short test
     cook through the store, for the phone, where there is no Start cook screen yet) and `?cook=end`.
   - `tools/device/flows/alarms.yaml` (named in Files) was not written: the checks need adb and `dumpsys`,
     not screen taps, so they live in `upgrade020.sh` and the `alarm` test of `run.sh`.
-  - Left on the emulator: the release test app at 0.3.0-alpha.3 with the test cook, force-stopped (its
-    alarms are out of AlarmManager). `upgrade020.sh setup` will not run again until Jason says it can go.
+  - The release test app was uninstalled from the emulator with Jason's yes (2026-11-13).
 - **Phone list approved by Jason (2026-11-13), dev copy only:** read-only check that the real app has no
   alarms (it has: stop and ask); back up the dev copy's data; `adb install -r` the dev build twice (second
   time with alarms pending); heads-up off and stay-awake on during the run, the dev copy off the battery

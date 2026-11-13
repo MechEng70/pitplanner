@@ -96,13 +96,15 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
   Gear version (T-026, `grantDebugPass()`) are the only way in. The gate retries Snyk once on a server or
   network error. T-016: list every phone action and wait for Jason's yes before touching the phone.
   T-037: run the `alarm` device test on an image per tester Android version below 16 (Jason gives the list).
-- **T-016 is half done (2026-11-13).** Emulator half: done, results in `docs/alarm-testing.md` (upgrade with
-  a live cook, Done and +15 with the app dead, time zone, app update, reboot, Doze step; commit `b9b5d7d`).
-  Phone half: not started. Jason approved the phone list (in the session; summary in TASKS T-016), but the
-  read-only check found his real 0.2.0 app holds 16 step alarms for a cook on Sat Nov 14 (05:35 to 17:00),
-  so nothing was done to the phone and the question went back to him: wait until after that cook, or go
-  ahead without the reboot. The dev APK for the phone is built (`android/app/build/outputs/apk/debug/`).
-  The emulator still has the release test app (0.3.0-alpha.3, force-stopped): removing it needs his yes.
+- **DO NOT TOUCH THE PHONE (Jason, 2026-11-13).** A real cook is running in his Pit Planner 0.2.0 with
+  alarms through Sat 2026-11-14 17:00. Until he says the cook is done: no adb commands to the phone, no
+  installs, no reads; emulator only; a task that needs the phone skips that step and notes it.
+  `tools/device/PHONE-BLOCKED` makes the device tools refuse the phone (`pick_target`); delete it only when
+  he says so. Hand-written adb commands must name the emulator (`adb -s emulator-5554 ...`).
+- **T-016: emulator half done, phone half blocked** until after that cook. Emulator results are in
+  `docs/alarm-testing.md` (upgrade with a live cook, Done and +15 with the app dead, time zone, app update,
+  reboot, Doze). The approved phone list is in TASKS T-016; the dev route for the phone's test cook is
+  `pitplanner://dev/alarm?cook=3`.
 - T-016 additions from Jason (in TASKS): upgrade with a live cook (each alarm once, on time, no duplicates),
   and the exact-alarm findings with the proposal to keep the manifest (`USE_EXACT_ALARM`, plus
   `SCHEDULE_EXACT_ALARM` up to API 32). The manifest has not been changed.

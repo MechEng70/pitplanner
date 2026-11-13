@@ -10,10 +10,17 @@ OUT="${DEVICE_OUT:-$DEVICE_DIR/out}"
 PKG=io.github.mecheng70.pitplanner.debug
 MAESTRO="${MAESTRO:-$(command -v maestro || echo "$HOME/.maestro/bin/maestro")}"
 METRO_PORT=8081
+# Present = Jason has said not to touch his phone (the file says why and until when). Only he lifts it.
+PHONE_BLOCK_FILE="${PHONE_BLOCK_FILE:-$DEVICE_DIR/PHONE-BLOCKED}"
 
 # Set ANDROID_SERIAL to the target: the running test emulator, or (DEVICE_TARGET=phone) the one phone attached.
 # The real phone is only for tests that need real hardware (TASKS: "Real phone").
 pick_target() {
+  # A hold on the real phone: while the file exists nothing here may talk to it, whatever asked for it.
+  if [ -f "$PHONE_BLOCK_FILE" ] && { [ "${DEVICE_TARGET:-emulator}" = phone ] || [[ "${ANDROID_SERIAL:-emulator-}" != emulator-* ]]; }; then
+    echo "The phone is off limits: $(cat "$PHONE_BLOCK_FILE")" >&2
+    return 1
+  fi
   [ -n "${ANDROID_SERIAL:-}" ] && return 0
   local devs
   if [ "${DEVICE_TARGET:-emulator}" = phone ]; then
