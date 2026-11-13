@@ -39,6 +39,7 @@
   4. The full test suite: engine + gate self-test + app (Jest) + Android (unit and regression, not only new tests)
   5. Semgrep (TypeScript, Kotlin and secrets rulesets)
   6. Snyk: `snyk test --all-projects --severity-threshold=high`, then `snyk code test --severity-threshold=high`
+     (`tools/snyk.sh` retries once on a Snyk server or network error, never on findings)
 - A task is not done until `npm run check` passes. Report its summary (the "check summary" block) at the end
   of each task.
 - No high or critical Semgrep or Snyk finding may be left open. A finding judged a false positive (or not

@@ -92,7 +92,9 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
 - Alarm wiring (T-015): `setCook` in the store saves and then replaces the phone's whole alarm set (never
   call `alarmService.replaceAll` from a screen); `useAlarmWiring` applies notification taps at start, on
   resume and while open. Screen tests that need alarms pass `fakeAlarms()` (`src/platform/fakes.ts`) to
-  `storeWrapper`. Debug screen: `pitplanner://debug`; the 5 taps on the Gear version come with T-026.
+  `storeWrapper`. Debug screen: `pitplanner://debug` in dev builds only; in a release build the 5 taps on the
+  Gear version (T-026, `grantDebugPass()`) are the only way in. The gate retries Snyk once on a server or
+  network error. T-016: list every phone action and wait for Jason's yes before touching the phone.
   T-037: run the `alarm` device test on an image per tester Android version below 16 (Jason gives the list).
 - T-016 additions from Jason (in TASKS): upgrade with a live cook (each alarm once, on time, no duplicates),
   and the exact-alarm findings with the proposal to keep the manifest (`USE_EXACT_ALARM`, plus

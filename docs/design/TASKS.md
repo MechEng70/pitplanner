@@ -730,6 +730,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     what is stored on the phone, notification taps (Read and clear), Cancel all alarms. The 0.2.0 screen's
     Allow rows (`AlertChecks`) come with T-025. **Not done here: the 5 taps on the Gear version.** Gear is
     still a placeholder with no version line; T-026 adds the line and the taps.
+  - Release builds (Jason, 2026-11-13): the screen opens only from the 5 taps, never from a
+    `pitplanner://debug` link. `src/lib/debugPass.ts`: the taps call `grantDebugPass()` and then open the
+    route; `DebugGate` takes the pass as the screen opens (used up, so a later link is refused) and
+    otherwise sends the route to Plan. Dev builds keep the link. Tests: `DebugGate.test.tsx`.
   - Tests: `src/test/alarmSync.test.tsx` (store and wiring over a real database and the fake, including the
     0.2.0 import fixture), `src/screens/debug/DebugScreen.test.tsx`. Device: `legacy-import` checks the
     imported cook's alarms are stored on the phone and gone once the database without a cook is back; `alarm`
@@ -745,6 +749,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Tests:** any failure gets a regression test in T-014's files.
 - **Real phone:** yes: alarms through Doze and a locked reboot need the real phone and its OEM power management.
 - **Device testing (Jason):** unlock after the reboot step when asked; leave the phone idle for the Doze step.
+- **Before the real phone is touched (Jason, 2026-11-13):** list exactly what will be done to it (Doze
+  forcing, reboots, settings changes, installs) and what will be restored, and wait for his yes. Any reboot
+  needs him present to unlock.
 - **Added by Jason (2026-11-13):**
   1. **Upgrade with a live cook.** Start a cook in 0.2.0 with alarms pending, install the new build over it,
      and confirm each alarm fires once, on time, with no duplicates from the old alarms plus the rescheduled
@@ -1024,6 +1031,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Status:** todo
 - **Goal:** cookers list, Cook rates and history links, Alerts sheet, Units sheet, Home Assistant "Coming
   later", support link, version (tap 5 times for debug), update row.
+  The 5 taps call `grantDebugPass()` (`src/lib/debugPass.ts`) and then open `/debug`: in a release build
+  that pass is the only way in (T-015).
 - **Files:** `app/(tabs)/gear.tsx`, `src/screens/gear/GearScreen.tsx`, tests, fidelity PNG 16.
 - **Depends on:** T-024.
 - **Acceptance:** the units switch converts everywhere without changing stored values.
