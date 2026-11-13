@@ -36,5 +36,5 @@ for dir in "${test_dirs[@]}"; do
 done
 
 echo "android unit tests: ${tasks[*]}"
-(cd android && ./gradlew -q "${tasks[@]}")
+(cd android && MALLOC_ARENA_MAX=2 ./gradlew -q "${tasks[@]}")
 echo "android unit tests passed"

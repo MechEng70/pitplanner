@@ -70,12 +70,10 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
   (`pitplanner://dev/db`, `?set=C`, `?fail=1`; dev builds only). `--repeat N` reruns a test to catch one that
   only sometimes fails. `launch` now waits for the app's own UI, not just its window.
 - Legacy prefs (T-011): `modules/pit-legacy` reads the 0.2.0 `CapacitorStorage` preferences
-  (`legacyStore` in `src/platform/legacy.ts`). **Open:** its device check has not run. `npm run device --
-  --only db` was stopped by the system for low memory during the Gradle build (the emulator, a Gradle daemon
-  near 6 GB and a Kotlin daemon were up together; swap was full). Run it first thing next session, with
-  nothing else heavy running; the dev build on the emulator predates the module, so it needs the build.
-  The emulator may still be at font scale 1.15 or 1.3 from the stopped run (`adb shell settings put system
-  font_scale 1.0`).
+  (`legacyStore` in `src/platform/legacy.ts`); device check passed.
+- Memory: Gradle and Kotlin daemons are capped by `plugins/withGradleMemory.ts` (2 GB and 1.5 GB heaps, 6
+  workers, 10 minute idle timeout), the emulator runs with 3 GB (`avd.sh`), and `npm run device` builds before
+  it boots the emulator and stops the daemons in between (`tools/stop-gradle.sh`). Numbers in TASKS T-011.
 - T-017 has PR-4 (equal-width tiles, mockup 05; try `flex: 1` first) and two PR-3 fixes to make: selected
   chips reserve their bold width, and nothing jumps when content below shrinks while scrolled to the bottom.
 - Tab bar is the kit `BottomNav` (0.2.0 icon pills); T-059 (whole turkey, cited FSIS numbers) follows T-019.
@@ -294,7 +292,7 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 1. Done 2026-11-12: Jason approved the stack-change plan; T-001 phone check on 0.2.0 passed.
 2. Jason: push `main` when ready (plan docs and T-001 are local only).
 3. Done: Maestro CLI installed (2.12.1, `~/.maestro/bin`).
-4. T-002..T-011 done (R-1 closed, D-4 decided and confirmed; T-011's device check still to run). Next: T-012,
+4. T-002..T-011 done (R-1 closed, D-4 decided and confirmed). Next: T-012,
    per WBS "Suggested order" (T-058 now sits between T-019 and the Cook screen).
    Push the `v0.2.0` tag only when Jason says.
 5. Still open from before (carried into the plan): real cook with alarms through a reboot (now T-037 on the Expo

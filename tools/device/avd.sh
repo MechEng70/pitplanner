@@ -8,6 +8,9 @@ set -euo pipefail
 SDK="${ANDROID_HOME:-$HOME/Android/Sdk}"
 export JAVA_HOME="${JAVA_HOME:-/usr/lib/jvm/temurin-21-jdk}"
 NAME=pitplanner
+# Fixed RAM for the emulator (Jason, 2026-11-12): passed on every start, so it holds whatever the AVD's
+# config.ini says (the AVD made in T-006 says 4096). 3 GB runs the dev build with Metro and Maestro.
+RAM_MB=3072
 IMAGE="system-images;android-36;google_apis;x86_64"
 AVD_DIR="${ANDROID_AVD_HOME:-$HOME/.android/avd}/$NAME.avd"
 
@@ -17,12 +20,12 @@ create() {
   [ -d "$AVD_DIR" ] && return 0
   [ -r /dev/kvm ] && [ -w /dev/kvm ] || { echo "No access to /dev/kvm: the emulator would be too slow." >&2; exit 1; }
   echo no | "$SDK/cmdline-tools/latest/bin/avdmanager" create avd -n "$NAME" -k "$IMAGE" -d pixel_6 >/dev/null 2>&1
-  # Phone-sized in dp; enough RAM for Metro-loaded dev builds; no boot animation or audio.
+  # Phone-sized in dp; no boot animation or audio. RAM as RAM_MB above.
   cat >>"$AVD_DIR/config.ini" <<'INI'
 hw.lcd.width=1080
 hw.lcd.height=2376
 hw.lcd.density=480
-hw.ramSize=4096
+hw.ramSize=3072
 hw.keyboard=no
 hw.audioInput=no
 hw.audioOutput=no
@@ -37,7 +40,7 @@ case "${1:-}" in
     create
     s="$(serial)"
     if [ -z "$s" ]; then
-      nohup "$SDK/emulator/emulator" -avd "$NAME" -no-window -no-audio -no-boot-anim -no-snapshot-save \
+      nohup "$SDK/emulator/emulator" -avd "$NAME" -memory "$RAM_MB" -no-window -no-audio -no-boot-anim -no-snapshot-save \
         -gpu swiftshader_indirect >"${TMPDIR:-/tmp}/pitplanner-emulator.log" 2>&1 &
       for _ in $(seq 120); do s="$(serial)"; [ -n "$s" ] && break; sleep 1; done
       [ -n "$s" ] || { echo "Emulator did not appear (see ${TMPDIR:-/tmp}/pitplanner-emulator.log)." >&2; exit 1; }

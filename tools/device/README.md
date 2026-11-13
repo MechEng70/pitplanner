@@ -52,6 +52,10 @@ token patterns (`redact.mjs`), to `out/logcat-failed.txt`.
 | `targets.tsv` | `stable-controls` steps: target, route, start, expect, label, times (tab separated). |
 | `crop.py`, `compose.py` | Crop the status bar; put screenshots side by side. |
 
+Memory: the APK is built before the emulator boots, and the Gradle and Kotlin daemons are stopped in between
+(`tools/stop-gradle.sh`); the emulator always runs with 3 GB (`avd.sh`). Limits for the daemons themselves are
+in `plugins/gradleMemory.ts`.
+
 Notes: Metro is started when it is not running. `launch` closes the dev menu's first-launch intro, and both
 `launch` and every screenshot wait for the dev build's "Refreshing..." banner to clear. A cold start with a plain deep link opens the dev launcher, so
 `launch` loads the bundle through `pitplanner://expo-development-client/?url=...` and then opens the route.

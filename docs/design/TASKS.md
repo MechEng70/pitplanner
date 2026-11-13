@@ -520,9 +520,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     screen before the kill.
 
 ### T-011 `pit-legacy` module
-- **Status:** done except the device check (see `git log --grep T-011`): the emulator run that would confirm
-  the module on a real build was stopped by the system for low memory during the Gradle build and has not
-  been run again. Run `npm run device -- --only db` before T-012 relies on it.
+- **Status:** done (see `git log --grep T-011`); device check passed 2026-11-12.
 - **Goal:** read the 0.2.0 `CapacitorStorage` SharedPreferences from JS, once.
 - **Files:** `modules/pit-legacy/` (`expo-module.config.json`, Kotlin module, TS API), JUnit tests.
 - **Depends on:** T-003.
@@ -543,10 +541,26 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     when there is nothing to retire, and a second call keeps the copy.
   - Tests: `LegacyPrefsTest` (Robolectric 4.16.1, the version expo-modules-core tests with; 9 cases), run by
     `npm run check` step 4 as `:pit-legacy:testDebugUnitTest`.
-  - Device check written, not yet run: the dev database screen shows `legacy prefs none` or the keys found,
-    and the `db` device test (emulator) writes a `CapacitorStorage.xml` shaped like the Capacitor app's,
-    expects `legacy prefs gear, settings` after a restart and removes the file. Nothing calls `retire` on a
-    device until T-012.
+  - Device check (emulator, `npm run device -- --only db`, 115% and 130%): passed. The dev database screen
+    shows `legacy prefs none`; with a `CapacitorStorage.xml` shaped like the Capacitor app's written into the
+    dev build's data, a restart shows `legacy prefs gear, settings`; the file is removed again. Nothing calls
+    `retire` on a device until T-012.
+  - Memory (Jason, 2026-11-12; the first device run for this task was stopped by the system for low memory):
+    - Cause: the emulator (4 GB guest) was open during the Gradle build, with a Gradle daemon at 5.8 GB and a
+      Kotlin daemon at 2.1 GB. Gradle's heap was already capped at 2 GB; the rest was outside the heap (20
+      workers on 20 cores, GC threads, code cache, direct buffers).
+    - `plugins/withGradleMemory.ts` (pure `gradleMemory.ts`, tested) writes into the generated
+      `gradle.properties`: `org.gradle.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=768m -XX:ReservedCodeCacheSize=256m
+      -XX:MaxDirectMemorySize=512m -XX:ParallelGCThreads=4 -XX:ConcGCThreads=2`,
+      `kotlin.daemon.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m` (same GC thread limits),
+      `org.gradle.workers.max=6`, `org.gradle.daemon.idletimeout=600000` (10 minutes). Gradle is started with
+      `MALLOC_ARENA_MAX=2` by the device runner, the Android tests and the release script.
+    - Emulator: `avd.sh` starts it with `-memory 3072` every time (and creates new AVDs with 3072).
+    - `npm run device` builds the APK first with no emulator running, runs `tools/stop-gradle.sh` (Gradle
+      `--stop` and the Kotlin daemon; also with `--no-build`), then boots the emulator and installs.
+    - Measured on the passing run (full debug build, then the test): Gradle daemon peak 2.6 GB, Kotlin daemon
+      1.8 GB, emulator 4.4 GB, Metro 1.4 GB; the four together never above 5.6 GB (build and emulator no
+      longer overlap); lowest available memory 8.8 GB of 30 with the desktop apps open (they held about 13 GB).
 
 ### T-012 Import from 0.2.0 and the fresh-start notice
 - **Status:** todo

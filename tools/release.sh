@@ -82,7 +82,7 @@ run npm run check
 [ -n "$DRY" ] || trap restore_dev EXIT
 run APP_VARIANT=production APP_VERSION="$V" npx expo prebuild --platform android --clean --no-install
 echo "+ (cd android && ./gradlew assembleRelease)"
-[ -n "$DRY" ] || (cd android && ./gradlew -q assembleRelease)
+[ -n "$DRY" ] || (cd android && MALLOC_ARENA_MAX=2 ./gradlew -q assembleRelease)
 OUT_APK=android/app/build/outputs/apk/release/app-release.apk
 
 echo "+ $BT/apksigner verify --print-certs $OUT_APK"

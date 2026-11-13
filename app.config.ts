@@ -7,6 +7,7 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 import pkg from './package.json';
 import { appVersion, versionCode } from './plugins/version.ts';
+import { withGradleMemory } from './plugins/withGradleMemory.ts';
 import { withReleaseSigning } from './plugins/withReleaseSigning.ts';
 import { colors } from './src/theme/tokens.ts';
 
@@ -35,34 +36,36 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   const dev = variant === 'development';
   // package.json's version, or APP_VERSION for an internal prerelease (tools/release.sh --version).
   const version = appVersion(pkg.version, process.env.APP_VERSION);
-  return withReleaseSigning({
-    ...config,
-    name: dev ? 'Pit Planner dev' : 'Pit Planner',
-    slug: 'pitplanner',
-    version,
-    scheme: 'pitplanner',
-    orientation: 'portrait',
-    userInterfaceStyle: 'dark',
-    backgroundColor: BG,
-    icon: './assets/icon-only.png',
-    platforms: ['android'],
-    android: {
-      package: dev ? `${APP_ID}.debug` : APP_ID,
-      versionCode: versionCode(version),
-      adaptiveIcon: {
-        foregroundImage: './assets/icon-foreground.png',
-        backgroundImage: './assets/icon-background.png',
-        backgroundColor: BG,
+  return withGradleMemory(
+    withReleaseSigning({
+      ...config,
+      name: dev ? 'Pit Planner dev' : 'Pit Planner',
+      slug: 'pitplanner',
+      version,
+      scheme: 'pitplanner',
+      orientation: 'portrait',
+      userInterfaceStyle: 'dark',
+      backgroundColor: BG,
+      icon: './assets/icon-only.png',
+      platforms: ['android'],
+      android: {
+        package: dev ? `${APP_ID}.debug` : APP_ID,
+        versionCode: versionCode(version),
+        adaptiveIcon: {
+          foregroundImage: './assets/icon-foreground.png',
+          backgroundImage: './assets/icon-background.png',
+          backgroundColor: BG,
+        },
+        predictiveBackGestureEnabled: false,
       },
-      predictiveBackGestureEnabled: false,
-    },
-    plugins: [
-      'expo-router',
-      ['expo-status-bar', { style: 'light' }],
-      ['expo-font', { android: { fonts: [robotoFamily] } }],
-      ['expo-splash-screen', { backgroundColor: BG, image: './assets/icon-foreground.png', imageWidth: 200 }],
-    ],
-    experiments: { typedRoutes: true },
-    extra: { variant },
-  });
+      plugins: [
+        'expo-router',
+        ['expo-status-bar', { style: 'light' }],
+        ['expo-font', { android: { fonts: [robotoFamily] } }],
+        ['expo-splash-screen', { backgroundColor: BG, image: './assets/icon-foreground.png', imageWidth: 200 }],
+      ],
+      experiments: { typedRoutes: true },
+      extra: { variant },
+    }),
+  );
 };

@@ -30,6 +30,11 @@ test('release signing is applied at prebuild (plugins/withReleaseSigning)', () =
   expect(mods?.android?.appBuildGradle).toBeDefined();
 });
 
+test('Gradle memory limits are applied at prebuild (plugins/withGradleMemory)', () => {
+  const mods = (build() as { mods?: { android?: Record<string, unknown> } }).mods;
+  expect(mods?.android?.gradleProperties).toBeDefined();
+});
+
 test('development is the default variant; only "production" builds the release app ID', () => {
   expect(variantOf(undefined)).toBe('development');
   expect(variantOf('preview')).toBe('development');

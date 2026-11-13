@@ -49,6 +49,21 @@ REPORT="$OUT/report.txt"
 : >"$REPORT"
 log() { echo "$*" | tee -a "$REPORT"; }
 
+# --- build first, with no emulator running ------------------------------------------------------------------
+# Memory (Jason, 2026-11-12): a build with the emulator open ran the machine out of memory. So the APK is
+# built before the emulator starts, and the Gradle and Kotlin daemons are stopped before it boots (also with
+# --no-build: daemons left by an earlier build go too). The install happens once the target is up.
+APK_BUILT=""
+if [ -z "$NOBUILD" ]; then
+  log "== build the dev build"
+  (cd "$ROOT" && tools/prebuild-if-stale.sh &&
+    cd android && JAVA_HOME="${JAVA_HOME:-/usr/lib/jvm/temurin-21-jdk}" MALLOC_ARENA_MAX=2 ./gradlew -q assembleDebug) 2>&1 |
+    tail -5 | tee -a "$REPORT"
+  [ "${PIPESTATUS[0]}" -eq 0 ] || { log "build failed"; exit 1; }
+  APK_BUILT=1
+fi
+"$ROOT/tools/stop-gradle.sh" && log "Gradle and Kotlin daemons stopped"
+
 # --- target ---------------------------------------------------------------------------------------------
 EMU_STARTED=""
 if [ "$DEVICE_TARGET" = emulator ] && [ -z "${ANDROID_SERIAL:-}" ] && ! pick_target 2>/dev/null; then
@@ -100,15 +115,11 @@ A shell svc power stayon usb
 # Other apps' heads-up banners (chat messages) must not land in screenshots.
 A shell settings put global heads_up_notifications_enabled 0
 
-# --- build, Metro, backup ---------------------------------------------------------------------------------
-if [ -z "$NOBUILD" ]; then
-  log "== build + install the dev build"
-  # assembleDebug + adb install to the target only (installDebug would install on every attached device).
-  (cd "$ROOT" && tools/prebuild-if-stale.sh &&
-    cd android && JAVA_HOME="${JAVA_HOME:-/usr/lib/jvm/temurin-21-jdk}" ./gradlew -q assembleDebug &&
-    adb -s "$ANDROID_SERIAL" install -r app/build/outputs/apk/debug/app-debug.apk) 2>&1 |
-    tail -5 | tee -a "$REPORT"
-  [ "${PIPESTATUS[0]}" -eq 0 ] || { log "build failed"; exit 1; }
+# --- install, Metro, backup -------------------------------------------------------------------------------
+if [ -n "$APK_BUILT" ]; then
+  log "== install the dev build"
+  A install -r "$ROOT/android/app/build/outputs/apk/debug/app-debug.apk" 2>&1 | tail -2 | tee -a "$REPORT"
+  [ "${PIPESTATUS[0]}" -eq 0 ] || { log "install failed"; exit 1; }
 fi
 if ! curl -s "localhost:$METRO_PORT/status" | grep -q running; then
   log "== starting Metro"
