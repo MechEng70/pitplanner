@@ -44,7 +44,8 @@ export interface AlarmService {
   acknowledge(keys: string[]): Promise<void>;
   setQuiet(until: number | null): Promise<void>;
   testAlarm(seconds: number, title?: string, body?: string): Promise<{ at: number; exact: boolean }>;
-  scheduled(): Promise<{ alarms: AlarmSpec[]; nags: StoredNag[] }>;
+  /** What the phone holds to fire. `test` marks a test alarm, which is not part of the cook's set. */
+  scheduled(): Promise<{ alarms: (AlarmSpec & { test?: boolean })[]; nags: StoredNag[] }>;
   drainActions(): Promise<NotificationAction[]>;
   onFired(fn: (e: AlarmEvent) => void): Unsubscribe;
   onAction(fn: (e: AlarmEvent) => void): Unsubscribe;

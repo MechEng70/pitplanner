@@ -2,11 +2,11 @@
 // Roboto is registered natively by the expo-font config plugin (app.config.ts), so nothing loads at startup.
 // The database is opened and migrated here, before any screen (T-010): the store is built over it, or, when
 // a migration failed, the error screen is shown instead of the app. The 0.2.0 data is imported here too,
-// once, with a one-time notice saying how it went (T-012). Setup (first run) joins as a stack route
+// once, with a one-time notice saying how it went (T-012). The store gets the phone's alarms (T-015). Setup (first run) joins as a stack route
 // in T-024.
 import '../global.css';
 import Constants from 'expo-constants';
-import { Stack, ThemeProvider } from 'expo-router';
+import { Stack, ThemeProvider, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useMemo, useState } from 'react';
 import { LogBox } from 'react-native';
@@ -15,8 +15,11 @@ import type { Db } from '@/db/db';
 import { exportDump, exportFileName } from '@/db/export';
 import { importLegacy, importNotice, markNoticeSeen } from '@/db/legacyImport';
 import { repos } from '@/db/repos';
+import { useAlarmWiring } from '@/lib/alarmWiring';
 import { StoreProvider } from '@/lib/store';
+import { alarmService } from '@/platform/alarms';
 import { legacyStore } from '@/platform/legacy';
+import { onResume } from '@/platform/resume';
 import { shareFilesAsTar, shareTextFile } from '@/platform/shareFile';
 import { ImportNotice } from '@/screens/shared/ImportNotice';
 import { MigrationErrorScreen } from '@/screens/shared/MigrationError';
@@ -38,6 +41,13 @@ function exportData(db: Db | null): Promise<void> {
   return shareTextFile(exportFileName(now), JSON.stringify(dump, null, 1), 'application/json', 'Export my data');
 }
 
+/** Notification taps applied on start, on resume and while open; a change opens the Cook tab (T-015). */
+function AlarmWiring() {
+  const router = useRouter();
+  useAlarmWiring(alarmService, onResume, () => router.navigate('/cook'));
+  return null;
+}
+
 export default function RootLayout() {
   const [boot] = useState(() => openAppDb(__DEV__));
   // First start of 0.3.0 over 0.2.0: bring the old data across before the store loads (once; T-012).
@@ -52,7 +62,8 @@ export default function RootLayout() {
     <ThemeProvider value={navTheme}>
       <StatusBar style="light" />
       {data ? (
-        <StoreProvider repos={data}>
+        <StoreProvider repos={data} alarms={alarmService}>
+          <AlarmWiring />
           <Stack
             screenOptions={{ headerShown: false, contentStyle: { backgroundColor: navTheme.colors.background } }}
           />

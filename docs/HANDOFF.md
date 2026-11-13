@@ -1,9 +1,9 @@
-# Handoff (2026-11-13, ninth session: emulator memory and GPU, T-012..T-014)
+# Handoff (2026-11-13, ninth session: emulator memory and GPU, T-012..T-015)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## START HERE: scaffold, gate, theme, kit, device tests and release build, SQLite storage, the app store, the import from 0.2.0 and the alarm module with its native tests in place (T-002..T-014 done), T-015 next
+## START HERE: scaffold, gate, theme, kit, device tests and release build, SQLite storage, the app store, the import from 0.2.0 and the alarm module, its native tests and the alarm wiring in place (T-002..T-015 done), T-016 next
 
 - Root is now the Expo app: `app.config.ts` (variants by `APP_VARIANT`, versionCode from package.json),
   `app/` routes (tabs Plan, Cook, Gear placeholders), `src/lib/` pure helpers, `src/platform/types.ts`
@@ -89,6 +89,11 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
   `permissionService` in `src/platform/alarms.ts` (typed exports only; wiring is T-015). Device test `alarm`
   (emulator): a test alarm from `pitplanner://dev/alarm?test=20:<tag>` rings with the screen off. Native
   tests (T-014): 41 Robolectric tests; the alarm code reads time from `Clock.now()` so tests can move it.
+- Alarm wiring (T-015): `setCook` in the store saves and then replaces the phone's whole alarm set (never
+  call `alarmService.replaceAll` from a screen); `useAlarmWiring` applies notification taps at start, on
+  resume and while open. Screen tests that need alarms pass `fakeAlarms()` (`src/platform/fakes.ts`) to
+  `storeWrapper`. Debug screen: `pitplanner://debug`; the 5 taps on the Gear version come with T-026.
+  T-037: run the `alarm` device test on an image per tester Android version below 16 (Jason gives the list).
 - T-016 additions from Jason (in TASKS): upgrade with a live cook (each alarm once, on time, no duplicates),
   and the exact-alarm findings with the proposal to keep the manifest (`USE_EXACT_ALARM`, plus
   `SCHEDULE_EXACT_ALARM` up to API 32). The manifest has not been changed.
@@ -310,7 +315,7 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 1. Done 2026-11-12: Jason approved the stack-change plan; T-001 phone check on 0.2.0 passed.
 2. Jason: push `main` when ready (plan docs and T-001 are local only).
 3. Done: Maestro CLI installed (2.12.1, `~/.maestro/bin`).
-4. T-002..T-014 done (R-1 closed, D-4 decided and confirmed). Next: T-015,
+4. T-002..T-015 done (R-1 closed, D-4 decided and confirmed). Next: T-016,
    per WBS "Suggested order" (T-058 now sits between T-019 and the Cook screen).
    Push the `v0.2.0` tag only when Jason says.
 5. Still open from before (carried into the plan): real cook with alarms through a reboot (now T-037 on the Expo

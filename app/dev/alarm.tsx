@@ -7,7 +7,8 @@ import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, Text } from '@/components/kit';
-import { alarmService, permissionService } from '@/platform/alarms';
+import { alarmService } from '@/platform/alarms';
+import { permissionService } from '@/platform/permissions';
 
 export default function AlarmCheck() {
   const { test } = useLocalSearchParams<{ test?: string }>();

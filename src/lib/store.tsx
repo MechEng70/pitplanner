@@ -1,12 +1,15 @@
 // App state (D-5): loaded once from SQLite through the repositories, written back on every change. A port
 // of legacy/src/lib/store.tsx; the write is synchronous, so a change is on disk before the screen redraws.
-// Alarm sync after a cook change and the update check join in T-015 and T-034.
+// Alarms (T-015): after every change to the running cook the phone's alarm set is replaced as a whole
+// (`syncAlarms`: cancel all, schedule the new set, never a patch), one sync at a time and in order.
+// The update check joins in T-034.
 
 import { createContext, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { CookLog, Cookers, PlanInput } from '../../engine/types.ts';
 import type { Repos } from '../db/repos/index.ts';
 import type { Flags } from '../db/repos/settings.ts';
-import type { ActiveCook } from './cook.ts';
+import type { AlarmService } from '../platform/types.ts';
+import { applyActions, syncAlarms, type ActiveCook } from './cook.ts';
 import type { Draft } from './draft.ts';
 import type { Units } from './format.ts';
 import { logsOf, type CookRecord } from './history.ts';
@@ -29,6 +32,11 @@ export interface AppState {
   firstRun: boolean; // no gear saved yet: show Setup
   /** A plan draft was saved but could not be loaded; Plan says so until the plan is changed. */
   draftLost: boolean;
+  /**
+   * How the last alarm sync went: `inexact` when exact alarms are denied (alerts may ring late), `failed`
+   * when the phone refused the set. Null until a cook has been synced. The Cook screen warns on both.
+   */
+  alarmSync: 'ok' | 'inexact' | 'failed' | null;
 }
 
 /** Next Saturday at 5:00 PM local, at least an hour out. Only used for a fresh draft. */
@@ -75,6 +83,7 @@ export function loadState(repos: Repos, now: number): AppState {
     records,
     cook: repos.activeCook.load(),
     flags: repos.settings.flags(),
+    alarmSync: null,
   };
 }
 
@@ -92,6 +101,12 @@ export interface Store {
   setTotalHours: (foodId: string, hours: number | null) => void;
   setRateLock: (foodId: string, locked: boolean) => void;
   setUpdate: (u: UpdateInfo) => void;
+  /**
+   * Apply the Done and +15 min taps made on notifications to the running cook (each once: the phone hands
+   * them over once). With `resync` (app start), also put the cook's alarms back when there was nothing to
+   * apply, or clear step alarms left on the phone when no cook is running. Resolves true when the cook changed.
+   */
+  drainAlerts: (resync?: boolean) => Promise<boolean>;
 }
 
 const Ctx = createContext<Store | null>(null);
@@ -100,18 +115,46 @@ interface Props {
   repos: Repos;
   /** The clock for write times and the default draft; tests pass a fixed one. */
   clock?: () => number;
+  /** The phone's alarms. Left out (some screen tests), cook changes are saved and nothing is scheduled. */
+  alarms?: AlarmService;
   children: ReactNode;
 }
 
-export function StoreProvider({ repos, clock = Date.now, children }: Props) {
+export function StoreProvider({ repos, clock = Date.now, alarms, children }: Props) {
   const [state, setState] = useState(() => loadState(repos, clock()));
   // Writers read the latest state here, so two changes in one event both build on each other.
   const latest = useRef(state);
+  // Alarm syncs run one after another, so the phone ends with the set of the last change.
+  const syncing = useRef<Promise<void>>(Promise.resolve());
 
   const actions = useMemo((): Omit<Store, 'state'> => {
     const commit = (patch: Partial<AppState>) => {
       latest.current = { ...latest.current, ...patch };
       setState(latest.current);
+    };
+    /** Replace the phone's alarm set with what the cook needs now (or clear it when there is no cook). */
+    const sync = () => {
+      if (!alarms) return;
+      syncing.current = syncing.current.then(async () => {
+        const { cook, units } = latest.current;
+        try {
+          if (!cook) {
+            await alarms.cancelAll();
+            commit({ alarmSync: null });
+          } else {
+            const r = await syncAlarms(cook, clock(), alarms, units);
+            commit({ alarmSync: r.exact ? 'ok' : 'inexact' });
+          }
+        } catch {
+          commit({ alarmSync: 'failed' });
+        }
+      });
+    };
+    const saveCook = (cook: ActiveCook | null) => {
+      if (cook) repos.activeCook.save(cook, clock());
+      else repos.activeCook.clear(clock());
+      commit({ cook });
+      sync();
     };
     const reloadHistory = () => {
       const records = repos.history.list();
@@ -138,11 +181,36 @@ export function StoreProvider({ repos, clock = Date.now, children }: Props) {
       setUnits(units) {
         repos.settings.setUnits(units, clock());
         commit({ units });
+        // Alert text follows the display units.
+        if (latest.current.cook) sync();
       },
-      setCook(cook) {
-        if (cook) repos.activeCook.save(cook, clock());
-        else repos.activeCook.clear(clock());
-        commit({ cook });
+      setCook: saveCook,
+      async drainAlerts(resync = false) {
+        if (!alarms) return false;
+        let actions: Awaited<ReturnType<AlarmService['drainActions']>> = [];
+        try {
+          actions = await alarms.drainActions();
+        } catch {
+          // Nothing read, nothing lost: the phone keeps the taps for the next try.
+        }
+        const cook = latest.current.cook;
+        const next = cook && actions.length > 0 ? applyActions(cook, actions) : cook;
+        if (cook && next && next !== cook) {
+          saveCook(next);
+          return true;
+        }
+        if (resync && cook) sync();
+        else if (resync) {
+          // No cook, yet the phone still holds step alarms or repeats (a cook the import could not bring
+          // across, or data cleared under a running cook): they would ring for nothing. Test alarms stay.
+          try {
+            const held = await alarms.scheduled();
+            if (held.nags.length > 0 || held.alarms.some(a => !a.test)) sync();
+          } catch {
+            // Not readable now; the next start looks again.
+          }
+        }
+        return false;
       },
       addRecord(r) {
         repos.history.save(r, clock());
@@ -173,7 +241,7 @@ export function StoreProvider({ repos, clock = Date.now, children }: Props) {
         commit({ update });
       },
     };
-  }, [repos, clock]);
+  }, [repos, clock, alarms]);
 
   const store = useMemo(() => ({ state, ...actions }), [state, actions]);
   return <Ctx.Provider value={store}>{children}</Ctx.Provider>;

@@ -140,6 +140,8 @@ export const quiet = (c: ActiveCook, now: number): ActiveCook => ({ ...c, quietU
 export async function syncAlarms(c: ActiveCook, now: number, alarms: AlarmService, units: Units) {
   const done = Object.keys(c.done);
   if (done.length) await alarms.acknowledge(done);
+  // Quiet also holds the repeats of a step that is already overdue (they are native; 0.2.0 let them ring).
+  await alarms.setQuiet(c.quietUntil != null && c.quietUntil > now ? c.quietUntil : null);
   // Pit out stops the clock: step alerts wait, one reminder asks whether it is back up.
   if (c.pitDownAt != null)
     return alarms.replaceAll([

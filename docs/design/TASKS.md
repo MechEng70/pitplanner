@@ -655,7 +655,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - JS: `modules/pit-alarms/index.ts` exports `pitAlarms`; `src/platform/alarms.ts` assigns it to
     `AlarmService` and `PermissionService`, so the typecheck proves the API matches. T-015 adds the wiring.
   - Device: dev route `pitplanner://dev/alarm` (`?test=20:x`; dev builds only, not an app screen) and
-    device test `alarm` (emulator only): the alarm is in AlarmManager, the screen is turned off, the
+    device test `alarm` (emulator only): the alarm is stored, the screen is turned off, the
     notification is posted on `steps_v1`, and afterwards nothing is stored or repeating. Sound is not checked
     (the emulator runs without audio); the real phone is T-016.
 
@@ -698,7 +698,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     invariants (engine tests, T-015, T-021).
 
 ### T-015 Alarm and permission services in JS
-- **Status:** todo
+- **Status:** done (see `git log --grep T-015`)
 - **Goal:** the `src/platform` implementations and app wiring: `syncAlarms` after every cook change, drain
   actions on start and resume, permission status, hidden debug screen (Gear version tapped 5 times).
 - **Files:** `src/platform/alarms.ts`, `src/platform/permissions.ts`, `src/platform/fakes.ts`, `src/lib/cook.ts`,
@@ -708,6 +708,32 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   fires any event in 10 s.
 - **Tests:** Jest with fakes: one `replaceAll` per change (never patch); a drained Done applies once.
 - **Device testing (Jason):** none.
+- **Notes (2026-11-13):**
+  - Sync is in the store (`src/lib/store.tsx`; `StoreProvider` takes `alarms`): `setCook` saves the cook and
+    then replaces the phone's whole alarm set through `syncAlarms` (`cancelAll` when the cook ends). Syncs run
+    one at a time and each reads the cook as it is when its turn comes, so the phone never ends on an older
+    set. A units change with a cook running re-syncs (alert text follows the units). `state.alarmSync`
+    (`ok`, `inexact`, `failed`) is there for the Cook screen's warning (T-021); nothing shows it yet.
+  - `syncAlarms` now also calls `setQuiet` (the cook's `quietUntil`, or off), so Quiet holds native repeats.
+  - `drainAlerts(resync)` (store) applies queued Done / +15 taps with `applyActions`; the phone hands them
+    over once and a step already done is skipped, so a tap applies once. `useAlarmWiring`
+    (`src/lib/alarmWiring.ts`, mounted in `app/_layout.tsx`) runs it at start (with `resync`: a cook gets
+    its alarms back, e.g. one imported from 0.2.0), on resume (`src/platform/resume.ts`) and on a tap while
+    the app is open; a change opens the Cook tab.
+  - Beyond the task text: at start with no cook running, step alarms or repeats still on the phone are
+    cleared (test alarms stay). Without it, a cook the import could not bring across would keep ringing
+    from 0.2.0's stored alarms.
+  - `src/platform/alarms.ts` (`alarmService`), `permissions.ts` (`permissionService`), `fakes.ts`
+    (`fakeAlarms`, `fakeResume`). `scheduled()` in `AlarmService` now carries the `test` mark.
+  - Debug screen: `src/screens/debug/DebugScreen.tsx`, route `app/debug.tsx` (`pitplanner://debug`): alert
+    status, Send a test alert in 10 sec, every step of the cook (or the draft plan) with a 10 sec button,
+    what is stored on the phone, notification taps (Read and clear), Cancel all alarms. The 0.2.0 screen's
+    Allow rows (`AlertChecks`) come with T-025. **Not done here: the 5 taps on the Gear version.** Gear is
+    still a placeholder with no version line; T-026 adds the line and the taps.
+  - Tests: `src/test/alarmSync.test.tsx` (store and wiring over a real database and the fake, including the
+    0.2.0 import fixture), `src/screens/debug/DebugScreen.test.tsx`. Device: `legacy-import` checks the
+    imported cook's alarms are stored on the phone and gone once the database without a cook is back; `alarm`
+    opens the debug screen and rings its test alert.
 
 ### T-016 Device alarm tests on the Expo build
 - **Status:** todo
@@ -760,8 +786,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
      - **Proposal: keep the manifest as it is.** It is the pattern the reference shows, and Pit Planner's
        core function is timed alarms. If it ever goes on Play, `USE_EXACT_ALARM` needs a policy review.
        To check in this task: `dumpsys package` shows `USE_EXACT_ALARM` granted after a fresh install and
-       after the upgrade from 0.2.0 (emulator API 36, then the phone). Android 14 and 15 rest on the docs
-       unless Jason wants those system images installed for a run.
+       after the upgrade from 0.2.0 (emulator API 36, then the phone).
+     - **Approved by Jason (2026-11-13):** keep the manifest; confirm with `dumpsys package` in this task.
+       No Android 14 or 15 images for now (see T-037 for the testers' versions).
 
 ---
 
@@ -1124,6 +1151,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Acceptance:** each alarm within 1 min of plan; none lost on reboot.
 - **Tests:** any bug gets a regression test.
 - **Real phone:** yes: the real Saturday cook with alarms.
+- **Before 0.3.0 ships (Jason, 2026-11-13):** run the `alarm` device test once on an emulator image matching
+  each Android version the testers actually use, if any is below 16. Jason gives the list of versions;
+  `tools/device/avd.sh` needs an image and AVD per version (it is fixed to API 36 today).
 - **Device testing (Jason):** the cook.
 
 ### T-038 Upgrade test and cut 0.3.0

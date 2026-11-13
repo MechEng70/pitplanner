@@ -451,6 +451,11 @@ test_legacy_import() {
         has_text "$dir/import-full.xml" "data cookers 3, rates 2, cooks 2, plan items 1" || miss "the imported data"
         has_text "$dir/import-full.xml" "units F lb" || miss "units"
         has_text "$dir/import-full.xml" "legacy prefs none" || miss "the old prefs emptied"
+        # T-015: the cook that came across is running, so its step alarms are set at this first start.
+        if launch "dev/alarm" && dump >"$dir/import-full-alarms.xml" &&
+          grep -qE 'text="stored alarms [1-9][0-9]*, repeats 0"' "$dir/import-full-alarms.xml"; then
+          log "    full: $(grep -oE 'stored alarms [0-9]+' "$dir/import-full-alarms.xml" | head -n 1) for the imported cook"
+        else miss "the imported cook's alarms"; fi
         [[ "$files" == *"CapacitorStorage.imported.xml"* ]] || miss "the kept copy of the prefs"
         [[ "$files" == *"history.json.imported"* ]] || miss "the kept history file"
         ;;
@@ -474,6 +479,10 @@ test_legacy_import() {
     { result "FAIL  legacy-import $s: could not put the database back"; return; }
   if launch "dev/db" && dump >"$dir/import-after.xml" && has_text "$dir/import-after.xml" "user_version $SCHEMA_VERSION"; then :
   else miss "the app after the database was put back"; fi
+  # The database put back has no running cook: the start above cleared the test cook's alarms from the phone
+  # (`dumpsys alarm` is no help here: its history keeps naming alarms that are gone).
+  if launch "dev/alarm" && dump >"$dir/import-after-alarms.xml" && has_text "$dir/import-after-alarms.xml" "stored alarms 0, repeats 0"; then :
+  else miss "the test cook's alarms cleared"; fi
   if [ $ok = 1 ]; then result "PASS  legacy-import $s"; else result "FAIL  legacy-import $s"; fi
 }
 
@@ -497,7 +506,6 @@ test_alarm() {
   for want in "test alarm set, exact yes" "notifications on" "exact alarms on" "stored alarms 1, repeats 0"; do
     has_text "$dir/alarm-set.xml" "$want" || miss "$want"
   done
-  A shell dumpsys alarm </dev/null | grep -q "io.github.mecheng70.pitplanner.FIRE" || miss "the alarm in AlarmManager"
   if posted_now; then miss "a screen-off ring (the alarm rang before the screen was off)"; fi
   A shell input keyevent KEYCODE_SLEEP
   sleep 1
@@ -514,6 +522,17 @@ test_alarm() {
   if launch "dev/alarm" && dump >"$dir/alarm-after.xml"; then
     has_text "$dir/alarm-after.xml" "stored alarms 0, repeats 0" || miss "stored alarms 0, repeats 0"
   else miss "the app after the alarm"; fi
+  # T-015: the hidden alarm test screen lists what is stored and rings a test alert in 10 s.
+  if launch "debug" && dump >"$dir/debug.xml"; then
+    has_text "$dir/debug.xml" "Alarm tests" || miss "the Alarm tests screen"
+    has_text "$dir/debug.xml" "Notifications on" || miss "Notifications on"
+    has_text "$dir/debug.xml" "Nothing scheduled." || miss "Nothing scheduled."
+    tap "Send a test alert in 10 sec" 1 | tee -a "$REPORT"
+    dump >"$dir/debug-set.xml" && grep -q 'text="[^"]*Test alert (test) (critical)"' "$dir/debug-set.xml" || miss "the test alert in the stored list"
+    sleep 12
+    tap "Refresh" 1 | tee -a "$REPORT"
+    dump >"$dir/debug-rang.xml" && has_text "$dir/debug-rang.xml" "Nothing scheduled." || miss "the test alert gone from the list after it rang"
+  else miss "the debug screen"; fi
   if [ $ok = 1 ]; then result "PASS  alarm $s"; else result "FAIL  alarm $s"; fi
 }
 

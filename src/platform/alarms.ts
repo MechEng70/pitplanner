@@ -1,8 +1,8 @@
-// Step alarms and alert permissions through the pit-alarms native module (T-013). The annotations are the
-// check that the module's JS API matches the service interfaces. T-015 adds the app wiring (alarms synced
-// after every cook change, notification actions drained on start and resume).
+// Step alarms through the pit-alarms native module (T-013). The annotation is the check that the module's
+// JS API matches AlarmService. The app wiring (one replaceAll after every cook change, notification taps
+// drained on start and resume) is in src/lib/store.tsx and src/lib/alarmWiring.ts; they take this service
+// as a parameter, so tests pass the fake (src/platform/fakes.ts).
 import { pitAlarms } from '../../modules/pit-alarms';
-import type { AlarmService, PermissionService } from './types';
+import type { AlarmService } from './types';
 
 export const alarmService: AlarmService = pitAlarms;
-export const permissionService: PermissionService = pitAlarms;
