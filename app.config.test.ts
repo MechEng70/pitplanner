@@ -21,7 +21,7 @@ test('the version comes from package.json; release.sh --version builds an intern
   expect(build('production').version).toBe(process.env.npm_package_version ?? require('./package.json').version);
   const alpha = build('production', '0.3.0-alpha.1');
   expect(alpha.version).toBe('0.3.0-alpha.1');
-  expect(alpha.android?.versionCode).toBe(300);
+  expect(alpha.android?.versionCode).toBe(300001);
   expect(() => build('production', '0.3')).toThrow();
 });
 

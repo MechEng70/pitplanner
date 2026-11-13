@@ -353,6 +353,13 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     firstInstallTime unchanged (same install, same data dir), the app opens on Plan, no crash.
   - A full release run takes about 20 minutes here (the release JS bundle was 8.5 minutes cold). The emulator
     crashed once during a build under memory load (23 of 30 GB in use); it restarts with its data.
+  - Follow-ups after Jason's review (2026-11-12, before T-008):
+    - versionCode scheme changed so prereleases sort below their release: (major*10000 + minor*100 + patch) *
+      1000 + stage, stage N for alpha.N, 300 + N for beta.N, 600 + N for rc.N, 999 for the final release
+      (TECH-DESIGN section 12; tests in `plugins/version.test.ts` failed first). The acceptance line's
+      "versionCode 300" is now 300001 for 0.3.0-alpha.1 and 300999 for 0.3.0.
+    - `release.sh` stops the test emulator before anything else (`avd.sh stop` now waits until it is gone).
+    - What to back up for signing: HANDOFF "Release signing: what to back up" (names only).
 
 ---
 

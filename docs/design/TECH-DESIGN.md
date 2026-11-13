@@ -396,12 +396,16 @@ behaviors they cover (e.g. Food details timing) are re-tested in Jest when each 
 - **Variants** in `app.config.ts` by `APP_VARIANT`: `development` -> `io.github.mecheng70.pitplanner.debug`,
   "Pit Planner dev" (installs beside the release, own data); `production` -> `io.github.mecheng70.pitplanner`,
   "Pit Planner". The app ID is permanent.
-- **Version:** `package.json` `version` -> `expo.version`; `android.versionCode = major*10000 + minor*100 +
-  patch` (0.3.0 -> 300 > 200, so 0.2.0 upgrades in place).
+- **Version:** `package.json` `version` -> `expo.version`; `android.versionCode = (major*10000 + minor*100 +
+  patch) * 1000 + stage` (`plugins/version.ts`). Stage: alpha.N = N, beta.N = 300 + N, rc.N = 600 + N, final
+  release = 999; N is 1 to 299, minor and patch under 100, major up to 209 (Android's limit is 2100000000).
+  Example: 0.3.0-alpha.1 300001 < 0.3.0-beta.1 300301 < 0.3.0-rc.1 300601 < 0.3.0 300999 < 0.3.1-alpha.1
+  301001. A prerelease always sorts below its final release and every version above the one before; 0.1.0
+  (100) and 0.2.0 (200) shipped under the old scheme and are below all of it, so 0.2.0 upgrades in place.
 - **Release (local, no EAS):**
   1. All tasks for the release done; `git status` clean on `main`; `npm run check` passes.
   2. Bump `package.json` version (0.3.0 for the first Expo release).
-  3. `npm run release`: `APP_VARIANT=production npx expo prebuild --platform android --clean`, then
+  3. `npm run release`: stops the test emulator (memory), `npm run check`, `APP_VARIANT=production npx expo prebuild --platform android --clean`, then
      `cd android && ./gradlew assembleRelease` (signing from `plugins/withReleaseSigning`), then verify the cert
      SHA-256 with `apksigner` and print versionCode/versionName -> `release/pitplanner-<version>.apk`. It
      regenerates the development `android/` on exit. `--version x.y.z-alpha.N` builds an internal prerelease;

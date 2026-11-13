@@ -43,14 +43,36 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
 - D-4 confirmed by Jason on condition of the `sheet-keyboard` device test; it passes (Sheet lifts by the
   keyboard height, `FooterScroll` reveals the focused field above the footer). Kit `InputField` added.
 - Release (T-007): `npm run release` (signing from git-ignored root `keystore.properties`; `--version
-  x.y.z-alpha.N` for internal builds, `--dry-run`, `--verify <apk>`). `release/pitplanner-0.3.0-alpha.1.apk`
-  installs over 0.2.0 on the emulator. About 20 minutes a run.
+  x.y.z-alpha.N` for internal builds, `--dry-run`, `--verify <apk>`). It stops the test emulator first (a
+  build needs the memory). About 20 minutes a run. versionCode (`plugins/version.ts`): (major*10000 +
+  minor*100 + patch) * 1000 + stage; stage is N for alpha.N, 300 + N for beta.N, 600 + N for rc.N, 999 for
+  the final release (N 1 to 299). So 0.3.0-alpha.1 = 300001 < 0.3.0 = 300999 < 0.3.1-alpha.1 = 301001.
+  `release/pitplanner-0.3.0-alpha.1.apk` is 300001 (the first build, 300, is kept as
+  `release/superseded/pitplanner-0.3.0-alpha.1-code300.apk`).
+- Signing backup: see "Release signing: what to back up" below.
 - T-017 has PR-4 (equal-width tiles, mockup 05; try `flex: 1` first) and two PR-3 fixes to make: selected
   chips reserve their bold width, and nothing jumps when content below shrinks while scrolled to the bottom.
 - Tab bar is the kit `BottomNav` (0.2.0 icon pills); T-059 (whole turkey, cited FSIS numbers) follows T-019.
   fsis.usda.gov answers automated fetches with 403: read it in a browser.
 - SE-003 (Snyk, `braces`/`open` in Metro and dev-middleware, not shipped): approved with conditions; override
   failed (open 11 is ESM-only), ignores expire 2027-02-10. Re-check triggers are in SECURITY-EXCEPTIONS.
+
+## Release signing: what to back up (Jason keeps the copies; no secrets in the repo)
+
+Losing any of these means no update can install over the app: every user would have to uninstall first.
+
+1. The keystore file `~/keys/pitplanner.jks` (PKCS12; it holds the private key).
+2. The values of `storePassword`, `keyPassword` and `keyAlias`. They are in the git-ignored
+   `keystore.properties` at the repo root (same values in `legacy/android/keystore.properties`); backing up
+   that file covers all three.
+
+Not needed: anything in `android/` (generated), the debug keystore, Snyk or GitHub logins.
+
+Restore on a new machine: put the `.jks` anywhere, copy `keystore.properties.example` to
+`keystore.properties`, fill in the absolute `storeFile` path and the three values, `chmod 600` both files.
+Check: `keytool -list -v -keystore <file> -alias <alias>` must show certificate SHA-256
+`b6c32d128659d5338c4a8c92f8d3214d96ecfd2430e63e6a76c54549b0880a29` (`CN=PitPlanner, O=PitPlanner`);
+`npm run release` checks the same digest on every APK and fails on any other.
 
 ## Stack change plan (approved 2026-11-12)
 
@@ -76,7 +98,7 @@ Key points of the plan (details in TECH-DESIGN):
   font-scale rule unchanged (lint rule bans truncating `Num`).
 - Gate unchanged in spirit: Prettier, ESLint (expo + React Native rules), typecheck, node:test (engine) + Jest/RNTL
   + JUnit, Semgrep, Snyk. Device tests move from Playwright/CDP to **Maestro** (Jason installs the CLI).
-- Release: `npx expo prebuild` + Gradle signed with `~/keys/pitplanner.jks`, versionCode 300, GitHub Release
+- Release: `npx expo prebuild` + Gradle signed with `~/keys/pitplanner.jks`, versionCode 300999 (scheme above), GitHub Release
   `v0.3.0` (not prerelease, so 0.2.0's update check sees it). Upgrade tested on an emulator with the real
   `release/pitplanner-0.2.0.apk` first.
 - Task IDs were renumbered: old Capacitor-era T-002..T-040 are superseded (mapping table at the end of

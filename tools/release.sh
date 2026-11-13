@@ -4,7 +4,8 @@
 #   npm run release -- --version 0.3.0-alpha.1   an internal prerelease (not distributed; any branch state)
 #   --dry-run                                print the steps and checks, run nothing
 #   --verify <apk>                           only check an APK's cert, package and version
-# Steps: npm run check; production prebuild (--clean) with the version; assembleRelease (signing from
+# Steps: stop the test emulator (it crashed once during a release build, 23 of 30 GB in use, and a build
+# needs the memory); npm run check; production prebuild (--clean) with the version; assembleRelease (signing from
 # plugins/withReleaseSigning and the git-ignored keystore.properties); verify the cert SHA-256, package,
 # versionCode and versionName; copy to release/pitplanner-<version>.apk and print its SHA-256. On exit the
 # development android/ is generated again, so the dev build and the gate keep working.
@@ -76,6 +77,7 @@ restore_dev() {
   run npx expo prebuild --platform android --clean --no-install && { [ -n "$DRY" ] || touch android/.prebuild-stamp; }
 }
 
+run tools/device/avd.sh stop
 run npm run check
 [ -n "$DRY" ] || trap restore_dev EXIT
 run APP_VARIANT=production APP_VERSION="$V" npx expo prebuild --platform android --clean --no-install

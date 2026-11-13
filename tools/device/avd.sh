@@ -3,7 +3,7 @@
 # phone's version), Google APIs x86_64 on KVM, screen 1080x2376 at 480 dpi = 360x792 dp like the phone.
 #   avd.sh create   create the AVD "pitplanner" if missing
 #   avd.sh start    start it headless (create first if needed), wait for boot, print its serial
-#   avd.sh stop     shut it down
+#   avd.sh stop     shut it down and wait until it is gone (its memory is free when this returns)
 set -euo pipefail
 SDK="${ANDROID_HOME:-$HOME/Android/Sdk}"
 export JAVA_HOME="${JAVA_HOME:-/usr/lib/jvm/temurin-21-jdk}"
@@ -55,7 +55,14 @@ case "${1:-}" in
     ;;
   stop)
     s="$(serial)"
-    [ -z "$s" ] || adb -s "$s" emu kill >/dev/null
+    [ -n "$s" ] || exit 0
+    adb -s "$s" emu kill >/dev/null
+    for _ in $(seq 60); do
+      adb devices | grep -q "^$s[[:space:]]" || pgrep -f "emulator.*-avd $NAME" >/dev/null || exit 0
+      sleep 1
+    done
+    echo "Emulator $s did not stop." >&2
+    exit 1
     ;;
   *)
     echo "usage: avd.sh create|start|stop" >&2
