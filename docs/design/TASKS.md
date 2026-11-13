@@ -520,7 +520,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     screen before the kill.
 
 ### T-011 `pit-legacy` module
-- **Status:** todo
+- **Status:** done except the device check (see `git log --grep T-011`): the emulator run that would confirm
+  the module on a real build was stopped by the system for low memory during the Gradle build and has not
+  been run again. Run `npm run device -- --only db` before T-012 relies on it.
 - **Goal:** read the 0.2.0 `CapacitorStorage` SharedPreferences from JS, once.
 - **Files:** `modules/pit-legacy/` (`expo-module.config.json`, Kotlin module, TS API), JUnit tests.
 - **Depends on:** T-003.
@@ -529,6 +531,22 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Acceptance:** returns the entries where they exist; an empty map otherwise.
 - **Tests:** Robolectric: seeded prefs read back; none -> empty; retire keeps the copy.
 - **Device testing (Jason):** none.
+- **Notes (2026-11-12):**
+  - `modules/pit-legacy`: `LegacyPrefs` (Kotlin; `read()`, `retire()`, `retired()`) and `PitLegacyModule`
+    (`PitLegacy`: synchronous `readCapacitorPrefs`, `retireCapacitorPrefs`), package
+    `io.github.mecheng70.pitplanner.legacy`. TS API `modules/pit-legacy/index.ts`; the app uses
+    `legacyStore` (`src/platform/legacy.ts`, interface `LegacyStore` in `src/platform/types.ts`, so T-012's
+    import takes a fake in tests).
+  - `read` returns the string entries of the `CapacitorStorage` preferences and changes nothing; other value
+    types and other preference files are left out. `retire` copies every entry to
+    `CapacitorStorage.imported`, and only when that copy is committed empties the original; it returns false
+    when there is nothing to retire, and a second call keeps the copy.
+  - Tests: `LegacyPrefsTest` (Robolectric 4.16.1, the version expo-modules-core tests with; 9 cases), run by
+    `npm run check` step 4 as `:pit-legacy:testDebugUnitTest`.
+  - Device check written, not yet run: the dev database screen shows `legacy prefs none` or the keys found,
+    and the `db` device test (emulator) writes a `CapacitorStorage.xml` shaped like the Capacitor app's,
+    expects `legacy prefs gear, settings` after a restart and removes the file. Nothing calls `retire` on a
+    device until T-012.
 
 ### T-012 Import from 0.2.0 and the fresh-start notice
 - **Status:** todo

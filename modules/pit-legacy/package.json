@@ -1,0 +1,7 @@
+{
+  "name": "pit-legacy",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.ts",
+  "description": "Reads the 0.2.0 (Capacitor) app's saved preferences once, for the import into SQLite (T-012)."
+}

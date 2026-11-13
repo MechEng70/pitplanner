@@ -1,0 +1,27 @@
+// pit-legacy: reads the 0.2.0 Capacitor app's SharedPreferences for the one-time import (TECH-DESIGN section 5).
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'io.github.mecheng70.pitplanner'
+version = '0.0.0'
+
+android {
+  namespace "io.github.mecheng70.pitplanner.legacy"
+  defaultConfig {
+    versionCode 1
+    versionName '0.0.0'
+  }
+  testOptions {
+    unitTests {
+      includeAndroidResources = true
+    }
+  }
+}
+
+dependencies {
+  testImplementation 'junit:junit:4.13.2'
+  // Same Robolectric as expo-modules-core's own tests.
+  testImplementation 'org.robolectric:robolectric:4.16.1'
+}

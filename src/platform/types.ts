@@ -64,6 +64,14 @@ export interface SecretStore {
   remove(k: SecretKey): Promise<void>;
 }
 
+/** The 0.2.0 (Capacitor) app's saved preferences: one JSON string per key (T-011, imported in T-012). */
+export interface LegacyStore {
+  /** Empty when the app was never the Capacitor one, or after `retireCapacitorPrefs`. Changes nothing. */
+  readCapacitorPrefs(): Record<string, string>;
+  /** Only after the import has committed: keeps a copy and empties the original. True if there was data. */
+  retireCapacitorPrefs(): boolean;
+}
+
 export interface ShareService {
   sharePlanFile(name: string, text: string): Promise<void>;
   onPlanOpened(fn: (file: { text?: string; name?: string; error?: string }) => void): Unsubscribe;

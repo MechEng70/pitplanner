@@ -286,6 +286,27 @@ test_db() {
       else ok=0; log "    MISSING after kill and restart: $want"; fi
     done
   done
+  # T-011: the pit-legacy module reads the 0.2.0 app's CapacitorStorage preferences on a real build. None
+  # yet; then (emulator only) a file shaped like the Capacitor app's, read after a restart and removed again.
+  has_text "$dir/db-F.xml" "legacy prefs none" || { ok=0; log "    MISSING: legacy prefs none"; }
+  if is_emulator; then
+    A shell am force-stop "$PKG"
+    A shell run-as "$PKG" sh -c "'mkdir -p shared_prefs && cat >shared_prefs/CapacitorStorage.xml'" <<'XML'
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<map>
+    <string name="settings">{&quot;temp&quot;:&quot;F&quot;,&quot;weight&quot;:&quot;lb&quot;}</string>
+    <string name="gear">{}</string>
+</map>
+XML
+    if launch "dev/db" && dump >"$dir/db-legacy.xml" && has_text "$dir/db-legacy.xml" "legacy prefs gear, settings"; then
+      log "    legacy prefs gear, settings (read from a CapacitorStorage file)"
+    else
+      ok=0; log "    MISSING: legacy prefs gear, settings"
+    fi
+    A shell am force-stop "$PKG"
+    A shell run-as "$PKG" rm -f shared_prefs/CapacitorStorage.xml
+    launch "dev/db" || ok=0
+  fi
   shot "$dir/db.png"
   if [ $ok = 1 ]; then result "PASS  db $s"; else result "FAIL  db $s"; fi
 }
