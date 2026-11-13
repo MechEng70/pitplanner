@@ -660,7 +660,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     (the emulator runs without audio); the real phone is T-016.
 
 ### T-014 `pit-alarms` native tests
-- **Status:** todo
+- **Status:** done (see `git log --grep T-014`)
 - **Goal:** every alarm invariant (TECH-DESIGN section 6) has a JUnit/Robolectric test.
 - **Files:** `modules/pit-alarms/android/src/test/...` (AlarmStoreTest, AlarmSchedulerTest, ReceiversTest,
   QuietTest), module `build.gradle` test dependencies.
@@ -671,6 +671,31 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Acceptance:** the tests run in `npm run check` step 4.
 - **Tests:** as listed.
 - **Device testing (Jason):** none.
+- **Notes (2026-11-13):**
+  - 41 tests in `modules/pit-alarms/android/src/test` (Robolectric 4.16.1, SDK 35), run by `npm run check`
+    step 4 as `:pit-alarms:testDebugUnitTest`. `TestSupport.kt` (`AlarmTestBase`) reads what AlarmManager
+    holds, delivers a scheduled alarm to its receiver through its own PendingIntent, and reads the shade.
+  - `AlarmStoreTest`: round trip, actions drained once in order, `quietUntil`, unreadable text reads as
+    nothing, device-protected storage, the one-time move from normal storage.
+  - `AlarmSchedulerTest`: `replaceAll` sets exactly the new set with `setAlarmClock` and never patches
+    (also the same set twice gives one alarm per step); past steps not scheduled; test alarms left alone;
+    a step scheduled again stops repeating; `cancelAll`; restore after boot (stored alarms and repeats, a
+    missed step rings at once and repeats, an overdue repeat rings 5 s after boot); Done for some keys of
+    an alarm; +15; exact alarms denied gives an inexact alarm and `exact = false`; Quiet moves, holds and
+    releases repeats.
+  - `ReceiversTest`: a step rings with Done / +15 min / Open on `steps_v1` and starts repeating; the
+    notification is not auto-cancel; six repeats 10 minutes apart with "N min past the step.", then "Cook
+    needs you" once; test alarms do not repeat; a stale alarm does nothing; Done and +15 from the
+    notification queue their action; a boot broadcast restores; the three receivers are in the manifest,
+    not exported, direct-boot aware; a repeat that fires inside Quiet is held without ringing or counting
+    (regression for the 0.2.0 gap); ids with odd characters survive the intent.
+  - One production change for testability: the alarm code reads the time from `Clock.now()` (`Clock.kt`;
+    the tests set `Clock.source`). Robolectric does not control `System.currentTimeMillis()`.
+  - Robolectric's AlarmManager never refuses `setAlarmClock`, so the denied case uses a test shadow
+    (`ExactAlarmsDenied`) that throws the `SecurityException` Android documents.
+  - Not covered here (device only, T-016): sound, full-screen takeover at night, Doze, a real locked reboot.
+    "Time steps app-only, temperature events HA-only" and "missing permission blocks Start cook" are JS
+    invariants (engine tests, T-015, T-021).
 
 ### T-015 Alarm and permission services in JS
 - **Status:** todo
@@ -694,6 +719,49 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Tests:** any failure gets a regression test in T-014's files.
 - **Real phone:** yes: alarms through Doze and a locked reboot need the real phone and its OEM power management.
 - **Device testing (Jason):** unlock after the reboot step when asked; leave the phone idle for the Doze step.
+- **Added by Jason (2026-11-13):**
+  1. **Upgrade with a live cook.** Start a cook in 0.2.0 with alarms pending, install the new build over it,
+     and confirm each alarm fires once, on time, with no duplicates from the old alarms plus the rescheduled
+     ones. Emulator first (`tools/device/upgrade020.sh`: start a cook and leave it running, read
+     `dumpsys alarm` before and after the install, then let the steps ring); the real phone in T-038. What
+     to look at: 0.2.0's `pit_alarms` store is read by the same `AlarmStore` (same name, device-protected
+     storage); `MY_PACKAGE_REPLACED` reschedules from it; the import (T-012) brings the cook across and T-015
+     reschedules from `plan.events` with `replaceAll`, which cancels the stored set first. The alarm ids and
+     PendingIntents are the same in both builds, so a second schedule should replace, not add: the test proves it.
+  2. **Exact-alarm permission: findings and proposal (no manifest change made).**
+     - Now: target SDK 36, min 24. The merged manifest declares `USE_EXACT_ALARM` and `SCHEDULE_EXACT_ALARM`
+       with `android:maxSdkVersion="32"`, the same as 0.2.0, so a fresh install and an upgrade from 0.2.0
+       hold the same permissions.
+     - `SCHEDULE_EXACT_ALARM` on Android 14 and later: "is no longer being pre-granted to most newly installed
+       apps targeting Android 13 and higher (will be set to denied by default)"; on a device upgrade "If an
+       existing app already has this permission, it'll be pre-granted when the device upgrades to Android
+       14."; after backup and restore "the permission will still be denied."
+       (https://developer.android.com/about/versions/14/changes/schedule-exact-alarms). The pages read say
+       nothing about an in-place app update, and nothing specific to Android 15 or 16.
+     - `setAlarmClock` needs it: "apps targeting SDK level 31 or higher need to request the
+       `SCHEDULE_EXACT_ALARM` permission to use this API"
+       (https://developer.android.com/reference/android/app/AlarmManager); without it a `SecurityException`
+       (the scheduler already falls back to `setAndAllowWhileIdle` and reports `exact: false`).
+     - `USE_EXACT_ALARM` (API 33+): "will be granted on install" (same Android 14 page); the alarms guide
+       lists it as "Granted automatically" and "Cannot be revoked by the user", "Subject to an upcoming
+       Google Play policy", "Limited use cases"
+       (https://developer.android.com/develop/background-work/services/alarms/schedule). The reference says
+       "This is only intended for use by apps that rely on exact alarms for their core functionality", "only
+       one of `USE_EXACT_ALARM` or `SCHEDULE_EXACT_ALARM` should be requested on a device", and shows
+       `SCHEDULE_EXACT_ALARM` with `android:maxSdkVersion="32"` beside it
+       (https://developer.android.com/reference/android/Manifest.permission). Nothing in the docs covers apps
+       distributed outside Google Play; the limit named is a Play policy, which does not apply to a sideloaded APK.
+     - So on Android 14, 15 and 16, fresh install or upgrade, the app holds `USE_EXACT_ALARM` from install and
+       the user cannot turn it off; the denied-by-default rule for `SCHEDULE_EXACT_ALARM` never applies
+       because that permission stops at API 32. On Android 12 and 12L the app uses `SCHEDULE_EXACT_ALARM`,
+       which the user can revoke (the red banner and the settings link cover that).
+     - Seen on the emulator (API 36, fresh install of the dev build): `exact alarms on`, `setAlarmClock`
+       accepted. The docs do not say what `canScheduleExactAlarms()` returns with only `USE_EXACT_ALARM`.
+     - **Proposal: keep the manifest as it is.** It is the pattern the reference shows, and Pit Planner's
+       core function is timed alarms. If it ever goes on Play, `USE_EXACT_ALARM` needs a policy review.
+       To check in this task: `dumpsys package` shows `USE_EXACT_ALARM` granted after a fresh install and
+       after the upgrade from 0.2.0 (emulator API 36, then the phone). Android 14 and 15 rest on the docs
+       unless Jason wants those system images installed for a run.
 
 ---
 
@@ -1069,6 +1137,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   rates and history intact (or the notice says what was not kept).
   The emulator upgrade test checks the imported cookers, rates, plan and history on the actual Gear, Plan and
   History screens, not only in the database (Jason, 2026-11-13; T-012 could only check the database).
+  Upgrade with a live cook on the real phone (Jason, 2026-11-13; emulator run in T-016): a cook started in
+  0.2.0 with alarms pending, 0.3.0 installed over it, each alarm fires once and on time, none twice; and
+  `USE_EXACT_ALARM` is still granted after the upgrade.
 - **Tests:** `npm run check` at the tagged commit.
 - **Real phone:** yes, after the emulator: 0.3.0 over 0.2.0 with Jason's real data.
 - **Device testing (Jason):** optional safety copy first (HANDOFF backup route); install 0.3.0 over 0.2.0;

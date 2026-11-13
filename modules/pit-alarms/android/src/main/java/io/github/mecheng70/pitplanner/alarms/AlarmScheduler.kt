@@ -50,7 +50,7 @@ object AlarmScheduler {
      */
     fun setQuiet(ctx: Context, until: Long?) {
         val store = AlarmStore(ctx)
-        val now = System.currentTimeMillis()
+        val now = Clock.now()
         store.quietUntil = until ?: 0L
         val moved = store.nags.map { n ->
             n.copy(nextAt = if (until != null) Quiet.defer(n.nextAt, until) else Quiet.release(n.nextAt, now, NAG_EVERY_MS))
@@ -87,7 +87,7 @@ object AlarmScheduler {
      */
     fun restore(ctx: Context) {
         val store = AlarmStore(ctx)
-        val now = System.currentTimeMillis()
+        val now = Clock.now()
         val (missed, future) = store.alarms.partition { it.at <= now }
         store.alarms = future
         for (a in missed) if (!a.test) Firing.fire(ctx, a, missed = true)
@@ -119,7 +119,7 @@ object AlarmScheduler {
     // ---- internals ----
 
     private fun scheduleStored(ctx: Context, store: AlarmStore): Result {
-        val now = System.currentTimeMillis()
+        val now = Clock.now()
         var exact = true
         var n = 0
         for (a in store.alarms) if (a.at > now) { exact = setAlarmClock(ctx, a.at, firePi(ctx, a.id)) && exact; n++ }

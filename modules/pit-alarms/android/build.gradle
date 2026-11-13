@@ -14,8 +14,16 @@ android {
     versionCode 1
     versionName '0.0.0'
   }
+  testOptions {
+    unitTests {
+      // The notification icon and the module manifest (receivers) are read by the Robolectric tests.
+      includeAndroidResources = true
+    }
+  }
 }
 
 dependencies {
   testImplementation 'junit:junit:4.13.2'
+  // Same Robolectric as expo-modules-core's own tests.
+  testImplementation 'org.robolectric:robolectric:4.16.1'
 }

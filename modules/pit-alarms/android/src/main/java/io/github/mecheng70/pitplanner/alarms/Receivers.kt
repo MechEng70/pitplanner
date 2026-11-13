@@ -8,7 +8,7 @@ import android.net.Uri
 /** What happens when a step's time comes: notify, tell the app if it is open, start repeating. */
 object Firing {
     fun fire(ctx: Context, alarm: Alarm, missed: Boolean = false) {
-        val now = System.currentTimeMillis()
+        val now = Clock.now()
         val body = if (missed) "Missed while the phone was off. ${alarm.body}" else alarm.body
         Notifications.show(ctx, alarm.id, alarm.keys, alarm.title, body, alarm.critical, repeat = 0)
         PitAlarmsModule.emit(PitAlarmsModule.EVENT_FIRED, alarm.id, alarm.keys)
@@ -29,7 +29,7 @@ class AlarmReceiver : BroadcastReceiver() {
             }
             NAG -> {
                 val nag = store.nags.find { it.alarmId == id } ?: return
-                val now = System.currentTimeMillis()
+                val now = Clock.now()
                 if (Quiet.active(now, store.quietUntil)) {
                     // Quiet alerts: hold this repeat until the window ends; it does not count as one.
                     val held = nag.copy(nextAt = store.quietUntil)
@@ -63,7 +63,7 @@ class ActionReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
         val id = intent.getStringExtra(EXTRA_ID) ?: return
         val keys = intent.getStringArrayListExtra(EXTRA_KEYS) ?: arrayListOf()
-        val now = System.currentTimeMillis()
+        val now = Clock.now()
         val store = AlarmStore(ctx)
         AlarmScheduler.acknowledge(ctx, keys)
         Notifications.cancel(ctx, id)

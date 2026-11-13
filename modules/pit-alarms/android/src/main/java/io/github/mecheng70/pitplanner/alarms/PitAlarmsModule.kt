@@ -52,7 +52,7 @@ class PitAlarmsModule : Module() {
 
         /** A real alarm in `seconds`, through setAlarmClock, outside the cook's set. */
         AsyncFunction("testAlarm") { seconds: Int, title: String?, body: String? ->
-            val at = System.currentTimeMillis() + seconds * 1000L
+            val at = Clock.now() + seconds * 1000L
             val a = Alarm("test:$at", at, title ?: "Test alert", body ?: "Alarms work.", true, emptyList(), test = true)
             val r = AlarmScheduler.scheduleTest(context, a)
             mapOf("at" to at.toDouble(), "exact" to r.exact)
