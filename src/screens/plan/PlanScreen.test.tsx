@@ -91,16 +91,18 @@ describe('empty (mockup 04)', () => {
     expect(screen.queryByRole('button', { name: 'Pick date and time' })).toBeNull();
   });
 
-  test('Cook a past plan again is off until there is a past cook', async () => {
-    const { props } = await show([]);
-    expect(button('Cook a past plan again')).toBeDisabled();
-    await fireEvent.press(button('Cook a past plan again'));
-    expect(props.onCookAgain).not.toHaveBeenCalled();
+  // Jason's T-017 review (2026-11-13): with no past cook the button is not there at all (it was dimmed).
+  test('Cook a past plan again is not shown until there is a past cook', async () => {
+    await show([]);
+    expect(screen.queryByText('Cook a past plan again', hidden)).toBeNull();
+    expect(button('Add food')).toBeOnTheScreen();
   });
 
   test('with a past cook it opens the history', async () => {
     const { props } = await show([], { history: true });
     expect(button('Cook a past plan again')).toBeEnabled();
+    // Bright, in the accent color as in mockup 04 (never dimmed).
+    expect(screen.getByText('Cook a past plan again').props.className).toContain('text-ember');
     await fireEvent.press(button('Cook a past plan again'));
     expect(props.onCookAgain).toHaveBeenCalledTimes(1);
   });
@@ -154,6 +156,15 @@ describe('plan (mockup 05)', () => {
     expect(card('Brisket').getByTestId('cooker-icon-smoker', hidden)).toBeOnTheScreen();
     expect(card('Chicken wings').getByTestId('cooker-icon-smoker', hidden)).toBeOnTheScreen();
     expect(card('Chicken breasts').getByTestId('cooker-icon-griddle', hidden)).toBeOnTheScreen();
+  });
+
+  // Jason's T-017 review (2026-11-13): at 115% and 130% the summary was cut ("12 lb, smoker, paper ...").
+  test('a card summary wraps to a second line instead of being cut; its time and duration are never cut', async () => {
+    await show([brisket]);
+    const card = within(button('Brisket, edit'));
+    expect(card.getByText('12 lb, smoker, paper wrap').props.numberOfLines).toBe(2);
+    expect(card.getByText('6:40 AM').props.numberOfLines).toBeUndefined();
+    expect(card.getByText('9 hr on heat').props.numberOfLines).toBeUndefined();
   });
 
   test('one item reads "1 item"', async () => {

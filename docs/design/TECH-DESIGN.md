@@ -308,8 +308,11 @@ times stay exact. Changes made without asking keep serve only if every food keep
 - **Bottom sheets (D-4, decided in T-005):** the kit `Sheet` on React Native `Modal`
   (`src/components/kit/sheet.tsx`): scrim fade and slide-up on the native driver (honors reduce motion),
   Close, scrim tap and Android back (the system sends it to the top `Modal`, so stacked sheets close top
-  first), `useSheet().close(after)`. The footer floats over the scroll area behind a 14 dp fade and the
+  first), `useSheet().close(after)`. The footer floats over the scroll area behind a fade and the
   content gets its measured height as bottom padding (the 0.2.0 ScrollWithFooter rule, `FooterScroll`).
+  Nothing may half-show behind a pinned button (Jason, 2026-11-13): the fade is 32 dp (`FOOT_FADE`), solid
+  for its last 8 dp, and the padding includes it, so at the end of the list nothing is dimmed. Without a
+  footer the fade at the end is as tall as the space under the content (16 dp).
   Keyboard (Jason's D-4 condition, T-006): edge-to-edge, Android does not resize a `Modal` window for the
   keyboard, so the sheet lifts itself by the keyboard height and gets that much shorter; `FooterScroll`
   scrolls a focused field above the footer (`InputField` asks on focus, and again when the view resizes).

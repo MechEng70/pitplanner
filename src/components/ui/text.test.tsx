@@ -75,3 +75,16 @@ test('a disabled primary turns grey with a tertiary label; tones recolor outline
   expect(screen.getByText('Add food').props.className).toContain('text-ember');
   expect(screen.getByText('Remove').props.className).toContain('text-error');
 });
+
+test('clamp is one line; clamp={2} lets secondary text wrap to a second line before it is cut', async () => {
+  await render(
+    <>
+      <Text clamp>One</Text>
+      <Text clamp={2}>Two</Text>
+      <Text>Free</Text>
+    </>,
+  );
+  expect(screen.getByText('One').props.numberOfLines).toBe(1);
+  expect(screen.getByText('Two').props.numberOfLines).toBe(2);
+  expect(screen.getByText('Free').props.numberOfLines).toBeUndefined();
+});

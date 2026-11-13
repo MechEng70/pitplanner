@@ -1,4 +1,5 @@
-// Plan with nothing on the menu (mockup 04): the empty state with Add food and Cook a past plan again, and
+// Plan with nothing on the menu (mockup 04): the empty state with Add food and, once there is a past cook,
+// Cook a past plan again, and
 // the notice for a saved plan that could not be loaded (Jason, 2026-11-12: never start empty without
 // saying so).
 import { useState } from 'react';
@@ -40,9 +41,12 @@ export function PlanEmpty({
         <Button block onPress={onAddFood}>
           <Text>Add food</Text>
         </Button>
-        <Button kind="text" block disabled={!hasHistory} onPress={onCookAgain}>
-          <Text>Cook a past plan again</Text>
-        </Button>
+        {/* Only with a past cook to pick from (Jason, 2026-11-13): never a dimmed button. */}
+        {hasHistory ? (
+          <Button kind="text" block onPress={onCookAgain}>
+            <Text>Cook a past plan again</Text>
+          </Button>
+        ) : null}
       </EmptyState>
     </>
   );

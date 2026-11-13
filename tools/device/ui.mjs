@@ -74,15 +74,36 @@ export function unequalWidths(nodes, prefixes, tolPx) {
 
 /**
  * T-017 acceptance: each of `labels` ends at or above the top of the pinned `footer` control, i.e. it can be
- * read and tapped without scrolling. Problems as lines.
+ * read and tapped without scrolling. With `marginPx` it must also end above the footer's fade (the strip of
+ * that height over the button, where content is dimmed). Problems as lines.
  */
-export function notAbove(nodes, labels, footer) {
+export function notAbove(nodes, labels, footer, marginPx = 0) {
   const foot = findByLabel(nodes, footer);
   if (!foot) return [`"${footer}" is not on screen`];
   return labels.flatMap(label => {
     const n = findByLabel(nodes, label);
     if (!n) return [`"${label}" is not on screen`];
-    return n.b.b <= foot.b.t ? [] : [`"${label}" ends at ${n.b.b} px, below the top of "${footer}" (${foot.b.t} px)`];
+    if (n.b.b > foot.b.t) return [`"${label}" ends at ${n.b.b} px, below the top of "${footer}" (${foot.b.t} px)`];
+    if (n.b.b > foot.b.t - marginPx)
+      return [`"${label}" ends at ${n.b.b} px, inside the ${marginPx} px fade above "${footer}" (${foot.b.t} px)`];
+    return [];
+  });
+}
+
+/**
+ * For the report: how far each of `labels` ends above the fade over the pinned `footer` (the strip of
+ * `marginPx` above its top), or how far past the fade's start, in whole dp. One line each.
+ */
+export function room(nodes, labels, footer, marginPx, pxPerDp) {
+  const foot = findByLabel(nodes, footer);
+  if (!foot) return [`"${footer}" is not on screen`];
+  return labels.map(label => {
+    const n = findByLabel(nodes, label);
+    if (!n) return `"${label}" is not on screen`;
+    const dp = Math.round((foot.b.t - marginPx - n.b.b) / pxPerDp);
+    return dp >= 0
+      ? `"${label}" ends ${dp} dp above the fade over "${footer}"`
+      : `"${label}" ends ${-dp} dp past the start of the fade over "${footer}"`;
   });
 }
 

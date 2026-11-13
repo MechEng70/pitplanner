@@ -4,9 +4,19 @@
 //   node check.mjs stable <before.xml> <after.xml> <label>          T-006 stable-controls
 //   node check.mjs keyboard <dump.xml> <field> <footer> <imeTop> <topPx>   T-006 sheet-keyboard
 //   node check.mjs widths <dump.xml> <tolPx> <label prefix>...      T-017 PR-4: one row, equal widths
-//   node check.mjs above <dump.xml> <footer> <label>...             T-017: each label ends above the footer
+//   node check.mjs above <dump.xml> <footer> <fadePx> <label>...    T-017: each label ends above the footer's fade
+//   node check.mjs room <dump.xml> <footer> <fadePx> <pxPerDp> <label>...   dp between each label and that fade
 import { readFileSync } from 'node:fs';
-import { findByLabel, fullyVisible, keyboardProblems, movedAbove, notAbove, parseDump, unequalWidths } from './ui.mjs';
+import {
+  findByLabel,
+  fullyVisible,
+  keyboardProblems,
+  movedAbove,
+  notAbove,
+  parseDump,
+  room,
+  unequalWidths,
+} from './ui.mjs';
 
 const load = f => parseDump(readFileSync(f, 'utf8'));
 const [cmd, ...a] = process.argv.slice(2);
@@ -30,9 +40,12 @@ if (cmd === 'find') {
 } else if (cmd === 'widths') {
   problems = unequalWidths(load(a[0]), a.slice(2), Number(a[1]));
 } else if (cmd === 'above') {
-  problems = notAbove(load(a[0]), a.slice(2), a[1]);
+  problems = notAbove(load(a[0]), a.slice(3), a[1], Number(a[2]));
+} else if (cmd === 'room') {
+  for (const line of room(load(a[0]), a.slice(4), a[1], Number(a[2]), Number(a[3]))) console.log(line);
+  process.exit(0);
 } else {
-  console.error('usage: check.mjs find|center|stable|keyboard|widths|above ...');
+  console.error('usage: check.mjs find|center|stable|keyboard|widths|above|room ...');
   process.exit(2);
 }
 for (const p of problems) console.log(p);

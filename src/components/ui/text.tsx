@@ -71,8 +71,9 @@ export type TextProps = React.ComponentProps<typeof RNText> & {
   tone?: TextTone;
   weight?: TextWeight;
   center?: boolean;
-  /** One line with an ellipsis. Secondary text only: never around a `Num` (lint rule num-text-size). */
-  clamp?: boolean;
+  /** Cut with an ellipsis after one line, or after this many (`clamp={2}`: wrap once, then cut). Secondary
+   *  text only: never around a `Num` (lint rule num-text-size). */
+  clamp?: boolean | number;
   /** ui.css `.lh`: 1.4 line height for wrapped secondary lines and notes. */
   relaxed?: boolean;
   asChild?: boolean;
@@ -101,7 +102,7 @@ function Text({
       <Component
         className={cn(TONE[t], center && 'text-center', className)}
         style={[textStyle(v, w, relaxed), style]}
-        numberOfLines={clamp ? 1 : undefined}
+        numberOfLines={clamp === true ? 1 : clamp || undefined}
         {...props}
       />
     </TextContext.Provider>

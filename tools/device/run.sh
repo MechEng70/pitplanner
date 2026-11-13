@@ -2,7 +2,7 @@
 # One unattended device pass on the dev build (TASKS T-006).
 #   npm run device -- [--phone] [--no-build] [--repeat N] [--only <test>]...
 #   tests: smoke, sheet-keyboard, stable-controls, db, migration-error, db-unopenable, legacy-import, alarm,
-#   plan
+#   plan, plan-3button
 #   DEVICE_SCALES="1.0 1.15 1.3" adds or changes the font scales (default 1.15 and 1.3).
 #   (default: all).
 #   --repeat N runs the chosen tests N times at each font scale (to catch a test that only sometimes fails). --only repeats or takes a comma list.
@@ -19,7 +19,7 @@ set -uo pipefail
 . "$(dirname "$0")/lib.sh"
 cd "$DEVICE_DIR" || exit 1
 
-ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan)
+ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button)
 TESTS=()
 NOBUILD=""
 REPEAT=1
@@ -109,12 +109,38 @@ restore() {
     A shell dumpsys battery reset >/dev/null 2>&1
     A shell device_config delete device_idle min_time_to_alarm >/dev/null 2>&1
   fi
+  nav_back && [ -z "$NAV_BEFORE" ] || log "navigation mode NOT put back (was $NAV_BEFORE)"
   if [ -n "$BACKUP" ]; then ./db.sh restore "$BACKUP" | tee -a "$REPORT"; fi
   A shell settings put system font_scale "$ORIG_SCALE" && log "font scale back to $ORIG_SCALE"
   A shell settings put global stay_on_while_plugged_in "$ORIG_STAYON"
   A shell settings put global heads_up_notifications_enabled "$ORIG_HEADSUP" && log "heads-up back to $ORIG_HEADSUP"
   if [ -n "$METRO_PID" ]; then kill -- "-$METRO_PID" 2>/dev/null && log "Metro stopped"; fi
   if [ -n "$EMU_STARTED" ]; then ./avd.sh stop && log "emulator stopped"; fi
+}
+# Navigation mode, emulator only (the phone's is Jason's and is never changed): gestural is the image's
+# default (a 24 dp bar under the app), threebutton has a 48 dp bar. `settings get secure navigation_mode`
+# follows the overlay at once: 0 three buttons, 1 two buttons, 2 gestures. nav_back puts back what was there.
+NAV_BEFORE=""
+nav_set() {
+  local code
+  case "$1" in threebutton) code=0 ;; twobutton) code=1 ;; gestural) code=2 ;; *) return 2 ;; esac
+  A shell cmd overlay enable-exclusive --category "com.android.internal.systemui.navbar.$1" >/dev/null 2>&1
+  for _ in $(seq 10); do
+    [ "$(A shell settings get secure navigation_mode | tr -d '\r')" = "$code" ] && return 0
+    sleep 1
+  done
+  return 1
+}
+nav_mode() {
+  is_emulator || return 1
+  [ -n "$NAV_BEFORE" ] || NAV_BEFORE=$(A shell settings get secure navigation_mode | tr -d '\r')
+  nav_set "$1"
+}
+nav_back() {
+  local name
+  [ -n "$NAV_BEFORE" ] || return 0
+  case "$NAV_BEFORE" in 0) name=threebutton ;; 1) name=twobutton ;; *) name=gestural ;; esac
+  nav_set "$name" && NAV_BEFORE=""
 }
 RESULTS=()
 trap restore EXIT
@@ -601,33 +627,53 @@ test_alarm() {
 }
 
 # T-017: the Plan tab against mockups 05 (the menu) and 04 (empty). The dev plan seed puts the mockup's menu
-# on the plan. Checked: the parts are there; what must fit above the pinned Start cook without scrolling
-# (115%: three cards and Add food; 130%: two cards; Jason's decision in HANDOFF); the three tiles share their
-# row in equal widths within 1 dp (PR-4). Screenshots for docs/fidelity (the avatars, PR-2, are judged there).
+# on the plan. Checked: the parts are there; what must show whole above the pinned Start cook without
+# scrolling (plan_fit); the three tiles share their row in equal widths within 1 dp (PR-4); the empty plan
+# offers Cook a past plan again only when there is a past cook. Screenshots for docs/fidelity (the avatars,
+# PR-2, are judged there).
+
+# The strip over the content above a pinned button where the kit fades the content out: FOOT_FADE.height in
+# src/components/kit/sheet.tsx (32 dp) plus the 2 dp between the fade and the button. A control that ends in
+# it is dimmed, so it only counts as fitting when it ends above it (Jason's T-017 review, 2026-11-13).
+FOOT_FADE_DP=34
+PLAN_PARTS=("Brisket, edit" "Chicken wings, edit" "Chicken breasts, edit" "Add food")
+plan_miss() { ok=0; log "    MISSING: $1"; }
+plan_problems() { local line; while IFS= read -r line; do [ -n "$line" ] && { ok=0; log "    $line"; }; done <<<"$1"; }
+has_label() { grep -qF "content-desc=\"$2\"" "$1"; }
+# Jason's fit targets (HANDOFF "Decisions"): at 115% three cards and Add food, at 130% two cards, whole above
+# Start cook and its fade, without scrolling. Logs how much room every part has, then fails the caller (its
+# `ok`) for a target that is missed. Used with gesture navigation (plan) and 3-button navigation (plan-3button).
+plan_fit() {
+  local s="$1" xml="$2" px fade out line fit
+  px=$(($(A shell wm density | grep -oE '[0-9]+$' | tail -n 1) / 160))
+  fade=$((FOOT_FADE_DP * px))
+  while IFS= read -r line; do log "    $line"; done < <(node check.mjs room "$xml" "Start cook" "$fade" "$px" "${PLAN_PARTS[@]}")
+  case "$s" in
+    1.15) fit=("${PLAN_PARTS[@]}") ;;
+    1.3) fit=("${PLAN_PARTS[@]:0:2}") ;;
+    *) fit=() ;;
+  esac
+  [ ${#fit[@]} -gt 0 ] || return 0
+  if out=$(node check.mjs above "$xml" "Start cook" "$fade" "${fit[@]}"); then
+    log "    whole above Start cook and its fade without scrolling: ${fit[*]}"
+  else
+    log "    FIT TARGET MISSED at $s:"
+    plan_problems "$out"
+  fi
+}
+
 test_plan() {
-  local s="$1" dir="$2" ok=1 want out line dp fit
-  miss() { ok=0; log "    MISSING: $1"; }
-  has_label() { grep -qF "content-desc=\"$2\"" "$1"; }
-  problems() { while IFS= read -r line; do [ -n "$line" ] && { ok=0; log "    $line"; }; done <<<"$1"; }
+  local s="$1" dir="$2" ok=1 want out dp
   launch "dev/plan?seed=mockup" || { result "FAIL  plan $s: app did not open"; return; }
   sleep 1
   dump >"$dir/plan-main.xml" || { result "FAIL  plan $s: could not read the screen"; return; }
-  for want in "Plan" "On the menu"; do has_text "$dir/plan-main.xml" "$want" || miss "$want"; done
-  grep -qE 'text="3.items"' "$dir/plan-main.xml" || miss "3 items" # a Num: its space is a no-break space
+  for want in "Plan" "On the menu"; do has_text "$dir/plan-main.xml" "$want" || plan_miss "$want"; done
+  grep -qE 'text="3.items"' "$dir/plan-main.xml" || plan_miss "3 items" # a Num: its space is a no-break space
   for want in "Share plan" "Ready by" "Start at" "Pick date and time" "Change date and time" "Smoker temp" \
     "Brisket, edit" "Start cook"; do
-    has_label "$dir/plan-main.xml" "$want" || miss "$want"
+    has_label "$dir/plan-main.xml" "$want" || plan_miss "$want"
   done
-  case "$s" in
-    1.15) fit=("Brisket, edit" "Chicken wings, edit" "Chicken breasts, edit" "Add food") ;;
-    1.3) fit=("Brisket, edit" "Chicken wings, edit") ;;
-    *) fit=() ;;
-  esac
-  if [ ${#fit[@]} -gt 0 ]; then
-    if out=$(node check.mjs above "$dir/plan-main.xml" "Start cook" "${fit[@]}"); then
-      log "    above Start cook without scrolling: ${fit[*]}"
-    else problems "$out"; fi
-  fi
+  plan_fit "$s" "$dir/plan-main.xml"
   shot "$dir/plan-main.png"
   # The date and time open the system's date dialog, then its time dialog; OK on both keeps the time.
   tap "Change date and time" 1 | tee -a "$REPORT"
@@ -635,29 +681,59 @@ test_plan() {
     tap "OK" 1 | tee -a "$REPORT"
     if dump >"$dir/plan-time.xml" && grep -qE 'text="OK"' "$dir/plan-time.xml"; then
       tap "OK" 1 | tee -a "$REPORT"
-      dump >"$dir/plan-picked.xml" && has_label "$dir/plan-picked.xml" "Change date and time" || miss "Plan after the pickers"
+      dump >"$dir/plan-picked.xml" && has_label "$dir/plan-picked.xml" "Change date and time" || plan_miss "Plan after the pickers"
       log "    date dialog, then time dialog, then back on Plan"
-    else miss "the time dialog"; fi
-  else miss "the date dialog"; fi
+    else plan_miss "the time dialog"; fi
+  else plan_miss "the date dialog"; fi
   # The tiles are the end of the list: scroll to them, then measure.
   scroll_bottom | tee -a "$REPORT"
-  dump >"$dir/plan-tiles.xml" || miss "the screen after scrolling"
+  dump >"$dir/plan-tiles.xml" || plan_miss "the screen after scrolling"
   dp=$(A shell wm density | grep -oE '[0-9]+$' | tail -n 1)
   if out=$(node check.mjs widths "$dir/plan-tiles.xml" "$((dp / 160))" "Fire smoker" "Pellets" "Conflicts"); then
     log "    tiles: equal widths on one row (within 1 dp)"
-  else problems "$out"; fi
+  else plan_problems "$out"; fi
+  # Scrolled to the end, the tiles sit whole above Start cook and its fade.
+  if out=$(node check.mjs above "$dir/plan-tiles.xml" "Start cook" "$((FOOT_FADE_DP * dp / 160))" "Fire smoker 6:20 AM"); then
+    log "    scrolled to the end: the tiles end above Start cook and its fade"
+  else plan_problems "$out"; fi
   shot "$dir/plan-tiles.png"
 
+  # Empty plan with a past cook (the seed adds one): Cook a past plan again shows. Then with none (the empty
+  # seed takes the seeded cook away again): it is not there (Jason's T-017 review, 2026-11-13).
+  launch "dev/plan?seed=past" || { result "FAIL  plan $s: app did not open (past cook)"; return; }
+  sleep 1
+  dump >"$dir/plan-past.xml" || { result "FAIL  plan $s: could not read the empty screen (past cook)"; return; }
+  for want in "Add food" "Cook a past plan again"; do
+    has_label "$dir/plan-past.xml" "$want" || plan_miss "$want (with a past cook)"
+  done
+  shot "$dir/plan-past.png"
   launch "dev/plan?seed=empty" || { result "FAIL  plan $s: app did not open (empty)"; return; }
   sleep 1
   dump >"$dir/plan-empty.xml" || { result "FAIL  plan $s: could not read the empty screen"; return; }
-  has_text "$dir/plan-empty.xml" "What are we cooking?" || miss "What are we cooking?"
-  for want in "Add food" "Cook a past plan again" "Change date and time"; do
-    has_label "$dir/plan-empty.xml" "$want" || miss "$want"
+  has_text "$dir/plan-empty.xml" "What are we cooking?" || plan_miss "What are we cooking?"
+  for want in "Add food" "Change date and time"; do
+    has_label "$dir/plan-empty.xml" "$want" || plan_miss "$want"
   done
+  if has_label "$dir/plan-empty.xml" "Cook a past plan again"; then ok=0; log "    Cook a past plan again shows with no past cook"; fi
   if has_label "$dir/plan-empty.xml" "Start cook"; then ok=0; log "    Start cook shows on the empty plan"; fi
   shot "$dir/plan-empty.png"
   if [ $ok = 1 ]; then result "PASS  plan $s"; else result "FAIL  plan $s"; fi
+}
+
+# Jason, 2026-11-13: the same fit check with 3-button navigation on (a 48 dp bar under the tab bar, where
+# gesture navigation has 24 dp). Emulator only: the phone's navigation mode is Jason's and is never changed.
+test_plan_3button() {
+  local s="$1" dir="$2" ok=1
+  if ! is_emulator; then result "SKIP  plan-3button $s: emulator only"; return; fi
+  if nav_mode threebutton; then
+    if launch "dev/plan?seed=mockup" && sleep 1 && dump >"$dir/plan-3button.xml"; then
+      has_label "$dir/plan-3button.xml" "Start cook" || plan_miss "Start cook"
+      plan_fit "$s" "$dir/plan-3button.xml"
+      shot "$dir/plan-3button.png"
+    else plan_miss "Plan (the app did not open or could not be read)"; fi
+  else plan_miss "3-button navigation (could not switch)"; fi
+  nav_back || { ok=0; log "    could not switch the navigation mode back"; }
+  if [ $ok = 1 ]; then result "PASS  plan-3button $s"; else result "FAIL  plan-3button $s"; fi
 }
 
 read -r -a SCALES <<<"${DEVICE_SCALES:-1.15 1.3}"
@@ -697,11 +773,22 @@ if [[ " ${TESTS[*]} " == *" legacy-import "* ]] && [ -f "$OUT/1.15/import-partia
 fi
 if [[ " ${TESTS[*]} " == *" plan "* ]]; then
   plan_imgs=()
+  empty_imgs=()
   for s in "${SCALES[@]}"; do
     pct=$(awk -v s="$s" 'BEGIN { printf "%d", s * 100 + 0.5 }')
-    plan_imgs+=("Plan $pct%=$OUT/$s/plan-main.png" "Tiles $pct%=$OUT/$s/plan-tiles.png" "Empty $pct%=$OUT/$s/plan-empty.png")
+    plan_imgs+=("Plan $pct%=$OUT/$s/plan-main.png" "Tiles $pct%=$OUT/$s/plan-tiles.png")
+    empty_imgs+=("Empty $pct%=$OUT/$s/plan-empty.png" "Past cook $pct%=$OUT/$s/plan-past.png")
   done
   python3 -I compose.py "$OUT/plan.png" "${plan_imgs[@]}" && IMAGES+=("$OUT/plan.png")
+  python3 -I compose.py "$OUT/plan-empty.png" "${empty_imgs[@]}" && IMAGES+=("$OUT/plan-empty.png")
+fi
+if [[ " ${TESTS[*]} " == *" plan-3button "* ]]; then
+  nav_imgs=()
+  for s in "${SCALES[@]}"; do
+    pct=$(awk -v s="$s" 'BEGIN { printf "%d", s * 100 + 0.5 }')
+    [ -f "$OUT/$s/plan-3button.png" ] && nav_imgs+=("3-button $pct%=$OUT/$s/plan-3button.png")
+  done
+  [ ${#nav_imgs[@]} -eq 0 ] || { python3 -I compose.py "$OUT/plan-3button.png" "${nav_imgs[@]}" && IMAGES+=("$OUT/plan-3button.png"); }
 fi
 log ""
 log "=== device summary ==="

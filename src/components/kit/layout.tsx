@@ -67,8 +67,8 @@ export function Row({
 export const Fill = ({ children }: Kids) => <View className="min-w-0 flex-1 basis-0">{children}</View>;
 
 /** Fixed column for numbers: never shrinks; right-aligned unless `end` is false. */
-export const Fixed = ({ children, end = true }: Kids & { end?: boolean }) => (
-  <View className={cn('shrink-0 flex-col', end && 'items-end')}>{children}</View>
+export const Fixed = ({ children, end = true, gap = 0 }: Kids & { end?: boolean; gap?: Gap }) => (
+  <View className={cn('shrink-0 flex-col', GAP[gap], end && 'items-end')}>{children}</View>
 );
 
 export const Spacer = () => <View className="flex-1" />;

@@ -841,7 +841,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ## Phase 5: Plan tab (mockups 04-08)
 
 ### T-017 Plan: empty and main (04, 05)
-- **Status:** done (see `git log --grep T-017`); waiting for Jason's review. His phone check (compare with
+- **Status:** done (see `git log --grep T-017`); Jason's review fixes done 2026-11-13 (notes "Review fixes"
+  below), new screenshots sent. **Open, Jason decides:** the 115% fit target (three cards and Add food) is
+  not met on a real-size display now that summaries wrap; numbers below. His phone check (compare with
   mockups 04-05) waits until the phone is free again (T-016 hold).
 - **Goal:** Plan tab as in mockups 04 and 05: Ready by / Start at with date and time pickers, smoker temp field
   with fire time, food cards, Add food, tiles (fire, pellets, conflicts), pinned Start cook, share icon.
@@ -853,6 +855,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   placeholder with its tests); it goes away when the plan is changed. Keep it and its tests in the real screen;
   it must not sit above a control in a way that breaks PR-3 when it disappears.
 - **Acceptance:** at 115% three cards and Add food fit above Start cook, two at 130% (HANDOFF decision).
+  Since the review (2026-11-13) these apply on the real-size emulator with gesture navigation and with
+  3-button navigation; the 115% target is not met there (notes "Review fixes").
 - **Tests:** RNTL: empty state actions; cards show start time and time on heat from `buildPlan`; tile values;
   Start cook disabled with no food.
 - **Device testing (Jason):** compare with mockups 04-05 on the phone.
@@ -929,6 +933,55 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - Device tests changed for Plan: `stable-controls` targets that start at the bottom scroll up to a control
     that is off screen; the `alarm` test empties the plan before it opens the debug screen (a menu's steps
     pushed its buttons off screen). The whole device suite passes on the taller emulator display.
+- **Review fixes (Jason's T-017 review, 2026-11-13):**
+  - Approved: the line "Not in this version of Pit Planner" (`UNKNOWN_ITEM`).
+  - Not approved: the emulator display made 24 dp taller. Undone: `avd.sh` never sets a display size (it
+    resets the override the AVD still held; gate test `tools/device/avd.test.mjs`). The emulator is
+    1080x2376 at 480 dpi (360x792 dp) with gesture navigation and its 24 dp bar. The notes above that
+    mention the taller display are history.
+  - Card summaries wrap to a second line instead of being cut (`Text clamp={2}`; a third line would be cut).
+    Times and durations are `Num`, in a fixed column, never wrapped or shrunk. The time stays on the name's
+    line and the duration on the summary's first line (the card's two columns start at the top).
+  - Nothing half-shows behind the pinned button: the kit footer fade (`FOOT_FADE` in `kit/sheet.tsx`, every
+    `Screen` and `Sheet` footer) is 32 dp, fading over its first 24 dp and solid for the last 8 dp before
+    the button (it was 14 dp and the tile tops showed in it). Taps in the fade reach what is under it. The
+    scroll content ends where the fade starts, so at the end of the list nothing is dimmed (the tiles end 34
+    dp above Start cook; before 32). The tiles cannot fit whole above Start cook as in mockup 05: the mockup
+    is 844 dp tall with no system bars; the display gives the app 725 dp at 100% (792 less a 43 dp status
+    bar and the 24 dp gesture bar) and the content needs about 810 dp.
+  - Found on the device: with no footer, the fade at the end of a body (24 dp) was taller than the space
+    under the content (16 dp) and dimmed the bottom edge of the last control (Add food on the empty Plan
+    once the button below it was hidden). It is 16 dp now.
+  - Cook a past plan again: not shown with no past cook; the accent text button of mockup 04 with one. Noted
+    in T-028, which wires it. Dev seed `pitplanner://dev/plan?seed=past` (one past cook with a fixed id;
+    the other seeds take it away again).
+  - Device tests: `plan` reports the room of each card and Add food above Start cook's fade and counts a
+    control as fitting only when it ends above the fade; new `plan-3button` runs the same fit check with
+    3-button navigation (48 dp bar; emulator only, the mode is put back).
+    The whole device suite on the real-size display (2026-11-13): everything passes except `plan` and
+    `plan-3button` at 115% (the fit target below).
+  - Fidelity (emulator, real size): `docs/fidelity/rn-05-plan.png` (100%, 115%, 130%, tiles at 115%),
+    `rn-05-plan-3button.png` (100%, 115%, 130%), `rn-04-plan-empty.png` (no past cook at 100%, 115%, 130%;
+    with a past cook at 115%).
+  - **Fit on the real-size emulator** (dp from the end of each part to the start of the fade over Start
+    cook; minus = that far into the fade or under the button; the fade and its gap are 34 dp):
+
+    | Scale | Navigation | Brisket | Wings | Breasts | Add food | Target | Met |
+    |---|---|---|---|---|---|---|---|
+    | 100% | gesture | 195 | 111 | 27 | -33 | none | |
+    | 100% | 3-button | 171 | 87 | 3 | -57 | none | |
+    | 115% | gesture | 175 | 74 | -10 | -70 | three cards and Add food | no |
+    | 115% | 3-button | 151 | 50 | -34 | -94 | three cards and Add food | no |
+    | 130% | gesture | 164 | 57 | -29 | -89 | two cards | yes |
+    | 130% | 3-button | 140 | 33 | -53 | -102 | two cards | yes |
+
+    Why 115% cannot be met: the brisket and wings summaries wrap there, 17 dp each, so the menu is 33 dp
+    taller than in the first build. Before the wrap, on this display, Add food already ended under
+    Start cook by about 3 dp (the reason the display had been made taller). Three cards and Add food now need 70 dp more
+    than the display has with gesture navigation and 94 dp more with three buttons; every block is the
+    mockup's size, so there is nothing to take it from without changing the mockup's spacing. `plan` and
+    `plan-3button` fail at 115% until Jason sets the target (for example: at 115% two cards whole, the third
+    may end in the fade, Add food by scrolling).
 
 ### T-018 Smoker temp menu, Add food, Issues sheet (06, 07)
 - **Status:** todo
@@ -1145,6 +1198,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Acceptance:** editing a cook changes the blended rate shown; excluded cooks do not count.
 - **Tests:** RNTL; repo tests for edit and exclude; `engine/history.test.ts` unchanged.
 - **Device testing (Jason):** none.
+- **Plan's Cook a past plan again (Jason's T-017 review, 2026-11-13):** on the empty Plan (mockup 04) the
+  button is not shown while there is no past cook, and is the bright accent text button of the mockup when
+  there is one (never dimmed). That part is built (`PlanEmpty.tsx`, tests in `PlanScreen.test.tsx`, device
+  test `plan` with `pitplanner://dev/plan?seed=past`). This task wires its handler (`onCookAgain` in
+  `app/(tabs)/plan.tsx`) to the history list and Cook again, and keeps both states working.
 
 ---
 

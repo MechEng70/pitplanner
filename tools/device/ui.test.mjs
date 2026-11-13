@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { findByLabel, keyboardProblems, movedAbove, notAbove, parseDump, unequalWidths } from './ui.mjs';
+import { findByLabel, keyboardProblems, movedAbove, notAbove, parseDump, room, unequalWidths } from './ui.mjs';
 
 const node = (attrs, kids = '') =>
   `<node class="${attrs.cls ?? 'android.view.View'}" text="${attrs.text ?? ''}" content-desc="${attrs.desc ?? ''}" ` +
@@ -195,4 +195,26 @@ test('above: controls that end above the pinned button pass; one that runs under
     '"Add food" ends at 1744 px, below the top of "Start cook" (1700 px)',
   ]);
   assert.deepEqual(notAbove(plan(), ['Chicken wings, edit'], 'Start cook'), ['"Chicken wings, edit" is not on screen']);
+});
+
+// The footer's fade (kit FooterScroll) covers the strip above the pinned button: a control that ends in it is
+// dimmed, so it does not count as fitting (Jason's T-017 review, 2026-11-13).
+test('above with a margin: a control that ends inside the fade above the pinned button is reported', () => {
+  assert.deepEqual(notAbove(plan(), ['Brisket, edit', 'Add food'], 'Start cook', 40), []);
+  assert.deepEqual(notAbove(plan({ addFood: '[96,1500][1344,1680]' }), ['Add food'], 'Start cook', 40), [
+    '"Add food" ends at 1680 px, inside the 40 px fade above "Start cook" (1700 px)',
+  ]);
+  assert.deepEqual(notAbove(plan({ addFood: '[96,1600][1344,1744]' }), ['Add food'], 'Start cook', 40), [
+    '"Add food" ends at 1744 px, below the top of "Start cook" (1700 px)',
+  ]);
+});
+
+test('room: how far each control ends above (or under) the fade over the pinned button, in dp', () => {
+  assert.deepEqual(room(plan({ addFood: '[96,1500][1344,1630]' }), ['Add food'], 'Start cook', 40, 2), [
+    '"Add food" ends 15 dp above the fade over "Start cook"',
+  ]);
+  assert.deepEqual(room(plan({ addFood: '[96,1600][1344,1744]' }), ['Add food', 'Wings'], 'Start cook', 40, 2), [
+    '"Add food" ends 42 dp past the start of the fade over "Start cook"',
+    '"Wings" is not on screen',
+  ]);
 });

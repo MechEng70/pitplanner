@@ -1,7 +1,8 @@
 #!/bin/bash
 # The test emulator, the default target of `npm run device` (Jason, 2026-11-12): Android 16 (API 36, the
-# phone's version), Google APIs x86_64 on KVM, screen 1080x2376 at 480 dpi = 360x792 dp like the phone
-# (plus the height of the emulator's gesture bar, which the phone does not show: see `start`).
+# phone's version), Google APIs x86_64 on KVM, screen 1080x2376 at 480 dpi = 360x792 dp like the phone.
+# Navigation is the image's default, gestures (a 24 dp bar under the app); `npm run device` switches to
+# 3-button navigation (48 dp) for its `plan-3button` check and back.
 #   avd.sh create   create the AVD "pitplanner" if missing
 #   avd.sh start    start it headless (create first if needed), wait for boot, print its serial
 #   avd.sh stop     shut it down and wait until it is gone (its memory is free when this returns)
@@ -54,24 +55,10 @@ case "${1:-}" in
       sleep 1
     done
     [ "$(adb -s "$s" shell getprop sys.boot_completed | tr -d '\r')" = 1 ] || { echo "Emulator did not boot." >&2; exit 1; }
-    # The phone shows no gesture bar, so an app gets all 792 dp of its height. The emulator's gesture bar
-    # takes its own strip at the bottom (24 dp), which pushed Plan's Add food under Start cook at 115%
-    # (T-017). The display is made taller by exactly that strip, so apps get the phone's 792 dp.
-    phys=$(adb -s "$s" shell wm size | sed -nE 's/^Physical size: ([0-9]+)x([0-9]+).*/\1 \2/p')
-    # The strip's height in px: the smallest bottom inset a navigation bar window asks for.
-    # (The bar's window comes up a few seconds after boot_completed: wait for it.)
-    strip=""
-    for _ in $(seq 40); do
-      strip=$(adb -s "$s" shell dumpsys window |
-        sed -nE 's/.*type=navigationBars, source=FRAME[^}]*insetsSize=Insets\{left=0, top=0, right=0, bottom=([0-9]+)\}.*/\1/p' |
-        sort -n | head -n 1)
-      [ -n "$strip" ] && break
-      sleep 1
-    done
-    if [ -n "$phys" ] && [ -n "$strip" ]; then
-      read -r pw ph <<<"$phys"
-      adb -s "$s" shell wm size "${pw}x$((ph + strip))"
-    fi
+    # The display stays the AVD's own 1080x2376 (Jason, 2026-11-13: a display made taller to hide the
+    # emulator's gesture bar is not a real phone, not approved). An override left by the T-017 version of this
+    # script is kept by the AVD across starts, so it is put back here.
+    adb -s "$s" shell wm size reset
     adb -s "$s" shell wm dismiss-keyguard >/dev/null 2>&1 || true
     adb -s "$s" shell settings put global window_animation_scale 0
     adb -s "$s" shell settings put global transition_animation_scale 0

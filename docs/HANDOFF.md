@@ -1,4 +1,4 @@
-# Handoff (2026-11-13, ninth session: emulator memory and GPU, T-012..T-015, T-016 emulator half, T-017)
+# Handoff (2026-11-13, tenth session: T-017 review fixes; before it the ninth: T-012..T-015, T-016 emulator half, T-017)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
@@ -96,16 +96,22 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
   Gear version (T-026, `grantDebugPass()`) are the only way in. The gate retries Snyk once on a server or
   network error. T-016: list every phone action and wait for Jason's yes before touching the phone.
   T-037: run the `alarm` device test on an image per tester Android version below 16 (Jason gives the list).
-- **Waiting on Jason (2026-11-13, end of the ninth session):**
-  1. T-017 review (committed `d096d53`, he has the summary). Until he approves it, do not start T-018.
-  2. In that review: the new line "Not in this version of Pit Planner" (a saved item the rules do not
-     know) needs his OK or his wording; and the emulator's taller display assumes his phone shows no
-     gesture bar, to be confirmed on the phone.
-  3. His word that the Saturday cook is done. That lifts the phone hold below and unblocks: the T-016 phone
-     half (approved list in TASKS T-016), the T-017 phone check against mockups 04-05, and reinstalling the
-     dev build on the phone (it needs a rebuild: date picker and alarm module).
-  4. The Android versions his testers use, for T-037 (alarm device test per version below 16).
-  Nothing is uncommitted; `main` is not pushed (he pushes when he says so).
+- **Waiting on Jason (2026-11-13, end of the tenth session):**
+  1. His look at the new Plan screenshots (`docs/fidelity/rn-05-plan.png`, `rn-05-plan-3button.png`,
+     `rn-04-plan-empty.png`) after the T-017 review fixes. Until he approves them, do not start T-018.
+  2. His decision on the 115% fit target (three cards and Add food above Start cook): not met on the
+     real-size emulator now that card summaries wrap, with gesture or 3-button navigation. Numbers and the
+     reason: TASKS T-017 "Review fixes". Until he decides, `plan` and `plan-3button` fail at 115% (on purpose:
+     the target is his). 130% (two cards) is met in both.
+  3. His word that the Saturday cook is done (he confirmed on 2026-11-13 that the hold stays). That lifts the
+     phone hold below and unblocks: the T-016 phone half (approved list in TASKS T-016), the T-017 phone
+     check against mockups 04-05, and reinstalling the dev build on the phone (it needs a rebuild: date
+     picker and alarm module).
+  4. The Android versions his testers use, for T-037 (alarm device test per version below 16). His reply of
+     2026-11-13 left this line as an unfilled placeholder: still open, ask again.
+  Settled in his review (2026-11-13): "Not in this version of Pit Planner" is approved; the taller emulator
+  display is not (undone).
+  `main` is not pushed (he pushes when he says so).
 - **DO NOT TOUCH THE PHONE (Jason, 2026-11-13).** A real cook is running in his Pit Planner 0.2.0 with
   alarms through Sat 2026-11-14 17:00. Until he says the cook is done: no adb commands to the phone, no
   installs, no reads; emulator only; a task that needs the phone skips that step and notes it.
@@ -125,9 +131,16 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
   `SelectField`, `Tiles equal`, chips that keep their selected width. Dev seed:
   `pitplanner://dev/plan?seed=mockup`. Device test `plan`. Radius classes must be theme names
   (`rounded-control`, not `rounded-2xl`): the gate checks it.
-- Emulator geometry: `avd.sh start` makes the display 24 dp taller (the height of its gesture bar), so apps
-  get the 792 dp Jason's phone gives them. Android's font scaling is non-linear above 100% (big text grows
-  less), so 130% looks roomier than 0.2.0's WebView did.
+- Emulator geometry: the display is the AVD's own 1080x2376 at 480 dpi (360x792 dp) with gesture navigation
+  and its 24 dp bar. Never resize it or change the test device to make a layout target pass (Jason,
+  2026-11-13: the 24 dp taller display was not approved); report a target that cannot be met, with the
+  reason. `plan-3button` repeats Plan's fit check with 3-button navigation (48 dp bar). Android's font
+  scaling is non-linear above 100% (big text grows less), so 130% looks roomier than 0.2.0's WebView did.
+- Pinned footers (kit `FooterScroll`, every `Screen` and `Sheet`): nothing half-shows behind the button. The
+  fade is 32 dp, solid for its last 8 dp; a control counts as fitting above a pinned button only when it
+  ends above the fade (34 dp over the button; `FOOT_FADE_DP` in `tools/device/run.sh`).
+- Plan cards: the summary wraps to two lines (`Text clamp={2}`), numbers never. Cook a past plan again shows
+  only with a past cook (dev seed `pitplanner://dev/plan?seed=past`).
 - Tab bar is the kit `BottomNav` (0.2.0 icon pills); T-059 (whole turkey, cited FSIS numbers) follows T-019.
   fsis.usda.gov answers automated fetches with 403: read it in a browser.
 - SE-003 (Snyk, `braces`/`open` in Metro and dev-middleware, not shipped): approved with conditions; override
@@ -344,8 +357,9 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 1. Done 2026-11-12: Jason approved the stack-change plan; T-001 phone check on 0.2.0 passed.
 2. Jason: push `main` when ready (plan docs and T-001 are local only).
 3. Done: Maestro CLI installed (2.12.1, `~/.maestro/bin`).
-4. T-002..T-015 and T-017 done, T-016 emulator half done (R-1 closed, D-4 decided and confirmed). Next: T-018,
-   per WBS "Suggested order" (T-058 now sits between T-019 and the Cook screen).
+4. T-002..T-015 and T-017 done (review fixes included), T-016 emulator half done (R-1 closed, D-4 decided and
+   confirmed). Next: T-018 once Jason approves the new Plan screenshots, per WBS "Suggested order" (T-058 now
+   sits between T-019 and the Cook screen).
    Push the `v0.2.0` tag only when Jason says.
 5. Still open from before (carried into the plan): real cook with alarms through a reboot (now T-037 on the Expo
    build), two-phone share via Gmail/Drive (T-031), lane chart full screen (T-040), import-made conflict fix
@@ -356,7 +370,12 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 - Follow the Android system font size. Times, temps, weights and countdowns never truncate at any
   scale; only secondary text may. Test at 115% and 130% (normal is 115%).
 - Engine rounds phase starts to 5-minute steps; off-heat stays exact (serve - slice - rest).
-- Plan: only Start cook is pinned; at 115% three cards + Add food fit, at 130% two cards.
+- Plan: only Start cook is pinned; at 115% three cards + Add food fit, at 130% two cards. These apply on
+  the real-size emulator with gesture and with 3-button navigation (Jason, 2026-11-13). The 115% target is
+  not met there since summaries wrap (TASKS T-017 "Review fixes"); Jason decides the new target.
+- Plan card summaries wrap to two lines rather than truncate; times and durations never wrap or shrink.
+  Nothing half-shows behind a pinned button: content fades out before it (Jason, 2026-11-13).
+- Cook a past plan again is hidden while there is no history, bright accent when there is (Jason, 2026-11-13).
 - Changing a value never moves the control being tapped or shifts the layout (Jason, 2026-11-12; T-017
   PR-3): tabular digits, fixed-height rows for computed values, no warnings above the control, no automatic
   scrolling. This retires the 0.2.0 "result card scrolls into view after any change" behavior.

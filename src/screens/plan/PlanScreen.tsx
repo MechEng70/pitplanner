@@ -250,27 +250,34 @@ export function PlanScreen({
         return (
           <Card key={it.id} onPress={() => onEditItem?.(it.id)} label={`${info.name}, edit`}>
             <Avatar kind={info.cooker} />
+            {/* The summary wraps to a second line at big font sizes instead of being cut (Jason, 2026-11-13).
+                The row starts both columns at the top, so the time stays on the name's line and the duration
+                on the summary's first line; the numbers never wrap or shrink. */}
             <Fill>
-              <Stack gap={2}>
-                <Text variant="bodyL" weight="500">
-                  {info.name}
-                </Text>
-                <Text variant="label" tone={info.known ? 'secondary' : 'warn'} clamp>
-                  {info.summary}
-                </Text>
-              </Stack>
+              <Row gap={14} align="start">
+                <Fill>
+                  <Stack gap={2}>
+                    <Text variant="bodyL" weight="500">
+                      {info.name}
+                    </Text>
+                    <Text variant="label" tone={info.known ? 'secondary' : 'warn'} clamp={2}>
+                      {info.summary}
+                    </Text>
+                  </Stack>
+                </Fill>
+                {span ? (
+                  <Fixed gap={2}>
+                    <Num variant="body" weight="500">
+                      {fmtTime(span.start)}
+                    </Num>
+                    <Num variant="caption" tone="secondary">
+                      {fmtDuration(span.minutes)}
+                      {info.perWeight ? ' on heat' : ''}
+                    </Num>
+                  </Fixed>
+                ) : null}
+              </Row>
             </Fill>
-            {span ? (
-              <Fixed>
-                <Num variant="body" weight="500">
-                  {fmtTime(span.start)}
-                </Num>
-                <Num variant="caption" tone="secondary">
-                  {fmtDuration(span.minutes)}
-                  {info.perWeight ? ' on heat' : ''}
-                </Num>
-              </Fixed>
-            ) : null}
           </Card>
         );
       })}

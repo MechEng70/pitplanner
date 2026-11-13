@@ -31,10 +31,16 @@ import { colors } from '@/theme/tokens';
 
 export const SHEET_IN_MS = 300;
 export const SHEET_OUT_MS = 200;
-/** ui.css: the sheet stops 24 dp short of the top; the footer fades in over 14 dp; 16 dp under the content. */
+/** ui.css: the sheet stops 24 dp short of the top; 16 dp under the content when there is no footer. */
 const TOP_GAP = 24;
-const FADE = 14;
 const BODY_END = 16;
+/**
+ * The fade over the end of the scroll area above a pinned footer. Nothing may half-show behind the pinned
+ * button (Jason's T-017 review, 2026-11-13: tile tops showed in the old 14 dp fade): the content fades out
+ * over the first three quarters and is gone for the last quarter, before the button. The device check
+ * `plan` counts a control as fitting only when it ends above this strip (FOOT_FADE_DP in tools/device/run.sh).
+ */
+export const FOOT_FADE = { height: 32, solidFrom: 0.75 } as const;
 
 interface SheetCtl {
   close: (after?: () => void) => void;
@@ -60,14 +66,18 @@ function useKeyboardHeight() {
   return h;
 }
 
-/** Vertical fade from transparent to `color`, for the top edge of a pinned footer or the end of a list. */
-function Fade({ color, height }: { color: string; height: number }) {
+/**
+ * Vertical fade from transparent to `color`, for the top edge of a pinned footer or the end of a list.
+ * `solidFrom` (0 to 1) is where it reaches the full color; from there down it is solid.
+ */
+function Fade({ color, height, solidFrom = 1 }: { color: string; height: number; solidFrom?: number }) {
   const id = `fade${React.useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   return (
     <Svg width="100%" height={height} style={styles.noTouch}>
       <Defs>
         <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor={color} stopOpacity={0} />
+          <Stop offset={solidFrom} stopColor={color} stopOpacity={1} />
           <Stop offset="1" stopColor={color} stopOpacity={1} />
         </LinearGradient>
       </Defs>
@@ -84,8 +94,9 @@ const REVEAL_MARGIN = 16;
 
 /**
  * The legacy ScrollWithFooter rule: the footer floats over the bottom of the scroll area behind a fade, and
- * the scroll content gets bottom padding equal to the footer's measured height, so nothing can end up hidden
- * behind it at any font size. Without a footer the content fades out at the bottom edge instead.
+ * the scroll content gets bottom padding equal to the footer's measured height (its fade included), so
+ * scrolled to the end nothing sits behind the footer or in its fade at any font size. Without a footer the
+ * content fades out at the bottom edge instead.
  */
 const FADE_TO = {
   surface: { color: colors.surface, bg: 'bg-surface' },
@@ -111,7 +122,7 @@ export function FooterScroll({
   const to = FADE_TO[fadeTo];
   const [footH, setFootH] = React.useState(0);
   const onFootLayout = (e: LayoutChangeEvent) => setFootH(e.nativeEvent.layout.height);
-  const pad = React.useMemo(() => ({ paddingBottom: (footer ? footH : 0) + BODY_END }), [footer, footH]);
+  const pad = React.useMemo(() => ({ paddingBottom: footer ? footH : BODY_END }), [footer, footH]);
   const scroll = React.useRef<ScrollViewInstance>(null);
   const covered = footer ? footH : 0;
   // Android scrolls a focused field only to the scroll view's bottom edge, which the footer covers, so the
@@ -156,16 +167,20 @@ export function FooterScroll({
         </ScrollView>
       </RevealContext.Provider>
       {footer ? (
-        <View onLayout={onFootLayout} style={styles.foot}>
-          <Fade color={to.color} height={FADE} />
+        <View testID="footer" onLayout={onFootLayout} style={[styles.foot, styles.touchKids]}>
+          {/* Taps in the fade go to what is under it. */}
+          <View testID="footer-fade" style={styles.footFade}>
+            <Fade color={to.color} height={FOOT_FADE.height} solidFrom={FOOT_FADE.solidFrom} />
+          </View>
           {/* ui.css: .sheet-foot, and for a screen .screen-foot (16 dp above the button, fade included; 12 below). */}
           <View className={cn('flex-row items-center gap-2 px-4', fill ? 'pb-3 pt-0.5' : 'pb-4 pt-2.5', to.bg)}>
             {footer}
           </View>
         </View>
       ) : (
-        <View style={[styles.foot, styles.noTouch]}>
-          <Fade color={to.color} height={BODY_END + 8} />
+        // As tall as the space under the content, so with the list at its end nothing is dimmed.
+        <View testID="end-fade" style={[styles.foot, styles.noTouch, styles.endFade]}>
+          <Fade color={to.color} height={BODY_END} />
         </View>
       )}
     </View>
@@ -291,5 +306,8 @@ export function Sheet({
 
 const styles = StyleSheet.create({
   noTouch: { pointerEvents: 'none' },
+  touchKids: { pointerEvents: 'box-none' },
+  footFade: { height: FOOT_FADE.height, pointerEvents: 'none' },
+  endFade: { height: BODY_END },
   foot: { position: 'absolute', left: 0, right: 0, bottom: 0 },
 });
