@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { findByLabel, keyboardProblems, movedAbove, parseDump } from './ui.mjs';
+import { findByLabel, keyboardProblems, movedAbove, notAbove, parseDump, unequalWidths } from './ui.mjs';
 
 const node = (attrs, kids = '') =>
   `<node class="${attrs.cls ?? 'android.view.View'}" text="${attrs.text ?? ''}" content-desc="${attrs.desc ?? ''}" ` +
@@ -149,4 +149,50 @@ test('sheet-keyboard: a field behind the footer fails (the first device result b
 test('sheet-keyboard: the wrong field focused, or no keyboard, fails', () => {
   assert.match(keyboardProblems(sheet({ focused: 'Name' }), kb)[0], /focused field is "Name"/);
   assert.deepEqual(keyboardProblems(sheet(), { ...kb, imeTop: undefined }), ['the keyboard is not open']);
+});
+
+// T-017: the Plan tiles (PR-4) and what fits above the pinned Start cook.
+const plan = ({ pellets = '[504,2000][936,2180]', addFood = '[96,1500][1344,1644]' } = {}) =>
+  parseDump(
+    dump(
+      node(
+        { b: '[0,0][1440,3168]' },
+        node({ desc: 'Brisket, edit', click: true, b: '[96,900][1344,1116]' }) +
+          node({ desc: 'Add food', click: true, b: addFood }) +
+          node(
+            { desc: 'Fire smoker 6:20 AM', b: '[48,2000][480,2180]' },
+            node({ text: 'Fire smoker', b: '[84,2036][300,2090]' }),
+          ) +
+          node({ desc: 'Pellets ~18 lb', b: pellets }) +
+          node({ desc: 'Conflicts None', click: true, b: '[960,2000][1392,2180]' }) +
+          node({ desc: 'Start cook', click: true, b: '[96,1700][1344,1868]' }),
+      ),
+    ),
+  );
+const TILES = ['Fire smoker', 'Pellets', 'Conflicts'];
+
+test('widths: three tiles in equal thirds pass, whatever their values', () => {
+  assert.deepEqual(unequalWidths(plan(), TILES, 3), []);
+});
+
+test('widths: a tile wider than the others, on another row, or missing is reported', () => {
+  assert.match(
+    unequalWidths(plan({ pellets: '[504,2000][990,2180]' }), TILES, 3).join(),
+    /widths differ: .*Pellets 486 px/,
+  );
+  assert.match(unequalWidths(plan({ pellets: '[504,2200][936,2380]' }), TILES, 3).join(), /not on one row/);
+  assert.deepEqual(unequalWidths(plan(), [...TILES, 'Serve'], 3), ['"Serve" is not on screen']);
+});
+
+test('widths: 1 dp of rounding is allowed, more is not', () => {
+  assert.deepEqual(unequalWidths(plan({ pellets: '[504,2000][939,2180]' }), TILES, 3), []);
+  assert.equal(unequalWidths(plan({ pellets: '[504,2000][940,2180]' }), TILES, 3).length, 1);
+});
+
+test('above: controls that end above the pinned button pass; one that runs under it is reported', () => {
+  assert.deepEqual(notAbove(plan(), ['Brisket, edit', 'Add food'], 'Start cook'), []);
+  assert.deepEqual(notAbove(plan({ addFood: '[96,1600][1344,1744]' }), ['Brisket, edit', 'Add food'], 'Start cook'), [
+    '"Add food" ends at 1744 px, below the top of "Start cook" (1700 px)',
+  ]);
+  assert.deepEqual(notAbove(plan(), ['Chicken wings, edit'], 'Start cook'), ['"Chicken wings, edit" is not on screen']);
 });

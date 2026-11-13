@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { Chips, Field, IconButton, Segmented, Stepper } from './controls';
+import { StyleSheet } from 'react-native';
+import { Chips, Field, IconButton, Segmented, SelectField, Stepper } from './controls';
 import { Close } from './icons';
 import { Text } from '@/components/ui/text';
 
@@ -104,4 +105,42 @@ test('Field shows its label, control and note', async () => {
   expect(screen.getByText('Name')).toBeOnTheScreen();
   expect(screen.getByText('control')).toBeOnTheScreen();
   expect(screen.getByText('Shown on the plan.')).toBeOnTheScreen();
+});
+
+describe('Chips keep their width when selected (T-017 PR-3)', () => {
+  const weightOf = (node: { props: { style?: unknown } }) =>
+    StyleSheet.flatten(node.props.style as never) as { fontWeight?: string };
+
+  test('every chip is sized by an unseen copy of its label in the selected weight', async () => {
+    await render(<Chips label="Plan from" value="a" onChange={() => {}} options={opts} />);
+    for (const o of opts) {
+      // Two copies: the unseen one that sizes the chip (always medium) and the one that shows.
+      const copies = screen.getAllByText(o.label, { includeHiddenElements: true });
+      expect(copies).toHaveLength(2);
+      expect(weightOf(copies[0]!).fontWeight).toBe('500');
+      expect(weightOf(copies[1]!).fontWeight).toBe(o.id === 'a' ? '500' : '400');
+      // Only one of them is there for a screen reader or a text query.
+      expect(screen.getAllByText(o.label)).toHaveLength(1);
+    }
+  });
+});
+
+describe('SelectField', () => {
+  test('is one button named by its label, showing the value and what trails it; a press opens the menu', async () => {
+    const onPress = jest.fn();
+    await render(
+      <SelectField label="Smoker temp" value="225F" trailing={<Text>Fire 6:20 AM</Text>} onPress={onPress} />,
+    );
+    const field = screen.getByRole('button', { name: 'Smoker temp' });
+    expect(field).toHaveTextContent('Smoker temp225FFire 6:20 AM');
+    expect(field).toBeCollapsed();
+    await fireEvent.press(field);
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  test('without onPress it is a read-only field, not a button', async () => {
+    await render(<SelectField label="Hopper" value="21 lb" />);
+    expect(screen.getByText('21 lb')).toBeOnTheScreen();
+    expect(screen.queryByRole('button')).toBeNull();
+  });
 });

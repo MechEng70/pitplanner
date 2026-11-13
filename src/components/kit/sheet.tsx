@@ -95,12 +95,16 @@ const FADE_TO = {
 export function FooterScroll({
   footer,
   fadeTo,
+  fill,
   contentClassName,
   children,
 }: {
   footer?: React.ReactNode;
   /** The background the content fades into: the sheet's surface or the screen's bg. */
   fadeTo: keyof typeof FADE_TO;
+  /** A screen body: take all the height there is (a sheet is only as tall as its content), and let the
+   *  content fill it (an empty state centers in what is left). */
+  fill?: boolean;
   contentClassName?: string;
   children: React.ReactNode;
 }) {
@@ -139,13 +143,13 @@ export function FooterScroll({
   );
   const onLayout = React.useCallback(() => reveal(TextInput.State.currentlyFocusedInput()), [reveal]);
   return (
-    <View className="min-h-0 shrink">
+    <View className={fill ? 'min-h-0 flex-1' : 'min-h-0 shrink'}>
       <RevealContext.Provider value={reveal}>
         <ScrollView
           ref={scroll}
           onLayout={onLayout}
-          className="shrink grow-0"
-          contentContainerClassName={contentClassName}
+          className={fill ? 'flex-1' : 'shrink grow-0'}
+          contentContainerClassName={cn(fill && 'grow', contentClassName)}
           contentContainerStyle={pad}
         >
           {children}
@@ -154,7 +158,10 @@ export function FooterScroll({
       {footer ? (
         <View onLayout={onFootLayout} style={styles.foot}>
           <Fade color={to.color} height={FADE} />
-          <View className={cn('flex-row items-center gap-2 px-4 pb-4 pt-2.5', to.bg)}>{footer}</View>
+          {/* ui.css: .sheet-foot, and for a screen .screen-foot (16 dp above the button, fade included; 12 below). */}
+          <View className={cn('flex-row items-center gap-2 px-4', fill ? 'pb-3 pt-0.5' : 'pb-4 pt-2.5', to.bg)}>
+            {footer}
+          </View>
         </View>
       ) : (
         <View style={[styles.foot, styles.noTouch]}>

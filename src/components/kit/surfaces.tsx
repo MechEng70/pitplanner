@@ -89,11 +89,13 @@ export function IconAvatar({ tone = 'plain', children }: Kids & { tone?: keyof t
 
 /* ---------- Tiles ---------- */
 
-const TilesInset = React.createContext(false);
+const TilesContext = React.createContext({ inset: false, equal: false });
 
 /**
  * A label, a value and an optional note. Tiles share a row and wrap to the next one rather than cut a value:
- * each is at least as wide as its content and grows to fill the row.
+ * each is at least as wide as its content and grows to fill the row. In an `equal` row (Plan: fire, pellets,
+ * conflicts) they share the width in equal parts instead, and a value too long for its part wraps.
+ * Each tile is one accessibility element, read as "label value".
  */
 export function Tile({
   label,
@@ -108,11 +110,13 @@ export function Tile({
   tone?: TextTone;
   onPress?: () => void;
 }) {
-  const inset = React.useContext(TilesInset);
+  const { inset, equal } = React.useContext(TilesContext);
   const className = cn(
-    'shrink-0 grow basis-auto gap-1 overflow-hidden rounded-control p-3',
+    'gap-1 overflow-hidden rounded-control p-3',
+    equal ? 'min-w-0 flex-1 basis-0' : 'shrink-0 grow basis-auto',
     inset ? 'bg-bg' : 'bg-surface',
   );
+  const name = [label, value, sub].filter(Boolean).join(' ');
   const body = (
     <>
       <Text variant="caption" tone="secondary">
@@ -128,20 +132,29 @@ export function Tile({
       ) : null}
     </>
   );
-  if (!onPress) return <View className={className}>{body}</View>;
+  if (!onPress)
+    return (
+      <View className={className} accessible aria-label={name}>
+        {body}
+      </View>
+    );
   return (
-    <Pressable className={className} onPress={onPress} role="button" android_ripple={RIPPLE}>
+    <Pressable className={className} onPress={onPress} role="button" aria-label={name} android_ripple={RIPPLE}>
       {body}
     </Pressable>
   );
 }
 
-/** Row of tiles that wraps; `inset` puts them on a card (background-colored tiles). */
-export function Tiles({ inset = false, children }: Kids & { inset?: boolean }) {
+/**
+ * Row of tiles that wraps; `inset` puts them on a card (background-colored tiles); `equal` gives every tile
+ * the same width on one row (T-017 PR-4).
+ */
+export function Tiles({ inset = false, equal = false, children }: Kids & { inset?: boolean; equal?: boolean }) {
+  const ctx = React.useMemo(() => ({ inset, equal }), [inset, equal]);
   return (
-    <TilesInset.Provider value={inset}>
-      <View className="shrink-0 flex-row flex-wrap gap-2">{children}</View>
-    </TilesInset.Provider>
+    <TilesContext.Provider value={ctx}>
+      <View className={cn('shrink-0 flex-row gap-2', !equal && 'flex-wrap')}>{children}</View>
+    </TilesContext.Provider>
   );
 }
 

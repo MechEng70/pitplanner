@@ -99,3 +99,23 @@ test('GroupCard puts a hairline between rows, not before the first', async () =>
   const card = toJSON() as { children: { type: string }[] };
   expect(card.children.map(c => c.type)).toEqual(['Text', 'View', 'Text', 'View', 'Text']);
 });
+
+test('each tile is one element read as "label value", in an equal row too', async () => {
+  const onPress = jest.fn();
+  await render(
+    <Tiles equal>
+      <Tile label="Fire smoker" value="6:20 AM" />
+      <Tile label="Pellets" value="~18 lb" tone="warn" onPress={onPress} />
+      <Tile label="Conflicts" value="None" tone="ok" />
+    </Tiles>,
+  );
+  const tiles = [
+    screen.getByLabelText('Fire smoker 6:20 AM'),
+    screen.getByRole('button', { name: 'Pellets ~18 lb' }),
+    screen.getByLabelText('Conflicts None'),
+  ];
+  // The equal widths are measured on a device (the `plan` device test): class names are not laid out in Jest.
+  expect(tiles).toHaveLength(3);
+  await fireEvent.press(tiles[1]!);
+  expect(onPress).toHaveBeenCalledTimes(1);
+});

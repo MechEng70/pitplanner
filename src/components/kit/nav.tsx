@@ -46,7 +46,7 @@ export function BottomNav({
           >
             <View
               className={cn(
-                'h-8 w-16 items-center justify-center overflow-hidden rounded-2xl',
+                'h-8 w-16 items-center justify-center overflow-hidden rounded-control',
                 on && 'bg-ember-container',
               )}
             >

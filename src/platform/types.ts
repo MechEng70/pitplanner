@@ -77,6 +77,12 @@ export interface LegacyStore {
   retireHistoryFile(): void;
 }
 
+/**
+ * The system's date picker, then its time picker, starting from `initial` (epoch ms). Resolves the chosen
+ * instant on the minute, or null when either dialog is dismissed.
+ */
+export type PickDateTime = (initial: number) => Promise<number | null>;
+
 export interface ShareService {
   sharePlanFile(name: string, text: string): Promise<void>;
   onPlanOpened(fn: (file: { text?: string; name?: string; error?: string }) => void): Unsubscribe;

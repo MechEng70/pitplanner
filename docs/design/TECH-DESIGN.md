@@ -27,6 +27,7 @@ mentions in CLAUDE.md are rewritten to match this file in T-002.
 | Secrets | `expo-secure-store` | Android Keystore-backed. HA refresh token only. |
 | Files and sharing | `expo-file-system`, `expo-sharing`, intent filters via config plugin | `.pitplan` export and open. |
 | Fonts | `expo-font` + Roboto (`@expo-google-fonts/roboto`) | Bundled. |
+| Date and time | `@react-native-community/datetimepicker` 9.2 (added in T-017), only in `src/platform/dateTime.ts` | Android's own date dialog, then its time dialog (`PickDateTime`); what 0.2.0's `datetime-local` input opened. Dark through the app theme; no config plugin. |
 | Native code | Expo Modules API (Kotlin) in `modules/` | `pit-alarms` (setAlarmClock, receivers, notifications), `pit-legacy` (one-time read of 0.2.0 data). iOS implementations later behind the same TS interfaces. |
 | Engine | `engine/` pure TypeScript, unchanged | Runs in Metro and in `node --test`. |
 | Build | Continuous Native Generation: `npx expo prebuild` generates `android/`; local Gradle signed release | No EAS. `android/` is generated and git-ignored; native config lives in `app.config.ts`, `plugins/` and `modules/`. |

@@ -1,9 +1,9 @@
-# Handoff (2026-11-13, ninth session: emulator memory and GPU, T-012..T-015)
+# Handoff (2026-11-13, ninth session: emulator memory and GPU, T-012..T-015, T-016 emulator half, T-017)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## START HERE: scaffold, gate, theme, kit, device tests and release build, SQLite storage, the app store, the import from 0.2.0 and the alarm module, its native tests and the alarm wiring in place (T-002..T-015 done), T-016 next
+## START HERE: scaffold, gate, theme, kit, device tests and release build, SQLite storage, the app store, the import from 0.2.0 and the alarm module, its tests and wiring, and the Plan tab in place (T-002..T-015 and T-017 done, T-016 half), T-018 next
 
 - Root is now the Expo app: `app.config.ts` (variants by `APP_VARIANT`, versionCode from package.json),
   `app/` routes (tabs Plan, Cook, Gear placeholders), `src/lib/` pure helpers, `src/platform/types.ts`
@@ -108,8 +108,16 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
 - T-016 additions from Jason (in TASKS): upgrade with a live cook (each alarm once, on time, no duplicates),
   and the exact-alarm findings with the proposal to keep the manifest (`USE_EXACT_ALARM`, plus
   `SCHEDULE_EXACT_ALARM` up to API 32). The manifest has not been changed.
-- T-017 has PR-4 (equal-width tiles, mockup 05; try `flex: 1` first) and two PR-3 fixes to make: selected
-  chips reserve their bold width, and nothing jumps when content below shrinks while scrolled to the bottom.
+- Plan (T-017): `src/screens/plan/PlanScreen.tsx` + `PlanEmpty.tsx`. What opens from it comes in as handler
+  props that the route does not pass yet (temp menu, Add food, Issues: T-018; food details: T-019; Start
+  cook: T-021; history: T-028; share: T-029), so those controls do nothing for now. Date and time go through
+  `src/platform/dateTime.ts` (`@react-native-community/datetimepicker`). Kit: `Screen`, `AppBar`,
+  `SelectField`, `Tiles equal`, chips that keep their selected width. Dev seed:
+  `pitplanner://dev/plan?seed=mockup`. Device test `plan`. Radius classes must be theme names
+  (`rounded-control`, not `rounded-2xl`): the gate checks it.
+- Emulator geometry: `avd.sh start` makes the display 24 dp taller (the height of its gesture bar), so apps
+  get the 792 dp Jason's phone gives them. Android's font scaling is non-linear above 100% (big text grows
+  less), so 130% looks roomier than 0.2.0's WebView did.
 - Tab bar is the kit `BottomNav` (0.2.0 icon pills); T-059 (whole turkey, cited FSIS numbers) follows T-019.
   fsis.usda.gov answers automated fetches with 403: read it in a browser.
 - SE-003 (Snyk, `braces`/`open` in Metro and dev-middleware, not shipped): approved with conditions; override
@@ -326,7 +334,7 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 1. Done 2026-11-12: Jason approved the stack-change plan; T-001 phone check on 0.2.0 passed.
 2. Jason: push `main` when ready (plan docs and T-001 are local only).
 3. Done: Maestro CLI installed (2.12.1, `~/.maestro/bin`).
-4. T-002..T-015 done (R-1 closed, D-4 decided and confirmed). Next: T-016,
+4. T-002..T-015 and T-017 done, T-016 emulator half done (R-1 closed, D-4 decided and confirmed). Next: T-018,
    per WBS "Suggested order" (T-058 now sits between T-019 and the Cook screen).
    Push the `v0.2.0` tag only when Jason says.
 5. Still open from before (carried into the plan): real cook with alarms through a reboot (now T-037 on the Expo

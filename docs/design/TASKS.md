@@ -841,7 +841,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ## Phase 5: Plan tab (mockups 04-08)
 
 ### T-017 Plan: empty and main (04, 05)
-- **Status:** todo
+- **Status:** done (see `git log --grep T-017`); waiting for Jason's review. His phone check (compare with
+  mockups 04-05) waits until the phone is free again (T-016 hold).
 - **Goal:** Plan tab as in mockups 04 and 05: Ready by / Start at with date and time pickers, smoker temp field
   with fire time, food cards, Add food, tiles (fire, pellets, conflicts), pinned Start cook, share icon.
 - **Files:** `app/(tabs)/plan.tsx`, `src/screens/plan/PlanScreen.tsx`, `src/screens/plan/PlanEmpty.tsx`, tests,
@@ -881,6 +882,53 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     (mockup 05) at 100%, 115% and 130%, whatever their values. Try `flex: 1` (with `flex-basis: 0`) on each
     tile before measuring anything. Fail: any two tiles in the row differ in width by more than 1 dp
     (`uiautomator dump` bounds), or a tile value is cut (Jason, 2026-11-12).
+
+- **Notes (2026-11-13):**
+  - `src/screens/plan/PlanScreen.tsx` (a port of the 0.2.0 screen), `PlanEmpty.tsx`, route
+    `app/(tabs)/plan.tsx`. The T-002 placeholder and its tests are gone; the draft-lost notice and its tests
+    moved to the real screen.
+  - **What opens from Plan arrives as a handler prop and is not wired yet**, so these controls show and do
+    nothing until their task: the smoker temp field, Add food and the Conflicts tile (T-018), a food card
+    (T-019), Start cook (T-021), Cook a past plan again (T-028), the share icon (T-029). Working now: Ready by
+    / Start at (keeps the schedule), the date and time (system dialogs), everything computed from the plan.
+  - Date and time: `@react-native-community/datetimepicker`, used only in `src/platform/dateTime.ts`
+    (`PickDateTime` in `types.ts`; the screen gets it as a prop). The dev build must be rebuilt for it.
+  - Kit added or changed: `Screen` and `AppBar` (`kit/screen.tsx`), `SelectField`, `FooterScroll fill`
+    (a screen body; its footer uses 0.2.0's `.screen-foot` spacing), `Tiles equal`, each `Tile` one
+    accessibility element read as "label value", and `Chips` sized by an unseen copy of the label in the
+    selected weight.
+  - PR-1: the smoker temp is one `SelectField` ("225F", "Fire 6:20 AM", chevron); a test checks the only
+    radios on Plan are the mode toggle. PR-2: the cooker avatar is in every card (Jest by test id; seen in
+    the screenshots at 100%, 115%, 130%). PR-3: values are `Num`; nothing shows above a control; the
+    draft-lost notice keeps its space after it goes away; Plan targets added to `targets.tsv` (`plan`,
+    `plan-bottom`). PR-4: `Tiles equal` (`flex: 1`, basis 0); device test `plan` measures the three widths.
+  - Draft notice: it can only show on the empty plan (a lost draft starts empty). It sits under the date
+    card; when the plan is changed it turns invisible but keeps its height while the tab stays open.
+  - Acceptance on the emulator (`npm run device -- --only plan`): at 115% three cards and Add food end above
+    Start cook; at 130% two cards do (in fact three: see the next point); tiles equal within 1 dp at 100%,
+    115%, 130%; the date dialog and the time dialog open and return to Plan.
+  - Font scale: Android scales large text less than small text above 100% (non-linear font scaling, Android
+    14 and later), and React Native follows it; 0.2.0's WebView scaled everything by the same factor. So at
+    130% the date line stays on one line and more fits than in 0.2.0's 130% screenshots.
+  - Emulator: its gesture bar takes 24 dp at the bottom that Jason's phone does not lose (0.2.0 and T-002
+    screenshots show the tab bar flush with the bottom). With it, Add food ended 7 dp under Start cook at
+    115%, although every block measured the same as in 0.2.0. `avd.sh start` now makes the emulator's
+    display taller by exactly that strip (`wm size`), so apps get the phone's 792 dp. **To confirm on the
+    phone when it is free.**
+  - Found and fixed on the way (each with a test that failed first): the selected tab's pill was a box
+    (`rounded-2xl` is not in the theme; gate test `tools/radius-classes.test.mjs`); a saved item whose food
+    or method the rules do not have crashed the screen (now its card shows the stored id and "Not in this
+    version of Pit Planner", the plan error shows, Start cook is off); Start at with no first step (a smoker
+    food, no smoker) set an invalid time.
+  - Dev only: `pitplanner://dev/plan?seed=mockup` (mockup 05's menu) and `?seed=empty`; on the emulator the
+    dev client's floating tools button is turned off (it covered the share icon).
+  - Fidelity: `docs/fidelity/rn-05-plan.png` and `rn-04-plan-empty.png` (emulator, 100%, 115%, 130%).
+  - Differences from mockup 05 that come from the rules data and the engine, not the screen: the breasts card
+    reads "4, griddle, pounded" (mockup: "4, pounded, griddle") and Pellets reads "~17 lb" (mockup: "~18 lb").
+    Cook a past plan again is dimmed while there is no past cook (as in 0.2.0; the mockup shows it lit).
+  - Device tests changed for Plan: `stable-controls` targets that start at the bottom scroll up to a control
+    that is off screen; the `alarm` test empties the plan before it opens the debug screen (a menu's steps
+    pushed its buttons off screen). The whole device suite passes on the taller emulator display.
 
 ### T-018 Smoker temp menu, Add food, Issues sheet (06, 07)
 - **Status:** todo

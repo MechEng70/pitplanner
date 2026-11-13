@@ -1,7 +1,9 @@
 #!/bin/bash
 # One unattended device pass on the dev build (TASKS T-006).
 #   npm run device -- [--phone] [--no-build] [--repeat N] [--only <test>]...
-#   tests: smoke, sheet-keyboard, stable-controls, db, migration-error, db-unopenable, legacy-import, alarm
+#   tests: smoke, sheet-keyboard, stable-controls, db, migration-error, db-unopenable, legacy-import, alarm,
+#   plan
+#   DEVICE_SCALES="1.0 1.15 1.3" adds or changes the font scales (default 1.15 and 1.3).
 #   (default: all).
 #   --repeat N runs the chosen tests N times at each font scale (to catch a test that only sometimes fails). --only repeats or takes a comma list.
 # Target: the test emulator (tools/device/avd.sh; started headless if needed and stopped again), or with
@@ -17,7 +19,7 @@ set -uo pipefail
 . "$(dirname "$0")/lib.sh"
 cd "$DEVICE_DIR" || exit 1
 
-ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm)
+ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan)
 TESTS=()
 NOBUILD=""
 REPEAT=1
@@ -127,6 +129,18 @@ if [ -n "$APK_BUILT" ]; then
   log "== install the dev build"
   A install -r "$ROOT/android/app/build/outputs/apk/debug/app-debug.apk" 2>&1 | tail -2 | tee -a "$REPORT"
   [ "${PIPESTATUS[0]}" -eq 0 ] || { log "install failed"; exit 1; }
+fi
+# The dev client's floating tools button sits over the top right corner of every screen (Plan's share icon).
+# On the emulator it is turned off in the dev menu's own preferences; the menu still opens from its
+# notification. The phone's dev build keeps it.
+if is_emulator; then
+  fab_prefs=shared_prefs/expo.modules.devmenu.sharedpreferences.xml
+  fab_now=$(A shell run-as "$PKG" cat "$fab_prefs" 2>/dev/null | tr -d '\r')
+  if [[ "$fab_now" == *"</map>"* ]] && [[ "$fab_now" != *'name="showFab"'* ]]; then
+    A shell am force-stop "$PKG"
+    sed 's#</map>#    <boolean name="showFab" value="false" />\n</map>#' <<<"$fab_now" |
+      A shell run-as "$PKG" sh -c "'cat >$fab_prefs'" && log "dev tools button off on the emulator"
+  fi
 fi
 if ! curl -s "localhost:$METRO_PORT/status" | grep -q running; then
   log "== starting Metro"
@@ -258,7 +272,12 @@ test_stable_controls() {
     fi
     n=$((n + 1))
     before="$dir/stable-$target-$n-before.xml" after="$dir/stable-$target-$n-after.xml"
-    if ! on_screen "$label" || ! dump >"$before"; then broken=1; continue; fi
+    # Started at the bottom, a control that is not on screen can only be above: scroll up to it. That is as
+    # far down as the screen can be with the control still in reach.
+    if ! on_screen "$label" "$([ "$start" = bottom ] && echo UP || echo DOWN)" || ! dump >"$before"; then
+      broken=1
+      continue
+    fi
     tap "$label" "$times" | tee -a "$REPORT"
     if ! dump >"$after"; then broken=1; continue; fi
     if out=$(node check.mjs stable "$before" "$after" "$label"); then
@@ -565,7 +584,9 @@ test_alarm() {
   if launch "dev/alarm" && dump >"$dir/alarm-after.xml"; then
     has_text "$dir/alarm-after.xml" "stored alarms 0, repeats 0" || miss "stored alarms 0, repeats 0"
   else miss "the app after the alarm"; fi
-  # T-015: the hidden alarm test screen lists what is stored and rings a test alert in 10 s.
+  # T-015: the hidden alarm test screen lists what is stored and rings a test alert in 10 s. With food on
+  # the plan it lists every step first and the rest is off screen, so the plan is emptied (dev seed).
+  launch "dev/plan?seed=empty" >/dev/null
   if launch "debug" && dump >"$dir/debug.xml"; then
     has_text "$dir/debug.xml" "Alarm tests" || miss "the Alarm tests screen"
     has_text "$dir/debug.xml" "Notifications on" || miss "Notifications on"
@@ -579,7 +600,68 @@ test_alarm() {
   if [ $ok = 1 ]; then result "PASS  alarm $s"; else result "FAIL  alarm $s"; fi
 }
 
-for s in 1.15 1.3; do
+# T-017: the Plan tab against mockups 05 (the menu) and 04 (empty). The dev plan seed puts the mockup's menu
+# on the plan. Checked: the parts are there; what must fit above the pinned Start cook without scrolling
+# (115%: three cards and Add food; 130%: two cards; Jason's decision in HANDOFF); the three tiles share their
+# row in equal widths within 1 dp (PR-4). Screenshots for docs/fidelity (the avatars, PR-2, are judged there).
+test_plan() {
+  local s="$1" dir="$2" ok=1 want out line dp fit
+  miss() { ok=0; log "    MISSING: $1"; }
+  has_label() { grep -qF "content-desc=\"$2\"" "$1"; }
+  problems() { while IFS= read -r line; do [ -n "$line" ] && { ok=0; log "    $line"; }; done <<<"$1"; }
+  launch "dev/plan?seed=mockup" || { result "FAIL  plan $s: app did not open"; return; }
+  sleep 1
+  dump >"$dir/plan-main.xml" || { result "FAIL  plan $s: could not read the screen"; return; }
+  for want in "Plan" "On the menu"; do has_text "$dir/plan-main.xml" "$want" || miss "$want"; done
+  grep -qE 'text="3.items"' "$dir/plan-main.xml" || miss "3 items" # a Num: its space is a no-break space
+  for want in "Share plan" "Ready by" "Start at" "Pick date and time" "Change date and time" "Smoker temp" \
+    "Brisket, edit" "Start cook"; do
+    has_label "$dir/plan-main.xml" "$want" || miss "$want"
+  done
+  case "$s" in
+    1.15) fit=("Brisket, edit" "Chicken wings, edit" "Chicken breasts, edit" "Add food") ;;
+    1.3) fit=("Brisket, edit" "Chicken wings, edit") ;;
+    *) fit=() ;;
+  esac
+  if [ ${#fit[@]} -gt 0 ]; then
+    if out=$(node check.mjs above "$dir/plan-main.xml" "Start cook" "${fit[@]}"); then
+      log "    above Start cook without scrolling: ${fit[*]}"
+    else problems "$out"; fi
+  fi
+  shot "$dir/plan-main.png"
+  # The date and time open the system's date dialog, then its time dialog; OK on both keeps the time.
+  tap "Change date and time" 1 | tee -a "$REPORT"
+  if dump >"$dir/plan-date.xml" && grep -qE 'text="OK"' "$dir/plan-date.xml" && grep -qiE 'text="cancel"' "$dir/plan-date.xml"; then
+    tap "OK" 1 | tee -a "$REPORT"
+    if dump >"$dir/plan-time.xml" && grep -qE 'text="OK"' "$dir/plan-time.xml"; then
+      tap "OK" 1 | tee -a "$REPORT"
+      dump >"$dir/plan-picked.xml" && has_label "$dir/plan-picked.xml" "Change date and time" || miss "Plan after the pickers"
+      log "    date dialog, then time dialog, then back on Plan"
+    else miss "the time dialog"; fi
+  else miss "the date dialog"; fi
+  # The tiles are the end of the list: scroll to them, then measure.
+  scroll_bottom | tee -a "$REPORT"
+  dump >"$dir/plan-tiles.xml" || miss "the screen after scrolling"
+  dp=$(A shell wm density | grep -oE '[0-9]+$' | tail -n 1)
+  if out=$(node check.mjs widths "$dir/plan-tiles.xml" "$((dp / 160))" "Fire smoker" "Pellets" "Conflicts"); then
+    log "    tiles: equal widths on one row (within 1 dp)"
+  else problems "$out"; fi
+  shot "$dir/plan-tiles.png"
+
+  launch "dev/plan?seed=empty" || { result "FAIL  plan $s: app did not open (empty)"; return; }
+  sleep 1
+  dump >"$dir/plan-empty.xml" || { result "FAIL  plan $s: could not read the empty screen"; return; }
+  has_text "$dir/plan-empty.xml" "What are we cooking?" || miss "What are we cooking?"
+  for want in "Add food" "Cook a past plan again" "Change date and time"; do
+    has_label "$dir/plan-empty.xml" "$want" || miss "$want"
+  done
+  if has_label "$dir/plan-empty.xml" "Start cook"; then ok=0; log "    Start cook shows on the empty plan"; fi
+  shot "$dir/plan-empty.png"
+  if [ $ok = 1 ]; then result "PASS  plan $s"; else result "FAIL  plan $s"; fi
+}
+
+read -r -a SCALES <<<"${DEVICE_SCALES:-1.15 1.3}"
+for s in "${SCALES[@]}"; do
   A shell settings put system font_scale "$s"
   dir="$OUT/$s"
   mkdir -p "$dir"
@@ -612,6 +694,14 @@ if [[ " ${TESTS[*]} " == *" legacy-import "* ]] && [ -f "$OUT/1.15/import-partia
     "Partial 115%=$OUT/1.15/import-partial.png" "Fresh 115%=$OUT/1.15/import-fresh.png" \
     "Full 130%=$OUT/1.3/import-full.png" "Partial 130%=$OUT/1.3/import-partial.png" \
     "Fresh 130%=$OUT/1.3/import-fresh.png" && IMAGES+=("$OUT/legacy-import.png")
+fi
+if [[ " ${TESTS[*]} " == *" plan "* ]]; then
+  plan_imgs=()
+  for s in "${SCALES[@]}"; do
+    pct=$(awk -v s="$s" 'BEGIN { printf "%d", s * 100 + 0.5 }')
+    plan_imgs+=("Plan $pct%=$OUT/$s/plan-main.png" "Tiles $pct%=$OUT/$s/plan-tiles.png" "Empty $pct%=$OUT/$s/plan-empty.png")
+  done
+  python3 -I compose.py "$OUT/plan.png" "${plan_imgs[@]}" && IMAGES+=("$OUT/plan.png")
 fi
 log ""
 log "=== device summary ==="

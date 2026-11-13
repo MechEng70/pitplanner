@@ -9,3 +9,9 @@ spike	dev/spike	top	moves	Less	5
 spike	dev/spike	top	moves	250F	1
 spike	dev/spike	top	moves	Start at	1
 spike-bottom	dev/spike	bottom	moves	More	5
+# Plan (T-017 PR-3): flipping Ready by / Start at re-times the plan; the toggle and everything above it stay.
+# plan-bottom starts scrolled to the tiles: nothing may shrink and make the view clamp.
+plan	dev/plan?seed=mockup	top	stays	Start at	1
+plan	dev/plan?seed=mockup	top	stays	Ready by	1
+plan-bottom	dev/plan?seed=mockup	bottom	stays	Start at	1
+plan-bottom	dev/plan?seed=mockup	bottom	stays	Ready by	1

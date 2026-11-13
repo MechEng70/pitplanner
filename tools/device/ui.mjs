@@ -51,6 +51,41 @@ export function findByLabel(nodes, label) {
   return hits.find(n => n.clickable || /EditText/.test(n.cls)) ?? hits[0] ?? null;
 }
 
+/** The element whose accessibility label starts with `prefix` (a tile is labelled "Fire smoker 6:20 AM"). */
+export const findByPrefix = (nodes, prefix) => nodes.find(n => n.desc.startsWith(prefix)) ?? null;
+
+/**
+ * T-017 PR-4: the elements labelled `prefixes` share one row in equal parts. Problems as lines: one missing,
+ * not on the same row (tops differ), or any two widths more than `tolPx` apart.
+ */
+export function unequalWidths(nodes, prefixes, tolPx) {
+  const found = prefixes.map(p => ({ p, n: findByPrefix(nodes, p) }));
+  const problems = found.filter(f => !f.n).map(f => `"${f.p}" is not on screen`);
+  const on = found.filter(f => f.n);
+  if (on.length < 2) return problems;
+  const width = f => f.n.b.r - f.n.b.l;
+  const widths = on.map(width);
+  if (Math.max(...widths) - Math.min(...widths) > tolPx)
+    problems.push(`widths differ: ${on.map(f => `${f.p} ${width(f)} px`).join(', ')}`);
+  if (new Set(on.map(f => f.n.b.t)).size > 1)
+    problems.push(`not on one row: ${on.map(f => `${f.p} top ${f.n.b.t}`).join(', ')}`);
+  return problems;
+}
+
+/**
+ * T-017 acceptance: each of `labels` ends at or above the top of the pinned `footer` control, i.e. it can be
+ * read and tapped without scrolling. Problems as lines.
+ */
+export function notAbove(nodes, labels, footer) {
+  const foot = findByLabel(nodes, footer);
+  if (!foot) return [`"${footer}" is not on screen`];
+  return labels.flatMap(label => {
+    const n = findByLabel(nodes, label);
+    if (!n) return [`"${label}" is not on screen`];
+    return n.b.b <= foot.b.t ? [] : [`"${label}" ends at ${n.b.b} px, below the top of "${footer}" (${foot.b.t} px)`];
+  });
+}
+
 /** On screen and not cut by `bottomPx` (the keyboard's top or the screen's height). */
 export const fullyVisible = (n, topPx, bottomPx) => n.b.t >= topPx && n.b.b <= bottomPx && n.b.b > n.b.t;
 

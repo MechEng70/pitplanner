@@ -93,13 +93,25 @@ export function Chips({
               o.disabled && 'border-dashed',
             )}
           >
-            <Text
-              variant={small ? 'caption' : 'body'}
-              weight={on ? '500' : '400'}
-              tone={o.disabled ? 'tertiary' : on ? 'onAccentContainer' : 'soft'}
-            >
-              {o.label}
-            </Text>
+            {/* The selected label is medium weight and wider. An unseen copy in that weight sizes every
+                chip, selected or not, so selecting one moves nothing (T-017 PR-3). */}
+            <View>
+              <View aria-hidden importantForAccessibility="no-hide-descendants" style={styles.unseen}>
+                <Text variant={small ? 'caption' : 'body'} weight="500">
+                  {o.label}
+                </Text>
+              </View>
+              <View style={styles.over}>
+                <Text
+                  center
+                  variant={small ? 'caption' : 'body'}
+                  weight={on ? '500' : '400'}
+                  tone={o.disabled ? 'tertiary' : on ? 'onAccentContainer' : 'soft'}
+                >
+                  {o.label}
+                </Text>
+              </View>
+            </View>
             {o.hint ? (
               <Text tone="tertiary" weight="400" style={styles.hint}>
                 {o.hint}
@@ -259,6 +271,54 @@ export function Stepper({
 }
 
 /** Label above a control, optional note below. */
+/**
+ * A field that opens a menu (ui.css .select): caption, value, and anything `trailing` before the edge
+ * (Plan's smoker temp shows the fire time and a chevron). Without `onPress` it is a read-only field with the
+ * same look. `open` is the menu showing: accent border and caption.
+ */
+export function SelectField({
+  label,
+  value,
+  trailing,
+  open,
+  onPress,
+}: {
+  label: string;
+  value: React.ReactNode;
+  trailing?: React.ReactNode;
+  open?: boolean;
+  onPress?: () => void;
+}) {
+  const className = cn(
+    'min-h-[60px] w-full shrink-0 flex-row items-center gap-2.5 overflow-hidden rounded-control',
+    open ? 'border-2 border-ember bg-field-open px-[15px] py-[7px]' : 'border border-outline px-4 py-2',
+  );
+  const body = (
+    <>
+      <View className="min-w-0 flex-1 gap-0.5">
+        <Text variant="caption" tone={open ? 'accent' : 'secondary'}>
+          {label}
+        </Text>
+        <Text variant="select">{value}</Text>
+      </View>
+      {trailing}
+    </>
+  );
+  if (!onPress) return <View className={className}>{body}</View>;
+  return (
+    <Pressable
+      className={className}
+      onPress={onPress}
+      role="button"
+      aria-label={label}
+      aria-expanded={!!open}
+      android_ripple={RIPPLE}
+    >
+      {body}
+    </Pressable>
+  );
+}
+
 export function Field({ label, note, children }: { label: string; note?: React.ReactNode; children: React.ReactNode }) {
   return (
     <View className="gap-2">
@@ -276,6 +336,9 @@ export function Field({ label, note, children }: { label: string; note?: React.R
 }
 
 const styles = StyleSheet.create({
+  unseen: { opacity: 0 },
+  // The label's own box is the chip's full width, so its bounds do not change with its weight either.
+  over: { ...StyleSheet.absoluteFill, justifyContent: 'center' },
   hint: { fontSize: chipHintSize, lineHeight: Math.round(chipHintSize * lineHeightRatio) },
   pressed: { ...StyleSheet.absoluteFill, backgroundColor: withAlpha(colors.text, 0.08), pointerEvents: 'none' },
 });
