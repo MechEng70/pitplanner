@@ -96,6 +96,16 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
   Gear version (T-026, `grantDebugPass()`) are the only way in. The gate retries Snyk once on a server or
   network error. T-016: list every phone action and wait for Jason's yes before touching the phone.
   T-037: run the `alarm` device test on an image per tester Android version below 16 (Jason gives the list).
+- **Waiting on Jason (2026-11-13, end of the ninth session):**
+  1. T-017 review (committed `d096d53`, he has the summary). Until he approves it, do not start T-018.
+  2. In that review: the new line "Not in this version of Pit Planner" (a saved item the rules do not
+     know) needs his OK or his wording; and the emulator's taller display assumes his phone shows no
+     gesture bar, to be confirmed on the phone.
+  3. His word that the Saturday cook is done. That lifts the phone hold below and unblocks: the T-016 phone
+     half (approved list in TASKS T-016), the T-017 phone check against mockups 04-05, and reinstalling the
+     dev build on the phone (it needs a rebuild: date picker and alarm module).
+  4. The Android versions his testers use, for T-037 (alarm device test per version below 16).
+  Nothing is uncommitted; `main` is not pushed (he pushes when he says so).
 - **DO NOT TOUCH THE PHONE (Jason, 2026-11-13).** A real cook is running in his Pit Planner 0.2.0 with
   alarms through Sat 2026-11-14 17:00. Until he says the cook is done: no adb commands to the phone, no
   installs, no reads; emulator only; a task that needs the phone skips that step and notes it.
