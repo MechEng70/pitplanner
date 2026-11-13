@@ -434,7 +434,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - Tests: `src/db/repos/repos.test.ts` (31 cases).
 
 ### T-010 App store over repositories
-- **Status:** todo
+- **Status:** done (see `git log --grep T-010`)
 - **Goal:** app state (gear, units, draft, rates, totals, locks, history, cook, flags, firstRun) loads from
   SQLite and writes through on every change (D-5).
 - **Files:** `src/lib/store.tsx` (React context; port of `legacy/src/lib/store.tsx`), `src/lib/cook.ts` (types
@@ -463,6 +463,43 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   switch cannot exist in a production build (test).
 - **Device testing (Jason):** none (emulator). Jason judges the error screen screenshots at 115% and 130%
   against the kit gallery: same components, plain copy, nothing cut.
+- **Notes (done 2026-11-12):**
+  - Before the task (Jason's T-009 review; commit "T-009 follow-ups"): migrations frozen by checksum
+    (`tools/migrations.test.mjs`, `npm run migrations:freeze`, CLAUDE.md rule); `cook_history` CHECK
+    (`ended_early = 1` requires `late_min IS NULL`); quarantine (`src/db/repos/quarantine.ts`, TECH-DESIGN
+    section 5); `Db.transaction` inside a transaction joins the outer one.
+  - Store: `src/lib/store.tsx` (`StoreProvider repos clock`, `useStore`, `loadState`, `planInput`,
+    `defaultServe`). Writes are synchronous, then state updates; writers read the latest state from a ref, so
+    two changes in one event build on each other. New against 0.2.0: `draftLost`, `setUpdate`; `setGear` ends
+    the first run when it saves gear (as a restart would). Not in the store yet: alarm sync after a cook
+    change (T-015) and the update check on launch and resume (its own task; `setUpdate` is ready for it).
+    Its test is `src/test/store.test.tsx` (src/lib may not import React Native test tools); helpers
+    `src/test/store.tsx` (`testRepos`, `storeWrapper`) for screen tests.
+  - Startup: `app/_layout.tsx` -> `openAppDb(__DEV__)` (`src/db/appDb.ts`, opened once) -> `StoreProvider`,
+    or `MigrationErrorScreen`. A database that cannot be opened at all is the same screen with Export off.
+  - Error screen `src/screens/shared/MigrationError.tsx`: kit `Text` (the sentence), primary `Button`
+    "Export my data", text `Button` "Show details" / "Hide details", details in `InfoBox`; a failed export
+    shows the kit `Banner` "The export did not work. Try again." Sentences: "The update failed, but your data
+    is safe." and, for a database from a newer app, "Your data is from a newer version of Pit Planner, and it
+    is safe."
+  - Export: `src/db/export.ts` (`exportDump`, `exportFileName`), shared by `src/platform/shareFile.ts`
+    (expo-file-system cache file + expo-sharing; both added, `~58.0.x`).
+  - Draft notice: `state.draftLost` shows the kit `Banner` (warn) "Your saved plan could not be loaded." on
+    the Plan placeholder; T-017 carries it into the real screen.
+  - Dev only: `pitplanner://dev/db` (`app/dev/db.tsx`, redirects to Plan outside dev builds) shows
+    `user_version`, journal mode, tables and units; `?set=C|F` saves units through the store; `?fail=1` arms
+    one failing start (`startupMigrations`: the flag is deleted, a throwing migration is appended). A release
+    build never reads the flag (`appDb.test.ts`).
+  - Emulator (`npm run device -- --only db,migration-error`, real expo-sqlite, 115% and 130%): all pass.
+    `db`: `user_version 1`, `journal wal`, the six tables; units saved as C then F are there after a kill and
+    restart. `migration-error`: armed, next start shows the sentence, Export my data and Show details, no
+    tabs; details show after the tap; Export my data opens the share sheet; the start after is normal with
+    the same version, tables and units. Screenshot `docs/fidelity/t010-migration-error.png`. The grey gear
+    at the top right is the Expo dev client's own button (dev builds only), not part of the screen.
+  - Device runner fixes found on the way: a just-booted emulator could still show its keyguard, so the run
+    stopped with "locked" (now asks up to 15 s; the phone is never unlocked); the first start after an
+    install could still be loading when the `set` link arrived, so `db` now waits for the saved units on
+    screen before the kill.
 
 ### T-011 `pit-legacy` module
 - **Status:** todo
@@ -557,6 +594,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Files:** `app/(tabs)/plan.tsx`, `src/screens/plan/PlanScreen.tsx`, `src/screens/plan/PlanEmpty.tsx`, tests,
   `docs/fidelity/rn-04-*.png`, `rn-05-*.png`.
 - **Depends on:** T-005, T-010.
+- **Draft notice (Jason, 2026-11-12):** when `state.draftLost` is true (a saved plan could not be loaded) Plan
+  shows the kit `Banner` (warn) "Your saved plan could not be loaded." (`DRAFT_LOST`, today in the T-002
+  placeholder with its tests); it goes away when the plan is changed. Keep it and its tests in the real screen;
+  it must not sit above a control in a way that breaks PR-3 when it disappears.
 - **Acceptance:** at 115% three cards and Add food fit above Start cook, two at 130% (HANDOFF decision).
 - **Tests:** RNTL: empty state actions; cards show start time and time on heat from `buildPlan`; tile values;
   Start cook disabled with no food.
@@ -887,7 +928,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Status:** todo
 - **Goal:** Gear > Export shares a JSON dump of cookers, rates and history (SPEC: history exportable); importing
   that file restores it.
-- **Files:** `src/db/export.ts`, `src/screens/gear/GearScreen.tsx`, tests.
+- **Files:** `src/db/export.ts` (the dump exists since T-010: every table, raw, including quarantine rows; this
+  task adds reading it back), `src/screens/gear/GearScreen.tsx`, tests.
 - **Depends on:** T-028, T-029.
 - **Acceptance:** export on the dev build, import on a fresh install, rates and history match.
 - **Tests:** Jest round trip; bad-file validation.

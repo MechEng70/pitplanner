@@ -1,9 +1,9 @@
-# Handoff (2026-11-12, eighth session: T-007 follow-ups, T-008, T-009)
+# Handoff (2026-11-12, eighth session: T-007 follow-ups, T-008, T-009, T-010)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## START HERE: scaffold, gate, theme, kit, device tests and release build, SQLite migrations and repositories in place (T-002..T-009 done), T-010 next
+## START HERE: scaffold, gate, theme, kit, device tests and release build, SQLite storage and the app store in place (T-002..T-010 done), T-011 next
 
 - Root is now the Expo app: `app.config.ts` (variants by `APP_VARIANT`, versionCode from package.json),
   `app/` routes (tabs Plan, Cook, Gear placeholders), `src/lib/` pure helpers, `src/platform/types.ts`
@@ -58,9 +58,15 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
   `history`, `kv`); corrupt rows read as defaults, never throw. `Draft` and `parseDraft` are in
   `src/lib/draft.ts`. Schema v1 gained `cook_history.ended_early` (0001 edited: allowed only because 0.3.0 has
   not shipped; after that, new migrations only).
-- T-010 also builds the migration error screen (Jason's yes: kit components only, one sentence, Export my
-  data, expandable details) and must open and migrate the real expo-sqlite database on the emulator,
-  including a forced migration failure (acceptance in TASKS T-010).
+- Store (T-010): `src/lib/store.tsx` (`useStore`) over the repositories; every change is written at once.
+  `app/_layout.tsx` opens and migrates the database (`src/db/appDb.ts`) before any screen; a failure shows
+  `MigrationErrorScreen` (Export my data via `src/db/export.ts` + `src/platform/shareFile.ts`). Screen tests
+  wrap with `storeWrapper()` from `src/test/store.tsx`.
+- Migrations are frozen (CLAUDE.md): a schema change is a new file + `npm run migrations:freeze`; the gate
+  fails on an edited one. Unreadable stored values are quarantined to `kv` (`quarantine:<origin>:<time>`)
+  before a write replaces them; a lost plan draft shows a notice on Plan (`state.draftLost`).
+- Device tests `db` and `migration-error` run the real expo-sqlite database on the emulator
+  (`pitplanner://dev/db`, `?set=C`, `?fail=1`; dev builds only).
 - T-017 has PR-4 (equal-width tiles, mockup 05; try `flex: 1` first) and two PR-3 fixes to make: selected
   chips reserve their bold width, and nothing jumps when content below shrinks while scrolled to the bottom.
 - Tab bar is the kit `BottomNav` (0.2.0 icon pills); T-059 (whole turkey, cited FSIS numbers) follows T-019.
@@ -279,7 +285,7 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 1. Done 2026-11-12: Jason approved the stack-change plan; T-001 phone check on 0.2.0 passed.
 2. Jason: push `main` when ready (plan docs and T-001 are local only).
 3. Done: Maestro CLI installed (2.12.1, `~/.maestro/bin`).
-4. T-002..T-009 done (R-1 closed, D-4 decided and confirmed). Next: T-010,
+4. T-002..T-010 done (R-1 closed, D-4 decided and confirmed). Next: T-011,
    per WBS "Suggested order" (T-058 now sits between T-019 and the Cook screen).
    Push the `v0.2.0` tag only when Jason says.
 5. Still open from before (carried into the plan): real cook with alarms through a reboot (now T-037 on the Expo

@@ -184,7 +184,19 @@ screens and `historyView.ts` use.
 - `PRAGMA foreign_keys = ON` and `journal_mode = WAL` at open.
 - Tests (Jest, `better-sqlite3` behind the same `Db` interface): 0 -> latest matches a schema snapshot; for
   every version N, fixture data at N migrates to latest intact; every repository round-trips.
-- Export: Gear > Export shares a JSON dump through the share sheet (T-036).
+- **Unreadable values are quarantined, never silently lost** (Jason, 2026-11-12). A read never throws and never
+  writes: a corrupt value reads as its default. Before a write replaces or deletes a value that cannot be
+  read (a `kv` value, a cooker profile, the active cook, a rate, a history item's options), its raw text is
+  copied in the same transaction to a `kv` row `quarantine:<origin>:<epoch ms>` holding `{ origin, at, raw }`
+  (`src/db/repos/quarantine.ts`). A plan draft that cannot be loaded shows a one-line notice on Plan
+  (`state.draftLost`) until the plan is changed.
+- Export: `src/db/export.ts` dumps every row of every table as JSON (so it includes the quarantine rows and
+  works on a database stuck at an old version). The migration error screen shares it (T-010); Gear > Export
+  and import come in T-036.
+- Startup: `app/_layout.tsx` calls `openAppDb` (`src/db/appDb.ts`) before any screen. `ok` builds the store
+  over the repositories; a failure shows the migration error screen (one sentence, Export my data, details)
+  with the database left open at its old version. Dev builds can force one failing start for the device test
+  (`pitplanner://dev/db?fail=1`); release builds never read that flag.
 
 **Can the 0.2.0 data be migrated? Yes.** Same app ID and signing key means Android keeps the app's data
 directory across the upgrade. The Capacitor app stored:

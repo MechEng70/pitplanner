@@ -1,7 +1,7 @@
 #!/bin/bash
 # One unattended device pass on the dev build (TASKS T-006).
 #   npm run device -- [--phone] [--no-build] [--only <test>]...
-#   tests: smoke, sheet-keyboard, stable-controls (default: all). --only repeats or takes a comma list.
+#   tests: smoke, sheet-keyboard, stable-controls, db, migration-error (default: all). --only repeats or takes a comma list.
 # Target: the test emulator (tools/device/avd.sh; started headless if needed and stopped again), or with
 # --phone the real phone, only for tests that need real hardware (TASKS "Real phone"; Jason, 2026-11-12).
 # Safety on the phone (Jason's own): stops if it is locked; backs up the dev build's data and restores it on
@@ -15,7 +15,7 @@ set -uo pipefail
 . "$(dirname "$0")/lib.sh"
 cd "$DEVICE_DIR" || exit 1
 
-ALL=(smoke sheet-keyboard stable-controls)
+ALL=(smoke sheet-keyboard stable-controls db migration-error)
 TESTS=()
 NOBUILD=""
 export DEVICE_TARGET=emulator
@@ -55,7 +55,15 @@ log "target: $DEVICE_TARGET ($ANDROID_SERIAL)"
 
 # --- safety: wake, refuse if locked, settings saved and restored on exit --------------------------------
 A shell input keyevent KEYCODE_WAKEUP
-if is_emulator; then A shell wm dismiss-keyguard; fi
+# A just-booted emulator can still be showing its (swipe) keyguard for a few seconds: T-010's first run
+# stopped here with "locked". Ask again until it is gone; the phone is never unlocked this way.
+if is_emulator; then
+  for _ in $(seq 15); do
+    A shell wm dismiss-keyguard
+    A shell dumpsys window | grep -q "isKeyguardShowing=true" || break
+    sleep 1
+  done
+fi
 if A shell dumpsys window | grep -q "isKeyguardShowing=true"; then
   echo "Phone is locked. Unlock it, then run again."
   exit 1
@@ -239,6 +247,86 @@ test_stable_controls() {
   finish_target
 }
 
+# A line of text on the screen (uiautomator `text=`), exactly.
+has_text() { grep -qF "text=\"$2\"" "$1"; }
+SCHEMA_VERSION=$(find "$ROOT/src/db/migrations" -name '[0-9][0-9][0-9][0-9]_*.ts' | wc -l)
+DB_TABLES="tables active_cook, cook_history, cook_history_items, cookers, kv, rate_overrides"
+
+# T-010: the real expo-sqlite database opens and migrates (version, WAL, the six tables), and a change made
+# through the store is still there after the app is killed and started again. The dev database screen
+# (pitplanner://dev/db) saves the units and shows what the database holds; `launch` force-stops first, so the
+# second launch can only know the units from the database. C then F, so each pass sees a real change.
+test_db() {
+  local s="$1" dir="$2" ok=1 u w want saved
+  for u in C F; do
+    [ "$u" = C ] && w=kg || w=lb
+    launch "dev/db?set=$u" || { result "FAIL  db $s: app did not open"; return; }
+    # The change must be on screen before the kill; otherwise this would test the link, not the database.
+    # (The first start after an install can still be loading the bundle when the link arrives.)
+    saved=""
+    for _ in $(seq 10); do
+      if dump >"$dir/db-$u-set.xml" && has_text "$dir/db-$u-set.xml" "units $u $w"; then saved=1; break; fi
+      A shell am start -W -a android.intent.action.VIEW -d "pitplanner://dev/db?set=$u" "$PKG" >/dev/null
+      sleep 2
+    done
+    if [ -z "$saved" ]; then ok=0; log "    the app did not show units $u $w after saving them"; continue; fi
+    log "    saved: units $u $w"
+    launch "dev/db" || { result "FAIL  db $s: app did not open after the kill"; return; }
+    if ! dump >"$dir/db-$u.xml"; then ok=0; log "    could not read the screen"; continue; fi
+    for want in "user_version $SCHEMA_VERSION" "journal wal" "$DB_TABLES" "units $u $w" "failure armed no"; do
+      if has_text "$dir/db-$u.xml" "$want"; then log "    after kill and restart: $want"
+      else ok=0; log "    MISSING after kill and restart: $want"; fi
+    done
+  done
+  shot "$dir/db.png"
+  if [ $ok = 1 ]; then result "PASS  db $s"; else result "FAIL  db $s"; fi
+}
+
+# T-010: a forced migration failure (dev builds only; armed from the dev database screen, used up by the next
+# start) shows the error screen instead of the app. The sentence and Export my data show, the details only
+# after Show details; Export my data opens the Android share sheet (checked by window focus and closed again:
+# it lists other apps, so it is never dumped or photographed); the start after that is normal, with the
+# version and the data as they were.
+test_migration_error() {
+  local s="$1" dir="$2" ok=1 units focus want
+  miss() { ok=0; log "    MISSING: $1"; }
+  launch "dev/db?fail=1" || { result "FAIL  migration-error $s: app did not open"; return; }
+  dump >"$dir/error-armed.xml" || { result "FAIL  migration-error $s: could not read the screen"; return; }
+  has_text "$dir/error-armed.xml" "failure armed yes" || miss "failure armed yes"
+  units=$(grep -oE 'text="units [CF] (kg|lb)"' "$dir/error-armed.xml" | head -n 1)
+
+  launch "" || { result "FAIL  migration-error $s: app did not open"; return; }
+  dump >"$dir/error.xml" || { result "FAIL  migration-error $s: could not read the error screen"; return; }
+  has_text "$dir/error.xml" "The update failed, but your data is safe." || miss "the sentence"
+  grep -q 'Export my data' "$dir/error.xml" || miss "Export my data"
+  grep -q 'Show details' "$dir/error.xml" || miss "Show details"
+  if grep -q 'Forced by' "$dir/error.xml"; then ok=0; log "    details are showing before Show details"; fi
+  if grep -q 'content-desc="Plan"' "$dir/error.xml"; then ok=0; log "    the app's tabs are showing"; fi
+  shot "$dir/migration-error.png"
+
+  tap "Show details" 1 | tee -a "$REPORT"
+  dump >"$dir/error-details.xml" || miss "the screen after Show details"
+  grep -q 'migration [0-9]* (forced_failure) failed: Forced by the dev database screen' "$dir/error-details.xml" ||
+    miss "the error details"
+  shot "$dir/migration-error-details.png"
+
+  tap "Export my data" 1 | tee -a "$REPORT"
+  sleep 2
+  focus=$(A shell dumpsys window | grep -m1 mCurrentFocus | tr -d '\r')
+  if [[ "$focus" =~ intentresolver|ChooserActivity|ResolverActivity ]]; then log "    Export my data: share sheet opened"
+  else ok=0; log "    Export my data: no share sheet (focus: ${focus##*mCurrentFocus=})"; fi
+  A shell input keyevent KEYCODE_BACK
+  sleep 1
+
+  launch "dev/db" || { result "FAIL  migration-error $s: app did not open after the failure"; return; }
+  dump >"$dir/error-after.xml" || miss "the screen after the failure"
+  for want in "user_version $SCHEMA_VERSION" "$DB_TABLES" "failure armed no"; do
+    has_text "$dir/error-after.xml" "$want" || miss "after the failure: $want"
+  done
+  [ -n "$units" ] && grep -qF "$units" "$dir/error-after.xml" || miss "after the failure: the same ${units:-units}"
+  if [ $ok = 1 ]; then result "PASS  migration-error $s"; else result "FAIL  migration-error $s"; fi
+}
+
 for s in 1.15 1.3; do
   A shell settings put system font_scale "$s"
   dir="$OUT/$s"
@@ -258,6 +346,11 @@ if [[ " ${TESTS[*]} " == *" sheet-keyboard "* ]]; then
   python3 -I compose.py "$OUT/sheet-keyboard.png" "Weight 115%=$OUT/1.15/sheet-keyboard-Weight.png" \
     "Name 115%=$OUT/1.15/sheet-keyboard-Name.png" "Weight 130%=$OUT/1.3/sheet-keyboard-Weight.png" \
     "Name 130%=$OUT/1.3/sheet-keyboard-Name.png" && IMAGES+=("$OUT/sheet-keyboard.png")
+fi
+if [[ " ${TESTS[*]} " == *" migration-error "* ]]; then
+  python3 -I compose.py "$OUT/migration-error.png" "Error 115%=$OUT/1.15/migration-error.png" \
+    "Details 115%=$OUT/1.15/migration-error-details.png" "Error 130%=$OUT/1.3/migration-error.png" \
+    "Details 130%=$OUT/1.3/migration-error-details.png" && IMAGES+=("$OUT/migration-error.png")
 fi
 log ""
 log "=== device summary ==="

@@ -62,7 +62,10 @@ export function migrate(db: Db, migrations: readonly Migration[]): MigrateResult
   return { from, to: latest };
 }
 
-export type OpenResult = { ok: true; db: Db; from: number; to: number } | { ok: false; error: MigrationError };
+export type OpenResult =
+  | { ok: true; db: Db; from: number; to: number }
+  // `db` stays open at its old version so the error screen can export it; null when it could not be opened.
+  | { ok: false; db: Db | null; error: MigrationError };
 
 /**
  * Set the connection up (foreign keys, WAL) and migrate. A migration failure comes back as a value, not a
@@ -75,7 +78,7 @@ export function openMigrated(db: Db, migrations: readonly Migration[]): OpenResu
   try {
     return { ok: true, db, ...migrate(db, migrations) };
   } catch (e) {
-    if (e instanceof MigrationError) return { ok: false, error: e };
+    if (e instanceof MigrationError) return { ok: false, db, error: e };
     throw e;
   }
 }
