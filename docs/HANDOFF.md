@@ -3,6 +3,48 @@
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
+## Restart on Monday 2026-11-16 (written Friday 2026-11-13, end of the tenth session)
+
+Where things stand:
+
+- `main` is clean and not pushed (Jason pushes when he says so). Last work commit: `0707878` (T-017 review
+  fixes). `npm run check` passed on it.
+- Device suite on the real-size emulator: everything passes except `plan` and `plan-3button` at 115%. That
+  failure is on purpose: Jason's 115% fit target is not met and he has not set a new one yet.
+- Emulator and Metro are stopped. The emulator is 1080x2376, gesture navigation, font scale 1.3 (as found).
+- The phone was not touched. `tools/device/PHONE-BLOCKED` is in place. The cook's alarms end Sat 2026-11-14
+  17:00, but the hold lifts only when Jason says the cook is done. Do not read it from the date.
+
+Nothing can start until Jason answers. Ask him these four first (he can paste the block back filled in):
+
+```
+a. New Plan screenshots (docs/fidelity/rn-05-plan.png, rn-05-plan-3button.png, rn-04-plan-empty.png):
+   approved, or what to change. At 100% Add food fades out above Start cook with its label still readable:
+   OK or not?
+b. 115% fit target, now that summaries wrap. Recommended: two cards whole, the third may end in the fade,
+   Add food by scrolling. Yes, or your own target.
+c. Is the Saturday cook done (phone hold lifted)?
+d. Tester Android versions for T-037, or "coming later".
+```
+
+What each answer unblocks:
+
+- **b decided:** change the `1.15)` case in `plan_fit` (`tools/device/run.sh`), the `plan` row in
+  `tools/device/README.md`, the acceptance and status lines of TASKS T-017 and the fit line under "Decisions
+  from Jason" below. Then `npm run device -- --no-build --only plan,plan-3button` must pass at 115% and 130%.
+- **a approved and b decided:** T-017 is closed on the emulator. Start T-018 (TASKS; mockups 06 and 07).
+- **a not approved:** fix what he names first (same loop as this session: failing test, fix, `npm run check`,
+  device run, new screenshots, stop).
+- **c yes:** delete `tools/device/PHONE-BLOCKED`, then list every phone action and wait for his yes before
+  the first one. Waiting on the phone: rebuild and reinstall the dev build (date picker and alarm module are
+  new), the T-016 phone half (approved list in TASKS T-016), the T-017 check against mockups 04-05. On that
+  check also read the phone's status bar and navigation bar heights: the emulator's are 43 dp and 24 dp, the
+  phone's status bar is not known, and Plan's fit depends on it.
+- **d answered:** record the versions in TASKS T-037.
+
+To keep the session short: TASKS.md is 1,500 lines, so read only the entries needed (`grep -n '^### T-017'`,
+T-018 and "Review fixes"), not the whole file.
+
 ## START HERE: scaffold, gate, theme, kit, device tests and release build, SQLite storage, the app store, the import from 0.2.0 and the alarm module, its tests and wiring, and the Plan tab in place (T-002..T-015 and T-017 done, T-016 half), T-018 next
 
 - Root is now the Expo app: `app.config.ts` (variants by `APP_VARIANT`, versionCode from package.json),
