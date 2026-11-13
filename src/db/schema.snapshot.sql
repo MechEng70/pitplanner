@@ -4,8 +4,9 @@ CREATE TABLE active_cook (
 
 CREATE TABLE cook_history (
   id TEXT PRIMARY KEY, served_at INTEGER NOT NULL, pit_temp_f REAL NOT NULL,
-  late_min REAL, ended_early INTEGER NOT NULL DEFAULT 0,
-  notes TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL);
+  late_min REAL, ended_early INTEGER NOT NULL DEFAULT 0 CHECK (ended_early IN (0, 1)),
+  notes TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL,
+  CHECK (ended_early = 0 OR late_min IS NULL));
 
 CREATE TABLE cook_history_items (
   id INTEGER PRIMARY KEY, cook_id TEXT NOT NULL REFERENCES cook_history(id) ON DELETE CASCADE,

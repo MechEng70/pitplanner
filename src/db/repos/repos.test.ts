@@ -103,7 +103,7 @@ describe('settings (kv)', () => {
 
   test('kv remove', () => {
     r.settings.setUnits({ temp: 'C', weight: 'kg' }, NOW);
-    r.kv.remove('units');
+    r.kv.remove('units', NOW);
     expect(r.settings.units()).toEqual({ temp: 'F', weight: 'lb' });
   });
 });
@@ -187,7 +187,7 @@ describe('active cook', () => {
     r.activeCook.save(later, NOW + 5);
     expect(r.activeCook.load()).toEqual(later);
     expect(db.all('SELECT id FROM active_cook')).toEqual([{ id: 1 }]);
-    r.activeCook.clear();
+    r.activeCook.clear(NOW);
     expect(r.activeCook.load()).toBeNull();
   });
 
@@ -264,10 +264,10 @@ describe('cook history', () => {
   test('remove deletes the record and its items', () => {
     r.history.save(record('a'), NOW);
     r.history.save(record('b'), NOW);
-    r.history.remove('a');
+    r.history.remove('a', NOW);
     expect(r.history.list().map(x => x.id)).toEqual(['b']);
     expect(db.get('SELECT COUNT(*) AS n FROM cook_history_items')).toEqual({ n: 2 });
-    r.history.remove('missing');
+    r.history.remove('missing', NOW);
   });
 
   test('corrupt options read as no options; the cook still loads and still counts', () => {
@@ -286,5 +286,124 @@ describe('cook history', () => {
     (bad.items[1]!.log as { foodId: unknown }).foodId = null; // NOT NULL column: the second item fails
     expect(() => r.history.save(bad, NOW)).toThrow();
     expect(r.history.list()).toEqual([record('a')]);
+  });
+});
+
+describe('quarantine: an unreadable value is copied aside before a write replaces it', () => {
+  const draft: Draft = { mode: 'readyBy', at: saturday.at, pitTempF: 225, items: saturday.items };
+
+  test('nothing is quarantined when what was stored could be read', () => {
+    r.settings.setUnits({ temp: 'C', weight: 'kg' }, NOW);
+    r.settings.setUnits({ temp: 'F', weight: 'lb' }, NOW + 1);
+    r.settings.setDraft(draft, NOW);
+    r.settings.setDraft(draft, NOW + 1);
+    r.cookers.save(gear, NOW);
+    r.cookers.save(gear, NOW + 1);
+    r.rates.setRate('brisket', 0.75, NOW);
+    r.rates.setRate('brisket', 0.8, NOW + 1);
+    r.rates.setLock('brisket', true, NOW + 2);
+    r.history.save(record('a'), NOW);
+    r.history.save(record('a'), NOW + 1);
+    r.history.remove('a', NOW + 2);
+    expect(r.quarantined()).toEqual([]);
+  });
+
+  test('a corrupt draft: reading keeps it, the first save quarantines the raw text with its time', () => {
+    r.settings.setDraft(draft, NOW);
+    corrupt('UPDATE kv SET value = \'{"mode":"readyBy","items":\' WHERE key = \'draft\'');
+    expect(r.settings.readDraft()).toEqual({ value: null, corrupt: true });
+    expect(r.settings.readDraft()).toEqual({ value: null, corrupt: true });
+    expect(r.quarantined()).toEqual([]);
+    r.settings.setDraft(draft, NOW + 500);
+    expect(r.quarantined()).toEqual([
+      { key: `quarantine:kv:draft:${NOW + 500}`, origin: 'kv:draft', at: NOW + 500, raw: '{"mode":"readyBy","items":' },
+    ]);
+    expect(r.settings.readDraft()).toEqual({ value: draft, corrupt: false });
+    r.settings.setDraft({ ...draft, pitTempF: 250 }, NOW + 600);
+    expect(r.quarantined()).toHaveLength(1);
+  });
+
+  test('a missing draft is not corrupt', () => {
+    expect(r.settings.readDraft()).toEqual({ value: null, corrupt: false });
+  });
+
+  test('valid JSON of the wrong shape is quarantined too (units)', () => {
+    r.kv.set('units', { temp: 'K' }, NOW);
+    r.settings.setUnits({ temp: 'C', weight: 'kg' }, NOW + 1);
+    expect(r.quarantined().map(q => [q.origin, q.raw])).toEqual([['kv:units', '{"temp":"K"}']]);
+  });
+
+  test('kv.remove quarantines an unreadable value before deleting it', () => {
+    r.kv.set('update', 1, NOW);
+    corrupt("UPDATE kv SET value = 'not json' WHERE key = 'update'");
+    r.kv.remove('update', NOW + 1);
+    expect(r.quarantined().map(q => [q.origin, q.raw])).toEqual([['kv:update', 'not json']]);
+  });
+
+  test('two values quarantined from the same place in the same millisecond both stay', () => {
+    for (const bad of ['first{', 'second{']) {
+      r.kv.set('flags', {}, NOW);
+      corrupt('UPDATE kv SET value = ? WHERE key = ?', [bad, 'flags']);
+      r.settings.setFlags({ supportShown: true }, NOW + 1);
+    }
+    expect(r.quarantined().map(q => q.raw)).toEqual(['first{', 'second{']);
+    expect(new Set(r.quarantined().map(q => q.key)).size).toBe(2);
+  });
+
+  test('cookers: saving gear keeps the unreadable profile, not the readable ones', () => {
+    r.cookers.save(gear, NOW);
+    corrupt("UPDATE cookers SET profile = '{oops' WHERE kind = 'smoker'");
+    r.cookers.save({ ...r.cookers.load(), smoker: gear.smoker }, NOW + 1);
+    expect(r.quarantined().map(q => [q.origin, q.raw])).toEqual([['cookers:smoker:pb820', '{oops']]);
+    expect(r.cookers.load()).toEqual(gear);
+  });
+
+  test('active cook: save and clear both keep an unreadable cook first', () => {
+    const cook = newCook(saturday, buildPlan(rules, saturday), NOW);
+    r.activeCook.save(cook, NOW);
+    corrupt('UPDATE active_cook SET data = \'{"plan":5}\'');
+    r.activeCook.clear(NOW + 1);
+    r.activeCook.save(cook, NOW + 2);
+    corrupt("UPDATE active_cook SET data = 'x'");
+    r.activeCook.save(cook, NOW + 3);
+    expect(r.quarantined().map(q => [q.origin, q.at, q.raw])).toEqual([
+      ['active_cook', NOW + 1, '{"plan":5}'],
+      ['active_cook', NOW + 3, 'x'],
+    ]);
+  });
+
+  test('rates: replacing an unusable rate keeps the row as it was', () => {
+    r.rates.setRate('brisket', 0.75, NOW);
+    r.rates.setTotalHours('brisket', 9, NOW);
+    corrupt("UPDATE rate_overrides SET hr_per_lb = 'fast' WHERE food_id = 'brisket'");
+    r.rates.setTotalHours('brisket', 10, NOW + 1); // another column: the bad rate is still there, nothing lost yet
+    expect(r.quarantined()).toEqual([]);
+    r.rates.setRate('brisket', 0.8, NOW + 2);
+    const [q] = r.quarantined();
+    expect(q).toMatchObject({ origin: 'rate_overrides:brisket', at: NOW + 2 });
+    expect(JSON.parse(q!.raw)).toEqual({ food_id: 'brisket', hr_per_lb: 'fast', total_hours: 10, locked: 0 });
+    expect(r.rates.load().rates).toEqual({ brisket: 0.8 });
+  });
+
+  test('history: replacing or removing a cook keeps item options that could not be read', () => {
+    r.history.save(record('a'), NOW);
+    r.history.save(record('b'), NOW);
+    corrupt("UPDATE cook_history_items SET options = '{bad' WHERE food_id = 'brisket'");
+    r.history.save(record('a', { notes: 'Edited.' }), NOW + 1);
+    r.history.remove('b', NOW + 2);
+    expect(r.quarantined().map(q => [q.origin, q.at, q.raw])).toEqual([
+      ['cook_history_items:a:0', NOW + 1, '{bad'],
+      ['cook_history_items:b:0', NOW + 2, '{bad'],
+    ]);
+  });
+
+  test('a failed write quarantines nothing (same transaction)', () => {
+    r.history.save(record('a'), NOW);
+    corrupt("UPDATE cook_history_items SET options = '{bad' WHERE food_id = 'brisket'");
+    const bad = record('a');
+    (bad.items[1]!.log as { foodId: unknown }).foodId = null;
+    expect(() => r.history.save(bad, NOW + 1)).toThrow();
+    expect(r.quarantined()).toEqual([]);
+    expect(db.get("SELECT options FROM cook_history_items WHERE food_id = 'brisket'")).toEqual({ options: '{bad' });
   });
 });

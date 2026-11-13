@@ -21,6 +21,7 @@
     "check": "tools/check.sh",
     "device": "tools/device/run.sh",
     "release": "tools/release.sh",
+    "migrations:freeze": "node tools/migrations-freeze.mjs",
     "semgrep:update": "tools/semgrep.sh --update-rules",
     "snyk:monitor": "snyk monitor --all-projects --exclude=reference,release,legacy,docs,modules"
   },

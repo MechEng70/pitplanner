@@ -4,6 +4,7 @@
 import type { Cookers, GriddleProfile, OvenProfile, SmokerProfile } from '../../../engine/types.ts';
 import type { Db } from '../db.ts';
 import { isNum, isNumOrNull, isObj, isStr, opt, parseJson } from './json.ts';
+import { quarantine } from './quarantine.ts';
 
 const SMOKER_TYPES = ['pellet', 'kamado', 'drum', 'gravity', 'offset', 'electric', 'other'];
 
@@ -47,6 +48,8 @@ function isOven(p: unknown): p is OvenProfile {
 }
 
 const KINDS = ['smoker', 'griddle', 'oven'] as const;
+const readable = (kind: string, p: unknown) =>
+  (kind === 'smoker' && isSmoker(p)) || (kind === 'griddle' && isGriddle(p)) || (kind === 'oven' && isOven(p));
 
 export function cookersRepo(db: Db) {
   return {
@@ -66,9 +69,14 @@ export function cookersRepo(db: Db) {
     count(): number {
       return db.get<{ n: number }>('SELECT COUNT(*) AS n FROM cookers')?.n ?? 0;
     },
-    /** Replace the whole set. */
+    /** Replace the whole set. A row that could not be read is quarantined before it goes. */
     save(cookers: Cookers, now: number): void {
       db.transaction(() => {
+        for (const row of db.all<{ id: string; kind: string; profile: string }>(
+          'SELECT id, kind, profile FROM cookers',
+        )) {
+          if (!readable(row.kind, parseJson(row.profile))) quarantine(db, `cookers:${row.id}`, row.profile, now);
+        }
         db.run('DELETE FROM cookers');
         KINDS.forEach((kind, position) => {
           const p = cookers[kind];

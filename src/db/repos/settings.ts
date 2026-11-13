@@ -35,16 +35,19 @@ function parseUpdate(raw: unknown): UpdateInfo | null {
   return { checkedAt: raw.checkedAt, latest: strOrNull(raw.latest), url: strOrNull(raw.url) };
 }
 
+/** Every setter quarantines an unreadable stored value before replacing it (quarantine.ts). */
 export function settingsRepo(kv: KvRepo) {
   return {
     units: (): Units => kv.get('units', parseUnits) ?? DEFAULT_UNITS,
-    setUnits: (u: Units, now: number) => kv.set('units', u, now),
+    setUnits: (u: Units, now: number) => kv.set('units', u, now, parseUnits),
     flags: (): Flags => kv.get('flags', parseFlags) ?? {},
-    setFlags: (f: Flags, now: number) => kv.set('flags', f, now),
+    setFlags: (f: Flags, now: number) => kv.set('flags', f, now, parseFlags),
     update: (): UpdateInfo | null => kv.get('update', parseUpdate),
-    setUpdate: (u: UpdateInfo, now: number) => kv.set('update', u, now),
+    setUpdate: (u: UpdateInfo, now: number) => kv.set('update', u, now, parseUpdate),
     draft: (): Draft | null => kv.get('draft', parseDraft),
-    setDraft: (d: Draft, now: number) => kv.set('draft', d, now),
+    /** `corrupt`: a draft was saved but cannot be loaded (the Plan screen says so; it stays until replaced). */
+    readDraft: (): { value: Draft | null; corrupt: boolean } => kv.read('draft', parseDraft),
+    setDraft: (d: Draft, now: number) => kv.set('draft', d, now, parseDraft),
   };
 }
 export type SettingsRepo = ReturnType<typeof settingsRepo>;

@@ -5,6 +5,7 @@ import type { CookLog } from '../../../engine/types.ts';
 import type { CookRecord } from '../../lib/history.ts';
 import type { Db } from '../db.ts';
 import { isStrMap, parseJson } from './json.ts';
+import { quarantine } from './quarantine.ts';
 
 interface CookRow {
   id: string;
@@ -53,6 +54,18 @@ function toLog(r: ItemRow): CookLog {
 }
 
 export function historyRepo(db: Db) {
+  /** Item options that cannot be read are quarantined before their rows are replaced or removed. */
+  const keepCorruptOptions = (cookId: string, now: number) => {
+    const rows = db.all<{ position: number; options: string }>(
+      'SELECT position, options FROM cook_history_items WHERE cook_id = ? AND options IS NOT NULL ORDER BY position',
+      [cookId],
+    );
+    for (const row of rows) {
+      if (!isStrMap(parseJson(row.options))) {
+        quarantine(db, `cook_history_items:${cookId}:${row.position}`, row.options, now);
+      }
+    }
+  };
   const insertItems = (r: CookRecord) => {
     r.items.forEach((item, position) => {
       const l = item.log;
@@ -110,6 +123,7 @@ export function historyRepo(db: Db) {
     /** Add a record, or replace the one with the same id in place (it keeps its position in the list). */
     save(r: CookRecord, now: number): void {
       db.transaction(() => {
+        keepCorruptOptions(r.id, now);
         const late = typeof r.lateMin === 'number' ? r.lateMin : null;
         const endedEarly = r.lateMin === null ? 1 : 0;
         const updated = db.run(
@@ -128,8 +142,11 @@ export function historyRepo(db: Db) {
         insertItems(r);
       });
     },
-    remove(id: string): void {
-      db.run('DELETE FROM cook_history WHERE id = ?', [id]); // items go by ON DELETE CASCADE
+    remove(id: string, now: number): void {
+      db.transaction(() => {
+        keepCorruptOptions(id, now);
+        db.run('DELETE FROM cook_history WHERE id = ?', [id]); // items go by ON DELETE CASCADE
+      });
     },
   };
 }

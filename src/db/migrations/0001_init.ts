@@ -1,4 +1,5 @@
-// Schema v1 (TECH-DESIGN section 5). Shipped once 0.3.0 is out: never edit, add 0002 instead.
+// Schema v1 (TECH-DESIGN section 5). Frozen: tools/migrations.test.mjs checks this file's checksum, so any
+// edit fails `npm run check`. A schema change is a new migration (0002_...), never an edit here.
 // Instants are INTEGER epoch ms, temps REAL F, weights REAL lb. JSON columns hold engine-owned shapes.
 
 import type { Migration } from '../migrate.ts';
@@ -22,8 +23,9 @@ CREATE TABLE active_cook (
   started_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
 CREATE TABLE cook_history (
   id TEXT PRIMARY KEY, served_at INTEGER NOT NULL, pit_temp_f REAL NOT NULL,
-  late_min REAL, ended_early INTEGER NOT NULL DEFAULT 0,
-  notes TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL);
+  late_min REAL, ended_early INTEGER NOT NULL DEFAULT 0 CHECK (ended_early IN (0, 1)),
+  notes TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL,
+  CHECK (ended_early = 0 OR late_min IS NULL));
 CREATE TABLE cook_history_items (
   id INTEGER PRIMARY KEY, cook_id TEXT NOT NULL REFERENCES cook_history(id) ON DELETE CASCADE,
   position INTEGER NOT NULL, name TEXT NOT NULL, food_id TEXT NOT NULL, method_id TEXT NOT NULL,

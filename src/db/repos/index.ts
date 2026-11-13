@@ -5,6 +5,7 @@ import { activeCookRepo } from './activeCook.ts';
 import { cookersRepo } from './cookers.ts';
 import { historyRepo } from './history.ts';
 import { kvRepo } from './kv.ts';
+import { quarantined } from './quarantine.ts';
 import { ratesRepo } from './rates.ts';
 import { settingsRepo } from './settings.ts';
 
@@ -17,6 +18,8 @@ export function repos(db: Db) {
     rates: ratesRepo(db),
     activeCook: activeCookRepo(db),
     history: historyRepo(db),
+    /** Unreadable values kept before a write replaced them (quarantine.ts). */
+    quarantined: () => quarantined(db),
   };
 }
 export type Repos = ReturnType<typeof repos>;

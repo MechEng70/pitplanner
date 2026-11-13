@@ -8,6 +8,10 @@
 - Cooking rules live in `data/foods.json`. Prefer changing data over adding special cases in code.
 - All instants are epoch milliseconds. All stored temps are F, weights lb; convert only for display (`engine/units.ts`).
 - Alarms: use the `pit-alarms` Expo module (setAlarmClock) described in SPEC.md section 6, through `src/platform/`. After any plan change, cancel all alarms and reschedule from `plan.events`.
+- Migrations are frozen: never edit, rename or delete a file in `src/db/migrations/` that is listed in
+  `checksums.json`, and never change an entry there. A schema change is a new migration (`0002_...`), added to
+  `index.ts`, with `schema.snapshot.sql` updated, then `npm run migrations:freeze` to record it. The gate test
+  `tools/migrations.test.mjs` fails `npm run check` otherwise. Do not "fix" that failure by updating a checksum.
 - Never commit signing keys (`*.jks`, `*.keystore`, `keystore.properties`).
 - Destructive actions need an explicit yes from Jason first: uninstalling apps, deleting data, or anything else
   destructive on a device or in the repo. Don't read consent into an unclear reply; ask again.

@@ -148,6 +148,23 @@ describe('connection setup', () => {
     }
   });
 
+  test('ended early has no lateness: ended_early = 1 requires late_min IS NULL', () => {
+    const db = opened();
+    const cook =
+      'INSERT INTO cook_history (id, served_at, pit_temp_f, created_at, late_min, ended_early) VALUES (?, ?, 225, ?, ?, ?)';
+    db.run(cook, ['late', NOW, NOW, 20, 0]);
+    db.run(cook, ['unknown', NOW, NOW, null, 0]);
+    db.run(cook, ['early', NOW, NOW, null, 1]);
+    expect(() => db.run(cook, ['both', NOW, NOW, 20, 1])).toThrow(/CHECK/);
+    expect(() => db.run(cook, ['two', NOW, NOW, null, 2])).toThrow(/CHECK/);
+    expect(() => db.run('UPDATE cook_history SET ended_early = 1 WHERE id = ?', ['late'])).toThrow(/CHECK/);
+    expect(db.all('SELECT id FROM cook_history ORDER BY id')).toEqual([
+      { id: 'early' },
+      { id: 'late' },
+      { id: 'unknown' },
+    ]);
+  });
+
   test('schema checks: cooker kinds, and one active cook at most', () => {
     const db = opened();
     const cooker = 'INSERT INTO cookers (id, kind, profile, position, updated_at) VALUES (?, ?, ?, 0, ?)';
@@ -169,7 +186,7 @@ describe('Db (test implementation)', () => {
     expect(db.get('SELECT value FROM kv WHERE key = ?', ['a'])).toEqual({ value: '1' });
   });
 
-  test('a transaction commits on return, rolls back on a throw, and cannot be nested', () => {
+  test('a transaction commits on return and rolls back on a throw; an inner one joins the outer', () => {
     const db = opened();
     expect(db.transaction(() => addKv(db, 'a', '1').changes)).toBe(1);
     expect(() =>
@@ -179,8 +196,17 @@ describe('Db (test implementation)', () => {
       }),
     ).toThrow('stop');
     expect(kvRows(db).map(r => r.key)).toEqual(['a']);
-    expect(() => db.transaction(() => db.transaction(() => 1))).toThrow(/inside a transaction/);
-    // The failed nesting rolled back and left the connection usable.
-    expect(db.transaction(() => addKv(db, 'c', '3').changes)).toBe(1);
+    expect(db.transaction(() => db.transaction(() => addKv(db, 'c', '3').changes))).toBe(1);
+    // A throw in the inner one rolls back the outer one's writes too.
+    expect(() =>
+      db.transaction(() => {
+        addKv(db, 'd', '4');
+        db.transaction(() => {
+          addKv(db, 'e', '5');
+          throw new Error('inner');
+        });
+      }),
+    ).toThrow('inner');
+    expect(kvRows(db).map(r => r.key)).toEqual(['a', 'c']);
   });
 });

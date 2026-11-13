@@ -18,14 +18,17 @@ export interface Db {
   run(sql: string, params?: readonly SqlValue[]): RunResult;
   all<T>(sql: string, params?: readonly SqlValue[]): T[];
   get<T>(sql: string, params?: readonly SqlValue[]): T | undefined;
-  /** Commit when `fn` returns, roll back and rethrow when it throws. Not nestable. */
+  /**
+   * Commit when `fn` returns, roll back and rethrow when it throws. Called inside another transaction it
+   * joins that one (no savepoint): a throw must be left to reach the outer call, which rolls everything back.
+   */
   transaction<T>(fn: () => T): T;
   close(): void;
 }
 
 /** Shared by both implementations: one BEGIN IMMEDIATE ... COMMIT around `fn`, ROLLBACK on a throw. */
 export function runTransaction<T>(exec: (sql: string) => void, state: { open: boolean }, fn: () => T): T {
-  if (state.open) throw new Error('transaction inside a transaction');
+  if (state.open) return fn();
   exec('BEGIN IMMEDIATE');
   state.open = true;
   try {

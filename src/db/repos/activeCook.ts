@@ -3,6 +3,7 @@
 import { normalize, type ActiveCook } from '../../lib/cook.ts';
 import type { Db } from '../db.ts';
 import { isNum, isObj, parseJson } from './json.ts';
+import { quarantine } from './quarantine.ts';
 
 /** Enough shape for the Cook screen and the alarm sync not to crash on it. */
 function looksLikeCook(raw: unknown): raw is Partial<ActiveCook> {
@@ -12,6 +13,11 @@ function looksLikeCook(raw: unknown): raw is Partial<ActiveCook> {
 }
 
 export function activeCookRepo(db: Db) {
+  /** A stored cook that cannot be read is quarantined before it is replaced or cleared. */
+  const keepIfCorrupt = (now: number) => {
+    const row = db.get<{ data: string }>('SELECT data FROM active_cook WHERE id = 1');
+    if (row && !looksLikeCook(parseJson(row.data))) quarantine(db, 'active_cook', row.data, now);
+  };
   return {
     load(): ActiveCook | null {
       const row = db.get<{ data: string; started_at: number }>('SELECT data, started_at FROM active_cook WHERE id = 1');
@@ -21,15 +27,21 @@ export function activeCookRepo(db: Db) {
       return normalize({ ...raw, startedAt: isNum(raw.startedAt) ? raw.startedAt : row.started_at });
     },
     save(cook: ActiveCook, now: number): void {
-      db.run(
-        'INSERT INTO active_cook (id, data, started_at, updated_at) VALUES (1, ?, ?, ?)' +
-          ' ON CONFLICT(id) DO UPDATE SET data = excluded.data, started_at = excluded.started_at,' +
-          ' updated_at = excluded.updated_at',
-        [JSON.stringify(cook), cook.startedAt, now],
-      );
+      db.transaction(() => {
+        keepIfCorrupt(now);
+        db.run(
+          'INSERT INTO active_cook (id, data, started_at, updated_at) VALUES (1, ?, ?, ?)' +
+            ' ON CONFLICT(id) DO UPDATE SET data = excluded.data, started_at = excluded.started_at,' +
+            ' updated_at = excluded.updated_at',
+          [JSON.stringify(cook), cook.startedAt, now],
+        );
+      });
     },
-    clear(): void {
-      db.run('DELETE FROM active_cook');
+    clear(now: number): void {
+      db.transaction(() => {
+        keepIfCorrupt(now);
+        db.run('DELETE FROM active_cook');
+      });
     },
   };
 }

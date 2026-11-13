@@ -153,9 +153,11 @@ CREATE TABLE active_cook (    -- at most one running cook, rewritten on every ch
 CREATE TABLE cook_history (
   id TEXT PRIMARY KEY, served_at INTEGER NOT NULL, pit_temp_f REAL NOT NULL,
   late_min REAL,              -- minutes after the planned serve; NULL when unknown or ended early
-  ended_early INTEGER NOT NULL DEFAULT 0,  -- 1: ended before serve (CookRecord.lateMin null); 0 with NULL
+  ended_early INTEGER NOT NULL DEFAULT 0 CHECK (ended_early IN (0, 1)),
+                              -- 1: ended before serve (CookRecord.lateMin null); 0 with NULL
                               -- late_min: a record from before lateMin was kept (no status shown)
-  notes TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL);
+  notes TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL,
+  CHECK (ended_early = 0 OR late_min IS NULL));  -- ended early has no lateness
 CREATE TABLE cook_history_items (
   id INTEGER PRIMARY KEY, cook_id TEXT NOT NULL REFERENCES cook_history(id) ON DELETE CASCADE,
   position INTEGER NOT NULL, name TEXT NOT NULL, food_id TEXT NOT NULL, method_id TEXT NOT NULL,
@@ -175,7 +177,10 @@ screens and `historyView.ts` use.
 - `src/db/migrations/NNNN_name.ts` exports `{ version: N, up(db) }`. The runner reads `PRAGMA user_version`,
   applies every higher migration in order, each in its own transaction, and sets `user_version`. A failed
   migration rolls back and the app shows an error screen with "Export my data", never a silent reset.
-- Shipped migrations are never edited; fixes are new migrations.
+- Migrations are frozen (Jason, 2026-11-12): `src/db/migrations/checksums.json` holds each file's SHA-256 and
+  `tools/migrations.test.mjs` (in `npm run check`) fails when a migration file changes, is removed or has no
+  entry. `npm run migrations:freeze` records a new file and refuses to change an existing entry. Fixes are new
+  migrations.
 - `PRAGMA foreign_keys = ON` and `journal_mode = WAL` at open.
 - Tests (Jest, `better-sqlite3` behind the same `Db` interface): 0 -> latest matches a schema snapshot; for
   every version N, fixture data at N migrates to latest intact; every repository round-trips.
