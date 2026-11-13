@@ -4,6 +4,7 @@
 //   node webview.mjs <port> look                     headings, buttons, checkboxes, radios and options on screen
 //   node webview.mjs <port> click <role> <name> [n]  click the control with that role and name, n times
 //   node webview.mjs <port> wait <text>              wait up to 20 s for the text
+//   node webview.mjs <port> reload                   reload the page (after changing what the app has saved)
 //   node webview.mjs <port> eval <js>                evaluate (async) JavaScript, print the JSON result
 const [port, cmd, ...args] = process.argv.slice(2);
 
@@ -81,15 +82,22 @@ try {
   } else if (cmd === 'wait') {
     let found = false;
     for (let i = 0; i < 40 && !found; i++) {
-      found = await evaluate(`document.body.innerText.includes(${JSON.stringify(args[0])})`);
+      // A page that is still loading has no body yet, or its context is gone: ask again.
+      found = await evaluate(`!!document.body && document.body.innerText.includes(${JSON.stringify(args[0])})`).catch(
+        () => false,
+      );
       if (!found) await sleep(500);
     }
     if (!found) throw new Error(`"${args[0]}" did not show`);
     console.log(`shows "${args[0]}"`);
+  } else if (cmd === 'reload') {
+    await send('Page.reload', {});
+    await sleep(1500);
+    console.log('reloaded');
   } else if (cmd === 'eval') {
     console.log(JSON.stringify(await evaluate(`(async () => { ${args[0]} })()`)));
   } else {
-    throw new Error('usage: webview.mjs <port> look | click <role> <name> [n] | wait <text> | eval <js>');
+    throw new Error('usage: webview.mjs <port> look | click <role> <name> [n] | wait <text> | reload | eval <js>');
   }
 } catch (e) {
   console.error(String(e.message ?? e));

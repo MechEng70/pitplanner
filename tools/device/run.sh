@@ -101,6 +101,12 @@ restore() {
     save_app_logcat "$OUT/logcat-failed.txt" && log "app log (redacted): $OUT/logcat-failed.txt"
   fi
   clear_logcat
+  # The Doze step of the alarm test: never leave the emulator idle-forced or its battery "unplugged".
+  if is_emulator; then
+    A shell dumpsys deviceidle unforce >/dev/null 2>&1
+    A shell dumpsys battery reset >/dev/null 2>&1
+    A shell device_config delete device_idle min_time_to_alarm >/dev/null 2>&1
+  fi
   if [ -n "$BACKUP" ]; then ./db.sh restore "$BACKUP" | tee -a "$REPORT"; fi
   A shell settings put system font_scale "$ORIG_SCALE" && log "font scale back to $ORIG_SCALE"
   A shell settings put global stay_on_while_plugged_in "$ORIG_STAYON"
@@ -486,7 +492,7 @@ test_legacy_import() {
   if [ $ok = 1 ]; then result "PASS  legacy-import $s"; else result "FAIL  legacy-import $s"; fi
 }
 
-# T-013: a test alarm through the real path (pit-alarms: setAlarmClock, AlarmReceiver, the step notification)
+# T-013, T-016: a test alarm through the real path (pit-alarms: setAlarmClock, AlarmReceiver, the step notification)
 # rings with the screen off. Emulator only: the notification is read from `dumpsys notification`, which on
 # the phone would list other apps'. The dev alarm screen (pitplanner://dev/alarm) sets the alarm 20 s out
 # with a title unique to this run; the screen is turned off; the notification must be posted on the step
@@ -496,9 +502,9 @@ test_alarm() {
   miss() { ok=0; log "    MISSING: $1"; }
   if ! is_emulator; then log "    alarm runs on the emulator only; skipped"; return; fi
   tag="$(date +%s)"
-  posted_now() {
+  posted_now() { # $1: the title's tag
     A shell dumpsys notification --noredact </dev/null | grep -A60 "NotificationRecord.*pkg=$PKG " |
-      grep -q "android.title=String (Test alert $tag)"
+      grep -q "android.title=String (Test alert $1)"
   }
   A shell pm grant "$PKG" android.permission.POST_NOTIFICATIONS
   launch "dev/alarm?test=20:$tag" || { result "FAIL  alarm $s: app did not open"; return; }
@@ -506,15 +512,52 @@ test_alarm() {
   for want in "test alarm set, exact yes" "notifications on" "exact alarms on" "stored alarms 1, repeats 0"; do
     has_text "$dir/alarm-set.xml" "$want" || miss "$want"
   done
-  if posted_now; then miss "a screen-off ring (the alarm rang before the screen was off)"; fi
+  if posted_now "$tag"; then miss "a screen-off ring (the alarm rang before the screen was off)"; fi
   A shell input keyevent KEYCODE_SLEEP
   sleep 1
   A shell dumpsys power </dev/null | grep -q "mWakefulness=Asleep" || miss "the screen off"
   for _ in $(seq 40); do
-    if posted_now; then posted=1; break; fi
+    if posted_now "$tag"; then posted=1; break; fi
     sleep 1
   done
   if [ -n "$posted" ]; then log "    rang with the screen off: Test alert $tag"; else miss "the notification"; fi
+
+  # Doze (T-016): a second test alarm rings with the emulator forced into deep idle (battery reported
+  # unplugged, screen off) and the app off the battery allowlist. Android (16: one hour) will not enter deep
+  # idle while an alarm clock is that close (DeviceIdleController's min_time_to_alarm), so the test shortens
+  # that window to 1 s as root for its duration: what it proves is that an alarm set with setAlarmClock is
+  # delivered on time to a device that is in deep idle. The window, the allowlist entry, idle and battery are
+  # put back here and again on exit (restore).
+  local listed="" idle forced
+  A root >/dev/null
+  A wait-for-device
+  A shell dumpsys deviceidle whitelist </dev/null | grep -q "$PKG" && listed=1
+  A shell dumpsys deviceidle whitelist "-$PKG" >/dev/null
+  A shell device_config put device_idle min_time_to_alarm 1000
+  A shell input keyevent KEYCODE_WAKEUP
+  A shell wm dismiss-keyguard
+  if launch "dev/alarm?test=45:$tag-doze"; then
+    A shell dumpsys battery unplug
+    A shell input keyevent KEYCODE_SLEEP
+    sleep 2
+    forced=$(A shell dumpsys deviceidle force-idle | tr -d '\r')
+    idle=$(A shell dumpsys deviceidle get deep | tr -d '\r')
+    # Forced in, Android may already be in the idle cycle's maintenance window: it ends an idle period ahead
+    # of an alarm clock on purpose (AlarmManager clamps "idle until" to the next wake-from-idle alarm).
+    [[ "$forced" == *"Now forced in to deep idle mode"* ]] || miss "forcing deep idle ($forced)"
+    case "$idle" in IDLE | IDLE_MAINTENANCE) ;; *) miss "the deep idle cycle with the alarm pending ($idle)" ;; esac
+    posted=""
+    for _ in $(seq 70); do
+      if posted_now "$tag-doze"; then posted=1; break; fi
+      sleep 1
+    done
+    if [ -n "$posted" ]; then log "    rang after deep idle was forced (state $idle), off the battery allowlist: Test alert $tag-doze"
+    else miss "the notification in Doze"; fi
+  else miss "the app for the Doze alarm"; fi
+  A shell device_config delete device_idle min_time_to_alarm >/dev/null
+  A shell dumpsys deviceidle unforce >/dev/null
+  A shell dumpsys battery reset
+  [ -n "$listed" ] && A shell dumpsys deviceidle whitelist "+$PKG" >/dev/null
   A shell dumpsys notification --noredact </dev/null | grep -A60 "NotificationRecord.*pkg=$PKG " |
     grep -q "channel=steps_v1" || miss "the step channel"
   A shell input keyevent KEYCODE_WAKEUP

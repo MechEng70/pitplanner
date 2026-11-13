@@ -6,6 +6,8 @@
 #                                820, griddle, oven), brisket at 0.75 hr/lb saved for future and added to the
 #                                plan, two cooks started, ended and saved to history
 #   upgrade020.sh check <apk>    install the APK over it, start it, and check what the import moved
+#   upgrade020.sh live           after setup: start a short cook in 0.2.0 and leave it running with alarms set
+#   upgrade020.sh alarms         the release app's pending alarms (AlarmManager) and its own stored set
 # Nothing is uninstalled or deleted: `setup` stops when the release app or data kept from an earlier install
 # is already there (Jason decides what happens to it).
 set -uo pipefail
@@ -60,6 +62,67 @@ setup() {
   echo "0.2.0 is set up: gear, a saved rate, a plan draft, two past cooks"
 }
 
+# A short cook left running in 0.2.0, for the upgrade with alarms pending (TASKS T-016, T-038): 2 lb of wings,
+# the smoker fired at the next 5-minute mark at least 7 minutes out, a 3 minute preheat so the first steps
+# come close together. The plan is written through the app's own Preferences plugin (0.2.0's date picker
+# cannot be driven); the cook is started with its Start cook button and the alarms are set by its own plugin.
+# Leaves the app running in the background (HOME), as a user would.
+live() {
+  A shell "ls $DATA/shared_prefs/CapacitorStorage.xml" >/dev/null || { echo "run setup first" >&2; exit 1; }
+  A shell pm grant $APP android.permission.POST_NOTIFICATIONS
+  A shell dumpsys deviceidle whitelist +$APP >/dev/null
+  A shell am start -W -n $APP/.MainActivity >/dev/null
+  sleep 5
+  A forward tcp:$PORT "localabstract:webview_devtools_remote_$(A shell pidof $APP | tr -d '\r')" >/dev/null
+  W wait "On the menu"
+  W eval 'const P = window.Capacitor.Plugins.Preferences;
+    const gear = JSON.parse((await P.get({ key: "gear" })).value);
+    gear.smoker.preheatMin = 3;
+    await P.set({ key: "gear", value: JSON.stringify(gear) });
+    const at = Math.ceil((Date.now() + 7 * 60000) / 300000) * 300000;
+    const items = [{ id: "w", foodId: "wings", methodId: "smokeCrisp", quantity: 2, options: { drybrine: "yes" }, restMin: 5 }];
+    await P.set({ key: "draft", value: JSON.stringify({ mode: "startAt", at, pitTempF: 225, items }) });
+    await P.remove({ key: "activeCook" });
+    return new Date(at).toString();'
+  W reload
+  W wait "On the menu"
+  W click button "Start cook"
+  if node webview.mjs $PORT look | grep -q "Start anyway"; then W click button "Start anyway"; fi
+  W wait "Cooking"
+  echo "0.2.0 has these alarms set:"
+  W eval 'const s = await window.Capacitor.Plugins.PitAlarms.getScheduled();
+    return s.alarms.map(a => new Date(a.at).toTimeString().slice(0, 8) + " " + a.id + " | " + a.title);'
+  A forward --remove tcp:$PORT
+  A shell input keyevent KEYCODE_HOME
+}
+
+# What the release app has waiting, from both sides: AlarmManager's pending alarms (time and kind: FIRE a
+# step, NAG a repeat) and the app's own native store (alarms, repeats, queued notification taps). The two
+# must agree; a step listed twice in AlarmManager would be a duplicate.
+alarms() {
+  echo "AlarmManager:"
+  A shell dumpsys alarm | awk -v pkg="$APP}" '
+    / Alarm\{.* origWhen / && $NF == pkg {
+      # The same alarm is printed again as "Next wake from idle": count each alarm object once.
+      id = $0; sub(/.*Alarm\{/, "", id); sub(/ .*/, "", id)
+      if (seen[id]++) next
+      for (i = 1; i <= NF; i++) if ($i == "origWhen") w = $(i + 1)
+      getline; sub(/.*\./, ""); print w, $0
+    }' |
+    sort | while read -r ms kind; do echo "  $(date -d "@$((ms / 1000))" +%T) $kind"; done
+  echo "stored by the app:"
+  A shell "cat /data/user_de/0/$APP/shared_prefs/pit_alarms.xml 2>/dev/null" | node -e '
+    const xml = require("fs").readFileSync(0, "utf8");
+    const un = s => s.replace(/&quot;/g, "\"").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+    const t = ms => new Date(ms).toTimeString().slice(0, 8);
+    const get = k => { const m = xml.match(new RegExp("<string name=\"" + k + "\">([\\s\\S]*?)</string>")); return m ? JSON.parse(un(m[1])) : []; };
+    for (const a of get("alarms")) console.log("  " + t(a.at) + " FIRE " + a.id + (a.test ? " (test)" : ""));
+    for (const n of get("nags")) console.log("  " + t(n.nextAt) + " NAG " + n.alarmId + " (repeat " + n.count + ")");
+    for (const x of get("actions")) console.log("  tap " + x.type + " " + x.keys.join(",") + " at " + t(x.at));
+    const q = xml.match(/name="quietUntil" value="(\d+)"/);
+    if (q && q[1] !== "0") console.log("  quiet until " + t(Number(q[1])));'
+}
+
 check() {
   local apk="${1:?check needs an APK}" ok=1 got ui
   want() { # name, SQL, expected
@@ -100,5 +163,7 @@ check() {
 case "${1:-}" in
   setup) setup ;;
   check) check "$APK_ARG" ;;
-  *) echo "usage: upgrade020.sh setup | check <apk>" >&2; exit 2 ;;
+  live) live ;;
+  alarms) alarms ;;
+  *) echo "usage: upgrade020.sh setup | live | alarms | check <apk>" >&2; exit 2 ;;
 esac

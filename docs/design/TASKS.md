@@ -749,6 +749,22 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Tests:** any failure gets a regression test in T-014's files.
 - **Real phone:** yes: alarms through Doze and a locked reboot need the real phone and its OEM power management.
 - **Device testing (Jason):** unlock after the reboot step when asked; leave the phone idle for the Doze step.
+- **Emulator half, done 2026-11-13** (results table in `docs/alarm-testing.md`):
+  - Upgrade with a live cook: real 0.2.0, a wings cook started with its Start cook button (six alarms),
+    `0.3.0-alpha.3` installed over it. The alarms came back without opening the app, the opened app replaced
+    the set with none doubled, and each step that came due rang once, at most 101 ms late.
+  - With the app dead: Done and +15 min on the notification; both applied once when the app opened.
+  - Time zone change, app update and reboot with alarms pending: all registered again at the same instants.
+  - `USE_EXACT_ALARM`: `granted=true` in `dumpsys package` under 0.2.0, after the upgrade and on the dev build.
+  - Doze: see "How Doze treats these alarms" in `docs/alarm-testing.md`. Android 16 will not enter deep idle
+    within an hour of an alarm clock, so the forced-idle check works on the emulator only (window shortened
+    as root). The `alarm` device test now includes it.
+  - Tools added: `upgrade020.sh live` and `alarms`; dev route `pitplanner://dev/alarm?cook=3` (a short test
+    cook through the store, for the phone, where there is no Start cook screen yet) and `?cook=end`.
+  - `tools/device/flows/alarms.yaml` (named in Files) was not written: the checks need adb and `dumpsys`,
+    not screen taps, so they live in `upgrade020.sh` and the `alarm` test of `run.sh`.
+  - Left on the emulator: the release test app at 0.3.0-alpha.3 with the test cook, force-stopped (its
+    alarms are out of AlarmManager). `upgrade020.sh setup` will not run again until Jason says it can go.
 - **Before the real phone is touched (Jason, 2026-11-13):** list exactly what will be done to it (Doze
   forcing, reboots, settings changes, installs) and what will be restored, and wait for his yes. Any reboot
   needs him present to unlock.
