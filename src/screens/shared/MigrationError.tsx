@@ -1,10 +1,10 @@
 // Shown instead of the app when the database could not be brought up to date (TECH-DESIGN section 5):
-// never a silent reset. Kit components only (Jason, 2026-11-12): one sentence, Export my data, and the
-// error details behind a text button.
+// never a silent reset. The kit empty state (Jason, 2026-11-12): icon, title, body, the primary button,
+// and the error details behind a text button.
 import { useState } from 'react';
 import { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Banner, Button, InfoBox, Stack, Text } from '@/components/kit';
+import { Banner, Button, EmptyState, InfoBox, Text, Warn } from '@/components/kit';
 
 export interface MigrationFailure {
   kind: 'failed' | 'newer';
@@ -13,10 +13,8 @@ export interface MigrationFailure {
   cause?: unknown;
 }
 
-const SENTENCE = {
-  failed: 'The update failed, but your data is safe.',
-  newer: 'Your data is from a newer version of Pit Planner, and it is safe.',
-} as const;
+export const TITLE = "Pit Planner couldn't update";
+export const BODY = 'Your data is safe. Tap Export my data and send the file to Jason.';
 
 export function errorDetails(e: MigrationFailure): string {
   const cause = e.cause instanceof Error ? e.cause.message : e.cause == null ? '' : String(e.cause);
@@ -25,8 +23,8 @@ export function errorDetails(e: MigrationFailure): string {
 
 interface Props {
   error: MigrationFailure;
-  /** Shares the data file; absent when the database could not be opened at all. */
-  onExport?: () => Promise<void>;
+  /** Shares the data: the JSON export, or the database file itself when it could not be opened. */
+  onExport: () => Promise<void>;
 }
 
 export function MigrationErrorScreen({ error, onExport }: Props) {
@@ -34,7 +32,6 @@ export function MigrationErrorScreen({ error, onExport }: Props) {
   const [busy, setBusy] = useState(false);
   const [exportFailed, setExportFailed] = useState(false);
   const run = async () => {
-    if (!onExport) return;
     setBusy(true);
     setExportFailed(false);
     try {
@@ -47,18 +44,18 @@ export function MigrationErrorScreen({ error, onExport }: Props) {
   };
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <ScrollView contentContainerClassName="p-4">
-        <Stack gap={16}>
-          <Text variant="bodyL">{SENTENCE[error.kind]}</Text>
+      <ScrollView contentContainerClassName="grow p-4">
+        <EmptyState icon={<Warn size={48} />} title={TITLE} body={BODY}>
           {exportFailed ? <Banner>The export did not work. Try again.</Banner> : null}
-          <Button block disabled={!onExport || busy} onPress={() => void run()}>
+          <Button block disabled={busy} onPress={() => void run()}>
             <Text>Export my data</Text>
           </Button>
-          <Button kind="text" aria-expanded={details} onPress={() => setDetails(d => !d)}>
+          {/* Centered like the body text above it. */}
+          <Button kind="text" className="self-center" aria-expanded={details} onPress={() => setDetails(d => !d)}>
             <Text>{details ? 'Hide details' : 'Show details'}</Text>
           </Button>
           {details ? <InfoBox>{errorDetails(error)}</InfoBox> : null}
-        </Stack>
+        </EmptyState>
       </ScrollView>
     </SafeAreaView>
   );

@@ -6,7 +6,7 @@ import { runTransaction, type Db, type SqlValue } from './db.ts';
 
 export function testDb(file = ':memory:'): Db {
   const sqlite = new Database(file);
-  const state = { open: false };
+  const state = { depth: 0 };
   const exec = (sql: string) => void sqlite.exec(sql);
   return {
     exec,

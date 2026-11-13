@@ -19,30 +19,43 @@ export interface Db {
   all<T>(sql: string, params?: readonly SqlValue[]): T[];
   get<T>(sql: string, params?: readonly SqlValue[]): T | undefined;
   /**
-   * Commit when `fn` returns, roll back and rethrow when it throws. Called inside another transaction it
-   * joins that one (no savepoint): a throw must be left to reach the outer call, which rolls everything back.
+   * Commit when `fn` returns, roll back and rethrow when it throws. Inside another transaction it is a
+   * savepoint: a throw undoes only this call's writes, whether or not the caller catches it.
    */
   transaction<T>(fn: () => T): T;
   close(): void;
 }
 
-/** Shared by both implementations: one BEGIN IMMEDIATE ... COMMIT around `fn`, ROLLBACK on a throw. */
-export function runTransaction<T>(exec: (sql: string) => void, state: { open: boolean }, fn: () => T): T {
-  if (state.open) return fn();
-  exec('BEGIN IMMEDIATE');
-  state.open = true;
+/** Open transaction depth per connection: 0 none, 1 the transaction, 2 and up savepoints inside it. */
+export interface TxState {
+  depth: number;
+}
+
+/**
+ * Shared by both implementations. The outermost call is BEGIN IMMEDIATE ... COMMIT (ROLLBACK on a throw). A
+ * call inside it is a SAVEPOINT: when it throws, only its own writes are undone, so a caller that catches the
+ * error and carries on commits nothing of the failed step.
+ */
+export function runTransaction<T>(exec: (sql: string) => void, state: TxState, fn: () => T): T {
+  const outer = state.depth === 0;
+  // The name is the nesting depth, an integer we count ourselves.
+  const savepoint = `sp_${state.depth}`;
+  exec(outer ? 'BEGIN IMMEDIATE' : `SAVEPOINT ${savepoint}`);
+  state.depth += 1;
   try {
     const result = fn();
-    exec('COMMIT');
+    exec(outer ? 'COMMIT' : `RELEASE ${savepoint}`);
     return result;
   } catch (e) {
     try {
-      exec('ROLLBACK');
+      exec(outer ? 'ROLLBACK' : `ROLLBACK TO ${savepoint}; RELEASE ${savepoint}`);
     } catch {
       // SQLite already rolled back (for example on a full disk); the first error is the one to report.
     }
     throw e;
   } finally {
-    state.open = false;
+    state.depth -= 1;
   }
 }
+
+export const DB_NAME = 'pitplanner.db';

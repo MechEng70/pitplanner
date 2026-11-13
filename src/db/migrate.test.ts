@@ -186,7 +186,7 @@ describe('Db (test implementation)', () => {
     expect(db.get('SELECT value FROM kv WHERE key = ?', ['a'])).toEqual({ value: '1' });
   });
 
-  test('a transaction commits on return and rolls back on a throw; an inner one joins the outer', () => {
+  test('a transaction commits on return and rolls back on a throw', () => {
     const db = opened();
     expect(db.transaction(() => addKv(db, 'a', '1').changes)).toBe(1);
     expect(() =>
@@ -196,17 +196,56 @@ describe('Db (test implementation)', () => {
       }),
     ).toThrow('stop');
     expect(kvRows(db).map(r => r.key)).toEqual(['a']);
-    expect(db.transaction(() => db.transaction(() => addKv(db, 'c', '3').changes))).toBe(1);
-    // A throw in the inner one rolls back the outer one's writes too.
+  });
+
+  test('an inner step that fails and is caught: the outer commit has none of its writes (SAVEPOINT)', () => {
+    const db = opened();
+    db.transaction(() => {
+      addKv(db, 'before', '1');
+      try {
+        db.transaction(() => {
+          addKv(db, 'inner', '2');
+          db.run('UPDATE kv SET value = ? WHERE key = ?', ['changed', 'before']);
+          throw new Error('inner step failed');
+        });
+      } catch {
+        // The caller carries on.
+      }
+      addKv(db, 'after', '3');
+    });
+    expect(kvRows(db)).toEqual([
+      { key: 'after', value: '3' },
+      { key: 'before', value: '1' },
+    ]);
+  });
+
+  test('nested steps: one that succeeds is kept, an uncaught failure undoes everything, three levels deep works', () => {
+    const db = opened();
+    expect(db.transaction(() => db.transaction(() => db.transaction(() => addKv(db, 'deep', '1').changes)))).toBe(1);
     expect(() =>
       db.transaction(() => {
-        addKv(db, 'd', '4');
+        addKv(db, 'outer', '2');
         db.transaction(() => {
-          addKv(db, 'e', '5');
+          addKv(db, 'inner', '3');
           throw new Error('inner');
         });
       }),
     ).toThrow('inner');
-    expect(kvRows(db).map(r => r.key)).toEqual(['a', 'c']);
+    expect(kvRows(db).map(r => r.key)).toEqual(['deep']);
+    // Two failed steps in a row at the same depth, then a good one: the connection is still usable.
+    db.transaction(() => {
+      for (const key of ['x', 'y']) {
+        try {
+          db.transaction(() => {
+            addKv(db, key, '0');
+            throw new Error(key);
+          });
+        } catch {
+          // caught
+        }
+      }
+      db.transaction(() => addKv(db, 'kept', '4'));
+    });
+    expect(kvRows(db).map(r => r.key)).toEqual(['deep', 'kept']);
   });
 });

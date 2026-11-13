@@ -7,7 +7,8 @@
 // never reads the flag.
 
 import type { Db } from './db.ts';
-import { expoDb } from './expoDb.ts';
+import { DB_NAME } from './db.ts';
+import { databaseFileUri, expoDb } from './expoDb.ts';
 import { MigrationError, openMigrated, userVersion, type Migration, type OpenResult } from './migrate.ts';
 import { migrations } from './migrations/index.ts';
 
@@ -81,3 +82,18 @@ export function dbStatus(db: Db): DbStatus {
     failureArmed: db.get('SELECT 1 FROM kv WHERE key = ?', [FORCE_FAILURE_KEY]) !== undefined,
   };
 }
+
+/**
+ * What Export my data shares when the database cannot be opened: the file with its write-ahead log and
+ * rollback journal (the log holds the newest data; on a phone the .db file alone can be almost empty), and a
+ * dated name for the tar they go into.
+ */
+export function rawDatabaseFiles(now: number): { uris: string[]; name: string } {
+  const [date, time] = new Date(now).toISOString().split('T') as [string, string];
+  const db = databaseFileUri();
+  return {
+    uris: [db, `${db}-wal`, `${db}-journal`],
+    name: `pitplanner-database-${date}-${time.slice(0, 5).replace(':', '')}.tar`,
+  };
+}
+export { DB_NAME };

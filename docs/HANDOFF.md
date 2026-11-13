@@ -60,13 +60,15 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
   not shipped; after that, new migrations only).
 - Store (T-010): `src/lib/store.tsx` (`useStore`) over the repositories; every change is written at once.
   `app/_layout.tsx` opens and migrates the database (`src/db/appDb.ts`) before any screen; a failure shows
-  `MigrationErrorScreen` (Export my data via `src/db/export.ts` + `src/platform/shareFile.ts`). Screen tests
+  `MigrationErrorScreen` (kit empty state; Export my data via `src/db/export.ts` + `src/platform/shareFile.ts`,
+  or the raw database files as a tar when the database cannot be opened). Screen tests
   wrap with `storeWrapper()` from `src/test/store.tsx`.
 - Migrations are frozen (CLAUDE.md): a schema change is a new file + `npm run migrations:freeze`; the gate
   fails on an edited one. Unreadable stored values are quarantined to `kv` (`quarantine:<origin>:<time>`)
   before a write replaces them; a lost plan draft shows a notice on Plan (`state.draftLost`).
-- Device tests `db` and `migration-error` run the real expo-sqlite database on the emulator
-  (`pitplanner://dev/db`, `?set=C`, `?fail=1`; dev builds only).
+- Device tests `db`, `migration-error` and `db-unopenable` run the real expo-sqlite database on the emulator
+  (`pitplanner://dev/db`, `?set=C`, `?fail=1`; dev builds only). `--repeat N` reruns a test to catch one that
+  only sometimes fails. `launch` now waits for the app's own UI, not just its window.
 - T-017 has PR-4 (equal-width tiles, mockup 05; try `flex: 1` first) and two PR-3 fixes to make: selected
   chips reserve their bold width, and nothing jumps when content below shrinks while scrolled to the bottom.
 - Tab bar is the kit `BottomNav` (0.2.0 icon pills); T-059 (whole turkey, cited FSIS numbers) follows T-019.

@@ -51,7 +51,7 @@ launch() {
   A shell am force-stop "$PKG"
   A shell am start -W -a android.intent.action.VIEW \
     -d "pitplanner://expo-development-client/?url=http%3A%2F%2Flocalhost%3A$METRO_PORT" "$PKG" >/dev/null
-  wait_for_app 30
+  wait_for_app 90
   if [ -n "$route" ]; then
     A shell am start -W -a android.intent.action.VIEW -d "pitplanner://$route" "$PKG" >/dev/null
     sleep 2
@@ -100,13 +100,15 @@ dump() {
   printf '%s\n' "$xml"
 }
 
-# Wait until the app (not the dev launcher) shows its tab bar or a dev screen.
+# Wait until the app itself is on screen: its tab bar, or the migration error screen. The app's window is up
+# seconds before that, showing only the dev client's Tools button while the bundle loads (longer on a cold
+# Metro). Returning then let a test kill the app before a link it had sent was acted on (T-010: the db test
+# lost its first save that way).
 wait_for_app() {
   local secs="$1" t0=$SECONDS ui
   while ((SECONDS - t0 < secs)); do
     ui="$(dump 2>/dev/null)"
-    if grep -q "package=\"$PKG\"" <<<"$ui" && ! grep -q 'text="DEVELOPMENT SERVERS"' <<<"$ui"; then
-      sleep 2
+    if grep -q "package=\"$PKG\"" <<<"$ui" && grep -qE 'content-desc="Plan"|Export my data' <<<"$ui"; then
       return 0
     fi
     sleep 1

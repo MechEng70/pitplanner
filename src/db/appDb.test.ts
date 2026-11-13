@@ -1,13 +1,16 @@
 // The app database on a stand-in for expo-sqlite (better-sqlite3 behind the same method names): opening,
 // migrating, and the dev-only forced migration failure the device test uses.
-import { armForcedFailure, dbStatus, FORCE_FAILURE_KEY, openApp, startupMigrations } from './appDb';
+import { armForcedFailure, dbStatus, FORCE_FAILURE_KEY, openApp, rawDatabaseFiles, startupMigrations } from './appDb';
 import { MigrationError, userVersion } from './migrate';
 import { migrations } from './migrations';
 import { testDb } from './testDb';
 
 const NOW = 1794500000000;
 const mockOpen = jest.fn();
-jest.mock('expo-sqlite', () => ({ openDatabaseSync: (name: string) => mockOpen(name) }));
+jest.mock('expo-sqlite', () => ({
+  defaultDatabaseDirectory: 'file:///data/files/SQLite',
+  openDatabaseSync: (name: string) => mockOpen(name),
+}));
 
 function standIn() {
   const Database = require('better-sqlite3') as typeof import('better-sqlite3');
@@ -103,4 +106,15 @@ test('dbStatus: version, journal mode, tables', () => {
   const s = dbStatus(migrated());
   expect(s).toMatchObject({ userVersion: migrations.length, failureArmed: false });
   expect(s.tables).toEqual(['active_cook', 'cook_history', 'cook_history_items', 'cookers', 'kv', 'rate_overrides']);
+});
+
+test('the raw database files to share when it cannot be opened: the file, its log and journal, and a dated tar name', () => {
+  expect(rawDatabaseFiles(Date.UTC(2026, 10, 12, 22, 5))).toEqual({
+    uris: [
+      'file:///data/files/SQLite/pitplanner.db',
+      'file:///data/files/SQLite/pitplanner.db-wal',
+      'file:///data/files/SQLite/pitplanner.db-journal',
+    ],
+    name: 'pitplanner-database-2026-11-12-2205.tar',
+  });
 });

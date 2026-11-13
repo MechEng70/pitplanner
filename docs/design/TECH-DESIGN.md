@@ -181,7 +181,8 @@ screens and `historyView.ts` use.
   `tools/migrations.test.mjs` (in `npm run check`) fails when a migration file changes, is removed or has no
   entry. `npm run migrations:freeze` records a new file and refuses to change an existing entry. Fixes are new
   migrations.
-- `PRAGMA foreign_keys = ON` and `journal_mode = WAL` at open.
+- `PRAGMA foreign_keys = ON` and `journal_mode = WAL` at open. `Db.transaction` nests with SAVEPOINTs: an inner
+  step that fails undoes only its own writes.
 - Tests (Jest, `better-sqlite3` behind the same `Db` interface): 0 -> latest matches a schema snapshot; for
   every version N, fixture data at N migrates to latest intact; every repository round-trips.
 - **Unreadable values are quarantined, never silently lost** (Jason, 2026-11-12). A read never throws and never
@@ -194,8 +195,9 @@ screens and `historyView.ts` use.
   works on a database stuck at an old version). The migration error screen shares it (T-010); Gear > Export
   and import come in T-036.
 - Startup: `app/_layout.tsx` calls `openAppDb` (`src/db/appDb.ts`) before any screen. `ok` builds the store
-  over the repositories; a failure shows the migration error screen (one sentence, Export my data, details)
-  with the database left open at its old version. Dev builds can force one failing start for the device test
+  over the repositories; a failure shows the migration error screen (kit empty state: title, body, Export
+  my data, details) with the database left open at its old version. If it cannot be opened at all, Export my
+  data shares the database file with its write-ahead log as one tar. Dev builds can force one failing start for the device test
   (`pitplanner://dev/db?fail=1`); release builds never read that flag.
 
 **Can the 0.2.0 data be migrated? Yes.** Same app ID and signing key means Android keeps the app's data

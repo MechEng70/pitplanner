@@ -1,13 +1,14 @@
 // expoDb maps the Db interface onto expo-sqlite's synchronous API. expo-sqlite is native, so here it is a
 // stand-in with the same method names and result shapes on better-sqlite3: the adapter's mapping, the
 // pragmas and the migrations run for real; only the native binding is replaced.
-import { expoDb } from './expoDb';
+import { databaseFileUri, expoDb } from './expoDb';
 import { openMigrated, userVersion } from './migrate';
 import { migrations } from './migrations';
 
 const mockOpened: string[] = [];
 
 jest.mock('expo-sqlite', () => ({
+  defaultDatabaseDirectory: '/data/user/0/app/files/SQLite',
   openDatabaseSync(name: string) {
     const Database = require('better-sqlite3') as typeof import('better-sqlite3');
     const sqlite = new Database(':memory:');
@@ -56,4 +57,26 @@ test('a transaction rolls back on a throw', () => {
   ).toThrow('stop');
   expect(db.all('SELECT key FROM kv')).toEqual([]);
   db.close();
+});
+
+test('a caught failure inside a transaction leaves none of its writes (savepoints through expo-sqlite)', () => {
+  const db = expoDb();
+  openMigrated(db, migrations);
+  const add = 'INSERT INTO kv (key, value, updated_at) VALUES (?, ?, ?)';
+  db.transaction(() => {
+    db.run(add, ['kept', '1', 5]);
+    try {
+      db.transaction(() => {
+        db.run(add, ['lost', '2', 5]);
+        throw new Error('inner');
+      });
+    } catch {
+      // caught
+    }
+  });
+  expect(db.all('SELECT key FROM kv')).toEqual([{ key: 'kept' }]);
+});
+
+test('the database file is where expo-sqlite keeps it, as a file URI', () => {
+  expect(databaseFileUri()).toBe('file:///data/user/0/app/files/SQLite/pitplanner.db');
 });

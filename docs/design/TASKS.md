@@ -477,11 +477,12 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     `src/test/store.tsx` (`testRepos`, `storeWrapper`) for screen tests.
   - Startup: `app/_layout.tsx` -> `openAppDb(__DEV__)` (`src/db/appDb.ts`, opened once) -> `StoreProvider`,
     or `MigrationErrorScreen`. A database that cannot be opened at all is the same screen with Export off.
-  - Error screen `src/screens/shared/MigrationError.tsx`: kit `Text` (the sentence), primary `Button`
-    "Export my data", text `Button` "Show details" / "Hide details", details in `InfoBox`; a failed export
-    shows the kit `Banner` "The export did not work. Try again." Sentences: "The update failed, but your data
-    is safe." and, for a database from a newer app, "Your data is from a newer version of Pit Planner, and it
-    is safe."
+  - Error screen `src/screens/shared/MigrationError.tsx` (rebuilt after Jason's review): the kit
+    `EmptyState` with the `Warn` icon, title "Pit Planner couldn't update", body "Your data is safe. Tap
+    Export my data and send the file to Jason.", the primary `Button` "Export my data", then the text `Button`
+    "Show details" / "Hide details" centered like the body, with the details in an `InfoBox`. A failed export
+    shows the kit `Banner` "The export did not work. Try again." The same screen for a failed migration, a
+    database from a newer app and a database that cannot be opened; the details say which.
   - Export: `src/db/export.ts` (`exportDump`, `exportFileName`), shared by `src/platform/shareFile.ts`
     (expo-file-system cache file + expo-sharing; both added, `~58.0.x`).
   - Draft notice: `state.draftLost` shows the kit `Banner` (warn) "Your saved plan could not be loaded." on
@@ -496,6 +497,23 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     tabs; details show after the tap; Export my data opens the share sheet; the start after is normal with
     the same version, tables and units. Screenshot `docs/fidelity/t010-migration-error.png`. The grey gear
     at the top right is the Expo dev client's own button (dev builds only), not part of the screen.
+  - Fixes after Jason's review (2026-11-12, before T-011):
+    - A database that cannot be opened at all: Export my data shares the database files themselves as one
+      tar (`pitplanner-database-<date>.tar`: `pitplanner.db`, `-wal`, `-journal`; `src/lib/tar.ts`, checked
+      against the system `tar`; `shareFilesAsTar`). Not the `.db` file alone: on the emulator the `.db` file
+      was 4 KB and its write-ahead log 190 KB, so the file alone would have held almost none of the data.
+      Device test `db-unopenable` (emulator only; swaps the file for a text file and puts it back).
+    - Nested `Db.transaction` calls are SAVEPOINTs: an inner step that throws undoes only its own writes,
+      also when the caller catches the error (tests in `migrate.test.ts` and through `expoDb`).
+    - The `db` device test failure at 115% (first T-010 run): cause found. `launch` returned as soon as the
+      app's window existed; for some seconds that window shows only the dev client's Tools button while the
+      bundle loads (measured: window at 8.6 s, tabs at 14.4 s on a cold Metro). The link was not lost (sent
+      during loading it was acted on 3 times out of 3, later), but the test's next `launch` force-stopped the
+      app before the save had run. It was never a database problem. Fix: `wait_for_app` waits for the app's
+      own UI (the tab bar or the error screen), and `db` sends its link once and fails if the saved value
+      does not show (no retry). `npm run device -- --no-build --only db --repeat 10`: 20 of 20 passed (10 at
+      115%, 10 at 130%; 40 save, kill, restart cycles).
+    - `--repeat N` added to the device runner.
   - Device runner fixes found on the way: a just-booted emulator could still show its keyguard, so the run
     stopped with "locked" (now asks up to 15 s; the phone is never unlocked); the first start after an
     install could still be loading when the `set` link arrived, so `db` now waits for the saved units on

@@ -5,9 +5,10 @@ import { MigrationErrorScreen } from './MigrationError';
 const failed = new MigrationError('failed', 2, 'migration 2 (add_notes) failed', new Error('no such column: x'));
 const newer = new MigrationError('newer', 7, 'database is version 7, this app knows up to 1');
 
-test('one plain sentence, Export my data, and the details hidden until asked for', async () => {
+test('the empty state: title, body, Export my data, and the details hidden until asked for', async () => {
   await render(<MigrationErrorScreen error={failed} onExport={async () => {}} />);
-  expect(screen.getByText('The update failed, but your data is safe.')).toBeOnTheScreen();
+  expect(screen.getByRole('heading', { name: "Pit Planner couldn't update" })).toBeOnTheScreen();
+  expect(screen.getByText('Your data is safe. Tap Export my data and send the file to Jason.')).toBeOnTheScreen();
   expect(screen.getByRole('button', { name: 'Export my data' })).toBeEnabled();
   expect(screen.queryByText(/migration 2/)).toBeNull();
   await fireEvent.press(screen.getByRole('button', { name: 'Show details' }));
@@ -16,9 +17,9 @@ test('one plain sentence, Export my data, and the details hidden until asked for
   expect(screen.queryByText(/migration 2/)).toBeNull();
 });
 
-test('a database from a newer app says so', async () => {
+test('a database from a newer app: same screen, the details say why', async () => {
   await render(<MigrationErrorScreen error={newer} onExport={async () => {}} />);
-  expect(screen.getByText('Your data is from a newer version of Pit Planner, and it is safe.')).toBeOnTheScreen();
+  expect(screen.getByRole('heading', { name: "Pit Planner couldn't update" })).toBeOnTheScreen();
   await fireEvent.press(screen.getByRole('button', { name: 'Show details' }));
   expect(screen.getByText('database is version 7, this app knows up to 1')).toBeOnTheScreen();
 });
@@ -42,9 +43,4 @@ test('a failed export says so and can be tried again', async () => {
   await fireEvent.press(screen.getByRole('button', { name: 'Export my data' }));
   await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
   expect(onExport).toHaveBeenCalledTimes(2);
-});
-
-test('with no database to read, Export my data is off', async () => {
-  await render(<MigrationErrorScreen error={new MigrationError('failed', 0, 'the database could not be opened')} />);
-  expect(screen.getByRole('button', { name: 'Export my data' })).toBeDisabled();
 });

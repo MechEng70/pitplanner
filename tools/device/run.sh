@@ -1,7 +1,8 @@
 #!/bin/bash
 # One unattended device pass on the dev build (TASKS T-006).
-#   npm run device -- [--phone] [--no-build] [--only <test>]...
-#   tests: smoke, sheet-keyboard, stable-controls, db, migration-error (default: all). --only repeats or takes a comma list.
+#   npm run device -- [--phone] [--no-build] [--repeat N] [--only <test>]...
+#   tests: smoke, sheet-keyboard, stable-controls, db, migration-error, db-unopenable (default: all).
+#   --repeat N runs the chosen tests N times at each font scale (to catch a test that only sometimes fails). --only repeats or takes a comma list.
 # Target: the test emulator (tools/device/avd.sh; started headless if needed and stopped again), or with
 # --phone the real phone, only for tests that need real hardware (TASKS "Real phone"; Jason, 2026-11-12).
 # Safety on the phone (Jason's own): stops if it is locked; backs up the dev build's data and restores it on
@@ -15,14 +16,20 @@ set -uo pipefail
 . "$(dirname "$0")/lib.sh"
 cd "$DEVICE_DIR" || exit 1
 
-ALL=(smoke sheet-keyboard stable-controls db migration-error)
+ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable)
 TESTS=()
 NOBUILD=""
+REPEAT=1
 export DEVICE_TARGET=emulator
 while [ $# -gt 0 ]; do
   case "$1" in
     --no-build) NOBUILD=1 ;;
     --phone) DEVICE_TARGET=phone ;;
+    --repeat)
+      REPEAT="${2:?--repeat needs a number}"
+      [[ "$REPEAT" =~ ^[1-9][0-9]*$ ]] || { echo "--repeat needs a number" >&2; exit 2; }
+      shift
+      ;;
     --only)
       IFS=, read -r -a more <<<"${2:?--only needs a test name}"
       TESTS+=("${more[@]}")
@@ -250,6 +257,8 @@ test_stable_controls() {
 # A line of text on the screen (uiautomator `text=`), exactly.
 has_text() { grep -qF "text=\"$2\"" "$1"; }
 SCHEMA_VERSION=$(find "$ROOT/src/db/migrations" -name '[0-9][0-9][0-9][0-9]_*.ts' | wc -l)
+ERROR_TITLE="Pit Planner couldn't update"
+ERROR_BODY="Your data is safe. Tap Export my data and send the file to Jason."
 DB_TABLES="tables active_cook, cook_history, cook_history_items, cookers, kv, rate_overrides"
 
 # T-010: the real expo-sqlite database opens and migrates (version, WAL, the six tables), and a change made
@@ -262,12 +271,11 @@ test_db() {
     [ "$u" = C ] && w=kg || w=lb
     launch "dev/db?set=$u" || { result "FAIL  db $s: app did not open"; return; }
     # The change must be on screen before the kill; otherwise this would test the link, not the database.
-    # (The first start after an install can still be loading the bundle when the link arrives.)
+    # The link is sent once: if the save does not show, that is a failure, not something to retry.
     saved=""
-    for _ in $(seq 10); do
+    for _ in $(seq 15); do
       if dump >"$dir/db-$u-set.xml" && has_text "$dir/db-$u-set.xml" "units $u $w"; then saved=1; break; fi
-      A shell am start -W -a android.intent.action.VIEW -d "pitplanner://dev/db?set=$u" "$PKG" >/dev/null
-      sleep 2
+      sleep 1
     done
     if [ -z "$saved" ]; then ok=0; log "    the app did not show units $u $w after saving them"; continue; fi
     log "    saved: units $u $w"
@@ -283,7 +291,7 @@ test_db() {
 }
 
 # T-010: a forced migration failure (dev builds only; armed from the dev database screen, used up by the next
-# start) shows the error screen instead of the app. The sentence and Export my data show, the details only
+# start) shows the error screen instead of the app. The title, body and Export my data show, the details only
 # after Show details; Export my data opens the Android share sheet (checked by window focus and closed again:
 # it lists other apps, so it is never dumped or photographed); the start after that is normal, with the
 # version and the data as they were.
@@ -297,7 +305,8 @@ test_migration_error() {
 
   launch "" || { result "FAIL  migration-error $s: app did not open"; return; }
   dump >"$dir/error.xml" || { result "FAIL  migration-error $s: could not read the error screen"; return; }
-  has_text "$dir/error.xml" "The update failed, but your data is safe." || miss "the sentence"
+  has_text "$dir/error.xml" "$ERROR_TITLE" || miss "the title"
+  has_text "$dir/error.xml" "$ERROR_BODY" || miss "the body"
   grep -q 'Export my data' "$dir/error.xml" || miss "Export my data"
   grep -q 'Show details' "$dir/error.xml" || miss "Show details"
   if grep -q 'Forced by' "$dir/error.xml"; then ok=0; log "    details are showing before Show details"; fi
@@ -327,12 +336,58 @@ test_migration_error() {
   if [ $ok = 1 ]; then result "PASS  migration-error $s"; else result "FAIL  migration-error $s"; fi
 }
 
+# T-010 follow-up: a database file that cannot be opened at all (not a database) shows the same screen, and
+# Export my data shares the database files (one tar). Emulator only: the test swaps the dev build's database for a text
+# file and puts the real one back afterwards (also when a step fails).
+test_db_unopenable() {
+  local s="$1" dir="$2" ok=1 units focus dbdir=files/SQLite
+  miss() { ok=0; log "    MISSING: $1"; }
+  if ! is_emulator; then log "    db-unopenable runs on the emulator only; skipped"; return; fi
+  launch "dev/db" || { result "FAIL  db-unopenable $s: app did not open"; return; }
+  dump >"$dir/unopenable-before.xml" || { result "FAIL  db-unopenable $s: could not read the screen"; return; }
+  units=$(grep -oE 'text="units [CF] (kg|lb)"' "$dir/unopenable-before.xml" | head -n 1)
+  A shell am force-stop "$PKG"
+  A shell run-as "$PKG" sh -c "'cd $dbdir && mkdir ../db-aside && mv pitplanner.db* ../db-aside/ && echo not-a-database-not-a-database >pitplanner.db'" ||
+    { result "FAIL  db-unopenable $s: could not swap the database file"; return; }
+  put_back() {
+    A shell am force-stop "$PKG"
+    A shell run-as "$PKG" sh -c "'cd $dbdir && rm -f pitplanner.db pitplanner.db-wal pitplanner.db-shm pitplanner.db-journal && mv ../db-aside/* . && rmdir ../db-aside'"
+  }
+  if launch "" && dump >"$dir/unopenable.xml"; then
+    has_text "$dir/unopenable.xml" "$ERROR_TITLE" || miss "the title"
+    tap "Show details" 1 | tee -a "$REPORT"
+    dump >"$dir/unopenable-details.xml" || miss "the screen after Show details"
+    grep -q 'the database could not be opened' "$dir/unopenable-details.xml" || miss "the error details"
+    shot "$dir/db-unopenable.png"
+    tap "Export my data" 1 | tee -a "$REPORT"
+    sleep 2
+    focus=$(A shell dumpsys window | grep -m1 mCurrentFocus | tr -d '\r')
+    if [[ "$focus" =~ intentresolver|ChooserActivity|ResolverActivity ]]; then log "    Export my data: share sheet opened for the database files"
+    else ok=0; log "    Export my data: no share sheet (focus: ${focus##*mCurrentFocus=})"; fi
+    A shell input keyevent KEYCODE_BACK
+    sleep 1
+  else
+    miss "the error screen"
+  fi
+  put_back || { result "FAIL  db-unopenable $s: could not put the database back"; return; }
+  if launch "dev/db" && dump >"$dir/unopenable-after.xml"; then
+    has_text "$dir/unopenable-after.xml" "user_version $SCHEMA_VERSION" || miss "after: user_version $SCHEMA_VERSION"
+    [ -n "$units" ] && grep -qF "$units" "$dir/unopenable-after.xml" || miss "after: the same ${units:-units}"
+  else
+    miss "the app after the database was put back"
+  fi
+  if [ $ok = 1 ]; then result "PASS  db-unopenable $s"; else result "FAIL  db-unopenable $s"; fi
+}
+
 for s in 1.15 1.3; do
   A shell settings put system font_scale "$s"
   dir="$OUT/$s"
   mkdir -p "$dir"
   log "== font scale $s"
-  for t in "${TESTS[@]}"; do "test_${t//-/_}" "$s" "$dir"; done
+  for ((round = 1; round <= REPEAT; round++)); do
+    [ "$REPEAT" = 1 ] || log "-- round $round of $REPEAT"
+    for t in "${TESTS[@]}"; do "test_${t//-/_}" "$s" "$dir"; done
+  done
 done
 
 # --- images and summary -----------------------------------------------------------------------------------

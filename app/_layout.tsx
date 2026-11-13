@@ -9,12 +9,12 @@ import { Stack, ThemeProvider } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useMemo, useState } from 'react';
 import { LogBox } from 'react-native';
-import { openAppDb } from '@/db/appDb';
+import { openAppDb, rawDatabaseFiles } from '@/db/appDb';
 import type { Db } from '@/db/db';
 import { exportDump, exportFileName } from '@/db/export';
 import { repos } from '@/db/repos';
 import { StoreProvider } from '@/lib/store';
-import { shareTextFile } from '@/platform/shareFile';
+import { shareFilesAsTar, shareTextFile } from '@/platform/shareFile';
 import { MigrationErrorScreen } from '@/screens/shared/MigrationError';
 import { navTheme } from '@/theme/navTheme';
 
@@ -23,8 +23,13 @@ import { navTheme } from '@/theme/navTheme';
 // drops the wrapper.
 LogBox.ignoreLogs(['ImageBackground is deprecated']);
 
-function exportData(db: Db): Promise<void> {
+/** Export my data: the JSON dump, or the database files themselves (one tar) when it could not be opened. */
+function exportData(db: Db | null): Promise<void> {
   const now = Date.now();
+  if (!db) {
+    const raw = rawDatabaseFiles(now);
+    return shareFilesAsTar(raw.uris, raw.name, 'Export my data', now);
+  }
   const dump = exportDump(db, now, Constants.expoConfig?.version ?? '');
   return shareTextFile(exportFileName(now), JSON.stringify(dump, null, 1), 'application/json', 'Export my data');
 }
@@ -32,7 +37,6 @@ function exportData(db: Db): Promise<void> {
 export default function RootLayout() {
   const [boot] = useState(() => openAppDb(__DEV__));
   const data = useMemo(() => (boot.ok ? repos(boot.db) : null), [boot]);
-  const failedDb = boot.ok ? null : boot.db;
   return (
     <ThemeProvider value={navTheme}>
       <StatusBar style="light" />
@@ -43,7 +47,7 @@ export default function RootLayout() {
           />
         </StoreProvider>
       ) : boot.ok ? null : (
-        <MigrationErrorScreen error={boot.error} onExport={failedDb ? () => exportData(failedDb) : undefined} />
+        <MigrationErrorScreen error={boot.error} onExport={() => exportData(boot.db)} />
       )}
     </ThemeProvider>
   );

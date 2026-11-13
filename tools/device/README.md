@@ -13,6 +13,7 @@ npm run device -- --phone --only smoke           # the real phone (only when a t
 tools/device/avd.sh start | stop                 # the emulator by hand
 npm run device -- --no-build --only sheet-keyboard
 npm run device -- --only smoke,stable-controls
+npm run device -- --no-build --only db --repeat 10   # a test that only sometimes fails
 ```
 
 Read `out/report.txt` first (the "device summary" block at the end), then the images it lists.
@@ -22,7 +23,8 @@ Read `out/report.txt` first (the "device summary" block at the end), then the im
 | `smoke` | The app opens; Plan, Cook and Gear each open. Images: `out/smoke.png`. |
 | `sheet-keyboard` | In a kit Sheet (`pitplanner://dev/kit?sheet=form`) with the keyboard open, the focused field and the pinned Save are fully above the keyboard, and the field is above Save. Weight (bottom) first, then Name (top). D-4 condition. Images: `out/sheet-keyboard.png`. |
 | `db` | The real expo-sqlite database (`pitplanner://dev/db`): `user_version`, WAL and the six tables; units saved through the store are still there after the app is killed and restarted (C, then F). |
-| `migration-error` | A forced migration failure (dev builds only, armed by `pitplanner://dev/db?fail=1`, used up by the next start) shows the error screen: the sentence and Export my data, details only after Show details, Export my data opens the share sheet (window focus only; never dumped or photographed, it lists other apps). The start after is normal with the same version and data. Images: `out/migration-error.png`. |
+| `migration-error` | A forced migration failure (dev builds only, armed by `pitplanner://dev/db?fail=1`, used up by the next start) shows the error screen: the title, body and Export my data, details only after Show details, Export my data opens the share sheet (window focus only; never dumped or photographed, it lists other apps). The start after is normal with the same version and data. Images: `out/migration-error.png`. |
+| `db-unopenable` | Emulator only. The dev build's database file is swapped for a text file (and put back afterwards): the same error screen shows, the details say the database could not be opened, and Export my data opens the share sheet for the file itself. |
 | `stable-controls` | For each step in `targets.tsv`: tapping the control moves neither it, its row nor anything above it (T-017 PR-3). A target starts as opened (`top`) or scrolled to the end (`bottom`: content shrinking below a control makes the view clamp and jump). `expect moves` marks a detector self-test (the spike must report a move). |
 
 ## Safety
