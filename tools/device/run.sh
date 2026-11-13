@@ -1,7 +1,7 @@
 #!/bin/bash
 # One unattended device pass on the dev build (TASKS T-006).
 #   npm run device -- [--phone] [--no-build] [--repeat N] [--only <test>]...
-#   tests: smoke, sheet-keyboard, stable-controls, db, migration-error, db-unopenable, legacy-import
+#   tests: smoke, sheet-keyboard, stable-controls, db, migration-error, db-unopenable, legacy-import, alarm
 #   (default: all).
 #   --repeat N runs the chosen tests N times at each font scale (to catch a test that only sometimes fails). --only repeats or takes a comma list.
 # Target: the test emulator (tools/device/avd.sh; started headless if needed and stopped again), or with
@@ -17,7 +17,7 @@ set -uo pipefail
 . "$(dirname "$0")/lib.sh"
 cd "$DEVICE_DIR" || exit 1
 
-ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import)
+ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm)
 TESTS=()
 NOBUILD=""
 REPEAT=1
@@ -475,6 +475,46 @@ test_legacy_import() {
   if launch "dev/db" && dump >"$dir/import-after.xml" && has_text "$dir/import-after.xml" "user_version $SCHEMA_VERSION"; then :
   else miss "the app after the database was put back"; fi
   if [ $ok = 1 ]; then result "PASS  legacy-import $s"; else result "FAIL  legacy-import $s"; fi
+}
+
+# T-013: a test alarm through the real path (pit-alarms: setAlarmClock, AlarmReceiver, the step notification)
+# rings with the screen off. Emulator only: the notification is read from `dumpsys notification`, which on
+# the phone would list other apps'. The dev alarm screen (pitplanner://dev/alarm) sets the alarm 20 s out
+# with a title unique to this run; the screen is turned off; the notification must be posted on the step
+# channel; afterwards nothing is left stored and nothing repeats (test alarms do not).
+test_alarm() {
+  local s="$1" dir="$2" ok=1 tag posted="" want
+  miss() { ok=0; log "    MISSING: $1"; }
+  if ! is_emulator; then log "    alarm runs on the emulator only; skipped"; return; fi
+  tag="$(date +%s)"
+  posted_now() {
+    A shell dumpsys notification --noredact </dev/null | grep -A60 "NotificationRecord.*pkg=$PKG " |
+      grep -q "android.title=String (Test alert $tag)"
+  }
+  A shell pm grant "$PKG" android.permission.POST_NOTIFICATIONS
+  launch "dev/alarm?test=20:$tag" || { result "FAIL  alarm $s: app did not open"; return; }
+  dump >"$dir/alarm-set.xml" || { result "FAIL  alarm $s: could not read the screen"; return; }
+  for want in "test alarm set, exact yes" "notifications on" "exact alarms on" "stored alarms 1, repeats 0"; do
+    has_text "$dir/alarm-set.xml" "$want" || miss "$want"
+  done
+  A shell dumpsys alarm </dev/null | grep -q "io.github.mecheng70.pitplanner.FIRE" || miss "the alarm in AlarmManager"
+  if posted_now; then miss "a screen-off ring (the alarm rang before the screen was off)"; fi
+  A shell input keyevent KEYCODE_SLEEP
+  sleep 1
+  A shell dumpsys power </dev/null | grep -q "mWakefulness=Asleep" || miss "the screen off"
+  for _ in $(seq 40); do
+    if posted_now; then posted=1; break; fi
+    sleep 1
+  done
+  if [ -n "$posted" ]; then log "    rang with the screen off: Test alert $tag"; else miss "the notification"; fi
+  A shell dumpsys notification --noredact </dev/null | grep -A60 "NotificationRecord.*pkg=$PKG " |
+    grep -q "channel=steps_v1" || miss "the step channel"
+  A shell input keyevent KEYCODE_WAKEUP
+  A shell wm dismiss-keyguard
+  if launch "dev/alarm" && dump >"$dir/alarm-after.xml"; then
+    has_text "$dir/alarm-after.xml" "stored alarms 0, repeats 0" || miss "stored alarms 0, repeats 0"
+  else miss "the app after the alarm"; fi
+  if [ $ok = 1 ]; then result "PASS  alarm $s"; else result "FAIL  alarm $s"; fi
 }
 
 for s in 1.15 1.3; do

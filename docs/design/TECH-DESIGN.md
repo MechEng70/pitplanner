@@ -244,11 +244,14 @@ RestoreReceiver: LOCKED_BOOT_COMPLETED, BOOT_COMPLETED, MY_PACKAGE_REPLACED, TIM
 ```
 
 - The module's `AndroidManifest.xml` declares the receivers (`exported=false`, `directBootAware=true`) and
-  permissions (`POST_NOTIFICATIONS`, `SCHEDULE_EXACT_ALARM`, `RECEIVE_BOOT_COMPLETED`,
-  `USE_FULL_SCREEN_INTENT`, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, `WAKE_LOCK`, as in 0.2.0); merged at
-  prebuild.
+  permissions exactly as the 0.2.0 manifest had them (`POST_NOTIFICATIONS`, `USE_EXACT_ALARM`,
+  `SCHEDULE_EXACT_ALARM` up to API 32, `RECEIVE_BOOT_COMPLETED`, `USE_FULL_SCREEN_INTENT`,
+  `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, `VIBRATE`); merged at prebuild.
 - Events to JS (`onFired`, `onAction`) through the module's event emitter.
-- New in the port: `setQuiet(until)` so Quiet also defers native nags (the known gap in 0.2.0).
+- New in the port: `setQuiet(until)` so Quiet also defers native nags (the known gap in 0.2.0). The window's
+  end is stored natively (`AlarmStore.quietUntil`); repeats due inside it move to its end, a repeat that
+  fires inside it is held without counting, and `setQuiet(null)` brings held repeats back to one interval
+  from now (`Quiet.kt`). Ending the cook clears it.
 - One notification owner: the module posts every step notification and requests `POST_NOTIFICATIONS` itself.
   `expo-notifications` and Notifee are not used (their schedulers do not use `setAlarmClock`).
 - Invariants, each with a test: replace the whole set, never patch; stable step keys; notifications stay until

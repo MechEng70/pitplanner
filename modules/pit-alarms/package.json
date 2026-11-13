@@ -2,5 +2,6 @@
   "name": "pit-alarms",
   "version": "0.0.0",
   "private": true,
-  "description": "Pit Planner step alarms (AlarmManager.setAlarmClock). Placeholder until T-013 ports the 0.2.0 plugin."
+  "main": "index.ts",
+  "description": "Pit Planner step alarms (AlarmManager.setAlarmClock): the 0.2.0 plugin as an Expo module, plus setQuiet."
 }

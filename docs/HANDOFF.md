@@ -1,9 +1,9 @@
-# Handoff (2026-11-13, ninth session: emulator memory and GPU, T-012)
+# Handoff (2026-11-13, ninth session: emulator memory and GPU, T-012, T-013)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## START HERE: scaffold, gate, theme, kit, device tests and release build, SQLite storage, the app store and the import from 0.2.0 in place (T-002..T-012 done), T-013 next
+## START HERE: scaffold, gate, theme, kit, device tests and release build, SQLite storage, the app store, the import from 0.2.0 and the alarm module in place (T-002..T-013 done), T-014 next
 
 - Root is now the Expo app: `app.config.ts` (variants by `APP_VARIANT`, versionCode from package.json),
   `app/` routes (tabs Plan, Cook, Gear placeholders), `src/lib/` pure helpers, `src/platform/types.ts`
@@ -84,6 +84,11 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
   The notice shows after a full import too (three sentences from Jason, `NOTICE_BODY`). T-038 must check the
   imported data on the Gear, Plan and History screens, not only in the database. The emulator holds no
   release app now, so `upgrade020.sh setup` can run.
+- Alarms (T-013): `modules/pit-alarms` is the 0.2.0 plugin on the Expo Modules API (same package, receiver
+  names and intent actions) plus `setQuiet` (`Quiet.kt`). JS: `pitAlarms` in the module, `alarmService` and
+  `permissionService` in `src/platform/alarms.ts` (typed exports only; wiring is T-015). Device test `alarm`
+  (emulator): a test alarm from `pitplanner://dev/alarm?test=20` rings with the screen off. Native tests
+  beyond the Quiet rule are T-014.
 - T-017 has PR-4 (equal-width tiles, mockup 05; try `flex: 1` first) and two PR-3 fixes to make: selected
   chips reserve their bold width, and nothing jumps when content below shrinks while scrolled to the bottom.
 - Tab bar is the kit `BottomNav` (0.2.0 icon pills); T-059 (whole turkey, cited FSIS numbers) follows T-019.
@@ -302,7 +307,7 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 1. Done 2026-11-12: Jason approved the stack-change plan; T-001 phone check on 0.2.0 passed.
 2. Jason: push `main` when ready (plan docs and T-001 are local only).
 3. Done: Maestro CLI installed (2.12.1, `~/.maestro/bin`).
-4. T-002..T-012 done (R-1 closed, D-4 decided and confirmed). Next: T-013,
+4. T-002..T-013 done (R-1 closed, D-4 decided and confirmed). Next: T-014,
    per WBS "Suggested order" (T-058 now sits between T-019 and the Cook screen).
    Push the `v0.2.0` tag only when Jason says.
 5. Still open from before (carried into the plan): real cook with alarms through a reboot (now T-037 on the Expo

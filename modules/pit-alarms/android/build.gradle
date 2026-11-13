@@ -1,4 +1,4 @@
-// pit-alarms: Expo module for step alarms (TECH-DESIGN section 6). Placeholder until T-013.
+// pit-alarms: Expo module for step alarms (TECH-DESIGN section 6): the 0.2.0 plugin on the Expo Modules API.
 plugins {
   id 'com.android.library'
   id 'expo-module-gradle-plugin'

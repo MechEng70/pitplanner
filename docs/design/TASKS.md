@@ -623,7 +623,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ## Phase 4: Alarm module
 
 ### T-013 `pit-alarms` Expo module (Kotlin port)
-- **Status:** todo
+- **Status:** done (see `git log --grep T-013`); test alarm rang with the screen off on the emulator 2026-11-13.
 - **Goal:** the 0.2.0 alarm plugin as an Expo module with the same behavior, plus `setQuiet`.
 - **Files:** `modules/pit-alarms/android/src/main/java/io/github/mecheng70/pitplanner/alarms/*.kt`
   (AlarmScheduler, AlarmStore, Notifications, Receivers, PitAlarmsModule), module `AndroidManifest.xml`,
@@ -636,6 +636,28 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   and `PermissionService`.
 - **Tests:** in T-014.
 - **Device testing (Jason):** none (Claude runs the 10 s test).
+- **Notes (2026-11-13):**
+  - `AlarmStore`, `AlarmScheduler`, `Notifications` and `Receivers` are the 0.2.0 files with these changes
+    only: the module cannot name the app's `MainActivity` or `R`, so the open and alarm-clock intents use the
+    package's launch intent (`Notifications.launchIntent`) and `ic_stat_pit` lives in the module's own
+    `res/drawable`; events go through `PitAlarmsModule.emit`; `drainActions` returns a list. Package, receiver
+    class names and the `FIRE` / `NAG` / `DONE` / `SNOOZE` action strings are unchanged.
+  - `PitAlarmsModule` (Expo `Module`, name `PitAlarms`): `setAlarms`, `cancelAll`, `acknowledge`, `setQuiet`,
+    `testAlarm`, `getScheduled`, `drainActions`, `status`, `requestNotifications` (through Expo's permission
+    manager; resolves with the status), `openSettings(which)` (one function for the four 0.2.0 settings
+    calls); events `alarmFired`, `alarmAction`.
+  - `setQuiet(until)`: see TECH-DESIGN section 6. The rule is pure (`Quiet.kt`: `active`, `defer`,
+    `release`) with a JUnit test now (`QuietTest`, replaces the placeholder test); the scheduler, store and
+    receiver tests are T-014.
+  - Manifest: the module's `AndroidManifest.xml` has the three receivers and the permissions exactly as 0.2.0
+    declared them (`USE_EXACT_ALARM`, `SCHEDULE_EXACT_ALARM` up to API 32, `VIBRATE`; TECH-DESIGN listed
+    `WAKE_LOCK`, which 0.2.0 never had; TECH-DESIGN corrected).
+  - JS: `modules/pit-alarms/index.ts` exports `pitAlarms`; `src/platform/alarms.ts` assigns it to
+    `AlarmService` and `PermissionService`, so the typecheck proves the API matches. T-015 adds the wiring.
+  - Device: dev route `pitplanner://dev/alarm` (`?test=20:x`; dev builds only, not an app screen) and
+    device test `alarm` (emulator only): the alarm is in AlarmManager, the screen is turned off, the
+    notification is posted on `steps_v1`, and afterwards nothing is stored or repeating. Sound is not checked
+    (the emulator runs without audio); the real phone is T-016.
 
 ### T-014 `pit-alarms` native tests
 - **Status:** todo
