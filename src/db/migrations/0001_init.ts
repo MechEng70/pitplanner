@@ -22,7 +22,8 @@ CREATE TABLE active_cook (
   started_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
 CREATE TABLE cook_history (
   id TEXT PRIMARY KEY, served_at INTEGER NOT NULL, pit_temp_f REAL NOT NULL,
-  late_min INTEGER, notes TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL);
+  late_min REAL, ended_early INTEGER NOT NULL DEFAULT 0,
+  notes TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL);
 CREATE TABLE cook_history_items (
   id INTEGER PRIMARY KEY, cook_id TEXT NOT NULL REFERENCES cook_history(id) ON DELETE CASCADE,
   position INTEGER NOT NULL, name TEXT NOT NULL, food_id TEXT NOT NULL, method_id TEXT NOT NULL,

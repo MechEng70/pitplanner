@@ -394,12 +394,13 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     migrations kept, newer database, foreign-key cascade, WAL on a file, CHECK constraints, transactions,
     and `expoDb` against a stand-in for expo-sqlite on better-sqlite3 (same method names and result shapes).
   - Not done here: nothing in the app opens the database yet (T-010 wires it into startup), so `expoDb` has not
-    run on a device. The error screen itself ("Export my data") is not in the mockups and has no task: ask
-    Jason before building it (T-010 or T-036).
+    run on a device. The error screen itself ("Export my data") is in T-010 (Jason's yes, 2026-11-12).
+  - T-009 changed this migration before it shipped: `cook_history.late_min` is REAL and `ended_early` is new
+    (see T-009 notes). From the first release that contains it, 0001 is never edited again.
   - Added `expo-sqlite` ~58.0.17, `better-sqlite3` and `@types/better-sqlite3` (dev).
 
 ### T-009 Repositories
-- **Status:** todo
+- **Status:** done (see `git log --grep T-009`)
 - **Goal:** typed reads and writes for kv, cookers, rate_overrides, active_cook and cook history.
 - **Files:** `src/db/repos/*.ts`, `src/lib/history.ts` (keeps `CookRecord`; I/O through the repo), tests.
 - **Depends on:** T-008.
@@ -408,18 +409,60 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Acceptance:** every repo round-trips; a corrupt JSON row reads as the default and never throws to the UI.
 - **Tests:** Jest repo tests including corrupt rows; `engine/history.test.ts` green and unchanged.
 - **Device testing (Jason):** none.
+- **Notes (done 2026-11-12):**
+  - `repos(db)` in `src/db/repos/index.ts` returns `kv`, `settings`, `cookers`, `rates`, `activeCook`,
+    `history`. All synchronous; every write takes `now`.
+    - `settings` (over `kv`): `units`/`setUnits` (default F, lb), `flags`/`setFlags`, `update`/`setUpdate`,
+      `draft`/`setDraft` (null when missing: the store makes the default draft).
+    - `cookers`: `load(): Cookers`, `save(cookers, now)` replaces the set, `count()` (0 = gear never saved,
+      the store's `firstRun`). Row id is `kind:profileId`.
+    - `rates`: `load()` returns `{ rates, totalHours, rateLocks }` (the store's three maps), `setRate`,
+      `setTotalHours` (null removes), `setLock`; a row with nothing left is deleted.
+    - `activeCook`: `load()`, `save(cook, now)`, `clear()`; read through `normalize` (`src/lib/cook.ts`).
+    - `history`: `list(): CookRecord[]` in the order saved, `logs()` (a query; equals `logsOf(list())`),
+      `save(record, now)` (same id replaces in place, for T-028's edit), `remove(id)`.
+  - Corrupt data never throws on read: bad JSON or a wrong shape in `kv` reads as the default; a corrupt
+    cooker row is skipped and the others load; an unusable rate is ignored; an unreadable cook is no cook;
+    corrupt item `options` read as none and the cook still counts. A draft with one bad item is dropped whole.
+  - **Schema v1 changed (not shipped yet, so 0001 was edited, with the snapshot and TECH-DESIGN section 5):**
+    `late_min INTEGER` alone could not tell "ended before serve" (`lateMin: null`, shown as "Ended early")
+    from "saved before lateness was kept" (`lateMin` absent, no status shown), so every imported 0.2.0 record
+    without `lateMin` would have read "Ended early". Now `late_min REAL` plus `ended_early INTEGER NOT NULL
+    DEFAULT 0`; a test checks the three cases through `serveStatus`.
+  - New `src/lib/draft.ts`: the `Draft` type (from the legacy store) and `parseDraft`. T-010's store imports
+    it. `src/lib/history.ts` is unchanged apart from its comment; `engine/history.test.ts` untouched, green.
+  - Tests: `src/db/repos/repos.test.ts` (31 cases).
 
 ### T-010 App store over repositories
 - **Status:** todo
 - **Goal:** app state (gear, units, draft, rates, totals, locks, history, cook, flags, firstRun) loads from
   SQLite and writes through on every change (D-5).
 - **Files:** `src/lib/store.tsx` (React context; port of `legacy/src/lib/store.tsx`), `src/lib/cook.ts` (types
-  kept; platform via interfaces), tests.
+  kept; platform via interfaces), `app/_layout.tsx` (open and migrate the database before the first screen),
+  `src/screens/shared/MigrationError.tsx`, `src/db/export.ts` (the JSON dump; T-036 adds the Gear row and
+  import on top of it), `tools/device/flows/` + `targets`/`run.sh` entries for the two device tests, tests.
 - **Depends on:** T-009.
+- **Migration error screen (Jason's yes, 2026-11-12):** shown instead of the app when `openMigrated` returns
+  `ok: false` (a failed migration, or a database from a newer app); never a silent reset. Built only from
+  existing kit components, no new UI patterns:
+  - one plain sentence: the update failed and your data is safe;
+  - an "Export my data" button (kit `Button`): shares a JSON dump of what can still be read (the database is
+    at its old version, untouched) through the share sheet;
+  - expandable error details (collapsed by default): migration version and the error message.
+  If an existing kit component cannot do the expandable part, stop and ask Jason before adding one.
 - **Acceptance:** killing the app after any change and reopening shows the change; `planInput(state)` returns
-  the same shape as before.
-- **Tests:** Jest store tests with the test DB and platform fakes.
-- **Device testing (Jason):** none.
+  the same shape as before. On the emulator (`npm run device`), with the real expo-sqlite database:
+  - a fresh install opens and migrates `pitplanner.db` (`user_version` 1, the six tables, WAL), and a change
+    made in the app is still there after the app is killed and reopened;
+  - a forced migration failure (dev build only, for example a dev-client link that adds a throwing migration
+    on the next start) shows the error screen at 115% and 130%; `user_version` and the data are unchanged;
+    Export my data opens the share sheet; after the forced failure is removed the app opens normally with
+    its data.
+- **Tests:** Jest store tests with the test DB and platform fakes; RNTL for the error screen (sentence, export
+  called once, details hidden until expanded, both failure kinds); export dump unit test. The forced-failure
+  switch cannot exist in a production build (test).
+- **Device testing (Jason):** none (emulator). Jason judges the error screen screenshots at 115% and 130%
+  against the kit gallery: same components, plain copy, nothing cut.
 
 ### T-011 `pit-legacy` module
 - **Status:** todo

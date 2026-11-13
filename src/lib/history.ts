@@ -1,5 +1,6 @@
 // Cook history records (SPEC section 9). Only Save on Cook finished writes one; Discard logs nothing.
-// Storage moves to SQLite (src/db, T-009); 0.2.0 kept them in files/history.json (imported in T-012).
+// Stored in SQLite through src/db/repos/history.ts (list, logs, save, remove); 0.2.0 kept them in
+// files/history.json (imported in T-012).
 
 import type { CookLog } from '../../engine/types.ts';
 

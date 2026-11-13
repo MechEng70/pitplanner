@@ -152,7 +152,10 @@ CREATE TABLE active_cook (    -- at most one running cook, rewritten on every ch
   started_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);
 CREATE TABLE cook_history (
   id TEXT PRIMARY KEY, served_at INTEGER NOT NULL, pit_temp_f REAL NOT NULL,
-  late_min INTEGER, notes TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL);
+  late_min REAL,              -- minutes after the planned serve; NULL when unknown or ended early
+  ended_early INTEGER NOT NULL DEFAULT 0,  -- 1: ended before serve (CookRecord.lateMin null); 0 with NULL
+                              -- late_min: a record from before lateMin was kept (no status shown)
+  notes TEXT NOT NULL DEFAULT '', created_at INTEGER NOT NULL);
 CREATE TABLE cook_history_items (
   id INTEGER PRIMARY KEY, cook_id TEXT NOT NULL REFERENCES cook_history(id) ON DELETE CASCADE,
   position INTEGER NOT NULL, name TEXT NOT NULL, food_id TEXT NOT NULL, method_id TEXT NOT NULL,
