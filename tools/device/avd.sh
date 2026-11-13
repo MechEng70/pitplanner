@@ -11,6 +11,9 @@ NAME=pitplanner
 # Fixed RAM for the emulator (Jason, 2026-11-12): passed on every start, so it holds whatever the AVD's
 # config.ini says (the AVD made in T-006 says 4096). 3 GB runs the dev build with Metro and Maestro.
 RAM_MB=3072
+# Graphics: software rendering (SwiftShader). `-gpu host` was tried on 2026-11-13 (EMU_GPU=host; it picked the
+# Intel Iris Xe through Mesa): the app never opened and every device test failed, so it is not used.
+GPU="${EMU_GPU:-swiftshader_indirect}"
 IMAGE="system-images;android-36;google_apis;x86_64"
 AVD_DIR="${ANDROID_AVD_HOME:-$HOME/.android/avd}/$NAME.avd"
 
@@ -41,7 +44,7 @@ case "${1:-}" in
     s="$(serial)"
     if [ -z "$s" ]; then
       nohup "$SDK/emulator/emulator" -avd "$NAME" -memory "$RAM_MB" -no-window -no-audio -no-boot-anim -no-snapshot-save \
-        -gpu swiftshader_indirect >"${TMPDIR:-/tmp}/pitplanner-emulator.log" 2>&1 &
+        -gpu "$GPU" >"${TMPDIR:-/tmp}/pitplanner-emulator.log" 2>&1 &
       for _ in $(seq 120); do s="$(serial)"; [ -n "$s" ] && break; sleep 1; done
       [ -n "$s" ] || { echo "Emulator did not appear (see ${TMPDIR:-/tmp}/pitplanner-emulator.log)." >&2; exit 1; }
     fi

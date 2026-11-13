@@ -100,7 +100,8 @@ dump() {
   printf '%s\n' "$xml"
 }
 
-# Wait until the app itself is on screen: its tab bar, or the migration error screen. The app's window is up
+# Wait until the app itself is on screen: its tab bar, the migration error screen, or the import notice (a
+# sheet over the tabs: its window is the one dumped). The app's window is up
 # seconds before that, showing only the dev client's Tools button while the bundle loads (longer on a cold
 # Metro). Returning then let a test kill the app before a link it had sent was acted on (T-010: the db test
 # lost its first save that way).
@@ -108,7 +109,7 @@ wait_for_app() {
   local secs="$1" t0=$SECONDS ui
   while ((SECONDS - t0 < secs)); do
     ui="$(dump 2>/dev/null)"
-    if grep -q "package=\"$PKG\"" <<<"$ui" && grep -qE 'content-desc="Plan"|Export my data' <<<"$ui"; then
+    if grep -q "package=\"$PKG\"" <<<"$ui" && grep -qE 'content-desc="Plan"|Export my data|Pit Planner has a new look' <<<"$ui"; then
       return 0
     fi
     sleep 1

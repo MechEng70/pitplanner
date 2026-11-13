@@ -14,14 +14,14 @@ export interface Flags {
 
 export const DEFAULT_UNITS: Units = { temp: 'F', weight: 'lb' };
 
-function parseUnits(raw: unknown): Units | null {
+export function parseUnits(raw: unknown): Units | null {
   if (!isObj(raw)) return null;
   const { temp, weight } = raw;
   if ((temp !== 'F' && temp !== 'C') || (weight !== 'lb' && weight !== 'kg')) return null;
   return { temp, weight };
 }
 
-function parseFlags(raw: unknown): Flags | null {
+export function parseFlags(raw: unknown): Flags | null {
   if (!isObj(raw)) return null;
   const out: Flags = {};
   if (raw.supportShown === true) out.supportShown = true;
@@ -29,7 +29,7 @@ function parseFlags(raw: unknown): Flags | null {
   return out;
 }
 
-function parseUpdate(raw: unknown): UpdateInfo | null {
+export function parseUpdate(raw: unknown): UpdateInfo | null {
   if (!isObj(raw) || !isNum(raw.checkedAt)) return null;
   const strOrNull = (v: unknown) => (isStr(v) ? v : null);
   return { checkedAt: raw.checkedAt, latest: strOrNull(raw.latest), url: strOrNull(raw.url) };

@@ -1,9 +1,9 @@
-# Handoff (2026-11-12, eighth session: T-007 follow-ups, T-008..T-011)
+# Handoff (2026-11-13, ninth session: emulator memory and GPU, T-012)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## START HERE: scaffold, gate, theme, kit, device tests and release build, SQLite storage, the app store and the legacy prefs reader in place (T-002..T-011 done), T-012 next
+## START HERE: scaffold, gate, theme, kit, device tests and release build, SQLite storage, the app store and the import from 0.2.0 in place (T-002..T-012 done), T-013 next
 
 - Root is now the Expo app: `app.config.ts` (variants by `APP_VARIANT`, versionCode from package.json),
   `app/` routes (tabs Plan, Cook, Gear placeholders), `src/lib/` pure helpers, `src/platform/types.ts`
@@ -74,6 +74,16 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
 - Memory: Gradle and Kotlin daemons are capped by `plugins/withGradleMemory.ts` (2 GB and 1.5 GB heaps, 6
   workers, 10 minute idle timeout), the emulator runs with 3 GB (`avd.sh`), and `npm run device` builds before
   it boots the emulator and stops the daemons in between (`tools/stop-gradle.sh`). Numbers in TASKS T-011.
+  `-gpu host` was tried (2026-11-13) and dropped: on the Intel Iris Xe the app never opened; the emulator stays
+  on software graphics.
+- Import (T-012): `src/db/legacyImport.ts` runs once at startup (`kv.legacy_import`), in one transaction;
+  unreadable parts are quarantined and named in a one-time notice (`ImportNotice`); the old files become
+  `*.imported` only when everything came along. Upgrade test: `tools/device/upgrade020.sh setup`, then
+  `check <apk>` (real 0.2.0 APK on the emulator, data made in its own screens, a 0.3.0 build over it); passed
+  with `release/pitplanner-0.3.0-alpha.2.apk`. Device test `legacy-import` covers the two notices.
+- Left on the emulator, waiting for Jason's yes before anything is removed: the release app at 0.3.0-alpha.2
+  with test data, `/data/local/tmp/kept-release-data-2026-11-12/`, and `canceled-run-leftovers/` in the dev
+  build's data (list in TASKS T-012). `upgrade020.sh setup` will not run again until the release app is gone.
 - T-017 has PR-4 (equal-width tiles, mockup 05; try `flex: 1` first) and two PR-3 fixes to make: selected
   chips reserve their bold width, and nothing jumps when content below shrinks while scrolled to the bottom.
 - Tab bar is the kit `BottomNav` (0.2.0 icon pills); T-059 (whole turkey, cited FSIS numbers) follows T-019.
@@ -292,7 +302,7 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 1. Done 2026-11-12: Jason approved the stack-change plan; T-001 phone check on 0.2.0 passed.
 2. Jason: push `main` when ready (plan docs and T-001 are local only).
 3. Done: Maestro CLI installed (2.12.1, `~/.maestro/bin`).
-4. T-002..T-011 done (R-1 closed, D-4 decided and confirmed). Next: T-012,
+4. T-002..T-012 done (R-1 closed, D-4 decided and confirmed). Next: T-013,
    per WBS "Suggested order" (T-058 now sits between T-019 and the Cook screen).
    Push the `v0.2.0` tag only when Jason says.
 5. Still open from before (carried into the plan): real cook with alarms through a reboot (now T-037 on the Expo

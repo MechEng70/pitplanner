@@ -6,7 +6,7 @@ import { isNum, isObj, parseJson } from './json.ts';
 import { quarantine } from './quarantine.ts';
 
 /** Enough shape for the Cook screen and the alarm sync not to crash on it. */
-function looksLikeCook(raw: unknown): raw is Partial<ActiveCook> {
+export function looksLikeCook(raw: unknown): raw is Partial<ActiveCook> {
   if (!isObj(raw) || !isObj(raw.plan) || !isObj(raw.input)) return false;
   if (!Array.isArray(raw.plan.events) || !Array.isArray(raw.input.items)) return false;
   return raw.original === undefined || (isObj(raw.original) && Array.isArray(raw.original.events));

@@ -47,8 +47,9 @@ function isOven(p: unknown): p is OvenProfile {
   );
 }
 
-const KINDS = ['smoker', 'griddle', 'oven'] as const;
-const readable = (kind: string, p: unknown) =>
+export const KINDS = ['smoker', 'griddle', 'oven'] as const;
+/** A profile the app can use for a cooker of this kind (also the legacy import's check). */
+export const readable = (kind: string, p: unknown) =>
   (kind === 'smoker' && isSmoker(p)) || (kind === 'griddle' && isGriddle(p)) || (kind === 'oven' && isOven(p));
 
 export function cookersRepo(db: Db) {

@@ -16,3 +16,5 @@ data/
 package-lock.json
 *.md
 *.html
+# Device test fixtures: byte-for-byte what the 0.2.0 app wrote (checked by legacy020.device.test.ts).
+tools/device/fixtures/

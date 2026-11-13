@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, Text } from '@/components/kit';
 import { armForcedFailure, dbStatus, openAppDb, type DbStatus } from '@/db/appDb';
+import { importReport } from '@/db/legacyImport';
 import { useStore } from '@/lib/store';
 import { legacyStore } from '@/platform/legacy';
 
@@ -22,11 +23,11 @@ export default function DbCheck() {
 function Check({ set, fail }: { set?: string; fail?: string }) {
   const { state, setUnits } = useStore();
   // Arming is a database write with nothing to redraw, so it runs once with the first status read.
-  const [status] = useState((): DbStatus | null => {
+  const [status] = useState((): (DbStatus & { imported: string }) | null => {
     const boot = openAppDb(true);
     if (!boot.ok) return null;
     if (fail === '1') armForcedFailure(boot.db, Date.now());
-    return dbStatus(boot.db);
+    return { ...dbStatus(boot.db), imported: importReport(boot.db)?.status ?? 'not run' };
   });
   // T-011: the pit-legacy native module answers on a real build (read only; nothing is retired here).
   const [legacyKeys] = useState(() => Object.keys(legacyStore.readCapacitorPrefs()).sort());
@@ -46,10 +47,17 @@ function Check({ set, fail }: { set?: string; fail?: string }) {
             <Text>journal {status.journalMode}</Text>
             <Text>tables {status.tables.join(', ')}</Text>
             <Text>failure armed {status.failureArmed ? 'yes' : 'no'}</Text>
+            <Text>import {status.imported}</Text>
           </>
         ) : null}
         <Text>
           units {state.units.temp} {state.units.weight}
+        </Text>
+        {/* T-012: what the store loaded (after an import: what came across from 0.2.0). */}
+        <Text>
+          data cookers {Object.keys(state.gear).length}, rates{' '}
+          {new Set([...Object.keys(state.rates), ...Object.keys(state.totalHours)]).size}, cooks {state.records.length},
+          plan items {state.draft.items.length}
         </Text>
         <Text>legacy prefs {legacyKeys.length > 0 ? legacyKeys.join(', ') : 'none'}</Text>
       </Stack>

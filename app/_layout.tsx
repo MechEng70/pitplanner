@@ -1,7 +1,8 @@
 // Root stack: global styles (NativeWind), the dark navigation theme and light system bar icons.
 // Roboto is registered natively by the expo-font config plugin (app.config.ts), so nothing loads at startup.
 // The database is opened and migrated here, before any screen (T-010): the store is built over it, or, when
-// a migration failed, the error screen is shown instead of the app. Setup (first run) joins as a stack route
+// a migration failed, the error screen is shown instead of the app. The 0.2.0 data is imported here too,
+// once, with a notice when part of it could not be moved (T-012). Setup (first run) joins as a stack route
 // in T-024.
 import '../global.css';
 import Constants from 'expo-constants';
@@ -12,9 +13,12 @@ import { LogBox } from 'react-native';
 import { openAppDb, rawDatabaseFiles } from '@/db/appDb';
 import type { Db } from '@/db/db';
 import { exportDump, exportFileName } from '@/db/export';
+import { importLegacy, importNotice, markNoticeSeen } from '@/db/legacyImport';
 import { repos } from '@/db/repos';
 import { StoreProvider } from '@/lib/store';
+import { legacyStore } from '@/platform/legacy';
 import { shareFilesAsTar, shareTextFile } from '@/platform/shareFile';
+import { ImportNotice } from '@/screens/shared/ImportNotice';
 import { MigrationErrorScreen } from '@/screens/shared/MigrationError';
 import { navTheme } from '@/theme/navTheme';
 
@@ -36,6 +40,13 @@ function exportData(db: Db | null): Promise<void> {
 
 export default function RootLayout() {
   const [boot] = useState(() => openAppDb(__DEV__));
+  // First start of 0.3.0 over 0.2.0: bring the old data across before the store loads (once; T-012).
+  const [imported, setImported] = useState(() => (boot.ok ? importLegacy(boot.db, legacyStore, Date.now()) : null));
+  const notice = imported ? importNotice(imported) : null;
+  const closeNotice = () => {
+    if (boot.ok) markNoticeSeen(boot.db, Date.now());
+    setImported(r => r && { ...r, noticeSeen: true });
+  };
   const data = useMemo(() => (boot.ok ? repos(boot.db) : null), [boot]);
   return (
     <ThemeProvider value={navTheme}>
@@ -45,6 +56,7 @@ export default function RootLayout() {
           <Stack
             screenOptions={{ headerShown: false, contentStyle: { backgroundColor: navTheme.colors.background } }}
           />
+          {notice ? <ImportNotice title={notice.title} body={notice.body} onClose={closeNotice} /> : null}
         </StoreProvider>
       ) : boot.ok ? null : (
         <MigrationErrorScreen error={boot.error} onExport={() => exportData(boot.db)} />

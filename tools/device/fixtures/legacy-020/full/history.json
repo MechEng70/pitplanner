@@ -1,0 +1,62 @@
+[
+ {
+  "id": "cook-1",
+  "date": 1791061200000,
+  "notes": "Wrapped at 165.",
+  "pitTempF": 225,
+  "items": [
+   {
+    "name": "Brisket",
+    "plannedMin": 540,
+    "actualMin": 565,
+    "log": {
+     "foodId": "brisket",
+     "methodId": "smoke",
+     "smokerId": "pb820",
+     "quantity": 12,
+     "pitTempF": 225,
+     "minutesOnHeat": 565,
+     "options": {
+      "wrap": "paper"
+     }
+    }
+   }
+  ]
+ },
+ {
+  "id": "cook-2",
+  "date": 1792875600000,
+  "notes": "",
+  "pitTempF": 250,
+  "lateMin": 20,
+  "items": [
+   {
+    "name": "Brisket",
+    "plannedMin": 540,
+    "actualMin": 550,
+    "log": {
+     "foodId": "brisket",
+     "methodId": "smoke",
+     "smokerId": "pb820",
+     "quantity": 12,
+     "pitTempF": 250,
+     "minutesOnHeat": 550
+    }
+   },
+   {
+    "name": "Wings",
+    "plannedMin": 90,
+    "actualMin": 85,
+    "log": {
+     "foodId": "wings",
+     "methodId": "smoke",
+     "smokerId": "pb820",
+     "quantity": 24,
+     "pitTempF": 250,
+     "minutesOnHeat": 85,
+     "discarded": true
+    }
+   }
+  ]
+ }
+]

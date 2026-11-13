@@ -1,7 +1,8 @@
 #!/bin/bash
 # One unattended device pass on the dev build (TASKS T-006).
 #   npm run device -- [--phone] [--no-build] [--repeat N] [--only <test>]...
-#   tests: smoke, sheet-keyboard, stable-controls, db, migration-error, db-unopenable (default: all).
+#   tests: smoke, sheet-keyboard, stable-controls, db, migration-error, db-unopenable, legacy-import
+#   (default: all).
 #   --repeat N runs the chosen tests N times at each font scale (to catch a test that only sometimes fails). --only repeats or takes a comma list.
 # Target: the test emulator (tools/device/avd.sh; started headless if needed and stopped again), or with
 # --phone the real phone, only for tests that need real hardware (TASKS "Real phone"; Jason, 2026-11-12).
@@ -16,7 +17,7 @@ set -uo pipefail
 . "$(dirname "$0")/lib.sh"
 cd "$DEVICE_DIR" || exit 1
 
-ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable)
+ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import)
 TESTS=()
 NOBUILD=""
 REPEAT=1
@@ -411,6 +412,79 @@ test_db_unopenable() {
   if [ $ok = 1 ]; then result "PASS  db-unopenable $s"; else result "FAIL  db-unopenable $s"; fi
 }
 
+# T-012: the first start over 0.2.0 data. Emulator only. The dev build's database is set aside, files shaped
+# like a 0.2.0 install (tools/device/fixtures/legacy-020: CapacitorStorage.xml through the real pit-legacy
+# module, files/history.json through expo-file-system) are put in place, and the app starts on an empty
+# database. Three cases: everything readable; a corrupted gear entry (the notice names it); nothing readable
+# (the fresh-start notice). Afterwards the test's files are removed and the database is put back.
+test_legacy_import() {
+  local s="$1" dir="$2" ok=1 case fx="$DEVICE_DIR/fixtures/legacy-020" files
+  miss() { ok=0; log "    $case MISSING: $1"; }
+  if ! is_emulator; then log "    legacy-import runs on the emulator only; skipped"; return; fi
+  as_app() { A shell run-as "$PKG" sh -c "'$1'"; }
+  clean() { as_app "rm -rf files/SQLite files/history.json files/history.json.imported shared_prefs/CapacitorStorage.xml shared_prefs/CapacitorStorage.imported.xml"; }
+  A shell am force-stop "$PKG"
+  as_app "mkdir import-aside && mv files/SQLite import-aside/" ||
+    { result "FAIL  legacy-import $s: could not set the database aside"; return; }
+  for case in full partial fresh; do
+    A shell am force-stop "$PKG"
+    clean
+    as_app "mkdir -p shared_prefs && cat >shared_prefs/CapacitorStorage.xml" <"$fx/$case/CapacitorStorage.xml"
+    as_app "cat >files/history.json" <"$fx/$case/history.json"
+    if ! launch "dev/db" || ! dump >"$dir/import-$case.xml"; then miss "the app"; continue; fi
+    case $case in
+      full)
+        if grep -q "Pit Planner has a new look" "$dir/import-full.xml"; then ok=0; log "    full: a notice showed, none expected"; fi
+        ;;
+      partial)
+        has_text "$dir/import-partial.xml" "Pit Planner has a new look" || miss "the notice"
+        grep -q 'came along. Your cookers could not be moved.' "$dir/import-partial.xml" || miss "what could not be moved"
+        ;;
+      fresh)
+        has_text "$dir/import-fresh.xml" "Pit Planner has a new look" || miss "the notice"
+        has_text "$dir/import-fresh.xml" "It starts fresh. Set up your cookers again." || miss "the fresh-start sentence"
+        ;;
+    esac
+    if [ $case != full ]; then
+      shot "$dir/import-$case.png"
+      tap "OK" 1 | tee -a "$REPORT"
+      # Closed once, it never shows again.
+      launch "dev/db" && dump >"$dir/import-$case.xml" || miss "the app after OK"
+      if grep -q "Pit Planner has a new look" "$dir/import-$case.xml"; then ok=0; log "    $case: the notice showed a second time"; fi
+    fi
+    files=$(as_app "ls shared_prefs files" | tr -d '\r' | tr '\n' ' ')
+    case $case in
+      full)
+        has_text "$dir/import-full.xml" "import done" || miss "import done"
+        has_text "$dir/import-full.xml" "data cookers 3, rates 2, cooks 2, plan items 1" || miss "the imported data"
+        has_text "$dir/import-full.xml" "units F lb" || miss "units"
+        has_text "$dir/import-full.xml" "legacy prefs none" || miss "the old prefs emptied"
+        [[ "$files" == *"CapacitorStorage.imported.xml"* ]] || miss "the kept copy of the prefs"
+        [[ "$files" == *"history.json.imported"* ]] || miss "the kept history file"
+        ;;
+      partial)
+        has_text "$dir/import-partial.xml" "import partial" || miss "import partial"
+        has_text "$dir/import-partial.xml" "data cookers 0, rates 2, cooks 2, plan items 1" || miss "the imported data"
+        grep -q 'text="legacy prefs [a-zA-Z, ]*gear' "$dir/import-partial.xml" || miss "the old prefs kept"
+        [[ " $files " == *" history.json "* ]] || miss "the old history file kept"
+        ;;
+      fresh)
+        has_text "$dir/import-fresh.xml" "import fresh" || miss "import fresh"
+        has_text "$dir/import-fresh.xml" "data cookers 0, rates 0, cooks 0, plan items 0" || miss "an empty start"
+        [[ " $files " == *" history.json "* ]] || miss "the old history file kept"
+        ;;
+    esac
+    [ $ok = 1 ] && log "    $case: as expected"
+  done
+  A shell am force-stop "$PKG"
+  clean
+  as_app "mv import-aside/SQLite files/ && rmdir import-aside" ||
+    { result "FAIL  legacy-import $s: could not put the database back"; return; }
+  if launch "dev/db" && dump >"$dir/import-after.xml" && has_text "$dir/import-after.xml" "user_version $SCHEMA_VERSION"; then :
+  else miss "the app after the database was put back"; fi
+  if [ $ok = 1 ]; then result "PASS  legacy-import $s"; else result "FAIL  legacy-import $s"; fi
+}
+
 for s in 1.15 1.3; do
   A shell settings put system font_scale "$s"
   dir="$OUT/$s"
@@ -438,6 +512,11 @@ if [[ " ${TESTS[*]} " == *" migration-error "* ]]; then
   python3 -I compose.py "$OUT/migration-error.png" "Error 115%=$OUT/1.15/migration-error.png" \
     "Details 115%=$OUT/1.15/migration-error-details.png" "Error 130%=$OUT/1.3/migration-error.png" \
     "Details 130%=$OUT/1.3/migration-error-details.png" && IMAGES+=("$OUT/migration-error.png")
+fi
+if [[ " ${TESTS[*]} " == *" legacy-import "* ]] && [ -f "$OUT/1.15/import-partial.png" ]; then
+  python3 -I compose.py "$OUT/legacy-import.png" "Partial 115%=$OUT/1.15/import-partial.png" \
+    "Fresh 115%=$OUT/1.15/import-fresh.png" "Partial 130%=$OUT/1.3/import-partial.png" \
+    "Fresh 130%=$OUT/1.3/import-fresh.png" && IMAGES+=("$OUT/legacy-import.png")
 fi
 log ""
 log "=== device summary ==="

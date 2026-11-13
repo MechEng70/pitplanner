@@ -70,6 +70,10 @@ export interface LegacyStore {
   readCapacitorPrefs(): Record<string, string>;
   /** Only after the import has committed: keeps a copy and empties the original. True if there was data. */
   retireCapacitorPrefs(): boolean;
+  /** The 0.2.0 cook history file (`files/history.json`) as text, or null when there is none. */
+  readHistoryFile(): string | null;
+  /** Only after the import has committed: renames the file to `history.json.imported`. */
+  retireHistoryFile(): void;
 }
 
 export interface ShareService {

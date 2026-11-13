@@ -561,9 +561,15 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     - Measured on the passing run (full debug build, then the test): Gradle daemon peak 2.6 GB, Kotlin daemon
       1.8 GB, emulator 4.4 GB, Metro 1.4 GB; the four together never above 5.6 GB (build and emulator no
       longer overlap); lowest available memory 8.8 GB of 30 with the desktop apps open (they held about 13 GB).
+  - GPU (2026-11-13): `-gpu host` tried and dropped. The emulator picked the Intel Iris Xe (Mesa), not the
+    NVIDIA RTX 4060. The app never opened ("did not open within 90s" on every launch): 0 passes, every test
+    failed, over 45 minutes for one run. Software graphics (SwiftShader): all 14 results pass in 16 min 24 s.
+    `avd.sh` stays on `swiftshader_indirect` (`EMU_GPU` overrides it for another try).
+  - Re-run 2026-11-13 after a rebuild, emulator font scale reset to 100%: `npm run device -- --only db` passed
+    at 115% and 130% (6 min 55 s with the build).
 
 ### T-012 Import from 0.2.0 and the fresh-start notice
-- **Status:** todo
+- **Status:** done (see `git log --grep T-012`); upgrade from the real 0.2.0 APK passed on the emulator 2026-11-13.
 - **Goal:** the first launch of 0.3.0 keeps the user's data, or says plainly what could not be kept
   (TECH-DESIGN section 5).
 - **Files:** `src/db/legacyImport.ts`, `src/screens/shared/ImportNotice.tsx`, tests, `docs/HANDOFF.md`.
@@ -577,6 +583,40 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Tests:** Jest import tests with fixture JSON shaped like a real 0.2.0 install (no personal data); each
   failure path.
 - **Device testing (Jason):** none yet (his phone upgrades at T-038).
+- **Notes (2026-11-13):**
+  - `src/db/legacyImport.ts`: `importLegacy(db, legacyStore, now)` runs in `app/_layout.tsx` after migrations
+    and before the store loads, once (report saved in `kv.legacy_import`: `none`, `done`, `partial`, `fresh`).
+    One transaction. Each key goes through the repositories' own validators; cookers are checked one by one,
+    rates value by value. Anything unreadable is quarantined (`quarantine:legacy:<key>:<time>`) and named in
+    the notice; unreadable `flags` and `update` are quarantined without a notice. A running cook is kept only
+    when its serve time is ahead (alarms are rescheduled once T-015 exists).
+  - Old files: retired only when everything came along (`done`): `CapacitorStorage` to
+    `CapacitorStorage.imported`, `files/history.json` to `history.json.imported` (`LegacyStore` gained
+    `readHistoryFile`, `retireHistoryFile`). On `partial` or `fresh` they stay where they are. If the write
+    fails nothing is imported and nothing saved, so the next start tries again.
+  - Notice: `ImportNotice` (kit Sheet, title "Pit Planner has a new look", one sentence, OK), shown once
+    (`noticeSeen`). Partial: "Your rates, plan and 2 past cooks came along. Your cookers could not be moved."
+    Fresh: "It starts fresh. Set up your cookers again." TECH-DESIGN's example says "plan draft"; the notice
+    says "plan", the word the app uses.
+  - Tests: `src/db/legacyImport.test.ts` (fixture `src/db/fixtures/legacy020.ts`, plus a cook exactly as the
+    0.2.0 app wrote it: `lateMin: null`, the save time as id), `ImportNotice.test.tsx`. The device fixtures in
+    `tools/device/fixtures/legacy-020` are generated from the same fixture and checked by
+    `legacy020.device.test.ts`.
+  - Acceptance on the emulator: `tools/device/upgrade020.sh setup` installed the real
+    `release/pitplanner-0.2.0.apk` and made the data in the app itself (Setup with Pit Boss 820, griddle and
+    oven; brisket at 0.75 hr/lb saved for future and added to the plan; two cooks started, ended and saved to
+    history; `tools/device/webview.mjs` drives the WebView over DevTools). `upgrade020.sh check
+    release/pitplanner-0.3.0-alpha.2.apk` installed the alpha (versionCode 300002) over it: the
+    app opened on its tabs with no notice; import `done`; three cookers, smoker Pit Boss 820; rate brisket
+    0.75; one plan item; units F lb; two past cooks; nothing quarantined; both `.imported` copies kept. There
+    are no Gear or History screens yet, so "everything shows" was checked in the database.
+  - Notices: device test `legacy-import` (dev build, fixture files): corrupted gear gives the partial notice,
+    nothing readable gives the fresh-start notice, each shows once.
+  - Left on the emulator (nothing of Jason's; not deleted without his yes): the release app
+    `io.github.mecheng70.pitplanner` at 0.3.0-alpha.2 with the test data; `/data/local/tmp/kept-release-data-2026-11-12/`
+    (data kept from T-007's alpha.1 install, moved aside so 0.2.0 started clean); `canceled-run-leftovers/` in
+    the dev build's data (files of a `legacy-import` run that was canceled mid-test). `upgrade020.sh setup`
+    stops while the release app is installed.
 
 ---
 
