@@ -1,6 +1,6 @@
 // One-time import of the 0.2.0 (Capacitor) app's data into SQLite, on the first start of 0.3.0
 // (TECH-DESIGN section 5). Everything that can be read is written in one transaction; whatever cannot is
-// reported (the notice says so plainly) and its raw text is quarantined, so nothing is silently dropped.
+// reported (the notice says so) and its raw text is quarantined, so nothing is silently dropped.
 // The old files are retired only when everything came along; otherwise they stay where they are.
 
 import type { Cookers } from '../../engine/types.ts';
@@ -243,24 +243,16 @@ export function importLegacy(db: Db, legacy: LegacyStore, now: number): ImportRe
   return report;
 }
 
-/** "a, b and c" */
-const list = (parts: string[]) =>
-  parts.length <= 1 ? (parts[0] ?? '') : `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
-
 export const NOTICE_TITLE = 'Pit Planner has a new look';
+/** One plain sentence each (Jason, 2026-11-13). */
+export const NOTICE_BODY = {
+  done: 'Your smokers, cook rates, plan and history came over.',
+  partial: "Some of your old settings couldn't be read. Check Gear before your next cook.",
+  fresh: "Your old data couldn't be brought over. Set up your smoker in Gear to start.",
+} as const;
 
-/** The one-time notice after the import: null when there is nothing to say (no old data, or all of it kept). */
+/** The one-time notice after the import: null when there was no old data or it has been closed. */
 export function importNotice(report: ImportReport): { title: string; body: string } | null {
-  if (report.noticeSeen || report.status === 'none' || report.status === 'done') return null;
-  if (report.status === 'fresh') return { title: NOTICE_TITLE, body: 'It starts fresh. Set up your cookers again.' };
-  const kept: string[] = [];
-  if (report.cookers > 0) kept.push('cookers');
-  if (report.rates > 0) kept.push('rates');
-  if (report.plan) kept.push('plan');
-  if (report.runningCook) kept.push('running cook');
-  if (report.cooks > 0) kept.push(`${report.cooks} past ${report.cooks === 1 ? 'cook' : 'cooks'}`);
-  const cameAlong = kept.length > 0 ? `Your ${list(kept)} came along. ` : '';
-  // "Some past cooks" when others did come along; the rest are named plainly.
-  const lost = report.lost.map(p => (p === 'past cooks' && report.cooks > 0 ? 'other past cooks' : p));
-  return { title: NOTICE_TITLE, body: `${cameAlong}Your ${list(lost)} could not be moved.` };
+  if (report.noticeSeen || report.status === 'none') return null;
+  return { title: NOTICE_TITLE, body: NOTICE_BODY[report.status] };
 }

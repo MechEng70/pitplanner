@@ -75,8 +75,10 @@ check() {
   A shell am start -W -n $APP/.MainActivity >/dev/null
   sleep 15
   ui=$(A exec-out uiautomator dump /dev/tty)
-  if grep -q 'content-desc="Plan"' <<<"$ui"; then echo "  the app opened on its tabs"; else ok=0; echo "  WRONG: the app did not open"; fi
-  if grep -q "Pit Planner has a new look" <<<"$ui"; then ok=0; echo "  WRONG: a notice showed, none expected"; else echo "  no notice"; fi
+  # The notice is a sheet over the tabs, so it is the window that is dumped.
+  if grep -q "Pit Planner has a new look" <<<"$ui" && grep -q "Your smokers, cook rates, plan and history came over." <<<"$ui"; then
+    echo "  the app opened with the notice: everything came over"
+  else ok=0; echo "  WRONG: the app did not open with the full-import notice"; fi
   A shell am force-stop $APP
   want "import" "SELECT json_extract(value,'\$.status') FROM kv WHERE key='legacy_import'" done
   want "cookers" "SELECT group_concat(kind) FROM (SELECT kind FROM cookers ORDER BY kind)" "griddle,oven,smoker"

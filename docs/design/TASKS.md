@@ -595,9 +595,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     `readHistoryFile`, `retireHistoryFile`). On `partial` or `fresh` they stay where they are. If the write
     fails nothing is imported and nothing saved, so the next start tries again.
   - Notice: `ImportNotice` (kit Sheet, title "Pit Planner has a new look", one sentence, OK), shown once
-    (`noticeSeen`). Partial: "Your rates, plan and 2 past cooks came along. Your cookers could not be moved."
-    Fresh: "It starts fresh. Set up your cookers again." TECH-DESIGN's example says "plan draft"; the notice
-    says "plan", the word the app uses.
+    (`noticeSeen`). Copy from Jason (2026-11-13), in `NOTICE_BODY`: full import "Your smokers, cook rates,
+    plan and history came over."; partial "Some of your old settings couldn't be read. Check Gear before your
+    next cook."; fresh start "Your old data couldn't be brought over. Set up your smoker in Gear to start."
+    A new install (no 0.2.0 data) shows nothing.
   - Tests: `src/db/legacyImport.test.ts` (fixture `src/db/fixtures/legacy020.ts`, plus a cook exactly as the
     0.2.0 app wrote it: `lateMin: null`, the save time as id), `ImportNotice.test.tsx`. The device fixtures in
     `tools/device/fixtures/legacy-020` are generated from the same fixture and checked by
@@ -610,13 +611,12 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     app opened on its tabs with no notice; import `done`; three cookers, smoker Pit Boss 820; rate brisket
     0.75; one plan item; units F lb; two past cooks; nothing quarantined; both `.imported` copies kept. There
     are no Gear or History screens yet, so "everything shows" was checked in the database.
-  - Notices: device test `legacy-import` (dev build, fixture files): corrupted gear gives the partial notice,
-    nothing readable gives the fresh-start notice, each shows once.
-  - Left on the emulator (nothing of Jason's; not deleted without his yes): the release app
-    `io.github.mecheng70.pitplanner` at 0.3.0-alpha.2 with the test data; `/data/local/tmp/kept-release-data-2026-11-12/`
-    (data kept from T-007's alpha.1 install, moved aside so 0.2.0 started clean); `canceled-run-leftovers/` in
-    the dev build's data (files of a `legacy-import` run that was canceled mid-test). `upgrade020.sh setup`
-    stops while the release app is installed.
+  - Notices: device test `legacy-import` (dev build, fixture files): everything readable, a corrupted gear
+    entry and nothing readable each show their sentence, once.
+  - The upgrade run above was made before the full-import notice existed (the app then opened with no
+    notice). `upgrade020.sh check` now expects that notice; that line first runs in T-038.
+  - Emulator leftovers removed with Jason's yes (2026-11-13): the release app with its test data, the data
+    kept from T-007's alpha.1 install, and the files of the canceled `legacy-import` run.
 
 ---
 
@@ -1045,6 +1045,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   normal release (not a prerelease) so 0.2.0's update check (`/releases/latest`) sees it.
 - **Acceptance:** release `v0.3.0` with APK and SHA-256; `snyk:monitor` ran; Jason's phone upgraded with gear,
   rates and history intact (or the notice says what was not kept).
+  The emulator upgrade test checks the imported cookers, rates, plan and history on the actual Gear, Plan and
+  History screens, not only in the database (Jason, 2026-11-13; T-012 could only check the database).
 - **Tests:** `npm run check` at the tagged commit.
 - **Real phone:** yes, after the emulator: 0.3.0 over 0.2.0 with Jason's real data.
 - **Device testing (Jason):** optional safety copy first (HANDOFF backup route); install 0.3.0 over 0.2.0;

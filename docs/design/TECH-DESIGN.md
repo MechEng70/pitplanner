@@ -215,10 +215,12 @@ written to SQLite in one transaction. On success it sets `legacy_import = done` 
 (`*.imported`, kept until 0.4.0). A running cook is imported and its alarms rescheduled from `plan.events` if
 its serve time is in the future; otherwise it is dropped.
 
-**Fresh-start fallback:** if a part fails to parse, the app imports what it can, keeps the originals, and shows
-a one-time notice, e.g. "Pit Planner has a new look. Your cookers, rates and 4 past cooks came along. Your plan
-draft could not be moved." If nothing can be read: "Pit Planner has a new look and starts fresh. Set up your
-cookers again." Tested on an emulator by installing the real `release/pitplanner-0.2.0.apk`, adding data, then
+**Notice after the import** (one-time kit Sheet, title "Pit Planner has a new look", one sentence, OK; copy
+from Jason, 2026-11-13). Everything came over: "Your smokers, cook rates, plan and history came over." A part
+failed to parse (the app imports what it can and keeps the originals): "Some of your old settings couldn't be
+read. Check Gear before your next cook." Nothing could be read: "Your old data couldn't be brought over. Set up
+your smoker in Gear to start." A new install with no 0.2.0 data shows nothing.
+Tested on an emulator by installing the real `release/pitplanner-0.2.0.apk`, adding data, then
 installing 0.3.0 over it (T-012, T-038).
 
 Old alarms across the upgrade: alarms do not survive an app update (the 0.2.0 receivers already assume this and

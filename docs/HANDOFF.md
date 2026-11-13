@@ -77,13 +77,13 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
   `-gpu host` was tried (2026-11-13) and dropped: on the Intel Iris Xe the app never opened; the emulator stays
   on software graphics.
 - Import (T-012): `src/db/legacyImport.ts` runs once at startup (`kv.legacy_import`), in one transaction;
-  unreadable parts are quarantined and named in a one-time notice (`ImportNotice`); the old files become
+  unreadable parts are quarantined; a one-time notice (`ImportNotice`) says how the import went; the old files become
   `*.imported` only when everything came along. Upgrade test: `tools/device/upgrade020.sh setup`, then
   `check <apk>` (real 0.2.0 APK on the emulator, data made in its own screens, a 0.3.0 build over it); passed
   with `release/pitplanner-0.3.0-alpha.2.apk`. Device test `legacy-import` covers the two notices.
-- Left on the emulator, waiting for Jason's yes before anything is removed: the release app at 0.3.0-alpha.2
-  with test data, `/data/local/tmp/kept-release-data-2026-11-12/`, and `canceled-run-leftovers/` in the dev
-  build's data (list in TASKS T-012). `upgrade020.sh setup` will not run again until the release app is gone.
+  The notice shows after a full import too (three sentences from Jason, `NOTICE_BODY`). T-038 must check the
+  imported data on the Gear, Plan and History screens, not only in the database. The emulator holds no
+  release app now, so `upgrade020.sh setup` can run.
 - T-017 has PR-4 (equal-width tiles, mockup 05; try `flex: 1` first) and two PR-3 fixes to make: selected
   chips reserve their bold width, and nothing jumps when content below shrinks while scrolled to the bottom.
 - Tab bar is the kit `BottomNav` (0.2.0 icon pills); T-059 (whole turkey, cited FSIS numbers) follows T-019.

@@ -8,7 +8,14 @@ import {
   legacyPrefs,
   legacyRecords,
 } from './fixtures/legacy020';
-import { importLegacy, importNotice, importReport, markNoticeSeen, type ImportReport } from './legacyImport';
+import {
+  importLegacy,
+  importNotice,
+  importReport,
+  markNoticeSeen,
+  NOTICE_BODY,
+  type ImportReport,
+} from './legacyImport';
 import { openMigrated } from './migrate';
 import { migrations } from './migrations';
 import { repos, type Repos } from './repos';
@@ -46,7 +53,7 @@ const withPref = (key: string, value: string | undefined) => {
 };
 
 describe('a full 0.2.0 install', () => {
-  test('everything comes along, the old files are retired, and there is nothing to announce', () => {
+  test('everything comes along, the old files are retired, and the notice says so', () => {
     const legacy = full();
     const report = importLegacy(db, legacy.store, NOW);
     expect(report).toEqual({
@@ -77,7 +84,10 @@ describe('a full 0.2.0 install', () => {
     expect(r.history.logs().map(l => l.foodId)).toEqual(['brisket', 'brisket']);
     expect(r.quarantined()).toEqual([]);
     expect(legacy.calls).toEqual(['prefs', 'history']);
-    expect(importNotice(report)).toBeNull();
+    expect(importNotice(report)).toEqual({
+      title: 'Pit Planner has a new look',
+      body: 'Your smokers, cook rates, plan and history came over.',
+    });
   });
 
   test('it runs once: a second start changes nothing and retires nothing', () => {
@@ -110,7 +120,7 @@ describe('no 0.2.0 data', () => {
 });
 
 describe('partial import', () => {
-  test('a corrupt gear entry: the rest comes along, the notice names what did not, the old files stay', () => {
+  test('a corrupt gear entry: the rest comes along, the notice says to check Gear, the old files stay', () => {
     const legacy = withPref('gear', '{"smoker":{"id":"pb820","name":');
     const report = importLegacy(db, legacy.store, NOW);
     expect(report).toMatchObject({ status: 'partial', cookers: 0, rates: 2, cooks: 2, plan: true, lost: ['cookers'] });
@@ -118,7 +128,7 @@ describe('partial import', () => {
     expect(r.history.list()).toHaveLength(2);
     expect(importNotice(report)).toEqual({
       title: 'Pit Planner has a new look',
-      body: 'Your rates, plan, running cook and 2 past cooks came along. Your cookers could not be moved.',
+      body: "Some of your old settings couldn't be read. Check Gear before your next cook.",
     });
     expect(legacy.calls).toEqual([]);
     expect(r.quarantined()).toEqual([
@@ -135,34 +145,14 @@ describe('partial import', () => {
   });
 
   test.each([
-    [
-      'draft',
-      'not json',
-      'plan',
-      'Your cookers, rates, running cook and 2 past cooks came along. Your plan could not be moved.',
-    ],
-    [
-      'settings',
-      '{"temp":"K"}',
-      'units',
-      'Your cookers, rates, plan, running cook and 2 past cooks came along. Your units could not be moved.',
-    ],
-    [
-      'activeCook',
-      '{"plan":5}',
-      'running cook',
-      'Your cookers, rates, plan and 2 past cooks came along. Your running cook could not be moved.',
-    ],
-    [
-      'rates',
-      '[1]',
-      'rates',
-      'Your cookers, rates, plan, running cook and 2 past cooks came along. Your rates could not be moved.',
-    ],
-  ] as const)('an unreadable %s is named in the notice', (key, value, part, body) => {
+    ['draft', 'not json', 'plan'],
+    ['settings', '{"temp":"K"}', 'units'],
+    ['activeCook', '{"plan":5}', 'running cook'],
+    ['rates', '[1]', 'rates'],
+  ] as const)('an unreadable %s is recorded as lost and gives the partial notice', (key, value, part) => {
     const report = importLegacy(db, withPref(key, value).store, NOW);
     expect(report).toMatchObject({ status: 'partial', lost: [part] });
-    expect(importNotice(report)?.body).toBe(body);
+    expect(importNotice(report)?.body).toBe(NOTICE_BODY.partial);
     expect(r.quarantined().map(q => q.origin)).toContain(`legacy:${key}`);
   });
 
@@ -172,14 +162,12 @@ describe('partial import', () => {
     expect(r.rates.load().rates).toEqual({ brisket: 0.75 });
   });
 
-  test('history: readable cooks come along, the others are named, the file is quarantined whole', () => {
+  test('history: readable cooks come along, the others are lost, the file is quarantined whole', () => {
     const records = [...legacyRecords, { id: 'cook-3', date: 'yesterday', items: [] }];
     const legacy = fakeLegacy(legacyPrefs(STARTED), JSON.stringify(records));
     const report = importLegacy(db, legacy.store, NOW);
     expect(report).toMatchObject({ status: 'partial', cooks: 2, lost: ['past cooks'] });
-    expect(importNotice(report)?.body).toBe(
-      'Your cookers, rates, plan, running cook and 2 past cooks came along. Your other past cooks could not be moved.',
-    );
+    expect(importNotice(report)?.body).toBe(NOTICE_BODY.partial);
     expect(r.quarantined().map(q => q.origin)).toEqual(['legacy:history.json']);
   });
 
@@ -215,10 +203,10 @@ describe('partial import', () => {
     expect(r.quarantined()).toEqual([]);
   });
 
-  test('a history file that is not JSON: no cooks, named plainly', () => {
+  test('a history file that is not JSON: no cooks, partial', () => {
     const report = importLegacy(db, fakeLegacy(legacyPrefs(STARTED), '[{"id":').store, NOW);
     expect(report).toMatchObject({ status: 'partial', cooks: 0, lost: ['past cooks'] });
-    expect(importNotice(report)?.body).toMatch(/Your past cooks could not be moved\.$/);
+    expect(importNotice(report)?.body).toBe(NOTICE_BODY.partial);
   });
 
   test('unreadable flags or update check are quarantined but not worth a notice', () => {
@@ -234,14 +222,6 @@ describe('partial import', () => {
     ).toEqual(['legacy:flags', 'legacy:update']);
     expect(legacy.calls).toEqual(['prefs', 'history']);
   });
-
-  test('several losses read as one sentence; one past cook is singular', () => {
-    const prefs = { ...legacyPrefs(STARTED), gear: 'x', draft: 'x', activeCook: 'x' };
-    const report = importLegacy(db, fakeLegacy(prefs, JSON.stringify([legacyRecords[0]])).store, NOW);
-    expect(importNotice(report)?.body).toBe(
-      'Your rates and 1 past cook came along. Your cookers, plan and running cook could not be moved.',
-    );
-  });
 });
 
 describe('fresh start', () => {
@@ -253,7 +233,7 @@ describe('fresh start', () => {
     expect(report.lost).toEqual(['cookers', 'units', 'plan', 'rates', 'running cook', 'past cooks']);
     expect(importNotice(report)).toEqual({
       title: 'Pit Planner has a new look',
-      body: 'It starts fresh. Set up your cookers again.',
+      body: "Your old data couldn't be brought over. Set up your smoker in Gear to start.",
     });
     expect(legacy.calls).toEqual([]);
     expect(r.cookers.count()).toBe(0);

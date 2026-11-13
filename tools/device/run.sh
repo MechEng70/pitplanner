@@ -415,10 +415,10 @@ test_db_unopenable() {
 # T-012: the first start over 0.2.0 data. Emulator only. The dev build's database is set aside, files shaped
 # like a 0.2.0 install (tools/device/fixtures/legacy-020: CapacitorStorage.xml through the real pit-legacy
 # module, files/history.json through expo-file-system) are put in place, and the app starts on an empty
-# database. Three cases: everything readable; a corrupted gear entry (the notice names it); nothing readable
-# (the fresh-start notice). Afterwards the test's files are removed and the database is put back.
+# database. Three cases, each with its own one-time notice: everything readable; a corrupted gear entry;
+# nothing readable. Afterwards the test's files are removed and the database is put back.
 test_legacy_import() {
-  local s="$1" dir="$2" ok=1 case fx="$DEVICE_DIR/fixtures/legacy-020" files
+  local s="$1" dir="$2" ok=1 case body fx="$DEVICE_DIR/fixtures/legacy-020" files
   miss() { ok=0; log "    $case MISSING: $1"; }
   if ! is_emulator; then log "    legacy-import runs on the emulator only; skipped"; return; fi
   as_app() { A shell run-as "$PKG" sh -c "'$1'"; }
@@ -433,25 +433,17 @@ test_legacy_import() {
     as_app "cat >files/history.json" <"$fx/$case/history.json"
     if ! launch "dev/db" || ! dump >"$dir/import-$case.xml"; then miss "the app"; continue; fi
     case $case in
-      full)
-        if grep -q "Pit Planner has a new look" "$dir/import-full.xml"; then ok=0; log "    full: a notice showed, none expected"; fi
-        ;;
-      partial)
-        has_text "$dir/import-partial.xml" "Pit Planner has a new look" || miss "the notice"
-        grep -q 'came along. Your cookers could not be moved.' "$dir/import-partial.xml" || miss "what could not be moved"
-        ;;
-      fresh)
-        has_text "$dir/import-fresh.xml" "Pit Planner has a new look" || miss "the notice"
-        has_text "$dir/import-fresh.xml" "It starts fresh. Set up your cookers again." || miss "the fresh-start sentence"
-        ;;
+      full) body="Your smokers, cook rates, plan and history came over." ;;
+      partial) body="Some of your old settings couldn't be read. Check Gear before your next cook." ;;
+      fresh) body="Your old data couldn't be brought over. Set up your smoker in Gear to start." ;;
     esac
-    if [ $case != full ]; then
-      shot "$dir/import-$case.png"
-      tap "OK" 1 | tee -a "$REPORT"
-      # Closed once, it never shows again.
-      launch "dev/db" && dump >"$dir/import-$case.xml" || miss "the app after OK"
-      if grep -q "Pit Planner has a new look" "$dir/import-$case.xml"; then ok=0; log "    $case: the notice showed a second time"; fi
-    fi
+    has_text "$dir/import-$case.xml" "Pit Planner has a new look" || miss "the notice"
+    has_text "$dir/import-$case.xml" "$body" || miss "the sentence: $body"
+    shot "$dir/import-$case.png"
+    tap "OK" 1 | tee -a "$REPORT"
+    # Closed once, it never shows again.
+    launch "dev/db" && dump >"$dir/import-$case.xml" || miss "the app after OK"
+    if grep -q "Pit Planner has a new look" "$dir/import-$case.xml"; then ok=0; log "    $case: the notice showed a second time"; fi
     files=$(as_app "ls shared_prefs files" | tr -d '\r' | tr '\n' ' ')
     case $case in
       full)
@@ -514,8 +506,9 @@ if [[ " ${TESTS[*]} " == *" migration-error "* ]]; then
     "Details 130%=$OUT/1.3/migration-error-details.png" && IMAGES+=("$OUT/migration-error.png")
 fi
 if [[ " ${TESTS[*]} " == *" legacy-import "* ]] && [ -f "$OUT/1.15/import-partial.png" ]; then
-  python3 -I compose.py "$OUT/legacy-import.png" "Partial 115%=$OUT/1.15/import-partial.png" \
-    "Fresh 115%=$OUT/1.15/import-fresh.png" "Partial 130%=$OUT/1.3/import-partial.png" \
+  python3 -I compose.py "$OUT/legacy-import.png" "Full 115%=$OUT/1.15/import-full.png" \
+    "Partial 115%=$OUT/1.15/import-partial.png" "Fresh 115%=$OUT/1.15/import-fresh.png" \
+    "Full 130%=$OUT/1.3/import-full.png" "Partial 130%=$OUT/1.3/import-partial.png" \
     "Fresh 130%=$OUT/1.3/import-fresh.png" && IMAGES+=("$OUT/legacy-import.png")
 fi
 log ""
