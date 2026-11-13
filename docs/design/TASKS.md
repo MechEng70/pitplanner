@@ -366,7 +366,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ## Phase 3: Storage
 
 ### T-008 SQLite: Db interface, migration runner, schema v1
-- **Status:** todo
+- **Status:** done (see `git log --grep T-008`)
 - **Goal:** `pitplanner.db` with versioned migrations from day one (TECH-DESIGN section 5).
 - **Files:** `src/db/db.ts` (interface), `src/db/expoDb.ts` (expo-sqlite), `src/db/testDb.ts` (better-sqlite3),
   `src/db/migrate.ts`, `src/db/migrations/0001_init.ts`, `src/db/schema.snapshot.sql`, tests.
@@ -377,6 +377,26 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   data unchanged.
 - **Tests:** Jest on better-sqlite3: snapshot, idempotence, rollback.
 - **Device testing (Jason):** none.
+- **Notes (done 2026-11-12):**
+  - `Db` (`src/db/db.ts`) is synchronous: `exec`, `run`, `all`, `get`, `transaction(fn)`, `close`. A
+    transaction is one uninterrupted block of JS, so nothing can interleave with it, and the store (T-010) can
+    load before the first render. `expoDb.ts` uses expo-sqlite's sync API (`openDatabaseSync`, `execSync`,
+    `runSync`, `getAllSync`, `getFirstSync`); `testDb.ts` is better-sqlite3 (dev dependency, tests only).
+    Both share `runTransaction` (BEGIN IMMEDIATE, COMMIT, ROLLBACK on a throw, no nesting).
+  - `migrate.ts`: `migrate(db, migrations)` applies every migration above `PRAGMA user_version`, each in one
+    transaction with its version bump. `openMigrated(db, migrations)` sets WAL and foreign keys, migrates, and
+    returns `{ ok: true, db, from, to }` or `{ ok: false, error }` (the error screen hook: `MigrationError`
+    with `kind` `failed` or `newer` and the version). A database from a newer app is refused, not touched.
+    The list is in `src/db/migrations/index.ts`; a misnumbered list throws.
+  - `schema.snapshot.sql` holds the schema as SQLite stores it, by object name. A new migration updates it in
+    the same commit.
+  - Tests (16): snapshot, the six tables, no-op re-run, rollback (throwing migration, bad SQL), earlier
+    migrations kept, newer database, foreign-key cascade, WAL on a file, CHECK constraints, transactions,
+    and `expoDb` against a stand-in for expo-sqlite on better-sqlite3 (same method names and result shapes).
+  - Not done here: nothing in the app opens the database yet (T-010 wires it into startup), so `expoDb` has not
+    run on a device. The error screen itself ("Export my data") is not in the mockups and has no task: ask
+    Jason before building it (T-010 or T-036).
+  - Added `expo-sqlite` ~58.0.17, `better-sqlite3` and `@types/better-sqlite3` (dev).
 
 ### T-009 Repositories
 - **Status:** todo

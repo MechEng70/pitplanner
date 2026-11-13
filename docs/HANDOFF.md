@@ -1,9 +1,9 @@
-# Handoff (2026-11-12, seventh session: T-006)
+# Handoff (2026-11-12, eighth session: T-007 follow-ups, T-008)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## START HERE: scaffold, gate, theme, kit, device tests and release build in place (T-002..T-007 done), T-008 next
+## START HERE: scaffold, gate, theme, kit, device tests and release build and SQLite migrations in place (T-002..T-008 done), T-009 next
 
 - Root is now the Expo app: `app.config.ts` (variants by `APP_VARIANT`, versionCode from package.json),
   `app/` routes (tabs Plan, Cook, Gear placeholders), `src/lib/` pure helpers, `src/platform/types.ts`
@@ -50,6 +50,10 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
   `release/pitplanner-0.3.0-alpha.1.apk` is 300001 (the first build, 300, is kept as
   `release/superseded/pitplanner-0.3.0-alpha.1-code300.apk`).
 - Signing backup: see "Release signing: what to back up" below.
+- Storage (T-008): `src/db/`: synchronous `Db` interface (`db.ts`), `expoDb.ts` (the only expo-sqlite
+  import), `testDb.ts` (better-sqlite3, Jest only), `migrate.ts` (`openMigrated` returns ok or a
+  `MigrationError`), `migrations/0001_init.ts`, `schema.snapshot.sql`. Nothing opens the database in the app
+  yet (T-010). The migration error screen is not in the mockups: ask Jason before building it.
 - T-017 has PR-4 (equal-width tiles, mockup 05; try `flex: 1` first) and two PR-3 fixes to make: selected
   chips reserve their bold width, and nothing jumps when content below shrinks while scrolled to the bottom.
 - Tab bar is the kit `BottomNav` (0.2.0 icon pills); T-059 (whole turkey, cited FSIS numbers) follows T-019.
@@ -268,7 +272,7 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 1. Done 2026-11-12: Jason approved the stack-change plan; T-001 phone check on 0.2.0 passed.
 2. Jason: push `main` when ready (plan docs and T-001 are local only).
 3. Done: Maestro CLI installed (2.12.1, `~/.maestro/bin`).
-4. T-002..T-007 done (R-1 closed, D-4 decided and confirmed). Next: T-008,
+4. T-002..T-008 done (R-1 closed, D-4 decided and confirmed). Next: T-009,
    per WBS "Suggested order" (T-058 now sits between T-019 and the Cook screen).
    Push the `v0.2.0` tag only when Jason says.
 5. Still open from before (carried into the plan): real cook with alarms through a reboot (now T-037 on the Expo
