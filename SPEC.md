@@ -156,6 +156,11 @@ Scheduled times set by these changes round to 5 minutes (actual times, like when
 
 - Home Assistant (v2): optional server URL and token in Gear. Read Chef iQ probe temps and Pit Boss pit temps; make check steps temperature-triggered ("Brisket at 165F, wrap it") instead of time-only; publish cook status to HA.
 - Refit the size exponent and temp curve from history.
+- Low and slow for tough cuts (Jason, 2026-11-14; `docs/design/TASKS.md` T-060). On 0.2.0 an 11.5 lb brisket flat, about 1.5 inches thick, planned at 250F for 8 hr 50 min so it would make a 5:00 PM serve, read 205F on the probe at about 3 hr 25 min. The grill held its set temp; the plan was wrong for the cut. Candidates, none decided, each needing sourced numbers:
+  1. The cut and its thickness (whole packer or flat, inches) as inputs to the time on heat, not weight alone.
+  2. A recommended smoker temp per food, with a note or warning when the plan's temp is above it for a tough cut, shown where the temp is chosen and in Conflicts.
+  3. A smoker temp change during the cook ("now at 225F") re-times what is left. Today the plan has one smoker temp for the whole cook.
+  4. A food running ahead of its rate re-times from probe readings (with Home Assistant).
 - Light theme.
 
 ## 12. Open items

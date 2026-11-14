@@ -1,41 +1,67 @@
-# Handoff (2026-11-14, eleventh session: T-017 closed on the emulator, T-018 built; before it the tenth: T-017 review fixes)
+# Handoff (2026-11-14, eleventh session: T-017 closed on the emulator, T-018 built and approved; T-019 next)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
 ## Restart (written Saturday 2026-11-14, end of the eleventh session)
 
-Jason's answers of 2026-11-14:
+Do these in order:
 
-- a. New Plan screenshots approved, the Add food fade above Start cook at 100% included.
-- b. 115% fit target: two cards whole, the third may end in the fade, Add food by scrolling. In
-  `tools/device/run.sh` (`plan_fit`), the device README and TASKS T-017. `plan` and `plan-3button` pass at
-  115% and 130%.
-- c. The cook is still running: the phone hold stays. `tools/device/PHONE-BLOCKED` is in place. It lifts
-  only when Jason says the cook is done. Do not read it from the date.
-- d. Tester Android versions for T-037: coming later. Ask again.
+1. **`npm run check` first.** Snyk was down for maintenance all of 2026-11-14 (`SNYK-0099`, 503), so gate
+   step 6 has not run on any commit of that day (T-017 close, T-018, the Celsius change). Steps 1 to 5
+   passed on each. Jason said to delay Snyk until Monday 2026-11-16. Fix anything it reports before new
+   work; T-017 and T-018 are gate-complete only once it passes (then say so in their status lines).
+2. **`npm run snyk:monitor`** once the check passes: `origin/main` moved to `4172f27` on 2026-11-14 (a push
+   to main), and the monitor step could not run with Snyk down.
+3. **T-019 Food details** (TASKS; mockups 08, 09, 10). Read its entry: it carries three things from this
+   session on top of the original task:
+   - Add food opens food details for the new food; it goes on the menu on Save (Jason, 2026-11-14). Take
+     out the T-018 stopgap (`addFood` in `src/screens/plan/PlanTab.tsx` adds the food at once) and pass
+     `onEdit` to `IssuesSheet` so its "Edit [food]" buttons show.
+   - The 0.2.0 scroll bug Jason hit on his phone: weight + and - make the screen scroll to the result
+     card. Do not port `KeepVisible`; regression test first; device targets for the weight stepper.
+   - The fixed result bar pinned at the bottom (his decision of 2026-11-12).
 
 Where things stand:
 
-- T-017 is closed on the emulator. **T-018 is built** (temp menu, Add food, Conflicts sheet; TASKS T-018
-  notes). Jason approved its screenshots and settled its three questions on 2026-11-14. It is done once
-  Snyk has run. **Next: T-019.**
-- **Do first on Monday 2026-11-16: `npm run check`.** Snyk was down for maintenance on 2026-11-14
-  (`SNYK-0099`, 503), so gate step 6 has not run on the T-017 close commit or on T-018. Steps 1 to 5 passed.
-  Jason said to delay Snyk until Monday. T-017 is not gate-complete until that run passes; fix anything it
-  reports before starting T-018.
-- `main` is clean and not pushed (Jason pushes when he says so).
+- T-017 is closed on the emulator. T-018 is built (temp menu, Add food, Conflicts sheet); Jason approved
+  its screenshots and settled its questions (TASKS T-018 notes). The whole device suite for Plan passes on
+  the emulator at 115% and 130% (`plan`, `plan-3button`, `plan-sheets`, `stable-controls`).
+- `main` is clean. Commits after `4172f27` are local only (Jason pushes when he says so).
 - Emulator and Metro are stopped. The emulator is 1080x2376, gesture navigation.
+- **The phone hold stays** (Jason, 2026-11-14: the cook was still on, the brisket holding at about 210F).
+  `tools/device/PHONE-BLOCKED` is in place. It lifts only when Jason says the cook is done. Do not read it
+  from the date. Ask him at the start of the next session.
 - Waiting on the phone (after Jason lifts the hold: delete `tools/device/PHONE-BLOCKED`, then list every
   phone action and wait for his yes before the first one): rebuild and reinstall the dev build (date picker
   and alarm module are new), the T-016 phone half (approved list in TASKS T-016), the T-017 check against
   mockups 04-05. On that check also read the phone's status bar and navigation bar heights: the emulator's
   are 43 dp and 24 dp, the phone's status bar is not known, and Plan's fit depends on it.
+- Still open with Jason: the tester Android versions for T-037 ("coming later"); when the brisket came off
+  (T-060).
 
-To keep the session short: TASKS.md is 1,500 lines, so read only the entries needed (`grep -n '^### T-018'`),
-not the whole file.
+Decided by Jason on 2026-11-14 (all in the docs named):
 
-## START HERE: scaffold, gate, theme, kit, device tests and release build, SQLite storage, the app store, the import from 0.2.0 and the alarm module, its tests and wiring, and the Plan tab in place (T-002..T-015 and T-017 done, T-016 half), T-018 next
+- Plan 115% fit target: two cards whole, the third may end in the fade, Add food by scrolling (TASKS T-017,
+  `plan_fit` in `tools/device/run.sh`).
+- Celsius set points show in 2C increments; Fahrenheit in the cooker's 5F steps (SPEC section 1 Units,
+  `showTemp` in `engine/units.ts`). The rows are 2C or 4C apart, because the smoker's steps are 2.8C.
+- The Conflicts fixes are move to griddle, change temp, edit the food. "Finish earlier" is dropped (SPEC
+  section 3). It was a planning fix, not food finishing early during a cook.
+- Add food opens food details first (T-019).
+
+For the next version (after 0.3.0), so it is not lost: **T-060** in TASKS and SPEC section 11, "Low and
+slow for tough cuts". Jason's brisket of 2026-11-14 heated far faster than the plan; the grill was fine,
+the plan was wrong for the cut. Four candidates (cut and thickness as inputs, a recommended smoker temp
+with a warning, re-timing on a smoker temp change mid-cook, re-timing from probes), none decided, all
+needing sourced numbers. Chart: `docs/screenshots/pitboss_001.jpg`.
+
+To keep the session short: TASKS.md is 1,700 lines, so read only the entries needed (`grep -n '^### T-019'`),
+not the whole file. For T-019 also read `legacy/src/screens/plan/FoodEdit.tsx` and its test (the behavior to
+port), mockups `docs/mockups/08-brisket-details.png`, `09-ribs-details.png`, `10-chicken-details.png`, and
+`src/screens/plan/PlanTab.tsx` (where the screen is opened from).
+
+## START HERE: scaffold, gate, theme, kit, device tests and release build, SQLite storage, the app store, the import from 0.2.0 and the alarm module, its tests and wiring, and the Plan tab with its menu and sheets in place (T-002..T-015, T-017 and T-018 done, T-016 half), T-019 next
 
 - Root is now the Expo app: `app.config.ts` (variants by `APP_VARIANT`, versionCode from package.json),
   `app/` routes (tabs Plan, Cook, Gear placeholders), `src/lib/` pure helpers, `src/platform/types.ts`
@@ -394,12 +420,12 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 2. Jason: push `main` when ready (plan docs and T-001 are local only).
 3. Done: Maestro CLI installed (2.12.1, `~/.maestro/bin`).
 4. T-002..T-015 and T-017 done (review fixes included), T-016 emulator half done (R-1 closed, D-4 decided and
-   confirmed). Next: T-018 (Jason approved the new Plan screenshots on 2026-11-14), per WBS "Suggested order" (T-058 now
-   sits between T-019 and the Cook screen).
+   confirmed). T-018 built and approved 2026-11-14. Next: T-019, per WBS "Suggested order" (T-058 sits
+   between T-019 and the Cook screen).
    Push the `v0.2.0` tag only when Jason says.
 5. Still open from before (carried into the plan): real cook with alarms through a reboot (now T-037 on the Expo
    build), two-phone share via Gmail/Drive (T-031), lane chart full screen (T-040), import-made conflict fix
-   (T-030), HA Phase 1 after 0.3.0 (T-042 onward).
+   (T-030), HA Phase 1 after 0.3.0 (T-042 onward), low and slow for tough cuts (T-060, next version).
 
 ## Decisions from Jason
 
@@ -426,6 +452,11 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
   process death. Device test with "Don't keep activities" on and a live font-size change mid-cook.
 - No UI element that isn't in `docs/mockups` or SPEC without asking Jason first (CLAUDE.md).
 - Smoker temp is the dropdown in the cooker's steps, never preset buttons (SPEC section 1; T-017 PR-1).
+- Celsius set points show in 2C increments, Fahrenheit in the cooker's 5F steps (Jason, 2026-11-14).
+- Add food opens food details first; the food goes on the menu on Save (Jason, 2026-11-14; T-019).
+- Conflicts fixes: move to griddle, change temp, edit the food. No "finish earlier" (Jason, 2026-11-14).
+- Tough cuts go low and slow; the plan should not push a brisket's temp up to make a serve time without
+  saying so, and weight alone does not time a thin flat (Jason, 2026-11-14; next version, T-060).
 - Setup step 1 is Welcome + units (the canvas has no step 1). Add a cooker (17) built with Setup.
 - Alerts stay in the notification shade until handled or swiped; nothing removes them silently.
 - Cost: keep sessions short, screenshot only at checkpoints, use `npm run device` instead of step-by-step driving.
