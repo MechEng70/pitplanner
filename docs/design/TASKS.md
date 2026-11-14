@@ -842,8 +842,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 
 ### T-017 Plan: empty and main (04, 05)
 - **Status:** done (see `git log --grep T-017`); Jason's review fixes done 2026-11-13 (notes "Review fixes"
-  below), new screenshots sent. **Open, Jason decides:** the 115% fit target (three cards and Add food) is
-  not met on a real-size display now that summaries wrap; numbers below. His phone check (compare with
+  below), new screenshots approved by Jason 2026-11-14 (the Add food fade at 100% included). 115% fit target set by
+  Jason 2026-11-14: two cards whole, the third may end in the fade, Add food by scrolling; met (numbers
+  below). Closed on the emulator. His phone check (compare with
   mockups 04-05) waits until the phone is free again (T-016 hold).
 - **Goal:** Plan tab as in mockups 04 and 05: Ready by / Start at with date and time pickers, smoker temp field
   with fire time, food cards, Add food, tiles (fire, pellets, conflicts), pinned Start cook, share icon.
@@ -854,9 +855,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   shows the kit `Banner` (warn) "Your saved plan could not be loaded." (`DRAFT_LOST`, today in the T-002
   placeholder with its tests); it goes away when the plan is changed. Keep it and its tests in the real screen;
   it must not sit above a control in a way that breaks PR-3 when it disappears.
-- **Acceptance:** at 115% three cards and Add food fit above Start cook, two at 130% (HANDOFF decision).
-  Since the review (2026-11-13) these apply on the real-size emulator with gesture navigation and with
-  3-button navigation; the 115% target is not met there (notes "Review fixes").
+- **Acceptance:** at 115% and at 130% two cards fit whole above Start cook and its fade; at 115% the third
+  card may end in the fade and Add food is reached by scrolling (Jason, 2026-11-14; it replaces "three cards
+  and Add food at 115%", which a real-size display cannot hold now that summaries wrap). These apply on the
+  real-size emulator with gesture navigation and with 3-button navigation.
 - **Tests:** RNTL: empty state actions; cards show start time and time on heat from `buildPlan`; tile values;
   Start cook disabled with no food.
 - **Device testing (Jason):** compare with mockups 04-05 on the phone.
@@ -970,18 +972,17 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     |---|---|---|---|---|---|---|---|
     | 100% | gesture | 195 | 111 | 27 | -33 | none | |
     | 100% | 3-button | 171 | 87 | 3 | -57 | none | |
-    | 115% | gesture | 175 | 74 | -10 | -70 | three cards and Add food | no |
-    | 115% | 3-button | 151 | 50 | -34 | -94 | three cards and Add food | no |
+    | 115% | gesture | 175 | 74 | -10 | -70 | two cards (since 2026-11-14) | yes |
+    | 115% | 3-button | 151 | 50 | -34 | -94 | two cards (since 2026-11-14) | yes |
     | 130% | gesture | 164 | 57 | -29 | -89 | two cards | yes |
     | 130% | 3-button | 140 | 33 | -53 | -102 | two cards | yes |
 
-    Why 115% cannot be met: the brisket and wings summaries wrap there, 17 dp each, so the menu is 33 dp
+    Why the first 115% target (three cards and Add food) could not be met: the brisket and wings summaries wrap there, 17 dp each, so the menu is 33 dp
     taller than in the first build. Before the wrap, on this display, Add food already ended under
     Start cook by about 3 dp (the reason the display had been made taller). Three cards and Add food now need 70 dp more
     than the display has with gesture navigation and 94 dp more with three buttons; every block is the
-    mockup's size, so there is nothing to take it from without changing the mockup's spacing. `plan` and
-    `plan-3button` fail at 115% until Jason sets the target (for example: at 115% two cards whole, the third
-    may end in the fade, Add food by scrolling).
+    mockup's size, so there is nothing to take it from without changing the mockup's spacing. Jason set the
+    new target on 2026-11-14 (two cards whole, the third may end in the fade, Add food by scrolling).
 
 ### T-018 Smoker temp menu, Add food, Issues sheet (06, 07)
 - **Status:** todo

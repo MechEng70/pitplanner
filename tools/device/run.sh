@@ -640,8 +640,9 @@ PLAN_PARTS=("Brisket, edit" "Chicken wings, edit" "Chicken breasts, edit" "Add f
 plan_miss() { ok=0; log "    MISSING: $1"; }
 plan_problems() { local line; while IFS= read -r line; do [ -n "$line" ] && { ok=0; log "    $line"; }; done <<<"$1"; }
 has_label() { grep -qF "content-desc=\"$2\"" "$1"; }
-# Jason's fit targets (HANDOFF "Decisions"): at 115% three cards and Add food, at 130% two cards, whole above
-# Start cook and its fade, without scrolling. Logs how much room every part has, then fails the caller (its
+# Jason's fit targets (HANDOFF "Decisions", set 2026-11-14): at 115% and at 130% two cards whole above Start
+# cook and its fade, without scrolling. At 115% the third card may end in the fade and Add food is reached by
+# scrolling. Logs how much room every part has, then fails the caller (its
 # `ok`) for a target that is missed. Used with gesture navigation (plan) and 3-button navigation (plan-3button).
 plan_fit() {
   local s="$1" xml="$2" px fade out line fit
@@ -649,8 +650,7 @@ plan_fit() {
   fade=$((FOOT_FADE_DP * px))
   while IFS= read -r line; do log "    $line"; done < <(node check.mjs room "$xml" "Start cook" "$fade" "$px" "${PLAN_PARTS[@]}")
   case "$s" in
-    1.15) fit=("${PLAN_PARTS[@]}") ;;
-    1.3) fit=("${PLAN_PARTS[@]:0:2}") ;;
+    1.15 | 1.3) fit=("${PLAN_PARTS[@]:0:2}") ;;
     *) fit=() ;;
   esac
   [ ${#fit[@]} -gt 0 ] || return 0

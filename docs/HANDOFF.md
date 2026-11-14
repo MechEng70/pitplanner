@@ -1,49 +1,37 @@
-# Handoff (2026-11-13, tenth session: T-017 review fixes; before it the ninth: T-012..T-015, T-016 emulator half, T-017)
+# Handoff (2026-11-14, eleventh session: T-017 closed on the emulator; before it the tenth: T-017 review fixes)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## Restart on Monday 2026-11-16 (written Friday 2026-11-13, end of the tenth session)
+## Restart (written Saturday 2026-11-14, end of the eleventh session)
+
+Jason's answers of 2026-11-14:
+
+- a. New Plan screenshots approved, the Add food fade above Start cook at 100% included.
+- b. 115% fit target: two cards whole, the third may end in the fade, Add food by scrolling. In
+  `tools/device/run.sh` (`plan_fit`), the device README and TASKS T-017. `plan` and `plan-3button` pass at
+  115% and 130%.
+- c. The cook is still running: the phone hold stays. `tools/device/PHONE-BLOCKED` is in place. It lifts
+  only when Jason says the cook is done. Do not read it from the date.
+- d. Tester Android versions for T-037: coming later. Ask again.
 
 Where things stand:
 
-- `main` is clean and not pushed (Jason pushes when he says so). Last work commit: `0707878` (T-017 review
-  fixes). `npm run check` passed on it.
-- Device suite on the real-size emulator: everything passes except `plan` and `plan-3button` at 115%. That
-  failure is on purpose: Jason's 115% fit target is not met and he has not set a new one yet.
-- Emulator and Metro are stopped. The emulator is 1080x2376, gesture navigation, font scale 1.3 (as found).
-- The phone was not touched. `tools/device/PHONE-BLOCKED` is in place. The cook's alarms end Sat 2026-11-14
-  17:00, but the hold lifts only when Jason says the cook is done. Do not read it from the date.
+- T-017 is closed on the emulator. **Next: T-018** (TASKS; mockups 06 and 07).
+- **Do first on Monday 2026-11-16: `npm run check`.** Snyk was down for maintenance on 2026-11-14
+  (`SNYK-0099`, 503, five runs), so gate step 6 has not run on the T-017 close commit. Steps 1 to 5 passed.
+  Jason said to delay Snyk until Monday. T-017 is not gate-complete until that run passes; fix anything it
+  reports before starting T-018.
+- `main` is clean and not pushed (Jason pushes when he says so).
+- Emulator and Metro are stopped. The emulator is 1080x2376, gesture navigation.
+- Waiting on the phone (after Jason lifts the hold: delete `tools/device/PHONE-BLOCKED`, then list every
+  phone action and wait for his yes before the first one): rebuild and reinstall the dev build (date picker
+  and alarm module are new), the T-016 phone half (approved list in TASKS T-016), the T-017 check against
+  mockups 04-05. On that check also read the phone's status bar and navigation bar heights: the emulator's
+  are 43 dp and 24 dp, the phone's status bar is not known, and Plan's fit depends on it.
 
-Nothing can start until Jason answers. Ask him these four first (he can paste the block back filled in):
-
-```
-a. New Plan screenshots (docs/fidelity/rn-05-plan.png, rn-05-plan-3button.png, rn-04-plan-empty.png):
-   approved, or what to change. At 100% Add food fades out above Start cook with its label still readable:
-   OK or not?
-b. 115% fit target, now that summaries wrap. Recommended: two cards whole, the third may end in the fade,
-   Add food by scrolling. Yes, or your own target.
-c. Is the Saturday cook done (phone hold lifted)?
-d. Tester Android versions for T-037, or "coming later".
-```
-
-What each answer unblocks:
-
-- **b decided:** change the `1.15)` case in `plan_fit` (`tools/device/run.sh`), the `plan` row in
-  `tools/device/README.md`, the acceptance and status lines of TASKS T-017 and the fit line under "Decisions
-  from Jason" below. Then `npm run device -- --no-build --only plan,plan-3button` must pass at 115% and 130%.
-- **a approved and b decided:** T-017 is closed on the emulator. Start T-018 (TASKS; mockups 06 and 07).
-- **a not approved:** fix what he names first (same loop as this session: failing test, fix, `npm run check`,
-  device run, new screenshots, stop).
-- **c yes:** delete `tools/device/PHONE-BLOCKED`, then list every phone action and wait for his yes before
-  the first one. Waiting on the phone: rebuild and reinstall the dev build (date picker and alarm module are
-  new), the T-016 phone half (approved list in TASKS T-016), the T-017 check against mockups 04-05. On that
-  check also read the phone's status bar and navigation bar heights: the emulator's are 43 dp and 24 dp, the
-  phone's status bar is not known, and Plan's fit depends on it.
-- **d answered:** record the versions in TASKS T-037.
-
-To keep the session short: TASKS.md is 1,500 lines, so read only the entries needed (`grep -n '^### T-017'`,
-T-018 and "Review fixes"), not the whole file.
+To keep the session short: TASKS.md is 1,500 lines, so read only the entries needed (`grep -n '^### T-018'`),
+not the whole file.
 
 ## START HERE: scaffold, gate, theme, kit, device tests and release build, SQLite storage, the app store, the import from 0.2.0 and the alarm module, its tests and wiring, and the Plan tab in place (T-002..T-015 and T-017 done, T-016 half), T-018 next
 
@@ -138,19 +126,14 @@ T-018 and "Review fixes"), not the whole file.
   Gear version (T-026, `grantDebugPass()`) are the only way in. The gate retries Snyk once on a server or
   network error. T-016: list every phone action and wait for Jason's yes before touching the phone.
   T-037: run the `alarm` device test on an image per tester Android version below 16 (Jason gives the list).
-- **Waiting on Jason (2026-11-13, end of the tenth session):**
-  1. His look at the new Plan screenshots (`docs/fidelity/rn-05-plan.png`, `rn-05-plan-3button.png`,
-     `rn-04-plan-empty.png`) after the T-017 review fixes. Until he approves them, do not start T-018.
-  2. His decision on the 115% fit target (three cards and Add food above Start cook): not met on the
-     real-size emulator now that card summaries wrap, with gesture or 3-button navigation. Numbers and the
-     reason: TASKS T-017 "Review fixes". Until he decides, `plan` and `plan-3button` fail at 115% (on purpose:
-     the target is his). 130% (two cards) is met in both.
-  3. His word that the Saturday cook is done (he confirmed on 2026-11-13 that the hold stays). That lifts the
+- **Waiting on Jason (2026-11-14, end of the eleventh session):**
+  1. His word that the Saturday cook is done (he confirmed on 2026-11-14 that the hold stays). That lifts the
      phone hold below and unblocks: the T-016 phone half (approved list in TASKS T-016), the T-017 phone
      check against mockups 04-05, and reinstalling the dev build on the phone (it needs a rebuild: date
      picker and alarm module).
-  4. The Android versions his testers use, for T-037 (alarm device test per version below 16). His reply of
-     2026-11-13 left this line as an unfilled placeholder: still open, ask again.
+  2. The Android versions his testers use, for T-037 (alarm device test per version below 16). "Coming
+     later" (2026-11-14): still open, ask again.
+  Settled 2026-11-14: the new Plan screenshots are approved; the 115% fit target is two cards whole.
   Settled in his review (2026-11-13): "Not in this version of Pit Planner" is approved; the taller emulator
   display is not (undone).
   `main` is not pushed (he pushes when he says so).
@@ -400,7 +383,7 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 2. Jason: push `main` when ready (plan docs and T-001 are local only).
 3. Done: Maestro CLI installed (2.12.1, `~/.maestro/bin`).
 4. T-002..T-015 and T-017 done (review fixes included), T-016 emulator half done (R-1 closed, D-4 decided and
-   confirmed). Next: T-018 once Jason approves the new Plan screenshots, per WBS "Suggested order" (T-058 now
+   confirmed). Next: T-018 (Jason approved the new Plan screenshots on 2026-11-14), per WBS "Suggested order" (T-058 now
    sits between T-019 and the Cook screen).
    Push the `v0.2.0` tag only when Jason says.
 5. Still open from before (carried into the plan): real cook with alarms through a reboot (now T-037 on the Expo
@@ -412,9 +395,10 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 - Follow the Android system font size. Times, temps, weights and countdowns never truncate at any
   scale; only secondary text may. Test at 115% and 130% (normal is 115%).
 - Engine rounds phase starts to 5-minute steps; off-heat stays exact (serve - slice - rest).
-- Plan: only Start cook is pinned; at 115% three cards + Add food fit, at 130% two cards. These apply on
-  the real-size emulator with gesture and with 3-button navigation (Jason, 2026-11-13). The 115% target is
-  not met there since summaries wrap (TASKS T-017 "Review fixes"); Jason decides the new target.
+- Plan: only Start cook is pinned; at 115% and at 130% two cards fit whole above it and its fade; at 115%
+  the third card may end in the fade and Add food is reached by scrolling (Jason, 2026-11-14; it replaces
+  "three cards + Add food at 115%", which a real-size display cannot hold since summaries wrap). These apply
+  on the real-size emulator with gesture and with 3-button navigation (Jason, 2026-11-13).
 - Plan card summaries wrap to two lines rather than truncate; times and durations never wrap or shrink.
   Nothing half-shows behind a pinned button: content fades out before it (Jason, 2026-11-13).
 - Cook a past plan again is hidden while there is no history, bright accent when there is (Jason, 2026-11-13).
