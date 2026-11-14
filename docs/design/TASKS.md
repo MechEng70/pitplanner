@@ -1012,19 +1012,25 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     `pitplanner://dev/plan?seed=clash` (two batches of wings, 225F and 350F) gives one real conflict.
   - Fidelity: `docs/fidelity/rn-06-temp-menu.png`, `rn-07-add-food.png`, `rn-conflicts.png` (115%, 130%).
   - **Open, Jason decides:**
-    1. Until food details (T-019) exists, a food chosen in Add food goes straight on the menu with the
-       rules defaults (in 0.2.0 it opens food details first, and is added on Save). T-019 puts that back.
-       The Conflicts sheet's "Edit [food]" buttons are left out until T-019 for the same reason.
+    1. Decided (Jason, 2026-11-14): a food chosen in Add food opens food details first, since the user
+       may need to change it; it goes on the menu on Save (as in 0.2.0). That is T-019. Until T-019 is
+       built the chosen food goes straight on the menu with the rules defaults, and the Conflicts sheet's
+       "Edit [food]" buttons are left out; T-019 removes both stopgaps (`addFood` in `PlanTab.tsx`).
     2. SPEC section 3 lists the fixes as "move to griddle, change temp, finish earlier". 0.2.0 has no
        "finish earlier" button (it has Edit [food]); none was added. Say what it should do if it is wanted.
-    3. In Celsius the menu's rows repeat (5F steps shown to the nearest 5C: 220F, 225F and 230F all read
-       105C). Same as 0.2.0. Not changed; a fix is a decision about how set points show in C.
+    3. In Celsius the menu's rows repeat in pairs: `showTemp` (`engine/units.ts`) shows set points to the
+       nearest 5C, and the smoker's 5F steps are 2.8C apart, so 220F (104.4C) and 225F (107.2C) both read
+       105C, 235F and 240F both 115C, and so on. Same as 0.2.0. Not changed; Jason decides how set points
+       show in C. (An earlier note here said 230F also reads 105C: wrong, it is 110C.)
   - Not the mockup: the last row showing is cut by the menu's footer when the list is longer than the
     display (the list scrolls; mockup 06 is drawn on a taller canvas). The fire times differ from mockup 06
     by 5 minutes on some rows (215F: 5:40 AM, not 5:45); they are the engine's.
 
 ### T-019 Food details (08, 09, 10)
 - **Status:** todo
+- **From T-018 (Jason, 2026-11-14):** choosing a food in Add food opens this screen for the new food; it
+  goes on the menu on Save, not before. Take out the T-018 stopgap (`addFood` in `PlanTab.tsx` adds it at
+  once) and pass `onEdit` to the Conflicts sheet so its "Edit [food]" buttons show.
 - **Goal:** quantity, cooker chips (missing cookers disabled with "Add in Gear"), method, options, rest, Timing
   (three models for by-weight foods, Standard/Total hours otherwise, "Use for future"), live result card.
   PR-3 (T-017) applies to every stepper (quantity, hr/lb, total hours) and chip: no automatic scrolling after a
