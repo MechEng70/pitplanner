@@ -62,11 +62,15 @@ export function alarmsFromPlan(
   nameOf?: (itemId: string) => string | undefined,
   opts: AlarmOptions = {},
 ): AlarmSpec[] {
-  const names = new Map(plan.items.map(it => [it.input.id, it.name]));
-  const title = (e: PlanEvent) =>
-    (e.itemId && (nameOf?.(e.itemId) ?? names.get(e.itemId))) || KIND_TITLE[e.kind] || 'Pit Planner';
-  const done = new Set(opts.done ?? []);
   const tx = opts.text ?? ((s: string) => s);
+  const names = new Map(plan.items.map(it => [it.input.id, it.name]));
+  // Two or more of the same food: the title is that food's label ("11.5 lb brisket"), in the user's units.
+  const labels = new Map(plan.items.filter(it => it.label).map(it => [it.input.id, tx(it.label!)]));
+  const title = (e: PlanEvent) =>
+    (e.itemId && (labels.get(e.itemId) ?? nameOf?.(e.itemId) ?? names.get(e.itemId))) ||
+    KIND_TITLE[e.kind] ||
+    'Pit Planner';
+  const done = new Set(opts.done ?? []);
 
   // Each step rings at its plan time, or at its reminder time if one is set and later.
   let steps = keyedEvents(plan)

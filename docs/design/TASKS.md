@@ -1127,8 +1127,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ### T-061 Tell two of the same food apart (labels on the menu and in the steps)
 - **Status:** built 2026-11-14 (engine, Plan cards, Conflicts buttons). Gate: `npm run check` passes, all six
   steps. Device run (emulator, 2026-11-14): `plan` and `plan-sheets` pass at 115% and 130%; `plan-sheets`
-  reads the labelled Conflicts message and buttons on its two-wings seed. Not run on the phone (hold).
-  Waits for Jason's read of a two-brisket plan (below). The Cook screen's cards and step list take the
+  reads the labelled Conflicts message and buttons on its two-wings seed (run before the summary and
+  alarm-title changes, which no device test reads). Not run on the phone (hold). Waits for Jason's read
+  of a two-brisket plan, set for Sunday 2026-11-15 (below). The Cook screen's cards and step list take the
   label when T-021 builds them.
 - **Built (2026-11-14):**
   - `engine/labels.ts`, `itemLabels(rules, items)`: a label for each item that shares its food with another
@@ -1143,9 +1144,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     place of the food name ("11.5 lb brisket: total hours fixed..."). `PlannedItem.label` is set for
     labelled items (for the Cook screen, T-021). Live changes keep it, since they run `derive` again.
     `data/foods.json` is unchanged: no step wording was rewritten.
-  - Plan (`PlanScreen.tsx`): a labelled food's card is titled with its label; its summary line is as before
-    (so the weight shows twice: "11.5 lb brisket" over "11.5 lb, smoker, paper wrap"; say if that should
-    change). Conflicts (`IssuesSheet.tsx`): the fix buttons name each food by its label ("Edit 11.5 lb
+  - Plan (`PlanScreen.tsx`): a labelled food's card is titled with its label, and its summary line leaves
+    the amount out ("11.5 lb brisket" over "Smoker, paper wrap"; Jason, 2026-11-14: the summary does not
+    have to say it too). A food that is alone keeps "Brisket" over "12 lb, smoker, paper wrap". Conflicts (`IssuesSheet.tsx`): the fix buttons name each food by its label ("Edit 11.5 lb
     brisket", "Move 2 lb chicken wings 1 to the griddle"); before, two of the same food gave two buttons
     with the same text.
   - Tests: `engine/labels.test.ts` (11), `PlanScreen.test.tsx` (2 new), `IssuesSheet.test.tsx` (2 new, 5
@@ -1156,8 +1157,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   order. Count foods: count, unit and food ("3 racks St. Louis ribs"). Step text: the label in front, then
   the step as written ("11.5 lb brisket: Check tenderness: pull at 200-205F when the probe slides in like
   butter."); the wording in `data/foods.json` stays.
-- **Not done here:** the alarm's title is still the food's name ("Brisket"), with the label in its body;
-  the Cook screen and Full timeline (T-021, T-023) are not built yet; history and Cook finished rows
+- **Alarm title (Jason, 2026-11-14: "it has to have the title of it, the 11.5 pound brisket"):** a labelled
+  food's alarm is titled with its label, in the user's units (`alarmsFromPlan` in `engine/alarms.ts`); the
+  body lines keep the label in front, since one alarm can list steps of several foods.
+- **Not done here:** the Cook screen and Full timeline (T-021, T-023) are not built yet; history and Cook finished rows
   (`src/lib/finish.ts`, `historyView.ts`) still say the food's name, as 0.2.0 did.
 - **Why (Jason, 2026-11-14, from his cook with two briskets):** "in the plan there isn't a pull 11.5 lb off
   of the smoker in the tasks. need to name the briskets by either user name or name/weight."
@@ -1183,7 +1186,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** a plan with two briskets: read the steps and say which brisket each is for.
   Until the Cook screen exists (T-021) the steps show nowhere in 0.3.0, so for now: on Plan, add two
   briskets of different weights and judge the two card titles against the answers above ("11.5 lb brisket",
-  "6 lb brisket"); make them the same weight and look for "1" and "2"; open Conflicts with two of one food
+  "6 lb brisket") and the line under each, which should not repeat the weight; make them the same weight
+  and look for "1" and "2"; open Conflicts with two of one food
   and read the buttons. Emulator or phone; no mockup shows this, the reference is this entry.
 
 ### T-058 Survive font-size changes and process death
@@ -1672,16 +1676,23 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     - Two thermometers in the same food: at 2:55 to 2:57 PM Pit Boss read 165F and 170F where Chef iQ
       read 159F and 158F (6F and 12F apart); at about 3:30 PM, 172F and 177F against 166.6F and 161.6F
       (5F to 15F apart, depending on the pairing). Pit Boss was the higher one every time.
-    - **The pairing is not settled by the images.** Nothing in `pitboss_006.png` ties a Pit Boss probe
-      to a Chef iQ probe or a probe to a food; "small brisket = probe 3" stays Jason's memory. Ask him
-      on the next cook, or read it from Home Assistant's entity names (T-050).
+    - **The pairing is not settled by the images, and only Jason knows it** (Jason, 2026-11-14: he
+      knows it only because he placed the probes himself, with many probes across the meats). Nothing
+      in `pitboss_006.png` ties a Pit Boss probe to a Chef iQ probe or a probe to a food; "small brisket
+      = probe 3" is his memory. **When this task is picked up again, ask him for the pairing before
+      comparing any two probe lines**, and have him write it down at the start of the next cook (which
+      probe, which maker, which food, where in the food). Home Assistant's entity names (T-050) say
+      which sensor is which, not which food it is in. What this means for the app: any feature that
+      re-times from probes (candidate 4) needs the user to say which probe is in which food.
     - Chef iQ's ambient sensors read 168F and 204F with the grill at 247F: the air next to the meat was
       40 to 80F under the grill's own reading. A plan timed from the set temp does not see that.
     - The grill read 217F against a 270F target at about 3:30 PM (just turned up, or the lid open for
       the wings; Jason's 3:30 PM note says he was turning it up to about 280F).
     - The big brisket's level stretch at 208 to 210F ran with the set temp at 208 to 210F: the meat had
-      reached the smoker's temp and could not go higher, so "stable at 210F" says the smoker was holding
-      it, not that it had finished cooking.
+      reached the smoker's temp and could not go higher, so the level line alone does not show doneness.
+      It was done all the same: Jason checked it with a probe before pulling and "it was good to go"
+      (Jason, 2026-11-14). So the 11.5 lb flat was probe tender at 6 hr 36 min against 8 hr 50 min
+      planned.
 - **Logs (Jason, 2026-11-14):** pull the logs from the phone once his cook plan is complete, for this
   analysis. Not before he says the cook is done; the phone hold and the list-and-yes rule apply.
 - **First step:** the answers above, then a SPEC section and mockups for any new UI (no UI element without

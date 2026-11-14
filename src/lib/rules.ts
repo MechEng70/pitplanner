@@ -83,13 +83,18 @@ export function countText(f: FoodDef, n: number): string {
   return f.name.toLowerCase().endsWith(f.quantity.unit.toLowerCase()) ? String(n) : `${n} ${f.quantity.unit}`;
 }
 
-/** Card subtitle: "12 lb, smoker, paper wrap". Quantity is formatted by the caller (units). */
-export function itemSummary(it: ItemInput, qty: string): string {
+/**
+ * Card subtitle: "12 lb, smoker, paper wrap". Quantity is formatted by the caller (units); null leaves it out,
+ * for a card whose title already says it ("11.5 lb brisket", T-061).
+ */
+export function itemSummary(it: ItemInput, qty: string | null): string {
   const f = food(it.foodId);
   const m = method(it.foodId, it.methodId);
   const how = m.short ?? (f.methods.length > 1 ? m.label.toLowerCase() : m.cooker);
   const opts = Object.entries(m.options ?? {})
     .map(([k, o]) => o.choices[it.options?.[k] ?? o.default]?.short)
     .filter(Boolean);
-  return [qty, how, ...opts].join(', ');
+  if (qty != null) return [qty, how, ...opts].join(', ');
+  // No amount in front: the line starts with a capital ("Smoker, paper wrap").
+  return [how.charAt(0).toUpperCase() + how.slice(1), ...opts].join(', ');
 }

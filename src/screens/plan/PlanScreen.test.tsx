@@ -161,15 +161,17 @@ describe('plan (mockup 05)', () => {
   // T-061 (Jason, 2026-11-14, from a cook with two briskets): two of the same food are told apart by a label.
   test('two of the same food: each card is titled with its label; a food that is alone keeps its name', async () => {
     await show([{ ...brisket, quantity: 11.5 }, { ...brisket, id: 'b2', quantity: 6 }, wings]);
-    expect(button('11.5 lb brisket, edit')).toBeOnTheScreen();
-    expect(button('6 lb brisket, edit')).toBeOnTheScreen();
+    // The title says the weight, so the summary line does not say it again (Jason, 2026-11-14).
+    expect(within(button('11.5 lb brisket, edit')).getByText('Smoker, paper wrap')).toBeOnTheScreen();
+    expect(within(button('6 lb brisket, edit')).getByText('Smoker, paper wrap')).toBeOnTheScreen();
+    expect(within(button('Chicken wings, edit')).getByText('2 lb, smoke then 400F crisp')).toBeOnTheScreen();
     expect(button('Chicken wings, edit')).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: 'Brisket, edit' })).toBeNull();
   });
 
   test('two of the same food at the same weight are numbered in menu order', async () => {
     await show([brisket, { ...brisket, id: 'b2' }]);
-    expect(within(button('12 lb brisket 1, edit')).getByText('12 lb, smoker, paper wrap')).toBeOnTheScreen();
+    expect(within(button('12 lb brisket 1, edit')).getByText('Smoker, paper wrap')).toBeOnTheScreen();
     expect(button('12 lb brisket 2, edit')).toBeOnTheScreen();
   });
 

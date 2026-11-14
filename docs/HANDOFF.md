@@ -7,14 +7,14 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
 
 Do these in order:
 
-1. **Nothing is owed on push or Snyk monitor for the earlier work.** `origin/main` was pushed to `279fc45` on
-   2026-11-14 and `npm run snyk:monitor` ran after it. The T-061 commit and this session's docs commits are
-   local only: push when Jason says, then run the monitor.
-   **Snyk says the org has reached its monthly limit of 200 private tests** (printed by the monitor and by
-   the gate on 2026-11-14). The gate still passed ("all 25 projects tested, none skipped", exit 0), but
-   tell Jason and watch for a gate that starts failing or skipping on the limit: that is a blocker to
-   report, not a step to remove. The monitor was run twice this session by mistake (a second run while
-   checking its output); do not rerun it without a push.
+1. **Nothing is owed on push.** `origin/main` has everything up to the end of the fourteenth session
+   (T-061 included).
+   **Snyk monitor is paused until December 2026** (Jason, 2026-11-14: "pause on that until next month"):
+   Snyk says the org reached its monthly limit of 200 private tests. Do not run `npm run snyk:monitor`
+   before 2026-12-01, even after a push; the push of 2026-11-14 with T-061 has no monitor run, so run it
+   once on the first push in December. The gate's Snyk step is unchanged and still passes ("all 25
+   projects tested, none skipped"); this was read as a pause of the monitor only, not of the gate. If
+   `npm run check` starts failing or skipping on the limit, stop and ask Jason: do not remove the step.
 2. **Phone: the hold is still on** (`tools/device/PHONE-BLOCKED`). Emulator only. Ask Jason whether the
    cook is done before anything that needs the phone.
 3. **Ask Jason on Sunday 2026-11-15 (he said "remember to do that tomorrow"):**
@@ -28,12 +28,14 @@ Do these in order:
      deleted with him (his words: "we will delete the pitboss_XXX.jpg tomorrow"). `pitboss_001.jpg` is
      committed and already pushed (`be1a578`); removing it from git, and from the pushed history if he
      wants, is his call. Deleting is destructive: his yes first.
-   - From the charts, one thing only he can settle: which Pit Boss probe was paired with which Chef iQ
-     probe, and which food each was in (the images do not show it; T-060).
-4. **T-061 is built and gate-complete; it waits for Jason's look.** What he judges is in TASKS T-061
-   "Device testing": two briskets on Plan, the card titles against "11.5 lb brisket" / "6 lb brisket", the
-   "1" and "2" on equal weights, the Conflicts buttons. One question for him there: a labelled card shows
-   the weight twice (title and summary line); keep or change.
+   - Probe pairing: only Jason knows which Pit Boss probe sat with which Chef iQ probe and in which
+     food; it is written up in T-060 ("The pairing is not settled by the images"). Ask him when T-060 is
+     picked up, not now.
+4. **T-061 is built and gate-complete; Jason tests it on Sunday 2026-11-15** ("we will do that
+   tomorrow"). What he judges is in TASKS T-061 "Device testing": two briskets on Plan, the card titles
+   against "11.5 lb brisket" / "6 lb brisket" with no weight in the line under them, the "1" and "2" on
+   equal weights, the Conflicts buttons. Settled by him on 2026-11-14: the summary does not repeat the
+   weight; the alarm's title is the label.
 5. **Next task: T-021 (Cook screen).** Its cards and step list use `PlannedItem.label` and the event text
    as it comes (the label is already in front). T-063 (take back a step marked Done by mistake) is in
    0.3.0 by his decision of 2026-11-14 and belongs with the Cook screen tasks; it needs a mockup or a SPEC

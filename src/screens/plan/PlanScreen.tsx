@@ -153,7 +153,8 @@ export function PlanScreen({
       return {
         known: true,
         name: label ? tx(label, units) : f.name,
-        summary: tx(itemSummary(it, qty), units),
+        // The label already says the amount, so the summary does not repeat it (Jason, 2026-11-14).
+        summary: tx(itemSummary(it, label ? null : qty), units),
         cooker: m.cooker,
         perWeight: m.timing.kind === 'perWeight',
       };

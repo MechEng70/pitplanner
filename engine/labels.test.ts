@@ -136,6 +136,13 @@ test('alarms carry the label, and step keys do not change with it', () => {
       .filter(k => k.event.itemId === 'a')
       .map(k => k.key);
   assert.deepEqual(keys(two), keys(one));
+  // The alarm's title is the label too (Jason, 2026-11-14), in the user's units; one brisket keeps "Brisket".
+  const titles = (p: typeof two, kg = false) =>
+    alarmsFromPlan(p, 0, undefined, kg ? { text: t => localizeText(t, 'F', 'kg') } : {}).map(a => a.title);
+  assert.ok(titles(two).includes('6 lb brisket'));
+  assert.ok(titles(two).every(t => !/\bBrisket\b/.test(t)));
+  assert.ok(titles(two, true).includes('2.7 kg brisket'));
+  assert.ok(titles(one).includes('Brisket'));
   const bodies = alarmsFromPlan(two, 0).map(a => a.body);
   assert.ok(bodies.some(b => b.includes('6 lb brisket: Check tenderness')));
 });
