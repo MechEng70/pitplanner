@@ -985,9 +985,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     new target on 2026-11-14 (two cards whole, the third may end in the fade, Add food by scrolling).
 
 ### T-018 Smoker temp menu, Add food, Issues sheet (06, 07)
-- **Status:** built and tested on the emulator 2026-11-14 (notes below); waits for Jason's look at the
-  screenshots and his answers to the three questions in the notes. Snyk has not run on it (down for
-  maintenance on 2026-11-14, delayed to Monday 2026-11-16 by Jason): `npm run check` must pass first.
+- **Status:** built and tested on the emulator 2026-11-14 (notes below). Jason approved the screenshots and
+  answered the three questions on 2026-11-14. Snyk has not run on it (down for maintenance on 2026-11-14,
+  delayed to Monday 2026-11-16 by Jason): done once `npm run check` passes.
 - **Goal:** temp menu with settable temps and fire times, Show all and the outside-200-300F warning; food
   picker with search and groups; conflicts sheet with fixes (move to griddle, change temp, edit the food).
 - **Files:** `src/screens/plan/TempMenu.tsx`, `FoodPick.tsx`, `IssuesSheet.tsx`, tests, fidelity PNGs.
@@ -1413,6 +1413,32 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Acceptance:** per decision.
 - **Tests:** an engine unit test if kept.
 - **Device testing (Jason):** none.
+
+### T-060 Smoker running hotter (or cooler) than its set temp
+- **Status:** todo (next version, after 0.3.0; needs Jason's details and a decision on the behavior first)
+- **Why (Jason, 2026-11-14):** during his cook on 0.2.0 the smoker ran hotter than expected and food
+  finished ahead of plan. The app only learns it when a step is marked done early; nothing notices that
+  the smoker itself is off its set temp and re-times the rest of the cook from that. "We need to remember
+  that behavior for the next version."
+- **Not this:** the Plan tab's "finish earlier" conflict fix, dropped from SPEC on 2026-11-14. That was a
+  choice made while planning. This is the cook running ahead because of the equipment.
+- **Goal (to be settled with Jason):** when the smoker runs away from its set temp for long enough to
+  matter, the cook says so and offers to re-time what is left (earlier pulls, longer holds, hold-limit
+  warnings), never silently. Open questions: how the app learns the real temp without Home Assistant (the
+  user enters what the controller or a grate probe reads?) and with it (T-050 reads the pit sensor); how
+  far off and for how long before it speaks; whether a smoker that always runs hot becomes a saved offset
+  for that cooker in Gear, used by the next plan.
+- **First step:** Jason's notes from the 2026-11-14 cook (set temp, what the smoker actually ran at, how
+  far ahead each food finished) and his screenshot of the Pit Boss temps. Then a SPEC section and mockups
+  for any new UI (no UI element without his yes), then the engine work with tests.
+- **Files (expected):** SPEC.md section 4, `engine/live.ts` and `engine/plan.ts` (the temp model already
+  scales time by smoker temp: `tempModel` in `data/foods.json`), the Cook screen, Gear cooker details.
+- **Depends on:** T-021 (Cook screen), T-038 (0.3.0 out). Related: T-050 and T-053 (live temps and the
+  pit-drop prompt from Home Assistant), T-054 (probe times feed rate learning).
+- **Acceptance:** per the decision; at least: an engine test that a cook run 25F hot re-times the remaining
+  phases and raises the hold warnings; nothing changes without the user's tap.
+- **Tests:** engine unit tests; RNTL for the prompt.
+- **Device testing (Jason):** a real cook with the smoker set off its plan temp.
 
 ---
 
