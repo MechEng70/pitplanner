@@ -1431,6 +1431,22 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **First step:** Jason's notes from the 2026-11-14 cook (set temp, what the smoker actually ran at, how
   far ahead each food finished) and his screenshot of the Pit Boss temps. Then a SPEC section and mockups
   for any new UI (no UI element without his yes), then the engine work with tests.
+- **Evidence so far:** `docs/screenshots/pitboss_001.jpg` (Jason, 2026-11-14): the Pit Boss app's chart
+  for the cook, 4 hr 58 min, in F. Read off the image, so within about 5F and 5 minutes; only the set temp
+  line is named in the image, the other lines are taken to be the grill (blue) and two probes (green,
+  yellow):
+  - Set temp: about 250F for the first 1 hr 15 min, then about 220 to 225F until about 3 hr 35 min, then
+    about 205F to the end.
+  - Grill: 20 to 25 minutes to come up, with one dip of about 20F on the way; after that it stays within a
+    few degrees of the set temp at every stage. The chart does not show the grill running above its set
+    temp.
+  - Green probe: 165F at about 1 hr 20 min, slow climb through 165 to 185F until about 2 hr 55 min, 205F at
+    about 3 hr 25 min, then level at 205F. Yellow probe: 45F rising to 65F (not in the food).
+  - So the food was ahead of a 225F plan mostly because the first 75 minutes were at about 250F. What is
+    not known yet: the smoker temp the Pit Planner plan used, and why the controller was at 250F (set by
+    hand, or the plan's temp). Ask Jason. If the plan said 225F, the gap is between the plan's temp and
+    the controller's set temp, which the app could ask about or read, a simpler problem than a grill that
+    misses its set temp.
 - **Files (expected):** SPEC.md section 4, `engine/live.ts` and `engine/plan.ts` (the temp model already
   scales time by smoker temp: `tempModel` in `data/foods.json`), the Cook screen, Gear cooker details.
 - **Depends on:** T-021 (Cook screen), T-038 (0.3.0 out). Related: T-050 and T-053 (live temps and the
