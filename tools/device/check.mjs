@@ -1,6 +1,7 @@
 // Device checks over uiautomator dumps, for run.sh. Exit 0 = pass, 1 = fail (problems on stdout).
 //   node check.mjs find <dump.xml> <label> <topPx> <bottomPx>       fully on screen? (exit 3: above it)
 //   node check.mjs center <dump.xml> <label>                        prints "x y" of the control's center
+//   node check.mjs text <dump.xml> <text>                           bounds of the first text node reading <text>
 //   node check.mjs stable <before.xml> <after.xml> <label>          T-006 stable-controls
 //   node check.mjs bounds <dump.xml> <label prefix>                 prints "left top right bottom" (px)
 //   node check.mjs keyboard <dump.xml> <field> <footer> <imeTop> <topPx>   T-006 sheet-keyboard
@@ -39,6 +40,11 @@ if (cmd === 'find') {
   if (!n) process.exit(1);
   console.log(`${n.b.l} ${n.b.t} ${n.b.r} ${n.b.b}`);
   process.exit(0);
+} else if (cmd === 'text') {
+  const n = load(a[0]).find(x => x.text === a[1]);
+  if (!n) process.exit(1);
+  console.log(`${n.b.l} ${n.b.t} ${n.b.r} ${n.b.b}`);
+  process.exit(0);
 } else if (cmd === 'stable') {
   problems = movedAbove(load(a[0]), load(a[1]), a[2]);
 } else if (cmd === 'keyboard') {
@@ -52,7 +58,7 @@ if (cmd === 'find') {
   for (const line of room(load(a[0]), a.slice(4), a[1], Number(a[2]), Number(a[3]))) console.log(line);
   process.exit(0);
 } else {
-  console.error('usage: check.mjs find|center|bounds|stable|keyboard|widths|above|room ...');
+  console.error('usage: check.mjs find|center|bounds|text|stable|keyboard|widths|above|room ...');
   process.exit(2);
 }
 for (const p of problems) console.log(p);

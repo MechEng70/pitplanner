@@ -1,5 +1,6 @@
-import { render, screen } from '@testing-library/react-native';
-import { StyleSheet } from 'react-native';
+import { act, render, screen } from '@testing-library/react-native';
+import * as React from 'react';
+import { Dimensions, StyleSheet } from 'react-native';
 import { Button } from './button';
 import { Text, textStyle } from './text';
 
@@ -87,4 +88,37 @@ test('clamp is one line; clamp={2} lets secondary text wrap to a second line bef
   expect(screen.getByText('One').props.numberOfLines).toBe(1);
   expect(screen.getByText('Two').props.numberOfLines).toBe(2);
   expect(screen.getByText('Free').props.numberOfLines).toBeUndefined();
+});
+
+// T-058 regression: with the activity kept through a font-size change, text on screen stayed at the old size
+// (emulator, 2026-11-14: the Plan tab label 52 px before and 5 s after 115% -> 130%, 59 px only after a tap).
+test('a system font-size change gives text a new native view, and only the text', async () => {
+  const mounts = { text: 0, parent: 0 };
+  function Count({ of }: { of: keyof typeof mounts }) {
+    React.useEffect(() => {
+      mounts[of] += 1;
+    }, [of]);
+    return null;
+  }
+  const before = Dimensions.get('window');
+  await render(
+    <>
+      <Count of="parent" />
+      <Text>
+        Serve 5:00 PM
+        <Count of="text" />
+      </Text>
+    </>,
+  );
+  expect(mounts).toEqual({ text: 1, parent: 1 });
+  try {
+    await act(async () => {
+      Dimensions.set({ window: { ...before, fontScale: 1.3 }, screen: Dimensions.get('screen') });
+    });
+    expect(mounts).toEqual({ text: 2, parent: 1 });
+    expect(screen.getByText('Serve 5:00 PM')).toBeOnTheScreen();
+  } finally {
+    await screen.unmount();
+    Dimensions.set({ window: before, screen: Dimensions.get('screen') });
+  }
 });

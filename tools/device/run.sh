@@ -2,7 +2,7 @@
 # One unattended device pass on the dev build (TASKS T-006).
 #   npm run device -- [--phone] [--no-build] [--repeat N] [--only <test>]...
 #   tests: smoke, sheet-keyboard, stable-controls, db, migration-error, db-unopenable, legacy-import, alarm,
-#   plan, plan-3button, plan-sheets, food-details
+#   plan, plan-3button, plan-sheets, food-details, survive
 #   DEVICE_SCALES="1.0 1.15 1.3" adds or changes the font scales (default 1.15 and 1.3).
 #   (default: all).
 #   --repeat N runs the chosen tests N times at each font scale (to catch a test that only sometimes fails). --only repeats or takes a comma list.
@@ -19,7 +19,7 @@ set -uo pipefail
 . "$(dirname "$0")/lib.sh"
 cd "$DEVICE_DIR" || exit 1
 
-ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets food-details)
+ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets food-details survive)
 TESTS=()
 NOBUILD=""
 REPEAT=1
@@ -110,6 +110,8 @@ restore() {
     A shell device_config delete device_idle min_time_to_alarm >/dev/null 2>&1
   fi
   nav_back && [ -z "$NAV_BEFORE" ] || log "navigation mode NOT put back (was $NAV_BEFORE)"
+  # The survive test turns "Don't keep activities" on (emulator only): never leave it on.
+  if is_emulator; then A shell settings put global always_finish_activities 0 >/dev/null 2>&1; fi
   if [ -n "$BACKUP" ]; then ./db.sh restore "$BACKUP" | tee -a "$REPORT"; fi
   A shell settings put system font_scale "$ORIG_SCALE" && log "font scale back to $ORIG_SCALE"
   A shell settings put global stay_on_while_plugged_in "$ORIG_STAYON"
@@ -862,6 +864,104 @@ test_food_details() {
     shot "$dir/food-chicken.png"
   else plan_miss "food details for chicken breasts"; fi
   if [ $ok = 1 ]; then result "PASS  food-details $s"; else result "FAIL  food-details $s"; fi
+}
+
+# T-058: the app survives a font-size change, its activity being destroyed and its process being killed.
+# Emulator only (it changes developer settings and kills the app).
+# 1. Font size changed with the app open on Gear: the same activity (its window, the DecorView in
+#    `dumpsys activity <package>`, is the same object; a rebuilt activity has a new one), still on Gear, and the
+#    Plan tab's label is drawn at the new size one second later.
+# 2. "Don't keep activities" on: food details with an unsaved rate, Home, back to the app: the same screen
+#    with the unsaved value.
+# 3. A running test cook, on Gear, the process killed in the background: the app's pending alarms are the same
+#    before and after, and the app comes back on Gear.
+activity_view() { A shell dumpsys activity "$PKG" </dev/null | grep -A400 "ACTIVITY $PKG/.MainActivity" | grep -m1 -oE 'DecorView\{[0-9a-f]+'; }
+app_alarms() { A shell dumpsys alarm </dev/null | grep -oE "Alarm\{[^}]*$PKG\}" | sed -E 's/Alarm\{[0-9a-f]+ /Alarm{/; s/ whenElapsed [0-9]+//' | sort -u; }
+text_height() { local b; b=$(node check.mjs text "$1" "$2") || return 1; set -- $b; echo $(($4 - $2)); }
+# Open the app again the way the launcher would, without stopping it first (launch force-stops, and a
+# force-stop also cancels the app's alarms, which is not what Android does when it kills a process).
+reopen() {
+  A shell am start -W -a android.intent.action.VIEW \
+    -d "pitplanner://expo-development-client/?url=http%3A%2F%2Flocalhost%3A$METRO_PORT" "$PKG" >/dev/null
+  wait_for_app 90 && wait_for_refresh
+}
+test_survive() {
+  local s="$1" dir="$2" ok=1 other h0 h1 r0 r1 a0 a1 a2
+  if ! is_emulator; then result "SKIP  survive $s: emulator only"; return; fi
+  [ "$s" = 1.3 ] && other=1.15 || other=1.3
+
+  launch "" || { result "FAIL  survive $s: app did not open"; return; }
+  tap "Gear" 1 | tee -a "$REPORT"
+  if dump >"$dir/survive-font-before.xml" && h0=$(text_height "$dir/survive-font-before.xml" "Plan"); then
+    r0=$(activity_view)
+    A shell settings put system font_scale "$other"
+    sleep 1
+    if dump >"$dir/survive-font-after.xml" && h1=$(text_height "$dir/survive-font-after.xml" "Plan"); then
+      r1=$(activity_view)
+      grep -q 'content-desc="Gear"[^>]*selected="true"' "$dir/survive-font-after.xml" || plan_miss "Gear still open after the font-size change"
+      if [ -n "$r0" ] && [ "$r0" = "$r1" ]; then log "    font size $s -> $other: the same activity (its window is still $r1)"
+      else plan_miss "the same activity after the font-size change (its window was \"$r0\", is \"$r1\")"; fi
+      if { [ "$other" = 1.3 ] && [ "$h1" -gt "$h0" ]; } || { [ "$other" = 1.15 ] && [ "$h1" -lt "$h0" ]; }; then
+        log "    the Plan tab label is drawn at the new size after 1 s ($h0 px -> $h1 px)"
+      else plan_miss "text at the new size 1 s after the change (Plan tab label $h0 px -> $h1 px)"; fi
+    else plan_miss "the screen after the font-size change"; fi
+    A shell settings put system font_scale "$s"
+    sleep 1
+  else plan_miss "the Gear screen"; fi
+
+  A shell settings put global always_finish_activities 1
+  if launch "dev/plan?seed=mockup&edit=b"; then
+    scroll_bottom | tee -a "$REPORT"
+    on_screen "More hours per pound" UP
+    tap "More hours per pound" 1 | tee -a "$REPORT"
+    A shell input keyevent KEYCODE_HOME
+    sleep 2
+    if reopen && sleep 1 && dump >"$dir/survive-activity.xml"; then
+      has_text "$dir/survive-activity.xml" "Brisket" && has_label "$dir/survive-activity.xml" "Save" ||
+        plan_miss "food details for the brisket after the activity was destroyed"
+      scroll_bottom | tee -a "$REPORT"
+      dump >"$dir/survive-activity-rate.xml" && grep -qE 'text="0\.80.hr/lb"' "$dir/survive-activity-rate.xml" ||
+        plan_miss "the unsaved 0.80 hr/lb after the activity was destroyed"
+      [ $ok = 1 ] && log "    Don't keep activities: food details came back with the unsaved 0.80 hr/lb"
+      shot "$dir/survive-activity.png"
+      tap "Close" 1 | tee -a "$REPORT"
+    else
+      plan_miss "the app after Home and back (Don't keep activities)"
+      dump >"$dir/survive-activity-missing.xml" && log "      on screen: $(grep -oE '(text|content-desc)="[^"]+"' "$dir/survive-activity-missing.xml" | head -12 | tr '\n' ' ')"
+      log "      top: $(A shell dumpsys activity activities </dev/null | grep -m1 -E 'topResumedActivity|mResumedActivity' | sed -E 's/ t[0-9]+.*//')"
+    fi
+  else plan_miss "food details (the app did not open)"; fi
+  A shell settings put global always_finish_activities 0
+
+  if launch "dev/alarm?cook=30"; then
+    sleep 2
+    A shell am start -W -a android.intent.action.VIEW -d "'pitplanner://gear'" "$PKG" >/dev/null
+    sleep 2
+    a0=$(app_alarms)
+    A shell input keyevent KEYCODE_HOME
+    sleep 2
+    A shell am kill "$PKG"
+    sleep 1
+    if [ -n "$(A shell pidof "$PKG" | tr -d '\r')" ]; then plan_miss "the process killed (it is still running)"; fi
+    a1=$(app_alarms)
+    if [ -n "$a0" ] && [ "$a0" = "$a1" ]; then log "    process killed: the app's $(wc -l <<<"$a0") pending alarm(s) are unchanged"
+    else plan_miss "the same pending alarms after the kill (before: $(wc -l <<<"$a0"), after: $(wc -l <<<"$a1"))"; fi
+    if reopen && dump >"$dir/survive-kill.xml"; then
+      if grep -q 'content-desc="Gear"[^>]*selected="true"' "$dir/survive-kill.xml"; then log "    the app came back on Gear"
+      else plan_miss "Gear open after the process was killed"; fi
+      a2=$(app_alarms)
+      if [ "$a1" != "$a2" ]; then
+        plan_miss "the same pending alarms after the app started again"
+        diff <(echo "$a1") <(echo "$a2") | sed 's/^/      /' | tee -a "$REPORT"
+      fi
+    else plan_miss "the app after the process was killed"; fi
+    # Put things back: end the test cook (clears its alarms) and leave the app on Plan.
+    A shell am start -W -a android.intent.action.VIEW -d "'pitplanner://dev/alarm?cook=end'" "$PKG" >/dev/null
+    sleep 2
+    A shell am start -W -a android.intent.action.VIEW -d "'pitplanner://plan'" "$PKG" >/dev/null
+    sleep 2
+  else plan_miss "the test cook (the app did not open)"; fi
+  if [ $ok = 1 ]; then result "PASS  survive $s"; else result "FAIL  survive $s"; fi
 }
 
 read -r -a SCALES <<<"${DEVICE_SCALES:-1.15 1.3}"

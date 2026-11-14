@@ -841,7 +841,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ## Phase 5: Plan tab (mockups 04-08)
 
 ### T-017 Plan: empty and main (04, 05)
-- **Status:** done (see `git log --grep T-017`); Jason's review fixes done 2026-11-13 (notes "Review fixes"
+- **Status:** gate-complete 2026-11-14 (`npm run check` passed with Snyk back up, all six steps; anything below about
+  Snyk being down is history). done (see `git log --grep T-017`); Jason's review fixes done 2026-11-13 (notes "Review fixes"
   below), new screenshots approved by Jason 2026-11-14 (the Add food fade at 100% included). 115% fit target set by
   Jason 2026-11-14: two cards whole, the third may end in the fade, Add food by scrolling; met (numbers
   below). Closed on the emulator. His phone check (compare with
@@ -985,7 +986,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     new target on 2026-11-14 (two cards whole, the third may end in the fade, Add food by scrolling).
 
 ### T-018 Smoker temp menu, Add food, Issues sheet (06, 07)
-- **Status:** built and tested on the emulator 2026-11-14 (notes below). Jason approved the screenshots and
+- **Status:** gate-complete 2026-11-14 (`npm run check` passed with Snyk back up, all six steps; anything below about
+  Snyk being down is history). built and tested on the emulator 2026-11-14 (notes below). Jason approved the screenshots and
   answered the three questions on 2026-11-14. Snyk has not run on it (down for maintenance on 2026-11-14,
   delayed to Monday 2026-11-16 by Jason): done once `npm run check` passes.
 - **Goal:** temp menu with settable temps and fire times, Show all and the outside-200-300F warning; food
@@ -1030,7 +1032,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     by 5 minutes on some rows (215F: 5:40 AM, not 5:45); they are the engine's.
 
 ### T-019 Food details (08, 09, 10)
-- **Status:** built 2026-11-14, emulator only; Jason approved the screenshots (115% and 130%) the same day:
+- **Status:** gate-complete 2026-11-14 (`npm run check` passed with Snyk back up, all six steps; anything below about
+  Snyk being down is history). built 2026-11-14, emulator only; Jason approved the screenshots (115% and 130%) the same day:
   "look good. I like the results bar", "T-019 is good to go". Snyk (gate step 6) not run: Snyk was down
   (`SNYK-0099`), steps 1 to 5 pass. Not gate-complete until `npm run check` passes with Snyk. His thumb test
   on the weight stepper still needs the phone (hold on).
@@ -1149,7 +1152,34 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** a plan with two briskets: read the steps and say which brisket each is for.
 
 ### T-058 Survive font-size changes and process death
-- **Status:** todo
+- **Status:** built 2026-11-14 (emulator: `survive` passes at 115% and 130%). The mid-cook half of the
+  acceptance (on Cook: same Next up and countdown) waits for T-021, as there is no Cook screen yet. Not run
+  on the phone (hold). Gate: `npm run check` passes, all six steps (2026-11-14, Snyk back up).
+- **Built (2026-11-14):**
+  - Font size. `plugins/fontScaleConfigChange.ts` (pure, tested) through `plugins/withFontScaleConfigChange.ts`
+    in `app.config.ts`: `fontScale` in the main activity's `configChanges`, and an `onConfigurationChanged`
+    in `MainActivity.kt` that has React Native's DeviceInfo module run its font-scale check at once. Found on
+    the emulator: with the activity kept, React Native 0.88 neither measures text already on screen again
+    (the Plan tab label stayed 52 px for 5 s after 115% -> 130%, and became 59 px only when re-rendered) nor
+    tells JavaScript the new scale before the next resume. So `Text` (`src/components/ui/text.tsx`) takes
+    `useWindowDimensions().fontScale` as its key: each piece of text gets a new native view at the new size
+    and nothing above it is rebuilt (regression test in `text.test.tsx`, seen red without the key).
+    `TextInput` is not re-keyed (it would drop the keyboard); it takes the new size on its next render.
+  - UI state. `src/lib/uiState.ts` (`UiState {tab, food}`; `parseUiState`, `restorableFood`), stored under kv
+    key `ui` by `settings.ui()` / `setUi()` (no migration), reached through `store.ui.read()` / `.write()`
+    (not React state: writing it re-renders nothing). `app/index.tsx` opens the saved tab; the tab bar saves
+    the open tab. `PlanTab` writes the food being edited on every change (`FoodEdit` `onChange`) and opens
+    Food details again from it; a saved food that is no longer on the menu (and is not new) is dropped.
+    The Plan draft itself was already stored by the store and the cook is in `active_cook` (T-008).
+  - Not built from the approach above: "the open route" beyond the tab and Food details (the other sheets,
+    the temp menu, Add food and Conflicts, come back closed: they hold no unsaved input), and no splash hold
+    (the saved state is read with the settings the app already waits for).
+  - Rig: `survive` in `tools/device/run.sh`, emulator only. The "same activity" check compares the
+    activity's window (`DecorView{...}` in `dumpsys activity <package>`), not `Running "main"` lines (the
+    dev build's log had none to count). Alarms are compared by their clock time (`origWhen`): Android's
+    `whenElapsed` moved by 1 ms when the app set the same alarms again. As the app now comes back where it
+    was left, `launch` with no route closes a food sheet that an earlier test left open, and `wait_for_app`
+    knows the sheet as the app being up.
 - **Goal:** changing the system font size never rebuilds the screen, and the active cook, the selected tab and
   unsaved edits survive the app being killed in the background (Jason, 2026-11-12, after the T-004 finding: a
   font-size change recreated the activity and the app came back on Plan with its UI state lost).
@@ -1188,7 +1218,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ## Phase 6: Cook tab (mockups 12-15)
 
 ### T-020 `engine/cookState.ts`
-- **Status:** built 2026-11-14 (13 tests); Snyk (gate step 6) not run, Snyk was down; steps 1 to 5 pass.
+- **Status:** gate-complete 2026-11-14 (`npm run check` passed with Snyk back up, all six steps; anything below about
+  Snyk being down is history). built 2026-11-14 (13 tests); Snyk (gate step 6) not run, Snyk was down; steps 1 to 5 pass.
 - **Notes (2026-11-14):**
   - `cookState(facts, now)` takes four facts (`pitDownAt`, `quietUntil`, `nextDueAt`, `finishing`; `null`
     for no cook) and returns the phase, `quiet`, `overdue`, the allowed actions, the alarm set (`none`,
@@ -1540,6 +1571,32 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - Green probe: about 165F at 1 hr 10 to 1 hr 20 min, a slow climb to about 185F, about 205 to 210F from a
     little after 3 hr, then level to the end; it starts to drop in the last minutes (the pull).
   - Yellow probe: 45 to 65F throughout (not in the food).
+- **Jason's note, mid-afternoon 2026-11-14 (dictated, so some words are unclear; ask before relying on a
+  number):** the tri-tip and the small brisket are not reaching 185-200F. The Chef iQ probes read about 160F
+  and have not reached 180F. The Pit Boss app had shown the same food much higher than it shows now: P1 reads
+  165 and 170, P2 reads 170 (the tri-tip is the yellow line on a chart he took earlier at 255F). Chef iQ says
+  47 minutes to reach the target temps; that differs a lot from the Pit Boss temps, which worries him ("for
+  some reason... the app just isn't showing correctly"). The smoker is at 250F. The wings are not started: he
+  put them off until 3:20 PM because of the tri-tip and the small brisket. He will add screenshots of both
+  apps as `docs/screenshots/pitboss_003.jpg`, `_004` and probably `_005` (that folder is git-ignored), and
+  write up more. Probes (Jason, same afternoon, from memory: "I believe that's the way it is"): each food has
+  two probes, one from each maker, close to the same spot: Pit Boss P1 and Chef iQ probe 1 in the brisket,
+  Pit Boss P2 and Chef iQ probe 2 in the tri-tip. Still not clear: what "I've got those pulled right now"
+  refers to. What it adds here: two thermometers in the same food disagreeing by 10F or more, and a
+  later food (wings) pushed back by hand because earlier food ran long: the opposite of the brisket that
+  finished early.
+- **Jason's note, about 3:30 PM 2026-11-14 (dictated; ask before relying on a number):** the app's brisket
+  "done" step came up at 3:30 PM and he hit Done by accident; 0.2.0 has no way to take that back. The brisket
+  was not done: it was not at 200F and not tender, so he left it on, put the wings on, and is turning the
+  smoker up to about 280F ("I should have turned it up to 300. I missed that setting"). His ask: "if
+  there's things that are missed, we should be able to go back and set... on the full timeline, I should be
+  able to click on the timeline and readjust it if something happened" (in BACKLOG.md; whether an undo for
+  Done belongs in 0.3.0's Cook screen is a question for him). Probes, corrected: the charts are in
+  `docs/screenshots/pitboss_003.jpg` to `_005.jpg` and `pitboss_006.png` (git-ignored, not yet read by a
+  session). In `pitboss_006.png` the Pit Boss app's lines are probe 3 ambient, probe 3 food and probe 1 food;
+  the small brisket went on first and is probe 3 in that image, and he thinks Pit Boss probe 3 pairs with
+  Chef iQ probe 1 and Pit Boss probe 1 with Chef iQ probe 2 (this differs from his earlier note: confirm with
+  him over the image). The brisket had only reached about 170F.
 - **Logs (Jason, 2026-11-14):** pull the logs from the phone once his cook plan is complete, for this
   analysis. Not before he says the cook is done; the phone hold and the list-and-yes rule apply.
 - **First step:** the answers above, then a SPEC section and mockups for any new UI (no UI element without

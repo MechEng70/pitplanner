@@ -191,3 +191,69 @@ describe('Conflicts', () => {
     expect(screen.getAllByRole('option').length).toBeGreaterThan(0);
   });
 });
+
+// T-058: Android may kill the app in the background or recreate its activity. Food details comes back as
+// it was left, unsaved changes included.
+describe('after the app was killed', () => {
+  const again = (repos: Awaited<ReturnType<typeof show>>) =>
+    render(<PlanTab pickDateTime={jest.fn(async () => null)} now={() => NOW} />, { wrapper: storeWrapper(repos) });
+
+  test('food details reopens with the unsaved change and Use for future; Save then writes it', async () => {
+    const repos = await show([brisket]);
+    await fireEvent.press(button('Brisket, edit'));
+    await fireEvent.press(button('More trimmed weight'));
+    await fireEvent.press(screen.getByRole('checkbox', { name: /Use for future/ }));
+    await screen.unmount();
+    expect(saved(repos).items[0]!.quantity).toBe(12);
+
+    await again(repos);
+    expect(screen.getByRole('heading', { name: 'Brisket' })).toBeOnTheScreen();
+    expect(screen.getByText('12.5')).toBeOnTheScreen();
+    expect(screen.getByRole('checkbox', { name: /Use for future/ })).toBeChecked();
+    await fireEvent.press(button('Save'));
+    await settle();
+    expect(saved(repos).items[0]!.quantity).toBe(12.5);
+  });
+
+  test('a new food that was not added yet reopens with Add to plan', async () => {
+    const repos = await show([brisket]);
+    await fireEvent.press(button('Add food'));
+    await fireEvent.press(button(/^Chicken wings/));
+    await settle();
+    await screen.unmount();
+    await again(repos);
+    expect(screen.getByRole('heading', { name: 'Chicken wings' })).toBeOnTheScreen();
+    expect(button('Add to plan')).toBeOnTheScreen();
+    expect(saved(repos).items).toHaveLength(1);
+  });
+
+  test('closed food details stays closed', async () => {
+    const repos = await show([brisket]);
+    await fireEvent.press(button('Brisket, edit'));
+    await fireEvent.press(button('Close'));
+    await settle();
+    await screen.unmount();
+    await again(repos);
+    expect(screen.queryByRole('heading', { name: 'Brisket' })).toBeNull();
+  });
+
+  test('saved food details stays closed too', async () => {
+    const repos = await show([brisket]);
+    await fireEvent.press(button('Brisket, edit'));
+    await fireEvent.press(button('Save'));
+    await settle();
+    await screen.unmount();
+    await again(repos);
+    expect(screen.queryByRole('heading', { name: 'Brisket' })).toBeNull();
+  });
+
+  test('an edit of a food that is no longer on the menu is dropped', async () => {
+    const repos = await show([brisket, wings('w1', 'smokeCrisp')]);
+    await fireEvent.press(button('Brisket, edit'));
+    await screen.unmount();
+    repos.settings.setDraft({ ...saved(repos), items: [wings('w1', 'smokeCrisp')] }, NOW);
+    await again(repos);
+    expect(screen.queryByRole('heading', { name: 'Brisket' })).toBeNull();
+    expect(button('Chicken wings, edit')).toBeOnTheScreen();
+  });
+});

@@ -1,6 +1,6 @@
 // The Plan tab with what opens from it: the smoker temp menu, Add food and the Conflicts sheet (T-018) and
 // food details (T-019). Start cook (T-021), past plans (T-028) and share (T-029) join with their tasks.
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { HostInstance } from 'react-native';
 import { buildPlan } from '../../../engine/plan';
 import type { ItemInput, Plan } from '../../../engine/types';
@@ -8,6 +8,7 @@ import type { Anchor } from '@/components/kit';
 import { newItemId } from '@/lib/itemId';
 import { method, newItem, rules } from '@/lib/rules';
 import { planInput, useStore } from '@/lib/store';
+import { restorableFood } from '@/lib/uiState';
 import type { PickDateTime } from '@/platform/types';
 import { FoodEdit } from './FoodEdit';
 import { FoodPick } from './FoodPick';
@@ -19,18 +20,19 @@ type Layer =
   | { kind: 'temp'; anchor: Anchor }
   | { kind: 'pick' }
   | { kind: 'issues' }
-  | { kind: 'food'; item: ItemInput; isNew: boolean }
+  | { kind: 'food'; item: ItemInput; isNew: boolean; remember?: boolean }
   | null;
 
-/** A food the rules file knows (a saved item from an older rules file may not be). */
-function known(it: ItemInput): boolean {
+/** A food and method the rules file knows (a saved item from an older rules file may not be). */
+function knownMethod(foodId: string, methodId: string): boolean {
   try {
-    method(it.foodId, it.methodId);
+    method(foodId, methodId);
     return true;
   } catch {
     return false;
   }
 }
+const known = (it: ItemInput) => knownMethod(it.foodId, it.methodId);
 
 export interface PlanTabProps {
   pickDateTime: PickDateTime;
@@ -40,7 +42,7 @@ export interface PlanTabProps {
 }
 
 export function PlanTab({ pickDateTime, now = Date.now, open }: PlanTabProps) {
-  const { state, setDraft } = useStore();
+  const { state, setDraft, ui } = useStore();
   const { draft, gear, units } = state;
   const fresh = (foodId: string): ItemInput =>
     newItem(
@@ -56,8 +58,24 @@ export function PlanTab({ pickDateTime, now = Date.now, open }: PlanTabProps) {
     if (item && known(item)) return { kind: 'food', item, isNew: false };
     if (open?.add && rules.foods.some(f => f.id === open.add))
       return { kind: 'food', item: fresh(open.add), isNew: true };
-    return null;
+    if (open) return null;
+    // Food details as it was left when the app was killed or its activity recreated (T-058).
+    const left = restorableFood(
+      ui.read().food,
+      draft.items.map(i => i.id),
+      knownMethod,
+    );
+    return left ? { kind: 'food', ...left } : null;
   });
+  const foodIsNew = layer?.kind === 'food' && layer.isNew;
+  const keepFood = useCallback(
+    (item: ItemInput, remember: boolean) => ui.write({ food: { item, isNew: foodIsNew, remember } }),
+    [ui, foodIsNew],
+  );
+  const closeFood = () => {
+    ui.write({ food: null });
+    setLayer(null);
+  };
   const tempField = useRef<HostInstance>(null);
   const close = () => setLayer(null);
 
@@ -136,9 +154,11 @@ export function PlanTab({ pickDateTime, now = Date.now, open }: PlanTabProps) {
           key={layer.item.id}
           initial={layer.item}
           isNew={layer.isNew}
+          remember={layer.remember}
           base={input}
           units={units}
-          onClose={close}
+          onChange={keepFood}
+          onClose={closeFood}
           onSave={it => saveFood(it, layer.isNew)}
           onRemove={() => removeFood(layer.item.id)}
         />

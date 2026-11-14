@@ -5,7 +5,7 @@
 // its own type and tone to Text nested in it (like CSS inheritance), so `<Num>` inside a sentence matches it.
 import { Slot } from '@rn-primitives/slot';
 import * as React from 'react';
-import { Text as RNText, type TextStyle } from 'react-native';
+import { Text as RNText, type TextStyle, useWindowDimensions } from 'react-native';
 import { cn } from '@/lib/utils';
 import { colors, fontFamily, lineHeightRatio, relaxedLineHeightRatio, type, type TypeName } from '@/theme/tokens';
 
@@ -97,9 +97,14 @@ function Text({
   const t = tone ?? ctx.tone ?? 'primary';
   const inner = React.useMemo(() => ({ variant: v, weight: w, tone: t }), [v, w, t]);
   const Component = asChild ? Slot : RNText;
+  // T-058: the activity is not rebuilt when the system font size changes, and React Native does not measure
+  // text that is already on screen again (seen on the emulator: old size until the next render of that
+  // text). A new key gives each piece of text a new native view at the new size; nothing above it is rebuilt.
+  const { fontScale } = useWindowDimensions();
   return (
     <TextContext.Provider value={inner}>
       <Component
+        key={fontScale}
         className={cn(TONE[t], center && 'text-center', className)}
         style={[textStyle(v, w, relaxed), style]}
         numberOfLines={clamp === true ? 1 : clamp || undefined}

@@ -73,7 +73,7 @@ const PAST: CookRecord = {
 
 export default function PlanSeed() {
   const { seed, edit, add } = useLocalSearchParams<{ seed?: string; edit?: string; add?: string }>();
-  const { setGear, setDraft, setRate, addRecord, removeRecord } = useStore();
+  const { setGear, setDraft, setRate, addRecord, removeRecord, ui } = useStore();
   const router = useRouter();
   useEffect(() => {
     const items = seed ? SEEDS[seed] : undefined;
@@ -81,10 +81,12 @@ export default function PlanSeed() {
     setGear({ smoker: saturday.cookers.smoker!, griddle: defaultGriddle(), oven: defaultOven() });
     setRate('brisket', 0.75);
     setDraft(() => ({ mode: 'readyBy', at: saturday.at, pitTempF: 225, items }));
+    // A seed starts clean: no food details left open by an earlier run (T-058 restores it otherwise).
+    ui.write({ food: null });
     if (seed === 'past') addRecord(PAST);
     else removeRecord(PAST_ID);
     router.replace({ pathname: '/plan', params: { ...(edit ? { edit } : {}), ...(add ? { add } : {}) } });
-  }, [seed, edit, add, setGear, setDraft, setRate, addRecord, removeRecord, router]);
+  }, [seed, edit, add, setGear, setDraft, setRate, addRecord, removeRecord, ui, router]);
   if (!__DEV__) return <Redirect href="/plan" />;
   return null;
 }

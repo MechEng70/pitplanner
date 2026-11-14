@@ -14,7 +14,7 @@ const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFin
 const isStr = (v: unknown): v is string => typeof v === 'string';
 const optNum = (v: unknown) => v === undefined || isNum(v);
 
-function isItem(v: unknown): v is ItemInput {
+export function isItem(v: unknown): v is ItemInput {
   return (
     isObj(v) &&
     isStr(v.id) &&

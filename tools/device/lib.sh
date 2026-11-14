@@ -65,7 +65,20 @@ launch() {
     sleep 2
   fi
   dismiss_dev_menu_intro
-  wait_for_refresh
+  wait_for_refresh || return 1
+  # The app comes back where it was left (T-058), so a food sheet a test before this one left open is open
+  # again and covers the tabs. A test that opens the app with no route starts from the tabs: close it.
+  if [ -z "$route" ]; then close_restored_sheet; fi
+}
+
+close_restored_sheet() {
+  local tmp="$OUT/.restored.xml" xy
+  dump >"$tmp" 2>/dev/null || return 0
+  grep -q 'content-desc="Close sheet"' "$tmp" || return 0
+  xy=$(node "$DEVICE_DIR/check.mjs" center "$tmp" Close) || return 0
+  # shellcheck disable=SC2086
+  A shell input tap $xy
+  sleep 1
 }
 
 # A fresh install of the dev build shows the dev menu's intro ("This is the developer menu", Continue) once;
@@ -117,7 +130,7 @@ wait_for_app() {
   local secs="$1" t0=$SECONDS ui
   while ((SECONDS - t0 < secs)); do
     ui="$(dump 2>/dev/null)"
-    if grep -q "package=\"$PKG\"" <<<"$ui" && grep -qE 'content-desc="Plan"|Export my data|Pit Planner has a new look' <<<"$ui"; then
+    if grep -q "package=\"$PKG\"" <<<"$ui" && grep -qE 'content-desc="Plan"|content-desc="Close sheet"|Export my data|Pit Planner has a new look' <<<"$ui"; then
       return 0
     fi
     sleep 1

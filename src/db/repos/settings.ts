@@ -3,6 +3,7 @@
 
 import { parseDraft, type Draft } from '../../lib/draft.ts';
 import type { Units } from '../../lib/format.ts';
+import { DEFAULT_UI, parseUiState, type UiState } from '../../lib/uiState.ts';
 import type { UpdateInfo } from '../../lib/update.ts';
 import { isNum, isObj, isStr } from './json.ts';
 import type { KvRepo } from './kv.ts';
@@ -48,6 +49,9 @@ export function settingsRepo(kv: KvRepo) {
     /** `corrupt`: a draft was saved but cannot be loaded (the Plan screen says so; it stays until replaced). */
     readDraft: (): { value: Draft | null; corrupt: boolean } => kv.read('draft', parseDraft),
     setDraft: (d: Draft, now: number) => kv.set('draft', d, now, parseDraft),
+    /** Where the user was (T-058): the tab and an open food edit. Missing or unreadable reads as the default. */
+    ui: (): UiState => kv.get('ui', parseUiState) ?? DEFAULT_UI,
+    setUi: (u: UiState, now: number) => kv.set('ui', u, now, parseUiState),
   };
 }
 export type SettingsRepo = ReturnType<typeof settingsRepo>;

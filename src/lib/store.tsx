@@ -13,6 +13,7 @@ import { applyActions, syncAlarms, type ActiveCook } from './cook.ts';
 import type { Draft } from './draft.ts';
 import type { Units } from './format.ts';
 import { logsOf, type CookRecord } from './history.ts';
+import type { UiState } from './uiState.ts';
 import type { UpdateInfo } from './update.ts';
 
 export type { Draft } from './draft.ts';
@@ -107,6 +108,11 @@ export interface Store {
    * apply, or clear step alarms left on the phone when no cook is running. Resolves true when the cook changed.
    */
   drainAlerts: (resync?: boolean) => Promise<boolean>;
+  /**
+   * Where the user is (T-058): saved on every change, read when a screen mounts. Not part of `state`: saving
+   * it re-renders nothing, so it can be written on every stepper tap.
+   */
+  ui: { read: () => UiState; write: (patch: Partial<UiState>) => void };
 }
 
 const Ctx = createContext<Store | null>(null);
@@ -239,6 +245,14 @@ export function StoreProvider({ repos, clock = Date.now, alarms, children }: Pro
       setUpdate(update) {
         repos.settings.setUpdate(update, clock());
         commit({ update });
+      },
+      ui: {
+        read: () => repos.settings.ui(),
+        write(patch) {
+          const old = repos.settings.ui();
+          const next = { ...old, ...patch };
+          if (JSON.stringify(next) !== JSON.stringify(old)) repos.settings.setUi(next, clock());
+        },
       },
     };
   }, [repos, clock, alarms]);

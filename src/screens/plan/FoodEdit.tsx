@@ -6,7 +6,7 @@
 //   user asks for by tapping that bar. The sheet keeps its full height and its content never gets shorter
 //   while it is open, so a change cannot shift or clamp what is being tapped (T-017 PR-3).
 // - The values the user saves for later (rate, total hours, the hint flag) go through the store.
-import { useMemo, useRef, useState, type RefObject } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { View, type HostInstance, type LayoutChangeEvent } from 'react-native';
 import { buildPlan, onHeatSpan } from '../../../engine/plan';
 import type { CookerKind, ItemInput, PlanInput, TimingModel } from '../../../engine/types';
@@ -44,6 +44,10 @@ export interface FoodEditProps {
   /** The plan as it is: with the item in it when it is on the menu, without it when it is new. */
   base: PlanInput;
   units: Units;
+  /** "Use for future" as it was left, when the screen is reopened after the app was killed (T-058). */
+  remember?: boolean;
+  /** Every change to the form, as it is made, so it can be saved and survive the app being killed. */
+  onChange?: (it: ItemInput, remember: boolean) => void;
   onSave: (it: ItemInput) => void;
   onRemove: () => void;
   onClose: () => void;
@@ -52,7 +56,9 @@ export interface FoodEditProps {
 export function FoodEdit(props: FoodEditProps) {
   const { state, setRate, setTotalHours, setFlags } = useStore();
   const [it, setIt] = useState<ItemInput>(props.initial);
-  const [remember, setRemember] = useState(false);
+  const [remember, setRemember] = useState(props.remember ?? false);
+  const { onChange } = props;
+  useEffect(() => onChange?.(it, remember), [onChange, it, remember]);
   // Shown once ever, the first time a by-weight food is added on the published rate.
   const [showHint] = useState(props.isNew && !state.flags.rateHintShown);
   const preview = usePreview(it, props.base, props.isNew);
