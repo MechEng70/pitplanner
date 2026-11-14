@@ -18,10 +18,8 @@ Jason's answers of 2026-11-14:
 Where things stand:
 
 - T-017 is closed on the emulator. **T-018 is built** (temp menu, Add food, Conflicts sheet; TASKS T-018
-  notes) and waits for Jason: his look at `docs/fidelity/rn-06-temp-menu.png`, `rn-07-add-food.png` and
-  `rn-conflicts.png` against mockups 06 and 07, and three questions (TASKS T-018 "Open, Jason decides":
-  a chosen food goes straight on the menu until T-019; no "finish earlier" fix; repeated rows in Celsius).
-  **Next after that: T-019.**
+  notes). Jason approved its screenshots and settled its three questions on 2026-11-14. It is done once
+  Snyk has run. **Next: T-019.**
 - **Do first on Monday 2026-11-16: `npm run check`.** Snyk was down for maintenance on 2026-11-14
   (`SNYK-0099`, 503), so gate step 6 has not run on the T-017 close commit or on T-018. Steps 1 to 5 passed.
   Jason said to delay Snyk until Monday. T-017 is not gate-complete until that run passes; fix anything it
