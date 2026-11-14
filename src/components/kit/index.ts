@@ -8,6 +8,7 @@ export { Divider, Fill, Fixed, Inset, Row, Spacer, Stack, type Gap } from './lay
 export { BottomNav, type NavItem } from './nav';
 export { Num, type NumProps } from './num';
 export { CheckRow, GroupLabel, ListRow, StatusRow } from './rows';
+export { ResultBar, type ResultCell } from './ResultBar';
 export { AppBar, Screen } from './screen';
 export { InputField, SearchField } from './input';
 export { Menu, MenuRow, type Anchor } from './menu';

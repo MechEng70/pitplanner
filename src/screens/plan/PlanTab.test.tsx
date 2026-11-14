@@ -71,18 +71,33 @@ describe('smoker temp', () => {
 });
 
 describe('Add food', () => {
-  test('choosing a food puts it on the menu with the rules defaults', async () => {
+  test('choosing a food opens its details; it goes on the menu on Add to plan, not before', async () => {
     const repos = await show([brisket]);
     await fireEvent.press(button('Add food'));
     expect(screen.getByRole('heading', { name: 'Add food' })).toBeOnTheScreen();
     await fireEvent.press(button(/^Chicken wings/));
     await settle();
     expect(screen.queryByRole('heading', { name: 'Add food' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Chicken wings' })).toBeOnTheScreen();
+    expect(saved(repos).items.map(i => i.foodId)).toEqual(['brisket']);
+    await fireEvent.press(button('Add to plan'));
+    await settle();
+    expect(screen.queryByRole('heading', { name: 'Chicken wings' })).toBeNull();
     expect(button('Chicken wings, edit')).toBeOnTheScreen();
     const items = saved(repos).items;
     expect(items.map(i => i.foodId)).toEqual(['brisket', 'wings']);
     expect(items[1]!.id).not.toBe(items[0]!.id);
     expect(items[1]!.methodId).toBe('smokeCrisp');
+  });
+
+  test('closing food details without Add to plan adds nothing', async () => {
+    const repos = await show([brisket]);
+    await fireEvent.press(button('Add food'));
+    await fireEvent.press(button(/^Chicken wings/));
+    await settle();
+    await fireEvent.press(button('Close'));
+    await settle();
+    expect(saved(repos).items.map(i => i.foodId)).toEqual(['brisket']);
   });
 
   test('from the empty plan too; the same food twice gets two ids', async () => {
@@ -92,10 +107,52 @@ describe('Add food', () => {
       // The sheet's row is the last match: on the second pass the card behind it is named Brisket too.
       await fireEvent.press(screen.getAllByRole('button', { name: /^Brisket/ }).at(-1)!);
       await settle();
+      await fireEvent.press(button('Add to plan'));
+      await settle();
     }
     const ids = saved(repos).items.map(i => i.id);
     expect(ids).toHaveLength(2);
     expect(new Set(ids).size).toBe(2);
+  });
+});
+
+describe('Food details', () => {
+  test('a food card opens it; Save writes the change to the plan', async () => {
+    const repos = await show([brisket]);
+    await fireEvent.press(button('Brisket, edit'));
+    expect(screen.getByRole('heading', { name: 'Brisket' })).toBeOnTheScreen();
+    await fireEvent.press(button('More trimmed weight'));
+    expect(saved(repos).items[0]!.quantity).toBe(12);
+    await fireEvent.press(button('Save'));
+    await settle();
+    expect(saved(repos).items).toEqual([{ ...brisket, quantity: 12.5 }]);
+  });
+
+  test('Remove takes the food off the menu', async () => {
+    const repos = await show([brisket, wings('w1', 'smokeCrisp')]);
+    await fireEvent.press(button('Brisket, edit'));
+    await fireEvent.press(button('Remove'));
+    await settle();
+    expect(saved(repos).items.map(i => i.id)).toEqual(['w1']);
+  });
+
+  test('the dev seed link opens it for an item, or for a new food', async () => {
+    const r = testRepos();
+    r.repos.cookers.save(gear, NOW);
+    r.repos.settings.setDraft({ mode: 'readyBy', at: saturday.at, pitTempF: 225, items: [brisket] }, NOW);
+    const first = await render(
+      <PlanTab pickDateTime={jest.fn(async () => null)} now={() => NOW} open={{ edit: 'b' }} />,
+      {
+        wrapper: storeWrapper(r.repos),
+      },
+    );
+    expect(button('Save')).toBeOnTheScreen();
+    await first.unmount();
+    await render(<PlanTab pickDateTime={jest.fn(async () => null)} now={() => NOW} open={{ add: 'stlribs' }} />, {
+      wrapper: storeWrapper(r.repos),
+    });
+    expect(screen.getByRole('heading', { name: 'St. Louis ribs' })).toBeOnTheScreen();
+    expect(button('Add to plan')).toBeOnTheScreen();
   });
 });
 
@@ -114,6 +171,15 @@ describe('Conflicts', () => {
     await fireEvent.press(button('Close'));
     await settle();
     expect(button('Conflicts None')).toBeOnTheScreen();
+  });
+
+  test('Edit opens that food after the sheet closes', async () => {
+    await show(clash);
+    await fireEvent.press(button('Conflicts 1'));
+    await fireEvent.press(screen.getAllByRole('button', { name: 'Edit chicken wings' })[0]!);
+    await settle();
+    expect(screen.queryByRole('heading', { name: 'Conflicts' })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Chicken wings' })).toBeOnTheScreen();
   });
 
   test('Change smoker temp closes the sheet and opens the temp menu', async () => {

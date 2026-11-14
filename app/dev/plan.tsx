@@ -6,6 +6,8 @@
 //   pitplanner://dev/plan?seed=empty    the same cookers, nothing on the menu (mockup 04, no past cook)
 //   pitplanner://dev/plan?seed=past     as empty, plus one past cook, so Cook a past plan again shows
 //   pitplanner://dev/plan?seed=clash    two batches of wings, smoked at 225F and hot at 350F: one conflict
+// Add &edit=<item id> (b, w, c on the mockup seed) to open food details for that item, or &add=<food id> to
+// open it for a new food (mockups 08-10: seed=empty with add=brisket, stlribs or breasts).
 // The past cook has a fixed id; the other two seeds take it away again (only that one, never a real cook).
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
@@ -70,7 +72,7 @@ const PAST: CookRecord = {
 };
 
 export default function PlanSeed() {
-  const { seed } = useLocalSearchParams<{ seed?: string }>();
+  const { seed, edit, add } = useLocalSearchParams<{ seed?: string; edit?: string; add?: string }>();
   const { setGear, setDraft, setRate, addRecord, removeRecord } = useStore();
   const router = useRouter();
   useEffect(() => {
@@ -81,8 +83,8 @@ export default function PlanSeed() {
     setDraft(() => ({ mode: 'readyBy', at: saturday.at, pitTempF: 225, items }));
     if (seed === 'past') addRecord(PAST);
     else removeRecord(PAST_ID);
-    router.replace('/plan');
-  }, [seed, setGear, setDraft, setRate, addRecord, removeRecord, router]);
+    router.replace({ pathname: '/plan', params: { ...(edit ? { edit } : {}), ...(add ? { add } : {}) } });
+  }, [seed, edit, add, setGear, setDraft, setRate, addRecord, removeRecord, router]);
   if (!__DEV__) return <Redirect href="/plan" />;
   return null;
 }

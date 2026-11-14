@@ -1030,7 +1030,24 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     by 5 minutes on some rows (215F: 5:40 AM, not 5:45); they are the engine's.
 
 ### T-019 Food details (08, 09, 10)
-- **Status:** todo
+- **Status:** built 2026-11-14, emulator only; Snyk (gate step 6) not run: Snyk was down (`SNYK-0099`), steps 1 to
+  5 pass. Not gate-complete until `npm run check` passes with Snyk. Waiting on Jason's review of
+  `tools/device/out/food-details-115.png` and `-130.png`, and on the phone for his thumb test (hold still on).
+- **Notes (2026-11-14):**
+  - Jason's three rulings: the sheet is always full height (kit `Sheet tall`; a content-tall sheet moves
+    every control when its content's height changes), the result bar sits in the sheet footer above Save /
+    Add to plan (a sheet has no tab bar under it), and the regression test was seen failing against a
+    temporary copy of the 0.2.0 behavior (an effect revealing the card on every item change: `scrollTo` was
+    called on each weight tap), which was then removed and never committed.
+  - The form's content never gets shorter while the sheet is open (`useNeverShorter` in `FoodEdit.tsx`):
+    scrolled to the end, shrinking content would make the view clamp and move the tapped control.
+  - Bar cells: Fire (smoker or griddle; "On" when the cooker is not lit ahead), Off heat, Serve.
+  - "Use for future" is the kit `CheckRow`, full width. Remove is a text button left of Save, as in 0.2.0,
+    with no confirmation (also as in 0.2.0).
+  - Dev seed: `pitplanner://dev/plan?seed=mockup&edit=b` opens an item, `?seed=empty&add=brisket` a new food.
+  - Device: `food-details` (new) and the `food` / `food-bottom` targets of `stable-controls` pass at 115% and
+    130%. Hours per pound is only in `food-bottom`: opened at the top it is behind the pinned bar, and the
+    rig's `on_screen` does not know about a pinned footer (a tap there lands on the bar).
 - **From T-018 (Jason, 2026-11-14):** choosing a food in Add food opens this screen for the new food; it
   goes on the menu on Save, not before. Take out the T-018 stopgap (`addFood` in `PlanTab.tsx` adds it at
   once) and pass `onEdit` to the Conflicts sheet so its "Edit [food]" buttons show.

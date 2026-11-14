@@ -145,3 +145,26 @@ test('the lift includes the bottom inset under the keyboard (navigation bar)', a
   kb.mockRestore();
   insets.mockRestore();
 });
+
+// T-019: a sheet only as tall as its content moves every control when the content's height changes.
+test('a tall sheet has its full height whatever the content; others only a limit', async () => {
+  const insets = jest.spyOn(SafeArea, 'useSafeAreaInsets').mockReturnValue({ top: 24, left: 0, right: 0, bottom: 24 });
+  const frame = () => StyleSheet.flatten(screen.getByTestId('sheet-frame').props.style) as ViewStyle;
+  const short = await render(
+    <Sheet title="Units" onClose={() => {}}>
+      <Text>Body</Text>
+    </Sheet>,
+  );
+  const limit = frame().maxHeight;
+  expect(limit).toBeGreaterThan(0);
+  expect(frame().height).toBeUndefined();
+  await short.unmount();
+  await render(
+    <Sheet tall title="Brisket" onClose={() => {}}>
+      <Text>Body</Text>
+    </Sheet>,
+  );
+  expect(frame().height).toBe(limit);
+  expect(frame().maxHeight).toBeUndefined();
+  insets.mockRestore();
+});

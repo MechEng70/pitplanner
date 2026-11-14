@@ -1,32 +1,30 @@
-# Handoff (2026-11-14, eleventh session: T-017 closed on the emulator, T-018 built and approved; T-019 next)
+# Handoff (2026-11-14, twelfth session: T-019 Food details built on the emulator; Snyk still owed)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## Restart (written Saturday 2026-11-14, end of the eleventh session)
+## Restart (written Saturday 2026-11-14, end of the twelfth session)
 
 Do these in order:
 
-1. **`npm run check` first.** Snyk was down for maintenance all of 2026-11-14 (`SNYK-0099`, 503), so gate
-   step 6 has not run on any commit of that day (T-017 close, T-018, the Celsius change). Steps 1 to 5
-   passed on each. Jason said to delay Snyk until Monday 2026-11-16. Fix anything it reports before new
-   work; T-017 and T-018 are gate-complete only once it passes (then say so in their status lines).
+1. **`npm run check` first.** Snyk was still down on 2026-11-14 (`SNYK-0099`, 503; tried again in the twelfth
+   session), so gate step 6 has not run on T-017's close, T-018, the Celsius change or T-019. Steps 1 to 5
+   pass on each. Jason said to start T-019 and run Snyk later. Fix anything it reports before new work;
+   T-017, T-018 and T-019 are gate-complete only once it passes (then say so in their status lines).
 2. **`npm run snyk:monitor`** once the check passes: `origin/main` moved to `4172f27` on 2026-11-14 (a push
    to main), and the monitor step could not run with Snyk down.
-3. **T-019 Food details** (TASKS; mockups 08, 09, 10). Read its entry: it carries three things from this
-   session on top of the original task:
-   - Add food opens food details for the new food; it goes on the menu on Save (Jason, 2026-11-14). Take
-     out the T-018 stopgap (`addFood` in `src/screens/plan/PlanTab.tsx` adds the food at once) and pass
-     `onEdit` to `IssuesSheet` so its "Edit [food]" buttons show.
-   - The 0.2.0 scroll bug Jason hit on his phone: weight + and - make the screen scroll to the result
-     card. Do not port `KeepVisible`; regression test first; device targets for the weight stepper.
-   - The fixed result bar pinned at the bottom (his decision of 2026-11-12).
+3. **T-019 review.** Food details is built (TASKS T-019 notes). Jason judges `tools/device/out/
+   food-details-115.png` and `-130.png` against mockups 08, 09, 10; his thumb test on the weight stepper
+   needs the phone (hold still on). Next task after that: T-059 or T-058 (both depend on T-019), his call.
 
 Where things stand:
 
 - T-017 is closed on the emulator. T-018 is built (temp menu, Add food, Conflicts sheet); Jason approved
   its screenshots and settled its questions (TASKS T-018 notes). The whole device suite for Plan passes on
   the emulator at 115% and 130% (`plan`, `plan-3button`, `plan-sheets`, `stable-controls`).
+- T-019 is built: `src/screens/plan/FoodEdit.tsx`, kit `ResultBar` and `Sheet tall`; Add food opens it and
+  the Conflicts sheet has its Edit buttons. Device tests `food-details` and the `food` targets pass at 115%
+  and 130% on the emulator.
 - `main` is clean. Commits after `4172f27` are local only (Jason pushes when he says so).
 - Emulator and Metro are stopped. The emulator is 1080x2376, gesture navigation.
 - **The phone hold stays** (Jason, 2026-11-14: the cook was still on, the brisket holding at about 210F).

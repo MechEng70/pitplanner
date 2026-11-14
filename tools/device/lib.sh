@@ -60,7 +60,8 @@ launch() {
     -d "pitplanner://expo-development-client/?url=http%3A%2F%2Flocalhost%3A$METRO_PORT" "$PKG" >/dev/null
   wait_for_app 90
   if [ -n "$route" ]; then
-    A shell am start -W -a android.intent.action.VIEW -d "pitplanner://$route" "$PKG" >/dev/null
+    # Quoted for the device's shell: a route with two parameters has an & in it.
+    A shell am start -W -a android.intent.action.VIEW -d "'pitplanner://$route'" "$PKG" >/dev/null
     sleep 2
   fi
   dismiss_dev_menu_intro

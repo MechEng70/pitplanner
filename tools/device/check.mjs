@@ -2,6 +2,7 @@
 //   node check.mjs find <dump.xml> <label> <topPx> <bottomPx>       fully on screen? (exit 3: above it)
 //   node check.mjs center <dump.xml> <label>                        prints "x y" of the control's center
 //   node check.mjs stable <before.xml> <after.xml> <label>          T-006 stable-controls
+//   node check.mjs bounds <dump.xml> <label prefix>                 prints "left top right bottom" (px)
 //   node check.mjs keyboard <dump.xml> <field> <footer> <imeTop> <topPx>   T-006 sheet-keyboard
 //   node check.mjs widths <dump.xml> <tolPx> <label prefix>...      T-017 PR-4: one row, equal widths
 //   node check.mjs above <dump.xml> <footer> <fadePx> <label>...    T-017: each label ends above the footer's fade
@@ -9,6 +10,7 @@
 import { readFileSync } from 'node:fs';
 import {
   findByLabel,
+  findByPrefix,
   fullyVisible,
   keyboardProblems,
   movedAbove,
@@ -32,6 +34,11 @@ if (cmd === 'find') {
   if (!n) process.exit(1);
   console.log(`${Math.round((n.b.l + n.b.r) / 2)} ${Math.round((n.b.t + n.b.b) / 2)}`);
   process.exit(0);
+} else if (cmd === 'bounds') {
+  const n = findByPrefix(load(a[0]), a[1]);
+  if (!n) process.exit(1);
+  console.log(`${n.b.l} ${n.b.t} ${n.b.r} ${n.b.b}`);
+  process.exit(0);
 } else if (cmd === 'stable') {
   problems = movedAbove(load(a[0]), load(a[1]), a[2]);
 } else if (cmd === 'keyboard') {
@@ -45,7 +52,7 @@ if (cmd === 'find') {
   for (const line of room(load(a[0]), a.slice(4), a[1], Number(a[2]), Number(a[3]))) console.log(line);
   process.exit(0);
 } else {
-  console.error('usage: check.mjs find|center|stable|keyboard|widths|above|room ...');
+  console.error('usage: check.mjs find|center|bounds|stable|keyboard|widths|above|room ...');
   process.exit(2);
 }
 for (const p of problems) console.log(p);

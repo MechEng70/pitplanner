@@ -2,7 +2,7 @@
 # One unattended device pass on the dev build (TASKS T-006).
 #   npm run device -- [--phone] [--no-build] [--repeat N] [--only <test>]...
 #   tests: smoke, sheet-keyboard, stable-controls, db, migration-error, db-unopenable, legacy-import, alarm,
-#   plan, plan-3button, plan-sheets
+#   plan, plan-3button, plan-sheets, food-details
 #   DEVICE_SCALES="1.0 1.15 1.3" adds or changes the font scales (default 1.15 and 1.3).
 #   (default: all).
 #   --repeat N runs the chosen tests N times at each font scale (to catch a test that only sometimes fails). --only repeats or takes a comma list.
@@ -19,7 +19,7 @@ set -uo pipefail
 . "$(dirname "$0")/lib.sh"
 cd "$DEVICE_DIR" || exit 1
 
-ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets)
+ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets food-details)
 TESTS=()
 NOBUILD=""
 REPEAT=1
@@ -775,7 +775,10 @@ test_plan_sheets() {
     done
     has_label "$dir/sheets-food.xml" "Search foods" || plan_miss "Search foods"
     shot "$dir/sheets-food.png"
+    # T-019: the food opens in food details first and goes on the menu on Add to plan.
     tap "Tri-tip" 1 | tee -a "$REPORT"
+    dump >"$dir/sheets-new.xml" && has_label "$dir/sheets-new.xml" "Add to plan" || plan_miss "food details for tri-tip, with Add to plan"
+    tap "Add to plan" 1 | tee -a "$REPORT"
     dump >"$dir/sheets-added.xml" && grep -qE 'text="4.items"' "$dir/sheets-added.xml" || plan_miss "4 items after adding tri-tip"
   else plan_miss "the Add food sheet"; fi
 
@@ -787,7 +790,7 @@ test_plan_sheets() {
     has_text "$dir/sheets-issues.xml" "Conflicts" || plan_miss "the Conflicts sheet"
     has_text "$dir/sheets-issues.xml" "Chicken wings needs 225F while Chicken wings needs 350F at the same time." ||
       plan_miss "the conflict's message"
-    for want in "Move chicken wings to the griddle" "Change smoker temp"; do
+    for want in "Move chicken wings to the griddle" "Change smoker temp" "Edit chicken wings"; do
       has_label "$dir/sheets-issues.xml" "$want" || has_text "$dir/sheets-issues.xml" "$want" || plan_miss "$want"
     done
     shot "$dir/sheets-issues.png"
@@ -796,6 +799,69 @@ test_plan_sheets() {
       plan_miss "Nothing to fix after the move"
   else plan_miss "the Conflicts sheet"; fi
   if [ $ok = 1 ]; then result "PASS  plan-sheets $s"; else result "FAIL  plan-sheets $s"; fi
+}
+
+# T-019 Food details (mockups 08-10), opened by the dev seed for a new brisket, ribs and chicken breasts on
+# the empty plan (brisket rate 0.75 hr/lb saved). The result bar is pinned above Add to plan with fire, off
+# heat and serve; a rate tap changes its times and leaves its bounds alone; a tap on it brings the full
+# result card into view, whole above the bar. The no-scroll checks are the `food` targets of stable-controls.
+BAR_BRISKET="Fire 6:20 AM, Off heat 3:40 PM, Serve 5:00 PM"
+test_food_details() {
+  local s="$1" dir="$2" ok=1 want before after bar_top
+  launch "dev/plan?seed=empty&add=brisket" || { result "FAIL  food-details $s: app did not open"; return; }
+  sleep 1
+  dump >"$dir/food-brisket.xml" || { result "FAIL  food-details $s: could not read the screen"; return; }
+  for want in "Brisket" "Trimmed weight" "Cook on" "Wrap at the stall" "Rest after pull"; do
+    has_text "$dir/food-brisket.xml" "$want" || plan_miss "$want"
+  done
+  for want in "More trimmed weight" "Less trimmed weight" "Butcher paper" "Add to plan" "$BAR_BRISKET"; do
+    has_label "$dir/food-brisket.xml" "$want" || plan_miss "$want"
+  done
+  has_label "$dir/food-brisket.xml" "Remove" && plan_miss "no Remove on a new food (it shows)"
+  shot "$dir/food-brisket.png"
+  # As opened, the rate stepper is behind the bar and the buttons: scrolled to the end it is clear of them.
+  scroll_bottom | tee -a "$REPORT"
+  on_screen "More hours per pound" UP
+  if dump >"$dir/food-rate-before.xml"; then
+    before=$(node check.mjs bounds "$dir/food-rate-before.xml" "Fire ")
+    tap "More hours per pound" 1 | tee -a "$REPORT"
+    dump >"$dir/food-rate-after.xml" || plan_miss "the screen after a rate tap"
+    after=$(node check.mjs bounds "$dir/food-rate-after.xml" "Fire ")
+    if [ -n "$before" ] && [ "$before" = "$after" ]; then log "    result bar: same bounds after a rate tap ($after)"
+    else plan_miss "the result bar where it was after a rate tap (was $before, is $after)"; fi
+    has_label "$dir/food-rate-after.xml" "$BAR_BRISKET" && plan_miss "new times in the result bar after a rate tap"
+    tap "Less hours per pound" 1 | tee -a "$REPORT"
+  else plan_miss "the hours per pound stepper"; fi
+  # Back to the top, then the bar: the only scroll on this screen, and the user starts it.
+  on_screen "More trimmed weight" UP
+  tap "Fire .*" 1 | tee -a "$REPORT"
+  sleep 1
+  if dump >"$dir/food-result.xml"; then
+    bar_top=$(node check.mjs bounds "$dir/food-result.xml" "Fire " | cut -d' ' -f2)
+    # The card's lines hold Nums: their spaces are no-break spaces.
+    for want in $'For serve at 5:00\u00a0PM' $'On 6:40\u00a0AM, off 3:40\u00a0PM'; do
+      if node check.mjs find "$dir/food-result.xml" "$want" "$(status_bar_px)" "${bar_top:-0}" >/dev/null; then
+        log "    after a tap on the bar: \"$want\" shows above it"
+      else plan_miss "\"$want\" whole above the result bar after a tap on it"; fi
+    done
+    shot "$dir/food-result.png"
+  else plan_miss "the screen after a tap on the result bar"; fi
+
+  launch "dev/plan?seed=empty&add=stlribs" || { result "FAIL  food-details $s: app did not open (ribs)"; return; }
+  sleep 1
+  if dump >"$dir/food-ribs.xml"; then
+    for want in "St. Louis ribs" "Racks" "Method" "Timing"; do has_text "$dir/food-ribs.xml" "$want" || plan_miss "$want (ribs)"; done
+    for want in "Standard" "Total hours" "Add to plan"; do has_label "$dir/food-ribs.xml" "$want" || plan_miss "$want (ribs)"; done
+    shot "$dir/food-ribs.png"
+  else plan_miss "food details for ribs"; fi
+  launch "dev/plan?seed=empty&add=breasts" || { result "FAIL  food-details $s: app did not open (chicken)"; return; }
+  sleep 1
+  if dump >"$dir/food-chicken.xml"; then
+    for want in "Chicken breasts" "How many" "Cook on" "Thickness" "Prep"; do has_text "$dir/food-chicken.xml" "$want" || plan_miss "$want (chicken)"; done
+    for want in "Griddle" "Add to plan"; do has_label "$dir/food-chicken.xml" "$want" || plan_miss "$want (chicken)"; done
+    shot "$dir/food-chicken.png"
+  else plan_miss "food details for chicken breasts"; fi
+  if [ $ok = 1 ]; then result "PASS  food-details $s"; else result "FAIL  food-details $s"; fi
 }
 
 read -r -a SCALES <<<"${DEVICE_SCALES:-1.15 1.3}"
@@ -859,6 +925,14 @@ if [[ " ${TESTS[*]} " == *" plan-sheets "* ]]; then
     sheet_imgs+=("Temp $pct%=$OUT/$s/sheets-temp.png" "Add food $pct%=$OUT/$s/sheets-food.png" "Conflicts $pct%=$OUT/$s/sheets-issues.png")
   done
   python3 -I compose.py "$OUT/plan-sheets.png" "${sheet_imgs[@]}" && IMAGES+=("$OUT/plan-sheets.png")
+fi
+if [[ " ${TESTS[*]} " == *" food-details "* ]]; then
+  for s in "${SCALES[@]}"; do
+    pct=$(awk -v s="$s" 'BEGIN { printf "%d", s * 100 + 0.5 }')
+    python3 -I compose.py "$OUT/food-details-$pct.png" "Brisket $pct%=$OUT/$s/food-brisket.png" \
+      "Result $pct%=$OUT/$s/food-result.png" "Ribs $pct%=$OUT/$s/food-ribs.png" \
+      "Chicken $pct%=$OUT/$s/food-chicken.png" && IMAGES+=("$OUT/food-details-$pct.png")
+  done
 fi
 log ""
 log "=== device summary ==="

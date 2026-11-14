@@ -1,25 +1,63 @@
-// The Plan tab with what opens from it: the smoker temp menu, Add food and the Conflicts sheet (T-018).
-// Food details (T-019), Start cook (T-021), past plans (T-028) and share (T-029) join with their tasks.
+// The Plan tab with what opens from it: the smoker temp menu, Add food and the Conflicts sheet (T-018) and
+// food details (T-019). Start cook (T-021), past plans (T-028) and share (T-029) join with their tasks.
 import { useMemo, useRef, useState } from 'react';
 import type { HostInstance } from 'react-native';
 import { buildPlan } from '../../../engine/plan';
-import type { Plan } from '../../../engine/types';
+import type { ItemInput, Plan } from '../../../engine/types';
 import type { Anchor } from '@/components/kit';
 import { newItemId } from '@/lib/itemId';
 import { method, newItem, rules } from '@/lib/rules';
 import { planInput, useStore } from '@/lib/store';
 import type { PickDateTime } from '@/platform/types';
+import { FoodEdit } from './FoodEdit';
 import { FoodPick } from './FoodPick';
 import { IssuesSheet } from './IssuesSheet';
 import { PlanScreen } from './PlanScreen';
 import { TempMenu } from './TempMenu';
 
-type Layer = { kind: 'temp'; anchor: Anchor } | { kind: 'pick' } | { kind: 'issues' } | null;
+type Layer =
+  | { kind: 'temp'; anchor: Anchor }
+  | { kind: 'pick' }
+  | { kind: 'issues' }
+  | { kind: 'food'; item: ItemInput; isNew: boolean }
+  | null;
 
-export function PlanTab({ pickDateTime, now = Date.now }: { pickDateTime: PickDateTime; now?: () => number }) {
+/** A food the rules file knows (a saved item from an older rules file may not be). */
+function known(it: ItemInput): boolean {
+  try {
+    method(it.foodId, it.methodId);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export interface PlanTabProps {
+  pickDateTime: PickDateTime;
+  now?: () => number;
+  /** Open food details at once: for the item with this id, or for a new food of this kind (dev seed links). */
+  open?: { edit?: string; add?: string };
+}
+
+export function PlanTab({ pickDateTime, now = Date.now, open }: PlanTabProps) {
   const { state, setDraft } = useStore();
   const { draft, gear, units } = state;
-  const [layer, setLayer] = useState<Layer>(null);
+  const fresh = (foodId: string): ItemInput =>
+    newItem(
+      foodId,
+      gear,
+      newItemId(
+        draft.items.map(i => i.id),
+        now(),
+      ),
+    );
+  const [layer, setLayer] = useState<Layer>(() => {
+    const item = open?.edit ? draft.items.find(x => x.id === open.edit) : undefined;
+    if (item && known(item)) return { kind: 'food', item, isNew: false };
+    if (open?.add && rules.foods.some(f => f.id === open.add))
+      return { kind: 'food', item: fresh(open.add), isNew: true };
+    return null;
+  });
   const tempField = useRef<HostInstance>(null);
   const close = () => setLayer(null);
 
@@ -39,22 +77,15 @@ export function PlanTab({ pickDateTime, now = Date.now }: { pickDateTime: PickDa
       setLayer({ kind: 'temp', anchor: { x, y, width, height } }),
     );
 
-  // Until food details (T-019) opens here, a chosen food goes on the menu with the rules defaults.
-  const addFood = (foodId: string) =>
-    setDraft(d => ({
-      ...d,
-      items: [
-        ...d.items,
-        newItem(
-          foodId,
-          gear,
-          newItemId(
-            d.items.map(i => i.id),
-            now(),
-          ),
-        ),
-      ],
-    }));
+  // A chosen food opens food details with the rules defaults; it goes on the menu on Save (Jason, 2026-11-14).
+  const addFood = (foodId: string) => setLayer({ kind: 'food', item: fresh(foodId), isNew: true });
+  const editFood = (id: string) => {
+    const item = draft.items.find(x => x.id === id);
+    if (item && known(item)) setLayer({ kind: 'food', item, isNew: false });
+  };
+  const saveFood = (it: ItemInput, isNew: boolean) =>
+    setDraft(d => ({ ...d, items: isNew ? [...d.items, it] : d.items.map(x => (x.id === it.id ? it : x)) }));
+  const removeFood = (id: string) => setDraft(d => ({ ...d, items: d.items.filter(x => x.id !== id) }));
   const moveToGriddle = (id: string, methodId: string) =>
     setDraft(d => ({
       ...d,
@@ -70,6 +101,7 @@ export function PlanTab({ pickDateTime, now = Date.now }: { pickDateTime: PickDa
         tempFieldRef={tempField}
         onOpenTemp={openTemp}
         onAddFood={() => setLayer({ kind: 'pick' })}
+        onEditItem={editFood}
         onOpenIssues={() => setLayer({ kind: 'issues' })}
       />
       {layer?.kind === 'temp' && gear.smoker ? (
@@ -96,6 +128,19 @@ export function PlanTab({ pickDateTime, now = Date.now }: { pickDateTime: PickDa
           onClose={close}
           onChangeTemp={openTemp}
           onMoveToGriddle={moveToGriddle}
+          onEdit={editFood}
+        />
+      ) : null}
+      {layer?.kind === 'food' ? (
+        <FoodEdit
+          key={layer.item.id}
+          initial={layer.item}
+          isNew={layer.isNew}
+          base={input}
+          units={units}
+          onClose={close}
+          onSave={it => saveFood(it, layer.isNew)}
+          onRemove={() => removeFood(layer.item.id)}
         />
       ) : null}
     </>

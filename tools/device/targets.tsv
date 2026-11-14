@@ -15,3 +15,17 @@ plan	dev/plan?seed=mockup	top	stays	Start at	1
 plan	dev/plan?seed=mockup	top	stays	Ready by	1
 plan-bottom	dev/plan?seed=mockup	bottom	stays	Start at	1
 plan-bottom	dev/plan?seed=mockup	bottom	stays	Ready by	1
+# Food details (T-019): the 0.2.0 bug was the screen scrolling to the result after every weight tap. Every
+# stepper and chip stays put, opened at the top and scrolled to the end (food-bottom: a control not on screen
+# there is scrolled up to, so it is as low as it can be with the list as far down as it goes).
+# Hours per pound is only in food-bottom: opened at the top it sits behind the pinned result bar, where a tap
+# lands on the bar (the first run did that: the bar scrolled to the result card, as it should).
+food	dev/plan?seed=mockup&edit=b	top	stays	More trimmed weight	5
+food	dev/plan?seed=mockup&edit=b	top	stays	Less trimmed weight	5
+food	dev/plan?seed=mockup&edit=b	top	stays	Foil	1
+food	dev/plan?seed=mockup&edit=b	top	stays	More rest	5
+food	dev/plan?seed=mockup&edit=b	top	stays	Less rest	5
+food-bottom	dev/plan?seed=mockup&edit=b	bottom	stays	More hours per pound	5
+food-bottom	dev/plan?seed=mockup&edit=b	bottom	stays	Less hours per pound	5
+food-bottom	dev/plan?seed=mockup&edit=b	bottom	stays	More trimmed weight	5
+food-bottom	dev/plan?seed=mockup&edit=b	bottom	stays	Less trimmed weight	5

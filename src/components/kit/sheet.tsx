@@ -107,6 +107,7 @@ export function FooterScroll({
   footer,
   fadeTo,
   fill,
+  tall,
   contentClassName,
   children,
 }: {
@@ -116,9 +117,12 @@ export function FooterScroll({
   /** A screen body: take all the height there is (a sheet is only as tall as its content), and let the
    *  content fill it (an empty state centers in what is left). */
   fill?: boolean;
+  /** A sheet that keeps its full height (Sheet `tall`): the scroll area takes all the height there is. */
+  tall?: boolean;
   contentClassName?: string;
   children: React.ReactNode;
 }) {
+  const stretch = fill || tall;
   const to = FADE_TO[fadeTo];
   const [footH, setFootH] = React.useState(0);
   const onFootLayout = (e: LayoutChangeEvent) => setFootH(e.nativeEvent.layout.height);
@@ -154,36 +158,37 @@ export function FooterScroll({
   );
   const onLayout = React.useCallback(() => reveal(TextInput.State.currentlyFocusedInput()), [reveal]);
   return (
-    <View className={fill ? 'min-h-0 flex-1' : 'min-h-0 shrink'}>
-      <RevealContext.Provider value={reveal}>
+    // The footer is inside the provider too: a control pinned there can reveal something in the scroll area.
+    <RevealContext.Provider value={reveal}>
+      <View className={stretch ? 'min-h-0 flex-1' : 'min-h-0 shrink'}>
         <ScrollView
           ref={scroll}
           onLayout={onLayout}
-          className={fill ? 'flex-1' : 'shrink grow-0'}
+          className={stretch ? 'flex-1' : 'shrink grow-0'}
           contentContainerClassName={cn(fill && 'grow', contentClassName)}
           contentContainerStyle={pad}
         >
           {children}
         </ScrollView>
-      </RevealContext.Provider>
-      {footer ? (
-        <View testID="footer" onLayout={onFootLayout} style={[styles.foot, styles.touchKids]}>
-          {/* Taps in the fade go to what is under it. */}
-          <View testID="footer-fade" style={styles.footFade}>
-            <Fade color={to.color} height={FOOT_FADE.height} solidFrom={FOOT_FADE.solidFrom} />
+        {footer ? (
+          <View testID="footer" onLayout={onFootLayout} style={[styles.foot, styles.touchKids]}>
+            {/* Taps in the fade go to what is under it. */}
+            <View testID="footer-fade" style={styles.footFade}>
+              <Fade color={to.color} height={FOOT_FADE.height} solidFrom={FOOT_FADE.solidFrom} />
+            </View>
+            {/* ui.css: .sheet-foot, and for a screen .screen-foot (16 dp above the button, fade included; 12 below). */}
+            <View className={cn('flex-row items-center gap-2 px-4', fill ? 'pb-3 pt-0.5' : 'pb-4 pt-2.5', to.bg)}>
+              {footer}
+            </View>
           </View>
-          {/* ui.css: .sheet-foot, and for a screen .screen-foot (16 dp above the button, fade included; 12 below). */}
-          <View className={cn('flex-row items-center gap-2 px-4', fill ? 'pb-3 pt-0.5' : 'pb-4 pt-2.5', to.bg)}>
-            {footer}
+        ) : (
+          // As tall as the space under the content, so with the list at its end nothing is dimmed.
+          <View testID="end-fade" style={[styles.foot, styles.noTouch, styles.endFade]}>
+            <Fade color={to.color} height={BODY_END} />
           </View>
-        </View>
-      ) : (
-        // As tall as the space under the content, so with the list at its end nothing is dimmed.
-        <View testID="end-fade" style={[styles.foot, styles.noTouch, styles.endFade]}>
-          <Fade color={to.color} height={BODY_END} />
-        </View>
-      )}
-    </View>
+        )}
+      </View>
+    </RevealContext.Provider>
   );
 }
 
@@ -192,12 +197,16 @@ export function Sheet({
   onClose,
   footer,
   flush,
+  tall,
   children,
 }: {
   title: string;
   onClose: () => void;
   footer?: React.ReactNode;
   flush?: boolean;
+  /** Always the full sheet height, whatever the content: a sheet only as tall as its content moves every
+   *  control when the content's height changes (T-017 PR-3; Food details, T-019). */
+  tall?: boolean;
   children: React.ReactNode;
 }) {
   const { height } = useWindowDimensions();
@@ -262,8 +271,11 @@ export function Sheet({
   );
   const fade = React.useMemo(() => ({ opacity: shown }), [shown]);
   const frame = React.useMemo(
-    () => ({ maxHeight: height - insets.top - TOP_GAP - kb, paddingBottom: kb > 0 ? 0 : insets.bottom }),
-    [height, insets.top, insets.bottom, kb],
+    () => ({
+      [tall ? 'height' : 'maxHeight']: height - insets.top - TOP_GAP - kb,
+      paddingBottom: kb > 0 ? 0 : insets.bottom,
+    }),
+    [height, insets.top, insets.bottom, kb, tall],
   );
 
   return (
@@ -293,7 +305,12 @@ export function Sheet({
                   <Close />
                 </IconButton>
               </View>
-              <FooterScroll footer={footer} fadeTo="surface" contentClassName={cn(flush ? 'gap-0' : 'gap-4 px-4 pt-1')}>
+              <FooterScroll
+                footer={footer}
+                fadeTo="surface"
+                tall={tall}
+                contentClassName={cn(flush ? 'gap-0' : 'gap-4 px-4 pt-1')}
+              >
                 {children}
               </FooterScroll>
             </View>

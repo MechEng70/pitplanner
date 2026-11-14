@@ -15,7 +15,7 @@ interface Props {
   cookers: Cookers;
   units: Units;
   onMoveToGriddle: (itemId: string, methodId: string) => void;
-  /** Opens a food's details. Left out until that screen exists (T-019): then no Edit buttons show. */
+  /** Opens a food's details. Without it no Edit buttons show. */
   onEdit?: (itemId: string) => void;
   onChangeTemp: () => void;
   onClose: () => void;
