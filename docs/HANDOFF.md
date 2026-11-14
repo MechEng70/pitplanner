@@ -137,7 +137,16 @@ not the whole file.
      picker and alarm module).
   2. The Android versions his testers use, for T-037 (alarm device test per version below 16). "Coming
      later" (2026-11-14): still open, ask again.
+  3. His notes from the cook of 2026-11-14 on 0.2.0: the smoker ran hotter than expected and food
+     finished ahead of plan. He will give details later. Ask for them before the Cook tab tasks (Phase 6):
+     they bear on "Done early", Running ahead and the hold warnings (SPEC section 4 live changes, failure
+     mode 3), not on the Plan tab's Conflicts sheet.
+  4. His look at the T-018 screenshots (`docs/fidelity/rn-06-temp-menu.png`, `rn-07-add-food.png`,
+     `rn-conflicts.png`).
   Settled 2026-11-14: the new Plan screenshots are approved; the 115% fit target is two cards whole.
+  Settled 2026-11-14 (T-018): Add food opens food details first (T-019); Celsius set points show in 2C
+  increments; the planning fix "finish earlier" is dropped from SPEC (it was a Plan-time fix for a smoker
+  conflict, not food finishing early during a cook, which stays in the Cook tab).
   Settled in his review (2026-11-13): "Not in this version of Pit Planner" is approved; the taller emulator
   display is not (undone).
   `main` is not pushed (he pushes when he says so).
