@@ -291,7 +291,7 @@ export function SelectField({
 }) {
   const className = cn(
     'min-h-[60px] w-full shrink-0 flex-row items-center gap-2.5 overflow-hidden rounded-control',
-    open ? 'border-2 border-ember bg-field-open px-[15px] py-[7px]' : 'border border-outline px-4 py-2',
+    open ? 'border-2 border-ember bg-field px-[15px] py-[7px]' : 'border border-outline px-4 py-2',
   );
   const body = (
     <>

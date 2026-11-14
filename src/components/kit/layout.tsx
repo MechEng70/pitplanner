@@ -74,3 +74,8 @@ export const Fixed = ({ children, end = true, gap = 0 }: Kids & { end?: boolean;
 export const Spacer = () => <View className="flex-1" />;
 
 export const Divider = () => <View role="separator" className="my-1 h-px shrink-0 bg-surface-3" />;
+
+/** Side padding for content on a `flush` sheet (ui.css `.inset`): rows there run edge to edge, this does not. */
+export function Inset({ children }: Kids) {
+  return <View className="px-4 pb-1">{children}</View>;
+}

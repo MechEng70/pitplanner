@@ -1,14 +1,14 @@
 // Plan tab: Empty (mockup 04) and Plan (05). A port of legacy/src/screens/plan/PlanScreen.tsx.
-// What opens from here comes with its own task and arrives as a handler: the temp menu, Add food and the
-// Issues sheet (T-018), food details (T-019), Start cook (T-021), Cook a past plan again (T-028), share
-// (T-029). Until then the route leaves them out and those controls do nothing.
+// What opens from here arrives as a handler from PlanTab.tsx: the temp menu, Add food and the Conflicts sheet
+// (T-018) are there; food details (T-019), Start cook (T-021), Cook a past plan again (T-028) and share
+// (T-029) come with their tasks, and until then those controls do nothing.
 //
 // T-017 requirements kept here: the smoker temp is one field that opens the menu, never preset buttons
 // (PR-1); every card has its cooker avatar (PR-2); a value that changes never moves a control: numbers are
 // Num (tabular digits, one line), nothing appears above a control, nothing scrolls by itself (PR-3); the
 // three tiles share the row in equal parts (PR-4).
-import { useMemo } from 'react';
-import { Pressable } from 'react-native';
+import { useMemo, type Ref } from 'react';
+import { Pressable, View, type HostInstance } from 'react-native';
 import { buildPlan, onHeatSpan } from '../../../engine/plan';
 import type { ItemInput, Plan, SmokerProfile } from '../../../engine/types';
 import {
@@ -45,6 +45,8 @@ export interface PlanScreenProps {
   onAddFood?: () => void;
   onEditItem?: (id: string) => void;
   onOpenTemp?: () => void;
+  /** The box around the smoker temp field: whoever opens the temp menu measures it to hang the menu there. */
+  tempFieldRef?: Ref<HostInstance>;
   onOpenIssues?: () => void;
   onStartCook?: (plan: Plan) => void;
   onShare?: (plan: Plan) => void;
@@ -109,6 +111,7 @@ export function PlanScreen({
   onAddFood,
   onEditItem,
   onOpenTemp,
+  tempFieldRef,
   onOpenIssues,
   onStartCook,
   onShare,
@@ -217,21 +220,23 @@ export function PlanScreen({
       {when}
 
       {gear.smoker ? (
-        <SelectField
-          label="Smoker temp"
-          value={<Num>{fmtTemp(draft.pitTempF, units, true)}</Num>}
-          onPress={() => onOpenTemp?.()}
-          trailing={
-            <Row gap={10}>
-              {plan?.fireAt != null ? (
-                <Num variant="label" tone="secondary">
-                  Fire {fmtTime(plan.fireAt)}
-                </Num>
-              ) : null}
-              <ChevronDown size={20} color={colors.text1} />
-            </Row>
-          }
-        />
+        <View ref={tempFieldRef} collapsable={false}>
+          <SelectField
+            label="Smoker temp"
+            value={<Num>{fmtTemp(draft.pitTempF, units, true)}</Num>}
+            onPress={() => onOpenTemp?.()}
+            trailing={
+              <Row gap={10}>
+                {plan?.fireAt != null ? (
+                  <Num variant="label" tone="secondary">
+                    Fire {fmtTime(plan.fireAt)}
+                  </Num>
+                ) : null}
+                <ChevronDown size={20} color={colors.text1} />
+              </Row>
+            }
+          />
+        </View>
       ) : null}
 
       <Row justify="between" align="baseline">

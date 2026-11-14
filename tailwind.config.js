@@ -44,7 +44,7 @@ export default {
       warn: { DEFAULT: c.warn, container: sc.warnContainer },
       gold: { container: sc.goldContainer },
       error: { DEFAULT: c.error, container: sc.errorContainer, 'on-container': sc.onErrorContainer },
-      scrim: c.scrim,
+      scrim: { DEFAULT: c.scrim, menu: sc.scrimMenu },
       // React Native Reusables (shadcn) semantic names
       background: c.bg,
       foreground: c.text,

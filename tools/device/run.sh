@@ -2,7 +2,7 @@
 # One unattended device pass on the dev build (TASKS T-006).
 #   npm run device -- [--phone] [--no-build] [--repeat N] [--only <test>]...
 #   tests: smoke, sheet-keyboard, stable-controls, db, migration-error, db-unopenable, legacy-import, alarm,
-#   plan, plan-3button
+#   plan, plan-3button, plan-sheets
 #   DEVICE_SCALES="1.0 1.15 1.3" adds or changes the font scales (default 1.15 and 1.3).
 #   (default: all).
 #   --repeat N runs the chosen tests N times at each font scale (to catch a test that only sometimes fails). --only repeats or takes a comma list.
@@ -19,7 +19,7 @@ set -uo pipefail
 . "$(dirname "$0")/lib.sh"
 cd "$DEVICE_DIR" || exit 1
 
-ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button)
+ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets)
 TESTS=()
 NOBUILD=""
 REPEAT=1
@@ -736,6 +736,68 @@ test_plan_3button() {
   if [ $ok = 1 ]; then result "PASS  plan-3button $s"; else result "FAIL  plan-3button $s"; fi
 }
 
+# T-018: what opens from Plan. The smoker temp menu (mockup 06): the opened field sits exactly over the field
+# that opened it, the rows are the smoker's own steps with fire times, and after a choice the field has the new
+# temp and neither it nor anything above it has moved (PR-3). Add food (mockup 07): the list, the search, and a
+# chosen food lands on the menu. Conflicts: the sheet lists the conflict and Move to the griddle clears it.
+test_plan_sheets() {
+  local s="$1" dir="$2" ok=1 want before open
+  launch "dev/plan?seed=mockup" || { result "FAIL  plan-sheets $s: app did not open"; return; }
+  sleep 1
+  dump >"$dir/sheets-plan.xml" || { result "FAIL  plan-sheets $s: could not read the screen"; return; }
+  before=$(node check.mjs center "$dir/sheets-plan.xml" "Smoker temp")
+  tap "Smoker temp" 1 | tee -a "$REPORT"
+  if dump >"$dir/sheets-temp.xml"; then
+    open=$(node check.mjs center "$dir/sheets-temp.xml" "Smoker temp")
+    [ -n "$before" ] && [ "$before" = "$open" ] || plan_miss "the opened field over the field (was $before, is $open)"
+    has_text "$dir/sheets-temp.xml" "Pit Boss 820 sets in 5F steps. Times for 12 lb brisket." || plan_miss "the menu's intro"
+    for want in 215F 220F 225F 230F; do grep -qE "text=\"$want\"" "$dir/sheets-temp.xml" || plan_miss "the $want row"; done
+    grep -qE 'text="fire.6:20.AM"' "$dir/sheets-temp.xml" || plan_miss "fire 6:20 AM on the 225F row"
+    grep -qE 'text="Show.180-500F"|content-desc="Show.180-500F"' "$dir/sheets-temp.xml" || plan_miss "Show 180-500F"
+    shot "$dir/sheets-temp.png"
+    tap "230F" 1 | tee -a "$REPORT"
+    if dump >"$dir/sheets-picked.xml"; then
+      grep -qE 'text="230F"' "$dir/sheets-picked.xml" || plan_miss "230F in the field after the choice"
+      grep -qE 'text="fire' "$dir/sheets-picked.xml" && plan_miss "the menu closed after the choice"
+      if out=$(node check.mjs stable "$dir/sheets-plan.xml" "$dir/sheets-picked.xml" "Smoker temp"); then
+        log "    after the choice: the field and everything above it are where they were (PR-3)"
+      else plan_problems "$out"; fi
+    else plan_miss "Plan after the temp choice"; fi
+  else plan_miss "the temp menu"; fi
+
+  # At 115% and up Add food is behind Start cook until the list is scrolled (Jason's target, 2026-11-14): a
+  # tap there would land on Start cook. Scrolled to the end it is above the tiles, clear of the button.
+  scroll_bottom | tee -a "$REPORT"
+  tap "Add food" 1 | tee -a "$REPORT"
+  if dump >"$dir/sheets-food.xml"; then
+    for want in "Add food" "Beef" "Brisket" "Tri-tip" "Pork" "St. Louis ribs" "Smoker, by weight"; do
+      has_text "$dir/sheets-food.xml" "$want" || plan_miss "$want on Add food"
+    done
+    has_label "$dir/sheets-food.xml" "Search foods" || plan_miss "Search foods"
+    shot "$dir/sheets-food.png"
+    tap "Tri-tip" 1 | tee -a "$REPORT"
+    dump >"$dir/sheets-added.xml" && grep -qE 'text="4.items"' "$dir/sheets-added.xml" || plan_miss "4 items after adding tri-tip"
+  else plan_miss "the Add food sheet"; fi
+
+  launch "dev/plan?seed=clash" || { result "FAIL  plan-sheets $s: app did not open (clash)"; return; }
+  sleep 1
+  scroll_bottom | tee -a "$REPORT"
+  tap "Conflicts 1" 1 | tee -a "$REPORT"
+  if dump >"$dir/sheets-issues.xml"; then
+    has_text "$dir/sheets-issues.xml" "Conflicts" || plan_miss "the Conflicts sheet"
+    has_text "$dir/sheets-issues.xml" "Chicken wings needs 225F while Chicken wings needs 350F at the same time." ||
+      plan_miss "the conflict's message"
+    for want in "Move chicken wings to the griddle" "Change smoker temp"; do
+      has_label "$dir/sheets-issues.xml" "$want" || has_text "$dir/sheets-issues.xml" "$want" || plan_miss "$want"
+    done
+    shot "$dir/sheets-issues.png"
+    tap "Move chicken wings to the griddle" 1 | tee -a "$REPORT"
+    dump >"$dir/sheets-fixed.xml" && has_text "$dir/sheets-fixed.xml" "Nothing to fix. The plan fits your cookers." ||
+      plan_miss "Nothing to fix after the move"
+  else plan_miss "the Conflicts sheet"; fi
+  if [ $ok = 1 ]; then result "PASS  plan-sheets $s"; else result "FAIL  plan-sheets $s"; fi
+}
+
 read -r -a SCALES <<<"${DEVICE_SCALES:-1.15 1.3}"
 for s in "${SCALES[@]}"; do
   A shell settings put system font_scale "$s"
@@ -789,6 +851,14 @@ if [[ " ${TESTS[*]} " == *" plan-3button "* ]]; then
     [ -f "$OUT/$s/plan-3button.png" ] && nav_imgs+=("3-button $pct%=$OUT/$s/plan-3button.png")
   done
   [ ${#nav_imgs[@]} -eq 0 ] || { python3 -I compose.py "$OUT/plan-3button.png" "${nav_imgs[@]}" && IMAGES+=("$OUT/plan-3button.png"); }
+fi
+if [[ " ${TESTS[*]} " == *" plan-sheets "* ]]; then
+  sheet_imgs=()
+  for s in "${SCALES[@]}"; do
+    pct=$(awk -v s="$s" 'BEGIN { printf "%d", s * 100 + 0.5 }')
+    sheet_imgs+=("Temp $pct%=$OUT/$s/sheets-temp.png" "Add food $pct%=$OUT/$s/sheets-food.png" "Conflicts $pct%=$OUT/$s/sheets-issues.png")
+  done
+  python3 -I compose.py "$OUT/plan-sheets.png" "${sheet_imgs[@]}" && IMAGES+=("$OUT/plan-sheets.png")
 fi
 log ""
 log "=== device summary ==="

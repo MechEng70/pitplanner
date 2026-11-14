@@ -985,7 +985,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     new target on 2026-11-14 (two cards whole, the third may end in the fade, Add food by scrolling).
 
 ### T-018 Smoker temp menu, Add food, Issues sheet (06, 07)
-- **Status:** todo
+- **Status:** built and tested on the emulator 2026-11-14 (notes below); waits for Jason's look at the
+  screenshots and his answers to the three questions in the notes. Snyk has not run on it (down for
+  maintenance on 2026-11-14, delayed to Monday 2026-11-16 by Jason): `npm run check` must pass first.
 - **Goal:** temp menu with settable temps and fire times, Show all and the outside-200-300F warning; food
   picker with search and groups; conflicts sheet with fixes (move to griddle, change temp, finish earlier).
 - **Files:** `src/screens/plan/TempMenu.tsx`, `FoodPick.tsx`, `IssuesSheet.tsx`, tests, fidelity PNGs.
@@ -994,6 +996,32 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   hold: the temp field stays put after a choice.
 - **Tests:** RNTL per sheet (search filters, temps from `settableTemps`, a fix applies).
 - **Device testing (Jason):** none beyond the screenshots.
+- **Notes (2026-11-14):**
+  - `src/screens/plan/TempMenu.tsx`, `FoodPick.tsx`, `IssuesSheet.tsx` (ports of the 0.2.0 files) and
+    `PlanTab.tsx`, which holds the Plan screen and whatever is open over it; the route renders `PlanTab`.
+    `PlanScreen` gained `tempFieldRef`: `PlanTab` measures the field (`measureInWindow`) to hang the menu.
+  - Kit: `Menu` and `MenuRow` (`menu.tsx`; a Modal like the Sheet, the opened field drawn over the real one,
+    the list opens with the selected temp as the third row), `SearchField`, `GroupLabel`, `Inset`. Theme:
+    `statusColors.scrimMenu` (ui.css `.scrim-menu`). Fixed: an open `SelectField` had no fill (`bg-field-open`
+    is not a theme class; it is `bg-field`), so the field under the scrim showed through; regression test in
+    `menu.test.tsx`.
+  - Item ids: `src/lib/itemId.ts` (from the time, pure; Hermes has no `crypto.randomUUID`).
+  - Tests: `TempMenu.test.tsx` (11), `FoodPick.test.tsx` (6), `IssuesSheet.test.tsx` (12), `PlanTab.test.tsx`
+    (6), `menu.test.tsx` (6), `itemId.test.ts`. Device test `plan-sheets` (emulator, 115% and 130%): passes.
+    PR-3: after a temp choice the field and everything above it are where they were. Dev seed
+    `pitplanner://dev/plan?seed=clash` (two batches of wings, 225F and 350F) gives one real conflict.
+  - Fidelity: `docs/fidelity/rn-06-temp-menu.png`, `rn-07-add-food.png`, `rn-conflicts.png` (115%, 130%).
+  - **Open, Jason decides:**
+    1. Until food details (T-019) exists, a food chosen in Add food goes straight on the menu with the
+       rules defaults (in 0.2.0 it opens food details first, and is added on Save). T-019 puts that back.
+       The Conflicts sheet's "Edit [food]" buttons are left out until T-019 for the same reason.
+    2. SPEC section 3 lists the fixes as "move to griddle, change temp, finish earlier". 0.2.0 has no
+       "finish earlier" button (it has Edit [food]); none was added. Say what it should do if it is wanted.
+    3. In Celsius the menu's rows repeat (5F steps shown to the nearest 5C: 220F, 225F and 230F all read
+       105C). Same as 0.2.0. Not changed; a fix is a decision about how set points show in C.
+  - Not the mockup: the last row showing is cut by the menu's footer when the list is longer than the
+    display (the list scrolls; mockup 06 is drawn on a taller canvas). The fire times differ from mockup 06
+    by 5 minutes on some rows (215F: 5:40 AM, not 5:45); they are the engine's.
 
 ### T-019 Food details (08, 09, 10)
 - **Status:** todo
@@ -1004,16 +1032,29 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   fire, off heat and serve; the full result card stays in the scroll; tapping the bar scrolls to the full card
   (the only scroll, and the user starts it). The bar meets PR-3: fixed height at each font scale, tabular
   digits, no layout shift when its values change.
+- **0.2.0 bug to leave behind (Jason, 2026-11-14, seen on his phone during a real cook):** on Food details,
+  tapping + or - on the weight makes the screen scroll by itself: the result text at the bottom is brought
+  into view, the stepper moves away from the finger, and he has to scroll back and tap again. Cause in
+  0.2.0: the result card is wrapped in `KeepVisible deps={[it]}` (`legacy/src/screens/plan/FoodEdit.tsx`
+  line 286), which scrolls the card into view after every change to the item. Requirement (pass/fail): do
+  not port `KeepVisible`; nothing on Food details scrolls, takes focus or moves on a value change. After
+  any number of + or - taps on the weight (and on every other stepper and chip) the tapped control is at
+  the same place on screen and the next tap lands on it. Fail: any tap after which the stepper's bounds
+  have moved.
 - **Files:** `src/screens/plan/FoodEdit.tsx`, `src/components/kit/ResultBar.tsx`, tests, fidelity PNGs 08-10,
   SPEC.md section 3 "Food details" (add the summary bar).
 - **Depends on:** T-017.
 - **Acceptance:** the T-001 checklist (HANDOFF) holds on the new UI; 12 lb brisket at 0.75 hr/lb shows 9 hr
   and fire 6:20 AM for a 5:00 PM serve; the T-006 `stable-controls` flow passes on Food details at 115% and
-  130% (hr/lb + five times, - five times). The summary bar keeps its height and position while hr/lb changes, and tapping it brings
+  130% (hr/lb + five times, - five times; weight + five times, - five times, from the top and scrolled so the
+  weight stepper is the lowest thing showing: targets in `tools/device/targets.tsv`). The summary bar keeps its height and position while hr/lb changes, and tapping it brings
   the full result card into view.
 - **Tests:** RNTL versions of the nine legacy FoodEdit cases (three/two models, source line, saves, hint once,
-  result card text).
-- **Device testing (Jason):** add brisket, set 0.75, read the result card at his usual font size.
+  result card text). Regression test for the 0.2.0 scroll bug, written failing first: a weight + tap calls no
+  `scrollTo` or `scrollToEnd` on the screen's scroll view and moves focus nowhere.
+- **Device testing (Jason):** add brisket, set 0.75, read the result card at his usual font size. Tap weight
+  + and - several times in a row without lifting his thumb's position: judge that the stepper stays under
+  the thumb and the screen does not scroll, compared with 0.2.0 on his phone, where it jumps.
 
 ### T-059 Whole turkey in `data/foods.json`
 - **Status:** todo

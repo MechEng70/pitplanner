@@ -1,4 +1,4 @@
-# Handoff (2026-11-14, eleventh session: T-017 closed on the emulator; before it the tenth: T-017 review fixes)
+# Handoff (2026-11-14, eleventh session: T-017 closed on the emulator, T-018 built; before it the tenth: T-017 review fixes)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
@@ -17,9 +17,13 @@ Jason's answers of 2026-11-14:
 
 Where things stand:
 
-- T-017 is closed on the emulator. **Next: T-018** (TASKS; mockups 06 and 07).
+- T-017 is closed on the emulator. **T-018 is built** (temp menu, Add food, Conflicts sheet; TASKS T-018
+  notes) and waits for Jason: his look at `docs/fidelity/rn-06-temp-menu.png`, `rn-07-add-food.png` and
+  `rn-conflicts.png` against mockups 06 and 07, and three questions (TASKS T-018 "Open, Jason decides":
+  a chosen food goes straight on the menu until T-019; no "finish earlier" fix; repeated rows in Celsius).
+  **Next after that: T-019.**
 - **Do first on Monday 2026-11-16: `npm run check`.** Snyk was down for maintenance on 2026-11-14
-  (`SNYK-0099`, 503, five runs), so gate step 6 has not run on the T-017 close commit. Steps 1 to 5 passed.
+  (`SNYK-0099`, 503), so gate step 6 has not run on the T-017 close commit or on T-018. Steps 1 to 5 passed.
   Jason said to delay Snyk until Monday. T-017 is not gate-complete until that run passes; fix anything it
   reports before starting T-018.
 - `main` is clean and not pushed (Jason pushes when he says so).
@@ -154,7 +158,9 @@ not the whole file.
   cook: T-021; history: T-028; share: T-029), so those controls do nothing for now. Date and time go through
   `src/platform/dateTime.ts` (`@react-native-community/datetimepicker`). Kit: `Screen`, `AppBar`,
   `SelectField`, `Tiles equal`, chips that keep their selected width. Dev seed:
-  `pitplanner://dev/plan?seed=mockup`. Device test `plan`. Radius classes must be theme names
+  `pitplanner://dev/plan?seed=mockup`. Device test `plan`. Since T-018 the route renders `PlanTab.tsx`
+  (the screen plus the temp menu, Add food and the Conflicts sheet); device test `plan-sheets`; kit `Menu`,
+  `MenuRow`, `SearchField`, `GroupLabel`, `Inset`. Radius classes must be theme names
   (`rounded-control`, not `rounded-2xl`): the gate checks it.
 - Emulator geometry: the display is the AVD's own 1080x2376 at 480 dpi (360x792 dp) with gesture navigation
   and its 24 dp bar. Never resize it or change the test device to make a layout target pass (Jason,
@@ -404,7 +410,10 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
 - Cook a past plan again is hidden while there is no history, bright accent when there is (Jason, 2026-11-13).
 - Changing a value never moves the control being tapped or shifts the layout (Jason, 2026-11-12; T-017
   PR-3): tabular digits, fixed-height rows for computed values, no warnings above the control, no automatic
-  scrolling. This retires the 0.2.0 "result card scrolls into view after any change" behavior.
+  scrolling. This retires the 0.2.0 "result card scrolls into view after any change" behavior. Jason hit it
+  on his phone on 2026-11-14 (weight + and - on Food details scroll the screen and he has to scroll back):
+  T-019 carries it as a pass/fail requirement with a regression test and device targets for the weight
+  stepper.
 - Food details result (T-019): a fixed-height summary bar pinned at the bottom above the tab bar (fire, off
   heat, serve); the full result card stays in the scroll; tapping the bar scrolls to it; meets PR-3.
 - Font size and process death (T-058, before the Cook screen): `configChanges` so a font-size change doesn't

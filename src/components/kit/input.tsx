@@ -3,6 +3,7 @@
 // The label is also the input's accessibility label, so tests and Maestro flows find the field by it.
 import * as React from 'react';
 import { StyleSheet, TextInput, View, type TextInputInstance } from 'react-native';
+import { Search } from '@/components/kit/icons';
 import { useReveal } from '@/components/kit/sheet';
 import { textStyle, Text } from '@/components/ui/text';
 import { colors } from '@/theme/tokens';
@@ -56,7 +57,37 @@ export function InputField({
   );
 }
 
+/** Search box (ui.css `.search`): a pill with the magnifier; the placeholder is also its accessibility label. */
+export function SearchField({
+  value,
+  onInput,
+  placeholder,
+}: {
+  value: string;
+  onInput: (v: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <View className="min-h-[52px] flex-row items-center gap-2.5 rounded-full bg-surface-2 px-4">
+      <Search color={colors.text2} />
+      <TextInput
+        aria-label={placeholder}
+        value={value}
+        onChangeText={onInput}
+        placeholder={placeholder}
+        placeholderTextColor={colors.text2}
+        selectionColor={colors.accent}
+        cursorColor={colors.accent}
+        returnKeyType="search"
+        autoCorrect={false}
+        style={styles.search}
+      />
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  search: { ...textStyle('bodyL', '400'), flex: 1, minWidth: 0, color: colors.text, paddingVertical: 12 },
   input: {
     ...textStyle('select', '400'),
     minHeight: 52,

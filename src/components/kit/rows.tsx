@@ -37,6 +37,17 @@ function TitleBlock({
   );
 }
 
+/** Heading over a group of rows in a list (ui.css `.group-label`). */
+export function GroupLabel({ label }: { label: string }) {
+  return (
+    <View className="px-5 pb-1 pt-3.5">
+      <Text variant="label" weight="500" tone="accentHi" role="heading">
+        {label}
+      </Text>
+    </View>
+  );
+}
+
 /**
  * Leading avatar, title, secondary line, chevron. `href` opens an outside page in the browser; with neither
  * `onPress` nor `href` it is a plain row with no chevron. The subtitle is one line unless `wrap`.

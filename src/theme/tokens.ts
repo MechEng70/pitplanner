@@ -47,6 +47,7 @@ export const statusColors = {
   goldContainer: '#3a3018', // .avatar-gold
   errorContainer: '#3a1c18', // .status-error, .banner-error
   onErrorContainer: '#ffd9d2', // .banner-error text
+  scrimMenu: 'rgba(10, 9, 9, 0.7)', // .scrim-menu: darker than the sheet scrim, the field shows over it
 } as const;
 
 /** Font family registered natively by the expo-font config plugin (app.config.ts) with these weights. */
