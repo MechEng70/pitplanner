@@ -1438,9 +1438,19 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   4. A food running ahead of its rate re-times from probe readings (Home Assistant: T-050, T-054).
   Any cooking number (a temp ceiling, a thickness rule) needs a source, as for T-059; ask Jason which
   sources he trusts before choosing numbers.
-- **Still to ask Jason:** how thick the brisket was, and whether it was a whole packer or a flat; where the
-  probe sat (a thin part reads ahead of the thick part); how the 250F got on the plan (chosen for this
-  cook, or left from an earlier one); when the brisket was actually tender and came off.
+- **Jason's answers (2026-11-14, during the cook):**
+  - The cut: bought as a whole packer and cut down to a flat; about 1.5 inches thick in most places. The
+    app's "brisket" is one food timed by weight, with no packer or flat choice and no thickness.
+  - The probe: at about mid level at first; when he wrapped it he moved it to the end, pushed in about 5
+    inches.
+  - Why 250F: chosen so the brisket would be done for a 5:00 PM serve. The same cook has a smaller brisket,
+    tri-tip and wings. So the serve time and the other foods drove the smoker temp up, and nothing in the
+    app said that was a poor trade for a brisket.
+  - End of the cook: not pulled when he wrote; he was letting it sit at about 210F for a couple of hours.
+    When it came off is still to ask.
+- **What that adds to the candidates:** (1) is a cut choice (packer or flat) as well as, or instead of, a
+  thickness number; (2) matters most when the temp is raised to make a serve time, so the note belongs
+  where the temp is chosen (the temp menu rows already show the fire time) and in Conflicts.
 - **Evidence:** `docs/screenshots/pitboss_001.jpg` (Jason, 2026-11-14): the Pit Boss app's chart for the
   cook, 4 hr 58 min, in F. Read off the image, so within about 5F and 5 minutes; only the set temp line is
   named in the image, the other lines are taken to be the grill (blue) and two probes (green, yellow):
