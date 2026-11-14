@@ -1414,51 +1414,53 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Tests:** an engine unit test if kept.
 - **Device testing (Jason):** none.
 
-### T-060 Smoker running hotter (or cooler) than its set temp
-- **Status:** todo (next version, after 0.3.0; needs Jason's details and a decision on the behavior first)
-- **Why (Jason, 2026-11-14):** during his cook on 0.2.0 the smoker ran hotter than expected and food
-  finished ahead of plan. The app only learns it when a step is marked done early; nothing notices that
-  the smoker itself is off its set temp and re-times the rest of the cook from that. "We need to remember
-  that behavior for the next version."
-- **Not this:** the Plan tab's "finish earlier" conflict fix, dropped from SPEC on 2026-11-14. That was a
-  choice made while planning. This is the cook running ahead because of the equipment.
-- **Goal (to be settled with Jason):** when the smoker runs away from its set temp for long enough to
-  matter, the cook says so and offers to re-time what is left (earlier pulls, longer holds, hold-limit
-  warnings), never silently. Open questions: how the app learns the real temp without Home Assistant (the
-  user enters what the controller or a grate probe reads?) and with it (T-050 reads the pit sensor); how
-  far off and for how long before it speaks; whether a smoker that always runs hot becomes a saved offset
-  for that cooker in Gear, used by the next plan.
-- **First step:** Jason's notes from the 2026-11-14 cook (set temp, what the smoker actually ran at, how
-  far ahead each food finished) and his screenshot of the Pit Boss temps. Then a SPEC section and mockups
-  for any new UI (no UI element without his yes), then the engine work with tests.
-- **Evidence so far:** `docs/screenshots/pitboss_001.jpg` (Jason, 2026-11-14): the Pit Boss app's chart
-  for the cook, 4 hr 58 min, in F. Read off the image, so within about 5F and 5 minutes; only the set temp
-  line is named in the image, the other lines are taken to be the grill (blue) and two probes (green,
-  yellow):
-  - Set temp: about 250F for the first 1 hr 15 min, then about 220 to 225F until about 3 hr 35 min, then
-    about 205F to the end.
-  - Grill: 20 to 25 minutes to come up, with one dip of about 20F on the way; after that it stays within a
-    few degrees of the set temp at every stage. The chart does not show the grill running above its set
-    temp.
-  - Green probe: 165F at about 1 hr 20 min, slow climb through 165 to 185F until about 2 hr 55 min, 205F at
-    about 3 hr 25 min, then level at 205F. Yellow probe: 45F rising to 65F (not in the food).
-  - Jason, 2026-11-14: the Pit Planner plan started at 250F. So the start matches the plan, and the
-    controller was then turned down to about 225F at 1 hr 15 min and to about 205F at 3 hr 35 min. The
-    plan in 0.2.0 has one smoker temp for the whole cook, so after 1 hr 15 min the cook ran cooler than
-    the plan, and the food still reached 205F at about 3 hr 25 min. A grill running above its set temp is
-    not what the chart shows; the food cooking faster than the plan's time is. Still to ask Jason: the
-    food and its weight, the time on heat the plan gave, why the temp was turned down at 1 hr 15 min, and
-    how he saw the smoker running hot (a grate thermometer?). Two candidate behaviors until then: (a) the
-    cook lets the user say the smoker temp changed mid-cook and re-times from it; (b) a food that runs
-    ahead of its rate re-times itself from probe readings (T-050, T-054).
-- **Files (expected):** SPEC.md section 4, `engine/live.ts` and `engine/plan.ts` (the temp model already
-  scales time by smoker temp: `tempModel` in `data/foods.json`), the Cook screen, Gear cooker details.
-- **Depends on:** T-021 (Cook screen), T-038 (0.3.0 out). Related: T-050 and T-053 (live temps and the
-  pit-drop prompt from Home Assistant), T-054 (probe times feed rate learning).
-- **Acceptance:** per the decision; at least: an engine test that a cook run 25F hot re-times the remaining
-  phases and raises the hold warnings; nothing changes without the user's tap.
-- **Tests:** engine unit tests; RNTL for the prompt.
-- **Device testing (Jason):** a real cook with the smoker set off its plan temp.
+### T-060 Food cooking faster than the plan: brisket thickness and the starting smoker temp
+- **Status:** todo (next version, after 0.3.0; needs Jason's answers and a decision on the behavior first)
+- **Why (Jason, 2026-11-14):** on his 0.2.0 cook an 11.5 lb brisket, planned at 250F for 8 hr 50 min on
+  heat, heated far faster than the plan. The equipment was not running hot: the grill held its set temp
+  (his first report read that way; he corrected it after the chart was read). In his words: the initial
+  temp was wrong, "we should have started lower"; "brisket has a thickness that we are not accounting for
+  in the smoking process"; "the meat is heating faster and that is not what we want for a brisket. Slow
+  and steady for tough meats." He turned the controller down at 1 hr 15 min because the meat was heating
+  too fast. "We need to remember that behavior for the next version."
+- **What the app does today:** time on heat comes from weight (hr/lb, or the size-adjusted model, time ~
+  weight^exponent) scaled by smoker temp (`tempModel` in `data/foods.json`). Nothing knows how thick the
+  cut is; the plan has one smoker temp for the whole cook; every settable temp from 200 to 300F is offered
+  for brisket without comment; a cook that is turned down part way keeps its 250F timing.
+- **Not this:** a grill missing its set temp, and not the Plan tab's "finish earlier" conflict fix dropped
+  from SPEC on 2026-11-14.
+- **Goal (to be settled with Jason):** a plan that keeps a tough cut low and slow, and a cook that follows
+  what actually happens. Candidates, none decided:
+  1. Thickness as an input for brisket (and other cuts where it matters), feeding the time on heat.
+  2. A recommended smoker temp per food, with a note or warning when the plan's temp is above it for a
+     tough cut (data in `data/foods.json`, not code).
+  3. A smoker temp change during the cook (the user says "now at 225F") re-times what is left.
+  4. A food running ahead of its rate re-times from probe readings (Home Assistant: T-050, T-054).
+  Any cooking number (a temp ceiling, a thickness rule) needs a source, as for T-059; ask Jason which
+  sources he trusts before choosing numbers.
+- **Still to ask Jason:** how thick the brisket was, and whether it was a whole packer or a flat; where the
+  probe sat (a thin part reads ahead of the thick part); how the 250F got on the plan (chosen for this
+  cook, or left from an earlier one); when the brisket was actually tender and came off.
+- **Evidence:** `docs/screenshots/pitboss_001.jpg` (Jason, 2026-11-14): the Pit Boss app's chart for the
+  cook, 4 hr 58 min, in F. Read off the image, so within about 5F and 5 minutes; only the set temp line is
+  named in the image, the other lines are taken to be the grill (blue) and two probes (green, yellow):
+  - Set temp: about 250F for the first 1 hr 15 min (the plan's temp), then about 220 to 225F until about
+    3 hr 35 min, then about 205F to the end.
+  - Grill: 20 to 25 minutes to come up, with one dip of about 20F on the way; after that within a few
+    degrees of the set temp at every stage.
+  - Green probe: 165F at about 1 hr 20 min, a slow climb through 165 to 185F until about 2 hr 55 min, 205F
+    at about 3 hr 25 min, then level at 205F. Yellow probe: 45F rising to 65F (not in the food).
+  - Against the plan: 205F on the probe at about 3 hr 25 min, with 8 hr 50 min planned on heat, even though
+    the smoker was turned down below the plan's temp after 1 hr 15 min.
+- **First step:** the answers above, then a SPEC section and mockups for any new UI (no UI element without
+  his yes), then the data and engine work with tests.
+- **Files (expected):** SPEC.md sections 3 and 4, `data/foods.json`, `engine/plan.ts`, `engine/live.ts`,
+  Food details, the Cook screen.
+- **Depends on:** T-021 (Cook screen), T-038 (0.3.0 out). Related: T-050, T-053, T-054 (Home Assistant
+  probes), T-059 (sourced food numbers).
+- **Acceptance:** per the decision. Nothing re-times without the user's tap.
+- **Tests:** engine unit tests for whatever is decided; RNTL for any prompt.
+- **Device testing (Jason):** a real brisket cook.
 
 ---
 

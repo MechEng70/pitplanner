@@ -135,11 +135,10 @@ not the whole file.
      picker and alarm module).
   2. The Android versions his testers use, for T-037 (alarm device test per version below 16). "Coming
      later" (2026-11-14): still open, ask again.
-  3. His notes from the cook of 2026-11-14 on 0.2.0: the smoker ran hotter than expected and food
-     finished ahead of plan. He will give details later, and has a screenshot of the Pit Boss temps. It
-     is task T-060 (next version, after 0.3.0): the app noticing the smoker is off its set temp and
-     offering to re-time the cook. Ask for the details before the Cook tab tasks (Phase 6) too: they bear
-     on "Done early", Running ahead and the hold warnings (SPEC section 4 live changes, failure mode 3).
+  3. More on his cook of 2026-11-14 on 0.2.0 (task T-060, next version): an 11.5 lb brisket planned at
+     250F for 8 hr 50 min heated far faster than the plan; the grill held its set temp. His view: the
+     starting temp was too high and the plan does not account for the brisket's thickness; tough meats go
+     slow and steady. Chart: `docs/screenshots/pitboss_001.jpg`. Questions still open are in T-060.
   Settled 2026-11-14: the new Plan screenshots are approved; the 115% fit target is two cards whole.
   Settled 2026-11-14 (T-018): Add food opens food details first (T-019); Celsius set points show in 2C
   increments; the planning fix "finish earlier" is dropped from SPEC (it was a Plan-time fix for a smoker
