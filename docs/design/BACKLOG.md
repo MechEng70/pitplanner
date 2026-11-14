@@ -10,7 +10,7 @@ decided until Jason triages it. New ideas that come up during the port are added
 |---|---|---|---|
 | Low and slow for tough cuts: a brisket heated far faster than the plan (cut and thickness, a recommended smoker temp, re-timing on a temp change, re-timing from probes) | T-060 | Cook of 2026-11-14 | Four candidates, none decided; needs sourced numbers. Phone logs and the two Pit Boss charts still to be read with him. |
 | A name of the user's own for a food ("Dad's brisket"), replacing the default label | T-062 | Cook of 2026-11-14 | Wanted; needs a mockup. The default label ("11.5 lb brisket") is in 0.3.0 as T-061. |
-| Take back a step marked Done by mistake, and go back on the full timeline to set what was missed (tap a step, adjust it) | none yet | Cook of 2026-11-14 | Jason hit Done on the brisket by accident at 3:30 PM and could not undo it. Not decided: whether undo for Done goes into 0.3.0 (Cook screen, T-021 on) or waits. Needs a mockup. |
+| Go back on the full timeline to set what was missed: tap a step, adjust it | none yet | Cook of 2026-11-14 | Next version (Jason, 2026-11-14). Taking back a step marked Done by mistake is not here: it is in 0.3.0 as T-063. Needs a mockup. |
 
 ## Planned before, not in 0.3.0
 

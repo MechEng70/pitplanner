@@ -1220,6 +1220,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ### T-020 `engine/cookState.ts`
 - **Status:** gate-complete 2026-11-14 (`npm run check` passed with Snyk back up, all six steps; anything below about
   Snyk being down is history). built 2026-11-14 (13 tests); Snyk (gate step 6) not run, Snyk was down; steps 1 to 5 pass.
+- **Decided (Jason, 2026-11-14):** entering Finishing cancels all alarms, as the table says ("follow the table
+  for now"). No longer a question for T-023.
 - **Notes (2026-11-14):**
   - `cookState(facts, now)` takes four facts (`pitDownAt`, `quietUntil`, `nextDueAt`, `finishing`; `null`
     for no cook) and returns the phase, `quiet`, `overdue`, the allowed actions, the alarm set (`none`,
@@ -1581,8 +1583,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   apps as `docs/screenshots/pitboss_003.jpg`, `_004` and probably `_005` (that folder is git-ignored), and
   write up more. Probes (Jason, same afternoon, from memory: "I believe that's the way it is"): each food has
   two probes, one from each maker, close to the same spot: Pit Boss P1 and Chef iQ probe 1 in the brisket,
-  Pit Boss P2 and Chef iQ probe 2 in the tri-tip. Still not clear: what "I've got those pulled right now"
-  refers to. What it adds here: two thermometers in the same food disagreeing by 10F or more, and a
+  Pit Boss P2 and Chef iQ probe 2 in the tri-tip. Disregard "I've got those pulled right now" (Jason: he cannot recall what it was
+  about). What it adds here: two thermometers in the same food disagreeing by 10F or more, and a
   later food (wings) pushed back by hand because earlier food ran long: the opposite of the brisket that
   finished early.
 - **Jason's note, about 3:30 PM 2026-11-14 (dictated; ask before relying on a number):** the app's brisket
@@ -1595,8 +1597,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   `docs/screenshots/pitboss_003.jpg` to `_005.jpg` and `pitboss_006.png` (git-ignored, not yet read by a
   session). In `pitboss_006.png` the Pit Boss app's lines are probe 3 ambient, probe 3 food and probe 1 food;
   the small brisket went on first and is probe 3 in that image, and he thinks Pit Boss probe 3 pairs with
-  Chef iQ probe 1 and Pit Boss probe 1 with Chef iQ probe 2 (this differs from his earlier note: confirm with
-  him over the image). The brisket had only reached about 170F.
+  Chef iQ probe 1 and Pit Boss probe 1 with Chef iQ probe 2 (Jason, later the same day: the image has the
+  Pit Boss probe 1 and probe 2 readings, and under them lines named "probe 3 food temp" and "probe 1 food
+  temp"; "small brisket = probe 3" means that probe 3 food temp line in `pitboss_006.png`. Read the image
+  to settle the pairing). The brisket had only reached about 170F.
 - **Logs (Jason, 2026-11-14):** pull the logs from the phone once his cook plan is complete, for this
   analysis. Not before he says the cook is done; the phone hold and the list-and-yes rule apply.
 - **First step:** the answers above, then a SPEC section and mockups for any new UI (no UI element without
@@ -1614,6 +1618,25 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ## Phase 12: Home Assistant (after 0.3.0)
 
 Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
+
+### T-063 Take back a step marked Done by mistake
+- **Status:** todo (0.3.0; Jason, 2026-11-14: "there needs to be somewhere to undo it in version 0.3.0. I
+  don't want to wait till the next version")
+- **Why:** on his cook of 2026-11-14 the brisket's done step came up at 3:30 PM and he hit Done by accident.
+  0.2.0 has no way back; the brisket was at about 170F and stayed on.
+- **Goal:** a step marked Done on the Cook screen can be put back to not done, with its alarms and the
+  steps after it as they were before the tap.
+- **Not this:** editing any step on the full timeline (next version, BACKLOG.md).
+- **First step:** how it looks and for how long it is offered (a mockup or a SPEC line) is Jason's to
+  approve before any UI: nothing in `docs/mockups` shows it.
+- **Files (expected):** SPEC.md section for Live cook, `engine/live.ts` or `engine/cookState.ts`, the Cook
+  screen (T-021 on), tests.
+- **Depends on:** T-021. Do it with the Cook screen tasks, before T-038 (release).
+- **Acceptance:** per the approved design; after undo, the next alarm and Next up are what they were before
+  Done was tapped.
+- **Tests:** engine unit tests (done then undone equals never done); RNTL for the control.
+- **Device testing (Jason):** mark a step Done in a test cook, take it back, judge Next up and the alarm
+  against what showed before the tap.
 
 ### T-042 Mock the HA screens (HA-INTEGRATION 4.5)
 - **Status:** todo

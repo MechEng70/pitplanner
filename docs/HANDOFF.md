@@ -1,45 +1,59 @@
-# Handoff (2026-11-14, twelfth session: T-019 Food details built on the emulator; Snyk still owed)
+# Handoff (2026-11-14, thirteenth session: T-020 and T-058 built; Snyk back, gate green; push owed)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## Restart (written Saturday 2026-11-14, end of the twelfth session)
+## Restart (written Saturday 2026-11-14, end of the thirteenth session)
 
 Do these in order:
 
-1. **`npm run check` first.** Snyk was still down on 2026-11-14 (`SNYK-0099`, 503; tried again in the twelfth
-   session), so gate step 6 has not run on T-017's close, T-018, the Celsius change or T-019. Steps 1 to 5
-   pass on each. Jason said to start T-019 and run Snyk later. Fix anything it reports before new work;
-   T-017, T-018 and T-019 are gate-complete only once it passes (then say so in their status lines).
-2. **`npm run snyk:monitor`** once the check passes: `origin/main` moved to `4172f27` on 2026-11-14 (a push
-   to main), and the monitor step could not run with Snyk down.
-3. **T-019** is approved by Jason from the emulator screenshots (2026-11-14). His thumb test on the weight
-   stepper needs the phone (hold still on).
-4. **Ask Jason on Sunday 2026-11-15 (he said "remember to do that tomorrow"):**
-   - Is the cook done? It was not on the evening of 2026-11-14, so the phone hold stays. When he says yes:
-     delete `tools/device/PHONE-BLOCKED`, then pull the logs for T-060 with the read-only list he was shown
-     (adb devices; logcat for the 0.2.0 release app's uid only, redacted, to `tools/device/out/`; dumpsys
-     alarm and dumpsys package for the app). List it again and wait for his yes. The release build's stored
-     cook data cannot be read over adb; it has to come out through the app.
-   - Delete the `docs/screenshots/pitboss_*.jpg` charts with him (his words: "we will delete the
-     pitboss_XXX.jpg tomorrow"). `pitboss_001.jpg` is committed and already pushed (`be1a578` is on `origin/main`);
-     `pitboss_002.jpg` is untracked and shows other apps' icons. They are there so the session has the
-     context of his cook; what they show is written down in TASKS T-060. `docs/screenshots/` is now in
-     `.gitignore` (he said "maybe we don't allow git to upload that directory"), which keeps new files out
-     but does not untrack 001: removing it from git, and from the pushed history if he wants, is his call.
-5. **Decided on 2026-11-14:** T-061 (0.3.0): two of the same food get a default label, "11.5 lb brisket",
-   shown only when there are two or more of the same food. A typed name is T-062, next version. The next
-   version's triage list is `docs/design/BACKLOG.md`; new ideas go there, not into the port.
-
-6. **Next task:** T-058 (font size and process death; T-021 depends on it), then T-021. T-061 is small and
-   decided. T-059 waits for the FSIS pages (Jason opens or pastes them). T-020 is built
-   (`engine/cookState.ts`); its notes carry one question for T-023 (when Finishing cancels the alarms).
+1. **Push main** (Jason, 2026-11-14: "go ahead and push everything in the next session"). `origin/main` is
+   at `4172f27`; local main is ahead by T-019, T-020, T-058 and docs commits. Then **`npm run
+   snyk:monitor`** (it follows a push to main). Nothing else is owed on the gate: `npm run check` passed
+   all six steps on 2026-11-14 with Snyk back up, the monitor ran once for the earlier push, and T-017 to
+   T-020 and T-058 are gate-complete.
+2. **Phone: the hold is still on** (`tools/device/PHONE-BLOCKED`). Emulator only. Ask Jason whether the
+   cook is done before anything that needs the phone.
+3. **Ask Jason on Sunday 2026-11-15 (he said "remember to do that tomorrow"):**
+   - Is the cook done? When he says yes: delete `tools/device/PHONE-BLOCKED`, then pull the logs for T-060
+     with the read-only list he was shown (adb devices; logcat for the 0.2.0 release app's uid only,
+     redacted, to `tools/device/out/`; dumpsys alarm and dumpsys package for the app). List it again and
+     wait for his yes. The release build's stored cook data cannot be read over adb; it has to come out
+     through the app.
+   - **Before deleting them, read the charts** `docs/screenshots/pitboss_003.jpg` to `_005.jpg` and
+     `pitboss_006.png` into the T-060 notes (Jason, 2026-11-14: yes). They are git-ignored and show his
+     phone's status bar: describe them in words, never copy them into the repo.
+   - Then delete the `docs/screenshots/pitboss_*` charts with him (his words: "we will delete the
+     pitboss_XXX.jpg tomorrow"). `pitboss_001.jpg` is committed and already pushed (`be1a578`); removing
+     it from git, and from the pushed history if he wants, is his call. Deleting is destructive: his yes
+     first.
+4. **Next tasks, in the order Jason agreed (2026-11-14):** T-061 (default label for two of the same food;
+   small, decided), then T-021 (Cook screen). T-063 (take back a step marked Done by mistake) is in
+   0.3.0 by his decision of 2026-11-14 and belongs with the Cook screen tasks; it needs a mockup or a SPEC
+   line he approves before any UI. T-059 waits for the FSIS pages (Jason opens or pastes them).
+5. **Decided on 2026-11-14 (do not ask again):**
+   - Finishing a cook cancels all alarms on entering Finishing, as the TECH-DESIGN table says ("follow
+     the table for now"); 0.2.0 cancelled only on Save or Discard. Applies at T-023.
+   - Undo for Done: 0.3.0 (T-063). Editing a step on the full timeline: next version (BACKLOG).
+   - T-061: two of the same food get a default label, "11.5 lb brisket", shown only when there are two or
+     more of the same food. A typed name is T-062, next version. New ideas go to
+     `docs/design/BACKLOG.md`, not into the port.
+6. **T-058 leftovers:** the mid-cook half of its acceptance (font change and process kill on the Cook
+   screen: same Next up and countdown) is to be added to the `survive` device test when T-021 builds the
+   Cook screen. The app now reopens where it was left (tab, Food details with unsaved values), so a device
+   test that opens the app with no route gets any left-open food sheet closed by `launch`.
+7. **Session habit (Jason, 2026-11-14):** before the context needs compacting, park the work, ask him the
+   open questions in one batch, write his answers into the docs, then tell him to clear and give him the
+   restart prompt.
 
 Where things stand:
 
 - T-017 is closed on the emulator. T-018 is built (temp menu, Add food, Conflicts sheet); Jason approved
   its screenshots and settled its questions (TASKS T-018 notes). The whole device suite for Plan passes on
   the emulator at 115% and 130% (`plan`, `plan-3button`, `plan-sheets`, `stable-controls`).
+- T-020 (`engine/cookState.ts`) and T-058 (font size, activity destruction, process death; device test
+  `survive`, emulator only) are built and gate-complete; T-058's notes in TASKS say what was found on the
+  emulator and what is not built.
 - T-019 is built: `src/screens/plan/FoodEdit.tsx`, kit `ResultBar` and `Sheet tall`; Add food opens it and
   the Conflicts sheet has its Edit buttons. Device tests `food-details` and the `food` targets pass at 115%
   and 130% on the emulator.
