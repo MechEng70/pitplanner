@@ -31,6 +31,10 @@ Do these in order:
    shown only when there are two or more of the same food. A typed name is T-062, next version. The next
    version's triage list is `docs/design/BACKLOG.md`; new ideas go there, not into the port.
 
+6. **Next task:** T-058 (font size and process death; T-021 depends on it), then T-021. T-061 is small and
+   decided. T-059 waits for the FSIS pages (Jason opens or pastes them). T-020 is built
+   (`engine/cookState.ts`); its notes carry one question for T-023 (when Finishing cancels the alarms).
+
 Where things stand:
 
 - T-017 is closed on the emulator. T-018 is built (temp menu, Add food, Conflicts sheet); Jason approved

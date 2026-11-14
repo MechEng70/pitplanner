@@ -1188,7 +1188,19 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ## Phase 6: Cook tab (mockups 12-15)
 
 ### T-020 `engine/cookState.ts`
-- **Status:** todo
+- **Status:** built 2026-11-14 (13 tests); Snyk (gate step 6) not run, Snyk was down; steps 1 to 5 pass.
+- **Notes (2026-11-14):**
+  - `cookState(facts, now)` takes four facts (`pitDownAt`, `quietUntil`, `nextDueAt`, `finishing`; `null`
+    for no cook) and returns the phase, `quiet`, `overdue`, the allowed actions, the alarm set (`none`,
+    `full`, `pitCheck`, `cancelAll`), `heldUntil` and `nagEveryMin`. `can(state, action)`;
+    `doneOffBy(dueAt, doneAt)` for the keep-or-move-serve question (5 min). The engine cannot import
+    `ActiveCook` from `src/lib`, so the caller passes the facts (`nextDueAt` is `dueAt` of `pending()[0]`).
+  - Read of the table, to confirm when the Cook UI is built: the overdue row lists only Done; it is taken
+    as "Done is what clears it", with the other cooking actions still allowed (as in 0.2.0). With the pit
+    out nothing counts as overdue (the clock is stopped).
+  - For T-023: the table says Finishing cancels every alarm. 0.2.0 cancelled them only on Save or Discard,
+    so alerts could still ring over the summary. `cookState` follows the table; ask Jason which he wants
+    before wiring it.
 - **Goal:** the live-cook states (TECH-DESIGN section 7) as one pure function the new Cook UI is built on.
 - **Files:** `engine/cookState.ts`, `engine/cookState.test.ts` (new files; existing engine files unchanged).
 - **Depends on:** none.
