@@ -1121,8 +1121,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** add a 12 lb turkey and an 18 lb turkey at 225F; read the warning wording and
   the icon at 100/115/130%; compare with the FSIS quote in `foods.json`.
 
-### T-061 Tell two of the same food apart (names on the menu and in the steps)
-- **Status:** todo (needs Jason's decisions below first; version not set)
+### T-061 Tell two of the same food apart (labels on the menu and in the steps)
+- **Status:** todo (0.3.0; decided by Jason 2026-11-14)
 - **Why (Jason, 2026-11-14, from his cook with two briskets):** "in the plan there isn't a pull 11.5 lb off
   of the smoker in the tasks. need to name the briskets by either user name or name/weight."
 - **What the app does today** (checked with the engine: an 11.5 lb and a 6 lb brisket plus tri-tip): both
@@ -1130,20 +1130,22 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   bark is set...", "Slice or plate the brisket."), and the pull step names no food at all ("Check
   tenderness: pull at 200-205F when the probe slides in like butter."). Nothing says which brisket a step
   is for. The menu cards do show the weight.
-- **Goal:** every step, alarm and card says which food it is for when the menu has more than one of the
-  same food, and the pull step always names its food.
-- **To decide with Jason (no UI element without his yes):**
-  1. The label: the weight ("11.5 lb brisket"), a name the user types ("Dad's brisket"), or the weight by
-     default with an optional name. Two of the same food at the same weight need a number or a name.
-  2. Where a name is typed, if there is one: a field on Food details (new UI, needs a mockup).
-  3. Only when two of the same food are on the menu, or always.
-  4. Which version: 0.3.0 or after.
-- **Files (expected):** `engine/types.ts` (`ItemInput.name`), `engine/plan.ts` (event text), `data/foods.json`
-  (step wording that takes the label), Food details, Plan cards, Cook steps, alarms text, SPEC sections 3
-  and 4.
-- **Depends on:** T-019. The Cook screen parts wait for T-021.
-- **Tests:** engine: two briskets give steps that differ by their labels, and every pull step names its
-  food; one brisket reads as today (or as decided in 3). RNTL for any name field.
+- **Decided (Jason, 2026-11-14):**
+  - The label defaults to the weight and the food: "11.5 lb brisket".
+  - It shows only when the menu has two or more of the same food. One brisket reads as today.
+  - The user will be able to type a name of their own, but not in 0.3.0: that is T-062 (next version,
+    `docs/design/BACKLOG.md`).
+  - This is a new behavior during the port (WBS rule R-5 says none until 0.3.0): his call, from a real cook.
+- **Goal:** with two or more of the same food on the menu, every step, alarm and card says which one it is
+  for by its label, and the pull step names its food.
+- **Still to settle while building (ask Jason, do not guess):** two of the same food at the same weight
+  (two 6 lb briskets) have the same default label; a count food's label ("3 racks St. Louis ribs"?).
+- **Files (expected):** `engine/plan.ts` (the label and the event text), `data/foods.json` (step wording
+  that takes the label, if the wording is data), `engine/plan.test.ts`, Plan cards, SPEC sections 3 and 4.
+  Cook steps and alarm text come from the same events (T-021, T-023).
+- **Depends on:** T-019.
+- **Tests:** engine: two briskets give steps that differ by their labels, and each pull step names its
+  food; one brisket reads as today. Weights in kg when the user's unit is kg.
 - **Device testing (Jason):** a plan with two briskets: read the steps and say which brisket each is for.
 
 ### T-058 Survive font-size changes and process death
@@ -1456,6 +1458,14 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Acceptance:** per decision.
 - **Tests:** an engine unit test if kept.
 - **Device testing (Jason):** none.
+
+### T-062 A name of the user's own for a food
+- **Status:** todo (next version; `docs/design/BACKLOG.md`)
+- **Why (Jason, 2026-11-14):** "user should be able to name it but default it to '11.5 lb brisket'
+  initially"; "save ability to enter a username until next version."
+- **Goal:** a name field on Food details that replaces the default label of T-061 everywhere it shows.
+- **First step:** a mockup of the field for Jason's yes (new UI), then `ItemInput.name`, Food details, tests.
+- **Depends on:** T-061, T-038 (0.3.0 out).
 
 ### T-060 Food cooking faster than the plan: brisket thickness and the starting smoker temp
 - **Status:** todo (next version, after 0.3.0; needs Jason's answers and a decision on the behavior first)

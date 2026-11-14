@@ -14,13 +14,22 @@ Do these in order:
 2. **`npm run snyk:monitor`** once the check passes: `origin/main` moved to `4172f27` on 2026-11-14 (a push
    to main), and the monitor step could not run with Snyk down.
 3. **T-019** is approved by Jason from the emulator screenshots (2026-11-14). His thumb test on the weight
-   stepper needs the phone (hold still on). Next task: T-058, T-059 or the new T-061, his call.
-4. **New from his cook (2026-11-14):** T-061, two briskets cannot be told apart in the steps and the pull
-   step names no food; four decisions are his (TASKS T-061). T-060 has the end of the cook and a second
-   chart, `docs/screenshots/pitboss_002.jpg`, which is not committed: the status bar with other apps' icons
-   lies over it. Ask before changing or committing it.
-5. **Logs:** Jason wants the logs pulled from the phone once his cook plan is complete (T-060). Only after
-   he says the cook is done, with the list of phone actions and his yes.
+   stepper needs the phone (hold still on).
+4. **Ask Jason on Sunday 2026-11-15 (he said "remember to do that tomorrow"):**
+   - Is the cook done? It was not on the evening of 2026-11-14, so the phone hold stays. When he says yes:
+     delete `tools/device/PHONE-BLOCKED`, then pull the logs for T-060 with the read-only list he was shown
+     (adb devices; logcat for the 0.2.0 release app's uid only, redacted, to `tools/device/out/`; dumpsys
+     alarm and dumpsys package for the app). List it again and wait for his yes. The release build's stored
+     cook data cannot be read over adb; it has to come out through the app.
+   - Delete the `docs/screenshots/pitboss_*.jpg` charts with him (his words: "we will delete the
+     pitboss_XXX.jpg tomorrow"). `pitboss_001.jpg` is committed and already pushed (`be1a578` is on `origin/main`);
+     `pitboss_002.jpg` is untracked and shows other apps' icons. They are there so the session has the
+     context of his cook; what they show is written down in TASKS T-060. `docs/screenshots/` is now in
+     `.gitignore` (he said "maybe we don't allow git to upload that directory"), which keeps new files out
+     but does not untrack 001: removing it from git, and from the pushed history if he wants, is his call.
+5. **Decided on 2026-11-14:** T-061 (0.3.0): two of the same food get a default label, "11.5 lb brisket",
+   shown only when there are two or more of the same food. A typed name is T-062, next version. The next
+   version's triage list is `docs/design/BACKLOG.md`; new ideas go there, not into the port.
 
 Where things stand:
 

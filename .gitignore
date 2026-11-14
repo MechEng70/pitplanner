@@ -32,3 +32,7 @@ legacy/tools/device/out/
 modules/*/android/build/
 modules/*/android/.gradle/
 modules/*/android/.cxx/
+
+# Jason's own captures for context (charts from his cooks, phone screenshots with other apps' icons): never
+# uploaded. What they show is written into the task that uses them.
+docs/screenshots/
