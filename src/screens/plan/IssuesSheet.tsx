@@ -1,9 +1,10 @@
 // Conflicts sheet (opens from the Conflicts tile): every warning of the plan, warnings before notes, each
 // with the fixes that apply. A port of legacy/src/screens/plan/IssuesSheet.tsx.
+import { itemLabels } from '../../../engine/labels';
 import type { Cookers, ItemInput, Plan } from '../../../engine/types';
 import { Button, Card, Fill, Row, Sheet, Stack, Text, useSheet, Warn } from '@/components/kit';
 import { tx, type Units } from '@/lib/format';
-import { food, method } from '@/lib/rules';
+import { food, method, rules } from '@/lib/rules';
 import { colors } from '@/theme/tokens';
 
 /** Warnings a different smoker temp can clear. */
@@ -32,10 +33,14 @@ export function IssuesSheet(props: Props) {
 function Issues({ plan, items, cookers, units, onMoveToGriddle, onEdit, onChangeTemp }: Props) {
   const { close } = useSheet();
   const list = [...plan.warnings].sort((a, b) => (a.level === b.level ? 0 : a.level === 'warn' ? -1 : 1));
+  // Two or more of the same food: the fix buttons name each by its label ("Edit 11.5 lb brisket").
+  const labels = itemLabels(rules, items);
   // A saved item the rules do not know has no name or methods to offer: it gets no fix buttons.
   const known = (it: ItemInput) => {
     try {
-      return { it, name: food(it.foodId).name.toLowerCase(), cooker: method(it.foodId, it.methodId).cooker };
+      const label = labels.get(it.id);
+      const name = label ? tx(label, units) : food(it.foodId).name.toLowerCase();
+      return { it, name, cooker: method(it.foodId, it.methodId).cooker };
     } catch {
       return null;
     }

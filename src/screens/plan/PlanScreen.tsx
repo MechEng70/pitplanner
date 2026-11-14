@@ -9,6 +9,7 @@
 // three tiles share the row in equal parts (PR-4).
 import { useMemo, type Ref } from 'react';
 import { Pressable, View, type HostInstance } from 'react-native';
+import { itemLabels } from '../../../engine/labels';
 import { buildPlan, onHeatSpan } from '../../../engine/plan';
 import type { ItemInput, Plan, SmokerProfile } from '../../../engine/types';
 import {
@@ -141,14 +142,17 @@ export function PlanScreen({
     const at = await pickDateTime(draft.at);
     if (at != null) setDraft(d => ({ ...d, at }));
   };
+  // Two or more of the same food: the card's title is the food's label ("11.5 lb brisket"), as in its steps.
+  const labels = itemLabels(rules, draft.items);
   const cardInfo = (it: ItemInput): CardInfo => {
     try {
       const f = food(it.foodId);
+      const label = labels.get(it.id);
       const m = method(it.foodId, it.methodId);
       const qty = f.quantity.kind === 'weight' ? fmtWeight(it.quantity, units) : countText(f, it.quantity);
       return {
         known: true,
-        name: f.name,
+        name: label ? tx(label, units) : f.name,
         summary: tx(itemSummary(it, qty), units),
         cooker: m.cooker,
         perWeight: m.timing.kind === 'perWeight',

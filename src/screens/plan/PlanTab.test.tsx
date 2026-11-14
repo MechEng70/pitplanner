@@ -163,7 +163,7 @@ describe('Conflicts', () => {
     const repos = await show(clash);
     await fireEvent.press(button('Conflicts 1'));
     expect(screen.getByRole('heading', { name: 'Conflicts' })).toBeOnTheScreen();
-    await fireEvent.press(screen.getAllByRole('button', { name: 'Move chicken wings to the griddle' })[0]!);
+    await fireEvent.press(button('Move 2 lb chicken wings 1 to the griddle'));
     const moved = saved(repos).items.filter(i => i.methodId === 'griddle');
     expect(moved).toHaveLength(1);
     expect(moved[0]!.restMin).toBe(method('wings', 'griddle').restMin.default);
@@ -176,7 +176,7 @@ describe('Conflicts', () => {
   test('Edit opens that food after the sheet closes', async () => {
     await show(clash);
     await fireEvent.press(button('Conflicts 1'));
-    await fireEvent.press(screen.getAllByRole('button', { name: 'Edit chicken wings' })[0]!);
+    await fireEvent.press(button('Edit 2 lb chicken wings 1'));
     await settle();
     expect(screen.queryByRole('heading', { name: 'Conflicts' })).toBeNull();
     expect(screen.getByRole('heading', { name: 'Chicken wings' })).toBeOnTheScreen();

@@ -790,13 +790,14 @@ test_plan_sheets() {
   tap "Conflicts 1" 1 | tee -a "$REPORT"
   if dump >"$dir/sheets-issues.xml"; then
     has_text "$dir/sheets-issues.xml" "Conflicts" || plan_miss "the Conflicts sheet"
-    has_text "$dir/sheets-issues.xml" "Chicken wings needs 225F while Chicken wings needs 350F at the same time." ||
+    has_text "$dir/sheets-issues.xml" "2 lb chicken wings 1 needs 225F while 2 lb chicken wings 2 needs 350F at the same time." ||
       plan_miss "the conflict's message"
-    for want in "Move chicken wings to the griddle" "Change smoker temp" "Edit chicken wings"; do
+    for want in "Move 2 lb chicken wings 1 to the griddle" "Move 2 lb chicken wings 2 to the griddle" \
+      "Change smoker temp" "Edit 2 lb chicken wings 1" "Edit 2 lb chicken wings 2"; do
       has_label "$dir/sheets-issues.xml" "$want" || has_text "$dir/sheets-issues.xml" "$want" || plan_miss "$want"
     done
     shot "$dir/sheets-issues.png"
-    tap "Move chicken wings to the griddle" 1 | tee -a "$REPORT"
+    tap "Move 2 lb chicken wings 1 to the griddle" 1 | tee -a "$REPORT"
     dump >"$dir/sheets-fixed.xml" && has_text "$dir/sheets-fixed.xml" "Nothing to fix. The plan fits your cookers." ||
       plan_miss "Nothing to fix after the move"
   else plan_miss "the Conflicts sheet"; fi

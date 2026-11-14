@@ -15,6 +15,7 @@ import type {
   TimingModel,
 } from './types.ts';
 import { isSettable } from './temps.ts';
+import { itemLabels } from './labels.ts';
 import {
   resolveMethod as mergeShared,
   type ResolvedMethod,
@@ -309,8 +310,28 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
   const warnings: Warning[] = [];
   const events: PlanEvent[] = [];
   let seq = 0;
-  const add = (e: Omit<PlanEvent, 'id' | 'alarm' | 'checkStep' | 'critical'> & Partial<PlanEvent>) =>
-    events.push({ id: `e${seq++}`, alarm: false, checkStep: false, critical: false, ...e });
+  // Two or more of the same food: each one's steps start with its label, and warnings use it as the name.
+  const labels = itemLabels(
+    rules,
+    items.map(it => it.input),
+  );
+  for (const it of items) {
+    const label = labels.get(it.input.id);
+    if (label) it.label = label;
+    else delete it.label;
+  }
+  const add = (e: Omit<PlanEvent, 'id' | 'alarm' | 'checkStep' | 'critical'> & Partial<PlanEvent>) => {
+    const label = e.itemId && labels.get(e.itemId);
+    events.push({
+      id: `e${seq++}`,
+      alarm: false,
+      checkStep: false,
+      critical: false,
+      ...e,
+      label: label ? `${label}: ${e.label}` : e.label,
+    });
+  };
+  const nm = (it: PlannedItem) => it.label ?? it.name;
 
   const [lo, hi] = rules.tempModel.trustedRangeF;
   if (pit < lo || pit > hi)
@@ -331,14 +352,14 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
         warnings.push({
           code: 'NO_SMOKER',
           level: 'warn',
-          message: `${it.name} needs a smoker. Add one in Gear.`,
+          message: `${nm(it)} needs a smoker. Add one in Gear.`,
           itemIds: [it.input.id],
         });
       if (p.cooker === 'griddle' && !input.cookers.griddle)
         warnings.push({
           code: 'NO_GRIDDLE',
           level: 'warn',
-          message: `${it.name} needs a griddle. Add one in Gear or move it to the smoker.`,
+          message: `${nm(it)} needs a griddle. Add one in Gear or move it to the smoker.`,
           itemIds: [it.input.id],
         });
     }
@@ -350,7 +371,7 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
         code: 'TOTAL_HOURS_FIXED',
         level: 'info',
         itemIds: [i.id],
-        message: `${it.name}: total hours fixed. Temp change does not adjust it.`,
+        message: `${nm(it)}: total hours fixed. Temp change does not adjust it.`,
       });
   }
 
@@ -372,7 +393,7 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
           code: 'PIT_CONFLICT',
           level: 'warn',
           itemIds: [a.it.input.id, b.it.input.id],
-          message: `${a.it.name} needs ${a.p.tempF}F while ${b.it.name} needs ${b.p.tempF}F at the same time.`,
+          message: `${nm(a.it)} needs ${a.p.tempF}F while ${nm(b.it)} needs ${b.p.tempF}F at the same time.`,
         });
       }
     }
@@ -385,21 +406,21 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
         code: 'HOLD_TOO_LONG',
         level: it.holdsPoorly ? 'warn' : 'info',
         itemIds: [it.input.id],
-        message: `${it.name} holds ${Math.round(hold)} min, past its ${it.holdLimitMin} min limit.${it.holdsPoorly ? ' Move it to the griddle or start it later.' : ''}`,
+        message: `${nm(it)} holds ${Math.round(hold)} min, past its ${it.holdLimitMin} min limit.${it.holdsPoorly ? ' Move it to the griddle or start it later.' : ''}`,
       });
     if (hold < it.restFloorMin - 0.5)
       warnings.push({
         code: 'REST_SHORT',
         level: 'warn',
         itemIds: [it.input.id],
-        message: `${it.name} only gets ${Math.max(0, Math.round(hold))} min of rest, under the ${it.restFloorMin} min minimum.`,
+        message: `${nm(it)} only gets ${Math.max(0, Math.round(hold))} min of rest, under the ${it.restFloorMin} min minimum.`,
       });
     else if (hold < it.restMin - 0.5)
       warnings.push({
         code: 'REST_REDUCED',
         level: 'info',
         itemIds: [it.input.id],
-        message: `${it.name} rest drops to ${Math.round(hold)} min. Still OK.`,
+        message: `${nm(it)} rest drops to ${Math.round(hold)} min. Still OK.`,
       });
   }
 

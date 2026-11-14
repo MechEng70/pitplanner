@@ -56,9 +56,12 @@ describe('Conflicts sheet', () => {
     const w = plan.warnings.find(x => x.code === 'PIT_CONFLICT')!;
     expect([...w.itemIds!].sort()).toEqual(['w1', 'w2']);
     expect(screen.getByText(w.message)).toBeOnTheScreen();
-    expect(screen.getAllByRole('button', { name: 'Move chicken wings to the griddle' })).toHaveLength(2);
+    // T-061: two of the same food, so each button says which one it is for.
+    expect(button('Move 2 lb chicken wings 1 to the griddle')).toBeOnTheScreen();
+    expect(button('Move 2 lb chicken wings 2 to the griddle')).toBeOnTheScreen();
     expect(button('Change smoker temp')).toBeOnTheScreen();
-    expect(screen.getAllByRole('button', { name: 'Edit chicken wings' })).toHaveLength(2);
+    expect(button('Edit 2 lb chicken wings 1')).toBeOnTheScreen();
+    expect(button('Edit 2 lb chicken wings 2')).toBeOnTheScreen();
   });
 
   test('a food with no griddle method is not offered the griddle', async () => {
@@ -79,10 +82,9 @@ describe('Conflicts sheet', () => {
   });
 
   test('Move to the griddle reports the food and its griddle method, and the sheet stays open', async () => {
-    const { plan, props } = await show({ items: clash });
-    const ids = plan.warnings.find(x => x.code === 'PIT_CONFLICT')!.itemIds!;
-    await fireEvent.press(screen.getAllByRole('button', { name: 'Move chicken wings to the griddle' })[1]!);
-    expect(props.onMoveToGriddle).toHaveBeenCalledWith(ids[1], 'griddle');
+    const { props } = await show({ items: clash });
+    await fireEvent.press(button('Move 2 lb chicken wings 2 to the griddle'));
+    expect(props.onMoveToGriddle).toHaveBeenCalledWith('w2', 'griddle');
     await settle();
     expect(props.onClose).not.toHaveBeenCalled();
   });
@@ -90,7 +92,7 @@ describe('Conflicts sheet', () => {
   test('without a griddle the move is not offered', async () => {
     await show({ items: clash, cookers: { smoker } });
     noButton(/to the griddle$/);
-    expect(screen.getAllByRole('button', { name: 'Edit chicken wings' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: /^Edit 2 lb chicken wings [12]$/ })).toHaveLength(2);
   });
 
   test('Change smoker temp closes the sheet, then opens the temp menu', async () => {
@@ -105,13 +107,12 @@ describe('Conflicts sheet', () => {
   });
 
   test('Edit closes the sheet, then opens that food', async () => {
-    const { plan, props } = await show({ items: clash });
-    const ids = plan.warnings.find(x => x.code === 'PIT_CONFLICT')!.itemIds!;
-    await fireEvent.press(screen.getAllByRole('button', { name: 'Edit chicken wings' })[0]!);
+    const { props } = await show({ items: clash });
+    await fireEvent.press(button('Edit 2 lb chicken wings 1'));
     expect(props.onEdit).not.toHaveBeenCalled();
     await settle();
     expect(props.onClose).toHaveBeenCalledTimes(1);
-    expect(props.onEdit).toHaveBeenCalledWith(ids[0]);
+    expect(props.onEdit).toHaveBeenCalledWith('w1');
   });
 
   test('without food details to open, no Edit buttons show', async () => {
@@ -128,7 +129,7 @@ describe('Conflicts sheet', () => {
       />,
     );
     noButton(/^Edit /);
-    expect(screen.getAllByRole('button', { name: 'Move chicken wings to the griddle' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: /^Move 2 lb chicken wings [12] to the griddle$/ })).toHaveLength(2);
   });
 
   test('a warning that is not about the temp has no temp fix', async () => {
@@ -144,6 +145,29 @@ describe('Conflicts sheet', () => {
     expect(byLevel('info').length).toBeGreaterThan(0);
     const shown = screen.getAllByTestId('issue-message').map(c => String(c.props.children));
     expect(shown).toEqual([...byLevel('warn'), ...byLevel('info')]);
+  });
+
+  test('one of a food keeps its plain name (T-061)', async () => {
+    const lone: Warning = {
+      code: 'REST_SHORT',
+      level: 'warn',
+      message: 'Chicken wings only gets 0 min of rest.',
+      itemIds: ['w1'],
+    };
+    await show({ items: [wings('w1', 'smokeCrisp')] }, F, [lone]);
+    expect(button('Edit chicken wings')).toBeOnTheScreen();
+  });
+
+  test('two of a food get labels in the user units (T-061)', async () => {
+    await show(
+      { items: [wings('w1', 'smokeCrisp'), { ...wings('w2', 'hot'), quantity: 3 }] },
+      { temp: 'F', weight: 'kg' },
+    );
+    expect(button('Edit 0.9 kg chicken wings')).toBeOnTheScreen();
+    expect(button('Edit 1.4 kg chicken wings')).toBeOnTheScreen();
+    expect(
+      screen.getByText(/^(0\.9|1\.4) kg chicken wings needs \d+F while (0\.9|1\.4) kg chicken wings needs \d+F/),
+    ).toBeOnTheScreen();
   });
 
   test('messages read in the user units', async () => {

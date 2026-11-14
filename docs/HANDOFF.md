@@ -1,17 +1,20 @@
-# Handoff (2026-11-14, thirteenth session: T-020 and T-058 built; Snyk back, gate green; push owed)
+# Handoff (2026-11-14, fourteenth session: main pushed, charts read into T-060, T-061 built)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## Restart (written Saturday 2026-11-14, end of the thirteenth session)
+## Restart (written Saturday 2026-11-14, end of the fourteenth session)
 
 Do these in order:
 
-1. **Push main** (Jason, 2026-11-14: "go ahead and push everything in the next session"). `origin/main` is
-   at `4172f27`; local main is ahead by T-019, T-020, T-058 and docs commits. Then **`npm run
-   snyk:monitor`** (it follows a push to main). Nothing else is owed on the gate: `npm run check` passed
-   all six steps on 2026-11-14 with Snyk back up, the monitor ran once for the earlier push, and T-017 to
-   T-020 and T-058 are gate-complete.
+1. **Nothing is owed on push or Snyk monitor for the earlier work.** `origin/main` was pushed to `279fc45` on
+   2026-11-14 and `npm run snyk:monitor` ran after it. The T-061 commit and this session's docs commits are
+   local only: push when Jason says, then run the monitor.
+   **Snyk says the org has reached its monthly limit of 200 private tests** (printed by the monitor and by
+   the gate on 2026-11-14). The gate still passed ("all 25 projects tested, none skipped", exit 0), but
+   tell Jason and watch for a gate that starts failing or skipping on the limit: that is a blocker to
+   report, not a step to remove. The monitor was run twice this session by mistake (a second run while
+   checking its output); do not rerun it without a push.
 2. **Phone: the hold is still on** (`tools/device/PHONE-BLOCKED`). Emulator only. Ask Jason whether the
    cook is done before anything that needs the phone.
 3. **Ask Jason on Sunday 2026-11-15 (he said "remember to do that tomorrow"):**
@@ -20,29 +23,34 @@ Do these in order:
      redacted, to `tools/device/out/`; dumpsys alarm and dumpsys package for the app). List it again and
      wait for his yes. The release build's stored cook data cannot be read over adb; it has to come out
      through the app.
-   - **Before deleting them, read the charts** `docs/screenshots/pitboss_003.jpg` to `_005.jpg` and
-     `pitboss_006.png` into the T-060 notes (Jason, 2026-11-14: yes). They are git-ignored and show his
-     phone's status bar: describe them in words, never copy them into the repo.
-   - Then delete the `docs/screenshots/pitboss_*` charts with him (his words: "we will delete the
-     pitboss_XXX.jpg tomorrow"). `pitboss_001.jpg` is committed and already pushed (`be1a578`); removing
-     it from git, and from the pushed history if he wants, is his call. Deleting is destructive: his yes
-     first.
-4. **Next tasks, in the order Jason agreed (2026-11-14):** T-061 (default label for two of the same food;
-   small, decided), then T-021 (Cook screen). T-063 (take back a step marked Done by mistake) is in
+   - The charts `docs/screenshots/pitboss_003.jpg` to `_005.jpg` and `pitboss_006.png` **are read** into
+     T-060 ("Evidence, charts 3 to 6", words only). So the `docs/screenshots/pitboss_*` charts can be
+     deleted with him (his words: "we will delete the pitboss_XXX.jpg tomorrow"). `pitboss_001.jpg` is
+     committed and already pushed (`be1a578`); removing it from git, and from the pushed history if he
+     wants, is his call. Deleting is destructive: his yes first.
+   - From the charts, one thing only he can settle: which Pit Boss probe was paired with which Chef iQ
+     probe, and which food each was in (the images do not show it; T-060).
+4. **T-061 is built and gate-complete; it waits for Jason's look.** What he judges is in TASKS T-061
+   "Device testing": two briskets on Plan, the card titles against "11.5 lb brisket" / "6 lb brisket", the
+   "1" and "2" on equal weights, the Conflicts buttons. One question for him there: a labelled card shows
+   the weight twice (title and summary line); keep or change.
+5. **Next task: T-021 (Cook screen).** Its cards and step list use `PlannedItem.label` and the event text
+   as it comes (the label is already in front). T-063 (take back a step marked Done by mistake) is in
    0.3.0 by his decision of 2026-11-14 and belongs with the Cook screen tasks; it needs a mockup or a SPEC
    line he approves before any UI. T-059 waits for the FSIS pages (Jason opens or pastes them).
-5. **Decided on 2026-11-14 (do not ask again):**
+6. **Decided on 2026-11-14 (do not ask again):**
    - Finishing a cook cancels all alarms on entering Finishing, as the TECH-DESIGN table says ("follow
      the table for now"); 0.2.0 cancelled only on Save or Discard. Applies at T-023.
    - Undo for Done: 0.3.0 (T-063). Editing a step on the full timeline: next version (BACKLOG).
    - T-061: two of the same food get a default label, "11.5 lb brisket", shown only when there are two or
-     more of the same food. A typed name is T-062, next version. New ideas go to
-     `docs/design/BACKLOG.md`, not into the port.
-6. **T-058 leftovers:** the mid-cook half of its acceptance (font change and process kill on the Cook
+     more of the same food; equal labels are numbered in menu order; count foods read "3 racks St. Louis
+     ribs"; a step reads "<label>: <the step as written>". A typed name is T-062, next version. New ideas
+     go to `docs/design/BACKLOG.md`, not into the port.
+7. **T-058 leftovers:** the mid-cook half of its acceptance (font change and process kill on the Cook
    screen: same Next up and countdown) is to be added to the `survive` device test when T-021 builds the
    Cook screen. The app now reopens where it was left (tab, Food details with unsaved values), so a device
    test that opens the app with no route gets any left-open food sheet closed by `launch`.
-7. **Session habit (Jason, 2026-11-14):** before the context needs compacting, park the work, ask him the
+8. **Session habit (Jason, 2026-11-14):** before the context needs compacting, park the work, ask him the
    open questions in one batch, write his answers into the docs, then tell him to clear and give him the
    restart prompt.
 
@@ -51,13 +59,16 @@ Where things stand:
 - T-017 is closed on the emulator. T-018 is built (temp menu, Add food, Conflicts sheet); Jason approved
   its screenshots and settled its questions (TASKS T-018 notes). The whole device suite for Plan passes on
   the emulator at 115% and 130% (`plan`, `plan-3button`, `plan-sheets`, `stable-controls`).
+- T-061 is built (`engine/labels.ts`; labels in step text, warnings, Plan card titles and Conflicts
+  buttons) and gate-complete; notes in TASKS T-061.
 - T-020 (`engine/cookState.ts`) and T-058 (font size, activity destruction, process death; device test
   `survive`, emulator only) are built and gate-complete; T-058's notes in TASKS say what was found on the
   emulator and what is not built.
 - T-019 is built: `src/screens/plan/FoodEdit.tsx`, kit `ResultBar` and `Sheet tall`; Add food opens it and
   the Conflicts sheet has its Edit buttons. Device tests `food-details` and the `food` targets pass at 115%
   and 130% on the emulator.
-- `main` is clean. Commits after `4172f27` are local only (Jason pushes when he says so).
+- `main` is clean. `origin/main` is at `279fc45`; commits after it are local only (Jason pushes when he
+  says so).
 - Emulator and Metro are stopped. The emulator is 1080x2376, gesture navigation.
 - **The phone hold stays** (Jason, 2026-11-14: the cook was still on, the brisket holding at about 210F).
   `tools/device/PHONE-BLOCKED` is in place. It lifts only when Jason says the cook is done. Do not read it
@@ -83,7 +94,9 @@ For the next version (after 0.3.0), so it is not lost: **T-060** in TASKS and SP
 slow for tough cuts". Jason's brisket of 2026-11-14 heated far faster than the plan; the grill was fine,
 the plan was wrong for the cut. Four candidates (cut and thickness as inputs, a recommended smoker temp
 with a warning, re-timing on a smoker temp change mid-cook, re-timing from probes), none decided, all
-needing sourced numbers. Chart: `docs/screenshots/pitboss_001.jpg`.
+needing sourced numbers. Chart: `docs/screenshots/pitboss_001.jpg`; charts 2 to 6 are described in words
+in T-060 (two thermometers in one food 5 to 15F apart; air by the meat 40 to 80F under the grill's
+reading; the brisket levelled at the smoker's own 208 to 210F set temp).
 
 To keep the session short: TASKS.md is 1,700 lines, so read only the entries needed (`grep -n '^### T-019'`),
 not the whole file. For T-019 also read `legacy/src/screens/plan/FoodEdit.tsx` and its test (the behavior to

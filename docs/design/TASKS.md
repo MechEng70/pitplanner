@@ -1125,7 +1125,40 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   the icon at 100/115/130%; compare with the FSIS quote in `foods.json`.
 
 ### T-061 Tell two of the same food apart (labels on the menu and in the steps)
-- **Status:** todo (0.3.0; decided by Jason 2026-11-14)
+- **Status:** built 2026-11-14 (engine, Plan cards, Conflicts buttons). Gate: `npm run check` passes, all six
+  steps. Device run (emulator, 2026-11-14): `plan` and `plan-sheets` pass at 115% and 130%; `plan-sheets`
+  reads the labelled Conflicts message and buttons on its two-wings seed. Not run on the phone (hold).
+  Waits for Jason's read of a two-brisket plan (below). The Cook screen's cards and step list take the
+  label when T-021 builds them.
+- **Built (2026-11-14):**
+  - `engine/labels.ts`, `itemLabels(rules, items)`: a label for each item that shares its food with another
+    on the menu, nothing for the rest. Weight foods "11.5 lb brisket"; count foods "3 racks St. Louis ribs",
+    "4 chicken breasts" (the unit is left out when the food's name already ends with it). Labels that would
+    still match are numbered in menu order ("6 lb brisket 1", "6 lb brisket 2"). Written in lb;
+    `localizeText` turns it into kg for display like any engine text. Not stored: it is worked out from the
+    menu each time, so a changed weight changes the label.
+  - `engine/plan.ts` `derive`: every event of a labelled item starts with "<label>: " (prep, each phase, the
+    pull, the slice), so alarm bodies carry it with no change to `engine/alarms.ts`; step keys are
+    unchanged (kind, item, phase), so Done, +15 and reminders are not affected. Warnings use the label in
+    place of the food name ("11.5 lb brisket: total hours fixed..."). `PlannedItem.label` is set for
+    labelled items (for the Cook screen, T-021). Live changes keep it, since they run `derive` again.
+    `data/foods.json` is unchanged: no step wording was rewritten.
+  - Plan (`PlanScreen.tsx`): a labelled food's card is titled with its label; its summary line is as before
+    (so the weight shows twice: "11.5 lb brisket" over "11.5 lb, smoker, paper wrap"; say if that should
+    change). Conflicts (`IssuesSheet.tsx`): the fix buttons name each food by its label ("Edit 11.5 lb
+    brisket", "Move 2 lb chicken wings 1 to the griddle"); before, two of the same food gave two buttons
+    with the same text.
+  - Tests: `engine/labels.test.ts` (11), `PlanScreen.test.tsx` (2 new), `IssuesSheet.test.tsx` (2 new, 5
+    reworded for the labels), `PlanTab.test.tsx` (2 reworded). The device test `plan-sheets` reads the new
+    button and message text on its two-wings seed.
+  - SPEC: section 4 "Two of the same food", section 3 Plan.
+- **Jason's answers (2026-11-14, while building):** same food at the same weight: number them, in menu
+  order. Count foods: count, unit and food ("3 racks St. Louis ribs"). Step text: the label in front, then
+  the step as written ("11.5 lb brisket: Check tenderness: pull at 200-205F when the probe slides in like
+  butter."); the wording in `data/foods.json` stays.
+- **Not done here:** the alarm's title is still the food's name ("Brisket"), with the label in its body;
+  the Cook screen and Full timeline (T-021, T-023) are not built yet; history and Cook finished rows
+  (`src/lib/finish.ts`, `historyView.ts`) still say the food's name, as 0.2.0 did.
 - **Why (Jason, 2026-11-14, from his cook with two briskets):** "in the plan there isn't a pull 11.5 lb off
   of the smoker in the tasks. need to name the briskets by either user name or name/weight."
 - **What the app does today** (checked with the engine: an 11.5 lb and a 6 lb brisket plus tri-tip): both
@@ -1141,8 +1174,6 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - This is a new behavior during the port (WBS rule R-5 says none until 0.3.0): his call, from a real cook.
 - **Goal:** with two or more of the same food on the menu, every step, alarm and card says which one it is
   for by its label, and the pull step names its food.
-- **Still to settle while building (ask Jason, do not guess):** two of the same food at the same weight
-  (two 6 lb briskets) have the same default label; a count food's label ("3 racks St. Louis ribs"?).
 - **Files (expected):** `engine/plan.ts` (the label and the event text), `data/foods.json` (step wording
   that takes the label, if the wording is data), `engine/plan.test.ts`, Plan cards, SPEC sections 3 and 4.
   Cook steps and alarm text come from the same events (T-021, T-023).
@@ -1150,6 +1181,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Tests:** engine: two briskets give steps that differ by their labels, and each pull step names its
   food; one brisket reads as today. Weights in kg when the user's unit is kg.
 - **Device testing (Jason):** a plan with two briskets: read the steps and say which brisket each is for.
+  Until the Cook screen exists (T-021) the steps show nowhere in 0.3.0, so for now: on Plan, add two
+  briskets of different weights and judge the two card titles against the answers above ("11.5 lb brisket",
+  "6 lb brisket"); make them the same weight and look for "1" and "2"; open Conflicts with two of one food
+  and read the buttons. Emulator or phone; no mockup shows this, the reference is this entry.
 
 ### T-058 Survive font-size changes and process death
 - **Status:** built 2026-11-14 (emulator: `survive` passes at 115% and 130%). The mid-cook half of the
@@ -1594,13 +1629,59 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   there's things that are missed, we should be able to go back and set... on the full timeline, I should be
   able to click on the timeline and readjust it if something happened" (in BACKLOG.md; whether an undo for
   Done belongs in 0.3.0's Cook screen is a question for him). Probes, corrected: the charts are in
-  `docs/screenshots/pitboss_003.jpg` to `_005.jpg` and `pitboss_006.png` (git-ignored, not yet read by a
-  session). In `pitboss_006.png` the Pit Boss app's lines are probe 3 ambient, probe 3 food and probe 1 food;
+  `docs/screenshots/pitboss_003.jpg` to `_005.jpg` and `pitboss_006.png` (git-ignored; read on 2026-11-14,
+  see "Evidence, charts 3 to 6" below). In `pitboss_006.png` the Pit Boss app's lines are probe 3 ambient,
+  probe 3 food and probe 1 food;
   the small brisket went on first and is probe 3 in that image, and he thinks Pit Boss probe 3 pairs with
   Chef iQ probe 1 and Pit Boss probe 1 with Chef iQ probe 2 (Jason, later the same day: the image has the
   Pit Boss probe 1 and probe 2 readings, and under them lines named "probe 3 food temp" and "probe 1 food
   temp"; "small brisket = probe 3" means that probe 3 food temp line in `pitboss_006.png`. Read the image
   to settle the pairing). The brisket had only reached about 170F.
+- **Evidence, charts 3 to 6** (`docs/screenshots/pitboss_003.jpg` to `_005.jpg`, `pitboss_006.png`; read
+  by a session on 2026-11-14, described in words only: they are git-ignored and never go into the repo).
+  Read off the images, so temps within about 5F and times within about 20 minutes.
+  - **`pitboss_003.jpg`** (Pit Boss app, portrait, phone clock 2:55 PM, cook time 8 hr 19 min). Its legend
+    names all four lines, which settles what the first two charts left as a guess: grey is the set temp,
+    blue the grill, **green is Probe 1, yellow is Probe 2**. The tiles under the chart read: grill 247F,
+    "Heating to 250", P1 165F, P2 170F, each with a target that looks like 180F (half hidden).
+  - **`pitboss_004.jpg`** (the same chart full screen, landscape, cook time 8 hr 31 min). The clearest
+    one. Set temp: about 250F to about 1 hr 15 min, about 222F to about 2 hr 15 min, a step up to about
+    235F until about 2 hr 40 min, about 222F again to about 3 hr 30 min, then about 208 to 210F until
+    about 6 hr 35 min, then back to 250F to the end. Grill: starts warm (135 to 175F on the two charts),
+    up in about 25 minutes, then on the set temp at every stage. Probe 1 (green, the 11.5 lb brisket):
+    about 45F at the start, climbing from about 30 minutes, about 165F at about 1 hr 30 min, a slow climb
+    to about 185F at about 3 hr 20 min, about 208F at about 3 hr 45 min, then level at about 208 to 210F
+    for about three hours; it falls to about 75F at about 6 hr 50 min (the pull at 1:00 PM, probe out)
+    and stays there until about 8 hr 10 min, when it jumps to about 165F. Probe 2 (yellow): 45F rising
+    slowly to about 65F for the whole cook (not in food), then the same jump at about 8 hr 10 min to
+    about 170F. So both Pit Boss probes went into the food still on the smoker only at about 2:35 to
+    2:55 PM; before that the Pit Boss app had no reading of the small brisket or the tri-tip at all.
+  - **`pitboss_005.jpg`** (Chef iQ app, phone clock 2:57 PM). Probe 1: 159F of a 180F target,
+    "Calculating...", ambient 168F. Probe 2: 158F of a 180F target, "Remove in 48m", ambient 204F. Both
+    on Manual.
+  - **`pitboss_006.png`** (a Home Assistant dashboard, not the Pit Boss app; no clock in the image, the
+    file is from 3:29 PM). Grill card "PitBossSmoker Grill temperature": target 270F, reading 217F,
+    "Fan". Then five sensors with small history lines: PitBossSmoker Probe 1 172.0F (rise, long level
+    stretch, a drop, back up: the big brisket, the pull, the move to another food); PitBossSmoker Probe 2
+    177.0F (low for the whole cook, one step up at the end); Probe 3 Ambient temperature 183.7F (flat,
+    then up late and jumpy); Probe 3 Food temperature 166.6F and Probe 1 Food temperature 161.6F (both
+    flat, then a climb late). The three "Probe N food/ambient" sensors have the Chef iQ shape (food and
+    ambient per probe), so they are taken to be the Chef iQ probes under Home Assistant's names; the
+    Chef iQ app itself calls its probes 1 and 2.
+  - **What the four add:**
+    - Two thermometers in the same food: at 2:55 to 2:57 PM Pit Boss read 165F and 170F where Chef iQ
+      read 159F and 158F (6F and 12F apart); at about 3:30 PM, 172F and 177F against 166.6F and 161.6F
+      (5F to 15F apart, depending on the pairing). Pit Boss was the higher one every time.
+    - **The pairing is not settled by the images.** Nothing in `pitboss_006.png` ties a Pit Boss probe
+      to a Chef iQ probe or a probe to a food; "small brisket = probe 3" stays Jason's memory. Ask him
+      on the next cook, or read it from Home Assistant's entity names (T-050).
+    - Chef iQ's ambient sensors read 168F and 204F with the grill at 247F: the air next to the meat was
+      40 to 80F under the grill's own reading. A plan timed from the set temp does not see that.
+    - The grill read 217F against a 270F target at about 3:30 PM (just turned up, or the lid open for
+      the wings; Jason's 3:30 PM note says he was turning it up to about 280F).
+    - The big brisket's level stretch at 208 to 210F ran with the set temp at 208 to 210F: the meat had
+      reached the smoker's temp and could not go higher, so "stable at 210F" says the smoker was holding
+      it, not that it had finished cooking.
 - **Logs (Jason, 2026-11-14):** pull the logs from the phone once his cook plan is complete, for this
   analysis. Not before he says the cook is done; the phone hold and the list-and-yes rule apply.
 - **First step:** the answers above, then a SPEC section and mockups for any new UI (no UI element without

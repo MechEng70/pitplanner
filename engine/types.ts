@@ -99,6 +99,7 @@ export interface Phase {
 export interface PlannedItem {
   input: ItemInput;
   name: string;
+  label?: string; // set only when the menu has two or more of this food: "11.5 lb brisket" (engine/labels.ts)
   holdsPoorly: boolean;
   phases: Phase[];
   restMin: number;
