@@ -3,7 +3,7 @@ import { buildPlan } from '../../../engine/plan';
 import { settableTemps } from '../../../engine/temps';
 import type { PlanInput } from '../../../engine/types';
 import { saturday } from '@/lib/fixtures/saturday';
-import { fmtTemp, type Units } from '@/lib/format';
+import type { Units } from '@/lib/format';
 import { rules } from '@/lib/rules';
 import { TempMenu } from './TempMenu';
 
@@ -104,10 +104,11 @@ describe('smoker temp menu (mockup 06)', () => {
 
   test('in Celsius the rows and the step are in C, and the choice is still reported in F', async () => {
     const { onPick } = await show(saturday, C);
-    // As in 0.2.0, set points show to the nearest 5C, so neighboring 5F rows can read the same in Celsius.
-    const on = rows().filter(r => r.props.accessibilityState?.selected);
-    expect(on).toHaveLength(1);
-    expect(within(on[0]!).getByText(fmtTemp(225, C, true))).toBeOnTheScreen();
+    // Set points show in 2C increments (Jason, 2026-11-14): every 5F step is its own row (220F and 225F
+    // both read 105C before).
+    expect(row('108C')).toBeSelected();
+    expect(labels().slice(0, 6)).toEqual(['94C', '96C', '98C', '102C', '104C', '108C']);
+    expect(new Set(labels()).size).toBe(labels().length);
     expect(screen.getByText(/sets in 2\.8C steps/)).toBeOnTheScreen();
     await fireEvent.press(rows()[0]!);
     expect(onPick).toHaveBeenCalledWith(200);

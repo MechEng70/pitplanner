@@ -23,7 +23,7 @@ Reference implementation of the scheduling rules: `reference/cook-day-planner.ht
 | Scope | Everything in v1: all smoker types in the picker with their fuel alert models, Share plan, support link. Home Assistant is v2. |
 | Scheduling | Plan to finish on time (no deliberate early cushion). The rest/hold is the only buffer. |
 | Timing model | Per food, three choices: Hours per pound (default for by-weight foods), Total hours (any food: the user's time on heat, used as-is) and Size-adjusted (time ~ weight^0.67, open from the first cook). The rate or total can apply to one cook or be saved for future cooks (Gear, Cook rates). New users start on published rates with a one-time hint that most pellet smokers run faster. |
-| Units | Fahrenheit and Celsius, pounds and kilograms. Stored as F and lb; converted at display. |
+| Units | Fahrenheit and Celsius, pounds and kilograms. Stored as F and lb; converted at display. Smoker and oven set points show in 5F steps (the cooker's own) or, in Celsius, in 2C increments. |
 | Smoker temp | Dropdown in the cooker's own steps (5F on Jason's Pit Boss Sportsman 850), not three fixed buttons. Each option shows its fire time. |
 | Pause | No "pause". Instead: Running behind/ahead, Quiet alerts, Pit went out, Start over, End cook. |
 
@@ -51,7 +51,7 @@ Artboard names refer to the mockup canvas.
 
 ### Plan tab
 - **Empty** (`Empty`): "What are we cooking?", Add food, Cook a past plan again.
-- **Plan** (`Main`): Ready by / Start at toggle and time; smoker temp dropdown with fire time; one card per food (start time, time on heat); Add food; tiles for fire time, pellets, conflicts; Start cook. Tapping a card opens its details. Conflicts tile opens the fixes (move to griddle, change temp, finish earlier).
+- **Plan** (`Main`): Ready by / Start at toggle and time; smoker temp dropdown with fire time; one card per food (start time, time on heat); Add food; tiles for fire time, pellets, conflicts; Start cook. Tapping a card opens its details. Conflicts tile opens the fixes (move to griddle, change temp, edit the food).
 - **Smoker temp menu** (`TempMenu`): options in the cooker's steps across 200-300F by default with "Show all"; each row shows the resulting fire time. Temps outside 200-300F show the untrusted-estimate warning.
 - **Add food** (`FoodPick`): searchable, grouped by Beef, Pork, Chicken.
 - **Food details** (`FoodEdit`, `Ribs`, `Chicken`): quantity stepper, cooker chips (only cookers the user has; others disabled with "Add in Gear"), method and options from the rules file, rest stepper, Timing (Hours per pound / Total hours / Size-adjusted for by-weight foods, Standard / Total hours for others, with "Use for future [food] on [cooker]"), and a live result card ("On 6:40 AM, off 3:40 PM, fire the smoker at 6:20 AM").

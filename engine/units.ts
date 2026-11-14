@@ -8,11 +8,17 @@ export const cToF = (c: number) => (c * 9) / 5 + 32;
 export const lbToKg = (lb: number) => lb * 0.45359237;
 export const kgToLb = (kg: number) => kg / 0.45359237;
 
-/** Display a stored Fahrenheit value. Celsius rounds to whole degrees; set points round to the nearest 5C. */
+/**
+ * Display a stored Fahrenheit value. Celsius rounds to whole degrees; set points show in 2C increments
+ * (Jason, 2026-11-14), so a smoker's 5F steps (2.8C apart) each read differently. Fahrenheit set points are
+ * the cooker's own steps (5F on Jason's smoker) and show as stored.
+ */
+const SET_POINT_STEP_C = 2;
+
 export function showTemp(f: number, unit: TempUnit, setPoint = false): string {
   if (unit === 'F') return `${Math.round(f)}F`;
   const c = fToC(f);
-  return `${setPoint ? Math.round(c / 5) * 5 : Math.round(c)}C`;
+  return `${setPoint ? Math.round(c / SET_POINT_STEP_C) * SET_POINT_STEP_C : Math.round(c)}C`;
 }
 
 export function showWeight(lb: number, unit: WeightUnit): string {

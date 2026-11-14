@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { settableTemps, isSettable } from './temps.ts';
+import { showTemp } from './units.ts';
 import { buildPlan, onHeatSpan } from './plan.ts';
 import type { SmokerProfile } from './types.ts';
 
@@ -88,12 +89,27 @@ test('localizeText: F and lb inside rules and engine text follow the user units'
   const { localizeText } = await import('./units.ts');
   assert.equal(localizeText('Check tenderness: pull at 200-205F.', 'F', 'lb'), 'Check tenderness: pull at 200-205F.');
   assert.equal(localizeText('Check tenderness: pull at 200-205F.', 'C', 'lb'), 'Check tenderness: pull at 93-96C.');
-  assert.equal(localizeText('Fire the smoker to 225F.', 'C', 'lb'), 'Fire the smoker to 105C.');
+  assert.equal(localizeText('Fire the smoker to 225F.', 'C', 'lb'), 'Fire the smoker to 108C.');
   assert.equal(localizeText('Confirm 165F in the thickest part.', 'C', 'lb'), 'Confirm 74C in the thickest part.');
-  assert.equal(localizeText('400F', 'C', 'lb'), '205C');
+  assert.equal(localizeText('400F', 'C', 'lb'), '204C');
   assert.equal(
     localizeText('About 26 lb of pellets, more than the 21 lb hopper. 0.75 hr/lb.', 'F', 'kg'),
     'About 11.8 kg of pellets, more than the 9.5 kg hopper. 0.75 hr/lb.',
   );
   assert.equal(localizeText('PB850SPW2 at 5 min', 'C', 'kg'), 'PB850SPW2 at 5 min');
+});
+
+// Jason, 2026-11-14: set points show in 2C increments (they were 5C, and the smoker's 5F steps are 2.8C
+// apart, so 220F and 225F both read 105C and the temp menu had rows that looked the same).
+test('Celsius set points show to the nearest 2C, so every 5F step reads differently', () => {
+  assert.equal(showTemp(220, 'C', true), '104C');
+  assert.equal(showTemp(225, 'C', true), '108C');
+  assert.equal(showTemp(230, 'C', true), '110C');
+  const shown: string[] = [];
+  for (let f = 180; f <= 500; f += 5) shown.push(showTemp(f, 'C', true));
+  assert.equal(new Set(shown).size, shown.length);
+  for (const s of shown) assert.equal(Number(s.slice(0, -1)) % 2, 0);
+  // Fahrenheit is unchanged, and so are temps that are not set points.
+  assert.equal(showTemp(225, 'F', true), '225F');
+  assert.equal(showTemp(165, 'C'), '74C');
 });

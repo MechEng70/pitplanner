@@ -124,8 +124,8 @@ test('start-at mode puts the first action at the chosen time', () => {
   assert.equal(p.serveAt, SERVE + 40 * MIN);
 });
 
-test('Celsius display rounds set points to 5C', () => {
-  assert.equal(showTemp(225, 'C', true), '105C');
+test('Celsius display shows set points in 2C increments', () => {
+  assert.equal(showTemp(225, 'C', true), '108C');
   assert.equal(showTemp(165, 'C'), '74C');
 });
 

@@ -989,7 +989,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   screenshots and his answers to the three questions in the notes. Snyk has not run on it (down for
   maintenance on 2026-11-14, delayed to Monday 2026-11-16 by Jason): `npm run check` must pass first.
 - **Goal:** temp menu with settable temps and fire times, Show all and the outside-200-300F warning; food
-  picker with search and groups; conflicts sheet with fixes (move to griddle, change temp, finish earlier).
+  picker with search and groups; conflicts sheet with fixes (move to griddle, change temp, edit the food).
 - **Files:** `src/screens/plan/TempMenu.tsx`, `FoodPick.tsx`, `IssuesSheet.tsx`, tests, fidelity PNGs.
 - **Depends on:** T-017.
 - **Acceptance:** only settable temps offered (failure mode 12); each fix changes the plan; PR-1 and PR-3 (T-017)
@@ -1016,12 +1016,15 @@ Android back closes the top sheet first; copy per CLAUDE.md.
        may need to change it; it goes on the menu on Save (as in 0.2.0). That is T-019. Until T-019 is
        built the chosen food goes straight on the menu with the rules defaults, and the Conflicts sheet's
        "Edit [food]" buttons are left out; T-019 removes both stopgaps (`addFood` in `PlanTab.tsx`).
-    2. SPEC section 3 lists the fixes as "move to griddle, change temp, finish earlier". 0.2.0 has no
-       "finish earlier" button (it has Edit [food]); none was added. Say what it should do if it is wanted.
+    2. Decided (Jason, 2026-11-14): "finish earlier" is dropped. SPEC section 3 now lists the fixes as
+       they are in 0.2.0: move to griddle, change temp, edit the food.
     3. In Celsius the menu's rows repeat in pairs: `showTemp` (`engine/units.ts`) shows set points to the
        nearest 5C, and the smoker's 5F steps are 2.8C apart, so 220F (104.4C) and 225F (107.2C) both read
-       105C, 235F and 240F both 115C, and so on. Same as 0.2.0. Not changed; Jason decides how set points
-       show in C. (An earlier note here said 230F also reads 105C: wrong, it is 110C.)
+       105C, 235F and 240F both 115C, and so on. Same as 0.2.0. (An earlier note here said 230F also reads 105C:
+       wrong, it is 110C.) Decided (Jason, 2026-11-14): Celsius set points show in 2C increments, Fahrenheit
+       in the cooker's 5F steps. `showTemp` now rounds set points to the nearest 2C, so every 5F step is
+       its own row (104C, 108C, 110C). The rows are 2C or 4C apart, because the smoker's real steps are
+       2.8C; a menu in even 2C steps would need the smoker's Celsius steps from a source.
   - Not the mockup: the last row showing is cut by the menu's footer when the list is longer than the
     display (the list scrolls; mockup 06 is drawn on a taller canvas). The fire times differ from mockup 06
     by 5 minutes on some rows (215F: 5:40 AM, not 5:45); they are the engine's.

@@ -94,7 +94,7 @@ test('lanes: phases by cooker, hot phase labelled with temp, rest dashed', () =>
     lanes(plan, { temp: 'C', weight: 'kg' }, k => k)
       .find(l => l.id === 'w')!
       .segments.at(-1)!.label,
-    '205C',
+    '204C',
   );
   assert.equal(c.segments[0].tone, 'griddle');
   assert.equal(c.subtitle, 'griddle');
