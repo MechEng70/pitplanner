@@ -13,9 +13,14 @@ Do these in order:
    T-017, T-018 and T-019 are gate-complete only once it passes (then say so in their status lines).
 2. **`npm run snyk:monitor`** once the check passes: `origin/main` moved to `4172f27` on 2026-11-14 (a push
    to main), and the monitor step could not run with Snyk down.
-3. **T-019 review.** Food details is built (TASKS T-019 notes). Jason judges `tools/device/out/
-   food-details-115.png` and `-130.png` against mockups 08, 09, 10; his thumb test on the weight stepper
-   needs the phone (hold still on). Next task after that: T-059 or T-058 (both depend on T-019), his call.
+3. **T-019** is approved by Jason from the emulator screenshots (2026-11-14). His thumb test on the weight
+   stepper needs the phone (hold still on). Next task: T-058, T-059 or the new T-061, his call.
+4. **New from his cook (2026-11-14):** T-061, two briskets cannot be told apart in the steps and the pull
+   step names no food; four decisions are his (TASKS T-061). T-060 has the end of the cook and a second
+   chart, `docs/screenshots/pitboss_002.jpg`, which is not committed: the status bar with other apps' icons
+   lies over it. Ask before changing or committing it.
+5. **Logs:** Jason wants the logs pulled from the phone once his cook plan is complete (T-060). Only after
+   he says the cook is done, with the list of phone actions and his yes.
 
 Where things stand:
 
@@ -35,8 +40,7 @@ Where things stand:
   and alarm module are new), the T-016 phone half (approved list in TASKS T-016), the T-017 check against
   mockups 04-05. On that check also read the phone's status bar and navigation bar heights: the emulator's
   are 43 dp and 24 dp, the phone's status bar is not known, and Plan's fit depends on it.
-- Still open with Jason: the tester Android versions for T-037 ("coming later"); when the brisket came off
-  (T-060).
+- Still open with Jason: the tester Android versions for T-037 ("coming later").
 
 Decided by Jason on 2026-11-14 (all in the docs named):
 

@@ -1030,9 +1030,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     by 5 minutes on some rows (215F: 5:40 AM, not 5:45); they are the engine's.
 
 ### T-019 Food details (08, 09, 10)
-- **Status:** built 2026-11-14, emulator only; Snyk (gate step 6) not run: Snyk was down (`SNYK-0099`), steps 1 to
-  5 pass. Not gate-complete until `npm run check` passes with Snyk. Waiting on Jason's review of
-  `tools/device/out/food-details-115.png` and `-130.png`, and on the phone for his thumb test (hold still on).
+- **Status:** built 2026-11-14, emulator only; Jason approved the screenshots (115% and 130%) the same day:
+  "look good. I like the results bar", "T-019 is good to go". Snyk (gate step 6) not run: Snyk was down
+  (`SNYK-0099`), steps 1 to 5 pass. Not gate-complete until `npm run check` passes with Snyk. His thumb test
+  on the weight stepper still needs the phone (hold on).
 - **Notes (2026-11-14):**
   - Jason's three rulings: the sheet is always full height (kit `Sheet tall`; a content-tall sheet moves
     every control when its content's height changes), the result bar sits in the sheet footer above Save /
@@ -1119,6 +1120,31 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Tests:** engine (above), `rules.test.ts` sources check, RNTL for the warning and the icon.
 - **Device testing (Jason):** add a 12 lb turkey and an 18 lb turkey at 225F; read the warning wording and
   the icon at 100/115/130%; compare with the FSIS quote in `foods.json`.
+
+### T-061 Tell two of the same food apart (names on the menu and in the steps)
+- **Status:** todo (needs Jason's decisions below first; version not set)
+- **Why (Jason, 2026-11-14, from his cook with two briskets):** "in the plan there isn't a pull 11.5 lb off
+  of the smoker in the tasks. need to name the briskets by either user name or name/weight."
+- **What the app does today** (checked with the engine: an 11.5 lb and a 6 lb brisket plus tri-tip): both
+  briskets give the same lines ("Brisket on the smoker, unwrapped...", "Check the brisket: wrap once the
+  bark is set...", "Slice or plate the brisket."), and the pull step names no food at all ("Check
+  tenderness: pull at 200-205F when the probe slides in like butter."). Nothing says which brisket a step
+  is for. The menu cards do show the weight.
+- **Goal:** every step, alarm and card says which food it is for when the menu has more than one of the
+  same food, and the pull step always names its food.
+- **To decide with Jason (no UI element without his yes):**
+  1. The label: the weight ("11.5 lb brisket"), a name the user types ("Dad's brisket"), or the weight by
+     default with an optional name. Two of the same food at the same weight need a number or a name.
+  2. Where a name is typed, if there is one: a field on Food details (new UI, needs a mockup).
+  3. Only when two of the same food are on the menu, or always.
+  4. Which version: 0.3.0 or after.
+- **Files (expected):** `engine/types.ts` (`ItemInput.name`), `engine/plan.ts` (event text), `data/foods.json`
+  (step wording that takes the label), Food details, Plan cards, Cook steps, alarms text, SPEC sections 3
+  and 4.
+- **Depends on:** T-019. The Cook screen parts wait for T-021.
+- **Tests:** engine: two briskets give steps that differ by their labels, and every pull step names its
+  food; one brisket reads as today (or as decided in 3). RNTL for any name field.
+- **Device testing (Jason):** a plan with two briskets: read the steps and say which brisket each is for.
 
 ### T-058 Survive font-size changes and process death
 - **Status:** todo
@@ -1463,8 +1489,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - Why 250F: chosen so the brisket would be done for a 5:00 PM serve. The same cook has a smaller brisket,
     tri-tip and wings. So the serve time and the other foods drove the smoker temp up, and nothing in the
     app said that was a poor trade for a brisket.
-  - End of the cook: not pulled when he wrote; he was letting it sit at about 210F for a couple of hours.
-    When it came off is still to ask.
+  - End of the cook (Jason, later on 2026-11-14): the 11.5 lb brisket was pulled at 1:00 PM, because its
+    temp had been stable at 210F for a few hours. He then turned the smoker back up to 250F "for the
+    brisket and then tritip" (taken to be the smaller brisket still on; to confirm). Against the plan: 8 hr
+    50 min on heat planned; the chart's cook time at 1:01 PM was 6 hr 36 min, about three of them level at
+    205 to 210F.
 - **What that adds to the candidates:** (1) is a cut choice (packer or flat) as well as, or instead of, a
   thickness number; (2) matters most when the temp is raised to make a serve time, so the note belongs
   where the temp is chosen (the temp menu rows already show the fire time) and in Conflicts.
@@ -1479,6 +1508,18 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     at about 3 hr 25 min, then level at 205F. Yellow probe: 45F rising to 65F (not in the food).
   - Against the plan: 205F on the probe at about 3 hr 25 min, with 8 hr 50 min planned on heat, even though
     the smoker was turned down below the plan's temp after 1 hr 15 min.
+- **Evidence, second chart:** `docs/screenshots/pitboss_002.jpg` (Jason, 2026-11-14, taken at 1:01 PM; not
+  committed yet: the phone's status bar with other apps' icons lies over the chart, and the repo is public).
+  The whole cook to the pull, 6 hr 36 min. Read off the image, so rough; its times come out about 10%
+  earlier than the first chart's for the same events, so take times within about 20 minutes:
+  - Set temp: about 250F for the first hour or so, about 220F, a short step up to about 235F, then about
+    208 to 210F for the rest, until the last 10 minutes, where it goes back up toward 250F.
+  - Grill: on the set temp throughout.
+  - Green probe: about 165F at 1 hr 10 to 1 hr 20 min, a slow climb to about 185F, about 205 to 210F from a
+    little after 3 hr, then level to the end; it starts to drop in the last minutes (the pull).
+  - Yellow probe: 45 to 65F throughout (not in the food).
+- **Logs (Jason, 2026-11-14):** pull the logs from the phone once his cook plan is complete, for this
+  analysis. Not before he says the cook is done; the phone hold and the list-and-yes rule apply.
 - **First step:** the answers above, then a SPEC section and mockups for any new UI (no UI element without
   his yes), then the data and engine work with tests.
 - **Files (expected):** SPEC.md sections 3 and 4, `data/foods.json`, `engine/plan.ts`, `engine/live.ts`,
