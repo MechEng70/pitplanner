@@ -1442,11 +1442,15 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     temp.
   - Green probe: 165F at about 1 hr 20 min, slow climb through 165 to 185F until about 2 hr 55 min, 205F at
     about 3 hr 25 min, then level at 205F. Yellow probe: 45F rising to 65F (not in the food).
-  - So the food was ahead of a 225F plan mostly because the first 75 minutes were at about 250F. What is
-    not known yet: the smoker temp the Pit Planner plan used, and why the controller was at 250F (set by
-    hand, or the plan's temp). Ask Jason. If the plan said 225F, the gap is between the plan's temp and
-    the controller's set temp, which the app could ask about or read, a simpler problem than a grill that
-    misses its set temp.
+  - Jason, 2026-11-14: the Pit Planner plan started at 250F. So the start matches the plan, and the
+    controller was then turned down to about 225F at 1 hr 15 min and to about 205F at 3 hr 35 min. The
+    plan in 0.2.0 has one smoker temp for the whole cook, so after 1 hr 15 min the cook ran cooler than
+    the plan, and the food still reached 205F at about 3 hr 25 min. A grill running above its set temp is
+    not what the chart shows; the food cooking faster than the plan's time is. Still to ask Jason: the
+    food and its weight, the time on heat the plan gave, why the temp was turned down at 1 hr 15 min, and
+    how he saw the smoker running hot (a grate thermometer?). Two candidate behaviors until then: (a) the
+    cook lets the user say the smoker temp changed mid-cook and re-times from it; (b) a food that runs
+    ahead of its rate re-times itself from probe readings (T-050, T-054).
 - **Files (expected):** SPEC.md section 4, `engine/live.ts` and `engine/plan.ts` (the temp model already
   scales time by smoker temp: `tempModel` in `data/foods.json`), the Cook screen, Gear cooker details.
 - **Depends on:** T-021 (Cook screen), T-038 (0.3.0 out). Related: T-050 and T-053 (live temps and the
