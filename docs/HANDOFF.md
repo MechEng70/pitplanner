@@ -35,7 +35,7 @@ Do these in order:
      Bash tool is killed at its 10 minute limit: the full suite takes longer, so run it in parts.
    - Under emulator or agent load the first Jest run can fail with 5 s timeouts; a second run passes. Do not
      raise the timeout.
-5. **Where the tasks stand (all on `main`; `npm run check` passed on this `main`, all six steps, on 2026-11-15; 537 Jest tests):**
+5. **Where the tasks stand (all on `main`; `npm run check` passed on this `main`, all six steps, on 2026-11-15; 536 Jest tests):**
 
    | Task | Built | Emulator at 115% | Open with Jason |
    |---|---|---|---|
@@ -59,6 +59,8 @@ Do these in order:
      "Jason's answers" lines in TASKS; do not ask them again.
    - `src/lib/maker.ts` (battery help links per maker) is unused since he chose a plain line; remove it or
      keep it for later, his call.
+   - Branches `t025` and `t026` are left over: their commits were cherry-picked onto `main`, so they are
+     safe to delete (`git branch -D t025 t026`) once Jason says so.
    - T-059 waits for the FSIS pages (403 to automated fetches: read in a browser).
 6. **Dev seeds added on 2026-11-15:** `pitplanner://dev/plan?seed=briskets` (11.5 lb and 6 lb),
    `?seed=twins` (two 6 lb), `?seed=tomorrow` (mockup menu for 5:00 PM tomorrow) and `?seed=cooking` (mockup 12
