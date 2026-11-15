@@ -30,10 +30,12 @@ are in each task's TASKS entry (T-022, T-028, T-030, T-033, T-037, T-059, T-063,
 first, each in a worktree off local `main`, no emulator, no gate; `git reset --hard main` first in each):**
 1. Done: Jason approved all six newest screenshots (11, 13 undo, 15 back, debug send, 20, Edit cook) on
    2026-11-15, 5:20 PM. He does not want approved screens pulled back toward the mockups. One thing to build
-   from it (T-065): on the debug screen, tapping the address copies it, with a line saying so.
+   from it (T-065): on the debug screen, tapping the address copies it, with a line saying so; use
+   `expo-clipboard` (works on Android and iOS; Jason wants no Android-only module where a cross-platform one
+   exists).
 2. **T-067** fast test cook: a dev-only link, the Saturday fixture, 60 times faster; nothing left to settle.
-3. **T-059** whole turkey, now in 0.3.0: needs the source links for the numbers he pasted (in the T-059
-   entry) and his OK on the food-safety note (new UI).
+3. **T-059** whole turkey, in 0.3.0 and unblocked (Jason, 2026-11-15, 5:30 PM): the numbers and how to cite
+   them are in its TASKS entry; no more links, no food-safety note. Build it.
 4. T-033 leftovers: put his answers into INSTALL.md and RELEASING.md (contact line, betas for testers); fix
    `docs/design/TECH-DESIGN.md` where it calls `pit-share` read-only.
 5. T-037 prep: emulator images for Android 14 and 15, `alarm` device test on each (`avd.sh` is fixed to API

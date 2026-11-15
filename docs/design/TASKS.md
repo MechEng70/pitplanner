@@ -1100,6 +1100,12 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     thickest part of the breast; pink smoked meat is safe at 165F.
   - They differ on the pull temperature (160F with carryover, or 165F in three spots). Use the 165F rule
     unless he says otherwise, and say so in the step text.
+- **Jason (2026-11-15, 5:30 PM): unblocked, build it.** He went to the USDA FSIS site named in this task and
+  got set 2 below from it himself, so cite it as "USDA FSIS (fsis.usda.gov), read by Jason 2026-11-15"; set 1
+  is his own numbers for hotter smoker temps, cite it as "Jason, 2026-11-15". No more source links are needed
+  and no food-safety note is wanted ("you're being very risk averse on this, and I'm okay with this"). Done
+  temperature in the step text: 165F in the thigh, the wing and the thickest part of the breast (the FSIS
+  rule), since he did not pick between the two.
 - **Status:** todo
 - **Goal:** whole turkey on the smoker, planned and learned like every other food (Jason, 2026-11-12).
 - **Files:** `data/foods.json`, `engine/rules.ts` (schema: sources, a minimum smoker temp per method, a size
@@ -1429,7 +1435,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Gate (2026-11-15):** merged onto `main` and `npm run check` passed all six steps. No device test yet.
 - **Jason's look (2026-11-15, 5:20 PM):** `rn-debug-send.png` approved. **To build:** tapping the address copies
   it, and the screen says so ("Tap the address to copy it."), so a tester can paste it into the email when it
-  is not filled in. Check what is installed for the clipboard before adding a dependency.
+  is not filled in. Use `expo-clipboard` (Jason, 2026-11-15: the app will be on iPhone too, so no
+  Android-only module; `expo-clipboard` works on Android and iOS), behind an interface in `src/platform/` with
+  a fake for tests. It is a new native dependency: prebuild, dev build rebuild, gate (Snyk reads the new
+  package).
 - **Device test (2026-11-15):** in `followups` the debug screen shows Send to developer, where the file goes and
   what it holds (emulator, 115%; `docs/fidelity/rn-debug-send.png`). Send is not tapped by the test. Not
   checked anywhere: the share sheet, the To field in an email app, the file's contents from a real phone.
