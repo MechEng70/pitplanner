@@ -43,7 +43,10 @@ Jason's yes). Questions for Jason from the two agents (ask in plain words; full 
   section 6 still says it is offered as the recipient, fix the line once he answers; (2) alarms that ring
   while the app is closed are not in the log: accept, or a task for a native ring log; (3) cook history notes
   are in the file: keep or leave out; (4) the section sits under the test alert button: keep or move to the top.
-Next: `t030` on his go.
+**All nine answered (4:15 PM), written into the T-063 and T-065 entries.** As built stays for T-063 (1) to
+(3) and T-065 (3), (4). To build: an undo arrow icon in the kit (T-063), "Back to the cook" on Cook finished
+(T-063), the recipient filled in by Kotlin in one of our modules (T-065; rebuild and device test). New later
+task T-068 (native ring log).
 
 **State of step 5a (device tests for Setup, Cook finished, Gear, History):**
 

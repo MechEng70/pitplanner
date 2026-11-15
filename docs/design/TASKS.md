@@ -1389,6 +1389,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   drops rows.
 
 ### T-065 Debug switch and send to developer
+- **Jason's answers to the build's questions (2026-11-15, 4:15 PM):** (1) Fill in his address: a few lines
+  of Kotlin in one of our own modules so the email app opens with the address as the recipient (no new
+  dependency; needs a dev build rebuild and a device test). **To build.** SPEC section 6 already says so.
+  (2) Rings while the app is closed: a later task for a native ring log (T-068). (3) Cook history notes stay
+  in the file. (4) The section stays under the test alert button.
 - **Gate (2026-11-15):** merged onto `main` and `npm run check` passed all six steps. No device test yet.
 - **Status:** built 2026-11-15, unit-tested on a worktree branch; `npm run check` and device test not run.
   0.3.0 (Jason, 2026-11-15: "since I'm going to send 0.3.0 to somebody, I'm going to need
@@ -1446,6 +1451,18 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   but comes from him.
 - **Depends on:** T-026.
 - **Tests:** unit tests for what goes into the file; RNTL for the action.
+
+### T-068 A log of every alarm ring, kept on the Android side
+- **Status:** todo, after 0.3.0 unless Jason moves it up (Jason, 2026-11-15: agreed as a task for later).
+- **Why:** the app's event log (T-065) only has rings seen while the app is open, plus Done and +15 taps read
+  afterwards. A missed or late alarm with the app closed is the case the debug file is most wanted for.
+- **Goal:** `pit-alarms` records each ring (step key, planned time, actual time, repeat number) in a small
+  capped store of its own; the debug file includes it.
+- **Files:** `modules/pit-alarms` (Kotlin, JUnit), `src/platform/alarms.ts`, `src/lib/debugReport.ts`.
+- **Depends on:** T-065.
+- **Acceptance:** a ring with the app killed shows in the next debug file with its times.
+- **Tests:** JUnit (Robolectric) for the store and its cap; Jest for the report section.
+- **Real phone:** yes, one ring with the app closed.
 
 ### T-066 User README with screenshots
 - **Status:** todo; after the screens are built (Jason, 2026-11-15: "we're definitely going to have to
@@ -2259,6 +2276,12 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 
 ### T-063 Take back a step marked Done by mistake
+- **Jason's answers to the build's questions (2026-11-15, 4:15 PM):** (1) Undo also takes back changes made
+  to the cook after the Done, and the row says so (as built). (2) The row names the step as Next up words it,
+  "Undo: Check the brisket" (as built). (3) An overdue step taken back rings again 10 min later (as built).
+  (4) Add a proper undo arrow icon to the kit; the row stops using Start over's icon. **To build.** (5) Cook
+  finished gets a way back to the cook for a Serve marked Done by mistake ("Back to the cook"; approved as a
+  new control on that screen; write the SPEC line with it). **To build.**
 - **Gate (2026-11-15):** merged onto `main` and `npm run check` passed all six steps. No device test yet.
 - **Status:** built 2026-11-15, unit-tested on a worktree branch; `npm run check` and device test not run.
   (0.3.0; Jason, 2026-11-14: "there needs to be somewhere to undo it in version 0.3.0. I don't want to wait
