@@ -32,9 +32,15 @@ import { rateRows, ratesSummary } from '@/lib/historyView';
 import { rules } from '@/lib/rules';
 import { useStore } from '@/lib/store';
 import { availableUpdate, RELEASES_PAGE } from '@/lib/update';
-import { allGranted, type AlarmStatus, type AppLinks, type PermissionService } from '@/platform/types';
+import {
+  allGranted,
+  type AlarmService,
+  type AlarmStatus,
+  type AppLinks,
+  type PermissionService,
+} from '@/platform/types';
 import { AddCooker, type CookerKind } from '@/screens/shared/AddCooker';
-import { AlertChecks, useAlarmStatus } from '@/screens/shared/AlertChecks';
+import { AlertChecks, BatteryNote, TestAlertButton, useAlarmStatus } from '@/screens/shared/AlertChecks';
 
 export const SUPPORT_URL = 'https://buymeacoffee.com/PitPlanner';
 /** Taps on the version that open the hidden test screen. */
@@ -46,6 +52,7 @@ type Open = 'add' | 'alerts' | 'units' | null;
 export function GearScreen({
   version,
   permissions,
+  alarms,
   onResume,
   onDebug,
   onCooker,
@@ -54,6 +61,8 @@ export function GearScreen({
   /** The app's version, as the build has it. */
   version: string;
   permissions: PermissionService;
+  /** For "Send a test alert in 10 sec" on the Alerts sheet (the real alarm path). */
+  alarms: Pick<AlarmService, 'testAlarm'>;
   onResume: AppLinks['onResume'];
   /** Opens the hidden test screen; the screen grants the pass first (src/lib/debugPass.ts). */
   onDebug: () => void;
@@ -229,6 +238,8 @@ export function GearScreen({
       {open === 'alerts' ? (
         <Sheet title="Alerts" onClose={close}>
           {status ? <AlertChecks status={status} permissions={permissions} onChange={refresh} /> : null}
+          <BatteryNote />
+          <TestAlertButton alarms={alarms} reserve />
         </Sheet>
       ) : null}
       {open === 'units' ? <UnitsSheet units={units} onChange={setUnits} onClose={close} /> : null}

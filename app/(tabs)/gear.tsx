@@ -6,6 +6,7 @@ import Constants from 'expo-constants';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { BackHandler } from 'react-native';
+import { alarmService } from '@/platform/alarms';
 import { permissionService } from '@/platform/permissions';
 import { onResume } from '@/platform/resume';
 import { CookerSheets } from '@/screens/gear/CookerSheets';
@@ -43,6 +44,7 @@ export default function GearTab() {
       <GearScreen
         version={Constants.expoConfig?.version ?? ''}
         permissions={permissionService}
+        alarms={alarmService}
         onResume={onResume}
         onDebug={() => router.push('/debug')}
         onCooker={setCooker}

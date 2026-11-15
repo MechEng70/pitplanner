@@ -304,23 +304,27 @@ describe('Share plan (T-029)', () => {
     expect(share.shared).toHaveLength(2);
   });
 
-  test('a share that fails does not throw and changes nothing on the screen', async () => {
+  // Jason, 2026-11-15: a failed share says so (0.2.0 showed nothing).
+  test('a share that fails says so; the plan is untouched and the next tap shares again', async () => {
     const share = fakeShare();
     share.failNext = new Error('no share sheet');
     const repos = await show([brisket], share);
-    const before = screen.toJSON();
     await fireEvent.press(button('Share plan'));
     await act(async () => {});
     expect(share.shared).toHaveLength(1);
     expect(share.failNext).toBeNull();
-    expect(screen.toJSON()).toEqual(before);
+    expect(screen.getByLabelText("Couldn't share")).toBeOnTheScreen();
+    expect(screen.getByText('The plan was not shared. Try again.')).toBeOnTheScreen();
+    await fireEvent.press(button('OK'));
+    await settle();
+    expect(screen.queryByLabelText("Couldn't share")).toBeNull();
     expect(saved(repos).items).toEqual([brisket]);
     // The next tap shares again.
     await fireEvent.press(button('Share plan'));
     expect(share.shared).toHaveLength(2);
   });
 
-  test('a share service that throws at once does not throw either', async () => {
+  test('a share service that throws at once says so too', async () => {
     const share = fakeShare();
     share.sharePlanFile = jest.fn(() => {
       throw new Error('no module');
@@ -328,6 +332,7 @@ describe('Share plan (T-029)', () => {
     await show([brisket], share);
     await fireEvent.press(button('Share plan'));
     expect(share.sharePlanFile).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText("Couldn't share")).toBeOnTheScreen();
   });
 });
 

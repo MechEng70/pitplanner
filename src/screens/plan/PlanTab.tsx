@@ -19,6 +19,7 @@ import {
   type PickDateTime,
   type ShareService,
 } from '@/platform/types';
+import { ImportNotice } from '@/screens/shared/ImportNotice';
 import { FoodEdit } from './FoodEdit';
 import { FoodPick } from './FoodPick';
 import { IssuesSheet } from './IssuesSheet';
@@ -32,6 +33,7 @@ type Layer =
   | { kind: 'issues' }
   | { kind: 'food'; item: ItemInput; isNew: boolean; remember?: boolean }
   | { kind: 'check'; input: PlanInput; plan: Plan }
+  | { kind: 'shareFailed' }
   | null;
 
 /** A food and method the rules file knows (a saved item from an older rules file may not be). */
@@ -44,6 +46,8 @@ function knownMethod(foodId: string, methodId: string): boolean {
   }
 }
 const known = (it: ItemInput) => knownMethod(it.foodId, it.methodId);
+
+export const SHARE_FAILED = { title: "Couldn't share", body: 'The plan was not shared. Try again.' };
 
 export interface PlanTabProps {
   pickDateTime: PickDateTime;
@@ -163,15 +167,16 @@ export function PlanTab({
     setLayer({ kind: 'check', input, plan });
   };
 
-  // Share (SPEC section 3): the menu, serve time and smoker temp as a .pitplan file. A share that fails shows
-  // nothing, as in 0.2.0.
+  // Share (SPEC section 3): the menu, serve time and smoker temp as a .pitplan file. A share that fails says so
+  // (Jason, 2026-11-15; 0.2.0 showed nothing).
   const share = (plan: Plan) => {
     if (!sharePlanFile) return;
     const text = pitPlanText(toPitPlan(plan.serveAt, input.pitTempF, input.items));
+    const failed = () => setLayer({ kind: 'shareFailed' });
     try {
-      sharePlanFile(PLAN_FILE_NAME, text).catch(() => {});
+      sharePlanFile(PLAN_FILE_NAME, text).catch(failed);
     } catch {
-      // Nothing to show.
+      failed();
     }
   };
 
@@ -188,6 +193,9 @@ export function PlanTab({
         onShare={share}
         onCookAgain={onCookAgain}
       />
+      {layer?.kind === 'shareFailed' ? (
+        <ImportNotice title={SHARE_FAILED.title} body={SHARE_FAILED.body} onClose={close} />
+      ) : null}
       {layer?.kind === 'check' ? (
         <StartCheckSheet
           permissions={permissions}

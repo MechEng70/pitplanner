@@ -122,9 +122,11 @@ export function GriddleSheet({
 const HOLD_MIN_F = 140; // food safety floor for holding
 const TYPICAL_LOW_F = 170; // where most ovens bottom out
 const OVEN_MAX_F = 250;
-const STEP = 5; // 5F, or 5C in Celsius
+const STEP_F = 5;
+/** In Celsius the setting moves in 2C steps, like smoker set points (Jason, 2026-11-15; 0.2.0 used 5C, which showed 75C where Gear showed 76C). */
+const STEP_C = 2;
 
-/** Oven details (mockup 19). The lowest setting steps by 5F, or by 5C in Celsius, and is stored in F. */
+/** Oven details (mockup 19). The lowest setting steps by 5F, or by 2C in Celsius, and is stored in whole F. */
 export function OvenSheet({
   initial,
   units,
@@ -140,8 +142,9 @@ export function OvenSheet({
 }) {
   const [o, setO] = useState(initial);
   const C = units.temp === 'C';
+  const STEP = C ? STEP_C : STEP_F;
   const shown = Math.round((C ? fToC(o.lowestTempF) : o.lowestTempF) / STEP) * STEP;
-  const toF = (v: number) => (C ? cToF(v) : v);
+  const toF = (v: number) => (C ? Math.round(cToF(v)) : v);
   const step = (d: number) =>
     setO({ ...o, lowestTempF: Math.min(OVEN_MAX_F, Math.max(HOLD_MIN_F, toF(shown + d * STEP))) });
   return (

@@ -47,7 +47,7 @@ Artboard names refer to the mockup canvas.
 ### First launch
 1. **Setup: what do you cook on** (`Setup`). Smoker model via the picker, hopper and grate filled from the model when verified. Griddle and Oven switches. "Add another cooker".
 2. **Smoker picker** (`Picker`). Search plus type chips (All, Pellet, Kamado, Offset, Drum, Gravity, Electric). Grouped list from `data/cookers.json`. "Not listed? Enter it yourself" opens a manual form (type, min/max temp, temp step or preset list, hopper, grate).
-3. **Setup: alerts** (`Perms`). Notifications (POST_NOTIFICATIONS, Android 13+), Alarms and reminders (exact alarm access), No battery limits (ignore battery optimizations). Live status per row. "Send a test alert in 10 sec" must use the real alarm path.
+3. **Setup: alerts** (`Perms`). Notifications (POST_NOTIFICATIONS, Android 13+), Alarms and reminders (exact alarm access), No battery limits (ignore battery optimizations). Live status per row. "Send a test alert in 10 sec" must use the real alarm path. Under the rows, a plain line for phones that delay alerts to save battery ("Alerts late or missing? Check the battery settings for Pit Planner in your phone's settings."); no link to an outside site (Jason, 2026-11-15).
 
 ### Plan tab
 - **Empty** (`Empty`): "What are we cooking?", Add food, Cook a past plan again.
@@ -56,7 +56,7 @@ Artboard names refer to the mockup canvas.
 - **Add food** (`FoodPick`): searchable, grouped by Beef, Pork, Chicken.
 - **Food details** (`FoodEdit`, `Ribs`, `Chicken`): quantity stepper, cooker chips (only cookers the user has; others disabled with "Add in Gear"), method and options from the rules file, rest stepper, Timing (Hours per pound / Total hours / Size-adjusted for by-weight foods, Standard / Total hours for others, with "Use for future [food] on [cooker]"), and a live result card ("On 6:40 AM, off 3:40 PM, fire the smoker at 6:20 AM"). Choosing a food in Add food opens this screen for the new food; it goes on the menu on Add to plan, not before. A result bar is pinned at the bottom, above the buttons, with three times: fire (the smoker or the griddle; "On" for a cooker that is not lit ahead), off heat and serve. It keeps its height and place as the values change. Tapping it scrolls the full result card into view; that is the only scroll on the screen, and the user starts it. Nothing scrolls, takes focus or moves when a value changes: the sheet is always full height and its content never gets shorter while it is open.
 - **Open shared plan** (`Shared`): shows the sender's menu; the receiver picks date and their own cookers; flags missing cookers and offers a fallback.
-- **Share**: share icon on Plan exports a `.pitplan` JSON file through the Android share sheet. The app registers an intent filter to open it.
+- **Share**: share icon on Plan exports a `.pitplan` JSON file through the Android share sheet. A share that fails says so ("Couldn't share"). The app registers an intent filter to open it.
 
 ### Cook tab
 - Only Start cook on Plan starts a cook (permission check, save, schedule alarms), and it opens the Cook tab. With no cook running the Cook tab shows "No cook running" and Go to Plan, whatever is on the plan (Jason, 2026-11-15; 0.2.0 started a cook from the tab, so a discarded cook came back on the next look). While a cook is running, Start cook on Plan is greyed out. Ending a cook (Save, Discard or Start over) goes back to Plan.

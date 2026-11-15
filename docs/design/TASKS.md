@@ -1525,6 +1525,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ---
 
 ## Phase 7: Setup (mockups 01-03, 17)
+- **Jason's answers (2026-11-15):** coming back to the app mid-cook shows Live cook (as built). Ending a
+  cook with nothing off the heat still offers Save to history: keep (the record holds what was cooked, to
+  reuse later). The rate card wording question was asked again in plainer words.
 
 ### T-024 Setup steps and smoker picker
 - **Status:** built 2026-11-15 on branch `t024`, unit-tested (Jest). NOT run on a device or emulator, and
@@ -1618,6 +1621,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ---
 
 ## Phase 8: Gear and history (mockups 16-20)
+- **Jason (2026-11-15):** no link to an outside site for battery help. A plain line instead, on this step
+  and on Gear's Alerts sheet: "Alerts late or missing? Check the battery settings for Pit Planner in your
+  phone's settings." (`BatteryNote`). `src/lib/maker.ts` and its empty link table are unused now.
 
 ### T-026 Gear screen (16)
 - **Status:** built 2026-11-15 on branch `t026`, unit-tested (Jest). NOT run on a device or emulator, and
@@ -1656,6 +1662,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Acceptance:** the units switch converts everywhere without changing stored values.
 - **Tests:** RNTL rows and units switch.
 - **Device testing (Jason):** none.
+- **Jason's answers (2026-11-15):** the Alerts sheet gets "Send a test alert in 10 sec" (built: the line that
+  says when it rings has its space reserved, so the sheet does not grow). Home Assistant row with no chevron:
+  OK (Home Assistant is a later version).
 
 ### T-027 Cooker sheets: griddle, oven, smoker (17-19)
 - **Status:** built 2026-11-15 on branch `t027`, unit-tested (Jest). NOT run on a device or emulator, and
@@ -1692,6 +1701,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Acceptance:** edits persist in `cookers` and the plan updates.
 - **Tests:** RNTL sheets.
 - **Device testing (Jason):** none.
+- **Jason's answers (2026-11-15):** in Celsius the oven setting steps by 2C like smoker set points (built;
+  stored in whole F; it now reads 76C where Gear reads 76C). Remove oven hidden when it is the only cooker:
+  he asked for a recommendation; kept hidden (removing it would empty the gear and restart Setup).
 
 ### T-028 History and cook rates (20), with editing
 - **Status:** built and unit-tested on branch `t028` (2026-11-15); not run on a device, and `npm run check`
@@ -1776,6 +1788,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Acceptance:** Gmail and Drive appear in the share sheet; the file matches `toPitPlan`.
 - **Tests:** Jest with the share fake; `engine/share.test.ts` unchanged.
 - **Device testing (Jason):** none.
+- **Jason (2026-11-15):** a failed share says so: sheet "Couldn't share" / "The plan was not shared. Try
+  again." / OK (built).
 
 ### T-030 Open a shared plan (11), with the conflict fix
 - **Status:** todo

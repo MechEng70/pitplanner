@@ -3,6 +3,7 @@
 // the Cook screen's red banner (SPEC section 6, failure mode 9), and Setup's alerts step (T-025), which adds
 // the test alert.
 import { useCallback, useEffect, useState } from 'react';
+import { View } from 'react-native';
 import { Button, GroupCard, Num, StatusRow, Text } from '@/components/kit';
 import { fmtTime } from '@/lib/format';
 import type { AlarmService, AlarmStatus, AppLinks, PermissionService } from '@/platform/types';
@@ -81,7 +82,23 @@ export function AlertChecks({
  * "Send a test alert in 10 sec" through the real alarm path (`AlarmService.testAlarm`). The line saying when
  * it rings comes in under the button, so the button stays put: keep this the last thing on its page.
  */
-export function TestAlertButton({ alarms }: { alarms: Pick<AlarmService, 'testAlarm'> }) {
+/** For phones that delay or drop alerts to save battery: no link, the user finds the setting (Jason, 2026-11-15). */
+export const BATTERY_NOTE =
+  "Alerts late or missing? Check the battery settings for Pit Planner in your phone's settings.";
+
+export function BatteryNote() {
+  return (
+    <Text variant="label" tone="secondary" relaxed>
+      {BATTERY_NOTE}
+    </Text>
+  );
+}
+
+/**
+ * "Send a test alert in 10 sec" through the real alarm path, then a line saying when it rings. With `reserve`
+ * the line's space is there from the start (a sheet must not grow when it appears).
+ */
+export function TestAlertButton({ alarms, reserve }: { alarms: Pick<AlarmService, 'testAlarm'>; reserve?: boolean }) {
   const [sent, setSent] = useState<number | null>(null);
   return (
     <>
@@ -101,6 +118,12 @@ export function TestAlertButton({ alarms }: { alarms: Pick<AlarmService, 'testAl
         <Text variant="label" tone="secondary" center>
           Test alert set for <Num>{fmtTime(sent)}</Num>. Lock the phone to check it rings.
         </Text>
+      ) : reserve ? (
+        <View className="opacity-0" aria-hidden importantForAccessibility="no-hide-descendants">
+          <Text variant="label" tone="secondary" center>
+            Test alert set for <Num>12:00 AM</Num>. Lock the phone to check it rings.
+          </Text>
+        </View>
       ) : null}
     </>
   );

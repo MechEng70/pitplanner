@@ -3,7 +3,7 @@
 // permissions off: the Start cook check asks again when it matters. The services come from the route.
 import { SetupActions, SetupPage } from '@/components/kit';
 import type { AlarmService, AppLinks, PermissionService } from '@/platform/types';
-import { AlertChecks, TestAlertButton, useAlarmStatus } from '@/screens/shared/AlertChecks';
+import { AlertChecks, BatteryNote, TestAlertButton, useAlarmStatus } from '@/screens/shared/AlertChecks';
 import { SETUP_STEPS } from './Setup';
 
 export function AlertsStep({
@@ -31,6 +31,7 @@ export function AlertsStep({
       footer={<SetupActions onBack={onBack} next="Finish setup" onNext={onFinish} />}
     >
       {status ? <AlertChecks status={status} permissions={permissions} onChange={refresh} /> : null}
+      <BatteryNote />
       <TestAlertButton alarms={alarms} />
     </SetupPage>
   );

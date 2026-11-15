@@ -45,6 +45,7 @@ function GearTab({ alarms, resume }: { alarms: ReturnType<typeof fakeAlarms>; re
       <GearScreen
         version="0.3.0"
         permissions={alarms}
+        alarms={alarms}
         onResume={resume.onResume}
         onDebug={jest.fn()}
         onCooker={setCooker}
@@ -267,7 +268,8 @@ describe('Oven (mockup 19)', () => {
     const { repos } = await show({ units: METRIC });
     await fireEvent.press(row(/^Oven/));
     const group = () => within(sheet('Oven').getByLabelText('Lowest oven setting'));
-    expect(group().getByText('75')).toBeOnTheScreen(); // 170F is 76.7C, on the 5C steps
+    // 170F is 76.7C: on the 2C steps it reads 76, the same as the Gear row (Jason, 2026-11-15; it read 75).
+    expect(group().getByText('76')).toBeOnTheScreen();
     expect(group().getByText(/C$/)).toBeOnTheScreen();
     expect(
       sheet('Oven').getByText(text('Holding needs at least 60C. Most ovens bottom out at 76C.')),
@@ -280,15 +282,15 @@ describe('Oven (mockup 19)', () => {
 
     await fireEvent.press(row(/^Oven/));
     await press('Oven', 'button', 'More lowest oven setting');
-    expect(group().getByText('80')).toBeOnTheScreen();
+    expect(group().getByText('78')).toBeOnTheScreen();
     await press('Oven', 'button', 'Save oven');
     await settle();
-    expect(repos.cookers.load().oven!.lowestTempF).toBe(176); // 80C
-    expect(events('ovenOn')).toEqual(['Oven to 176F for holding.']);
+    expect(repos.cookers.load().oven!.lowestTempF).toBe(172); // 78C
+    expect(events('ovenOn')).toEqual(['Oven to 172F for holding.']);
 
     // Down to the 60C (140F) floor.
     await fireEvent.press(row(/^Oven/));
-    for (let i = 0; i < 4; i++) await press('Oven', 'button', 'Less lowest oven setting');
+    for (let i = 0; i < 9; i++) await press('Oven', 'button', 'Less lowest oven setting');
     expect(group().getByText('60')).toBeOnTheScreen();
     expect(sheet('Oven').getByRole('button', { name: 'Less lowest oven setting' })).toBeDisabled();
     await press('Oven', 'button', 'Save oven');

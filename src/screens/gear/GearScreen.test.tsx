@@ -36,6 +36,7 @@ async function show({
     <GearScreen
       version="0.3.0"
       permissions={alarms}
+      alarms={alarms}
       onResume={resume.onResume}
       onDebug={onDebug}
       {...(handlers ? { onCooker, onHistory } : {})}
@@ -183,9 +184,18 @@ describe('Alerts', () => {
     const alarms = fakeAlarms();
     alarms.granted = { ...alarms.granted, exactAlarms: false, batteryUnrestricted: false };
     const resume = fakeResume();
-    await render(<GearScreen version="0.3.0" permissions={alarms} onResume={resume.onResume} onDebug={jest.fn()} />, {
-      wrapper: storeWrapper(r.repos, () => NOW, alarms),
-    });
+    await render(
+      <GearScreen
+        version="0.3.0"
+        permissions={alarms}
+        alarms={alarms}
+        onResume={resume.onResume}
+        onDebug={jest.fn()}
+      />,
+      {
+        wrapper: storeWrapper(r.repos, () => NOW, alarms),
+      },
+    );
     expect(await screen.findByText('Needs a fix: exact alarms, battery limits')).toBeOnTheScreen();
 
     await fireEvent.press(row(/^Alerts/));
@@ -247,4 +257,31 @@ describe('version', () => {
     await fireEvent.press(version);
     expect(onDebug).toHaveBeenCalledTimes(2);
   });
+});
+
+// Jason, 2026-11-15: the Alerts sheet can send a test alert, and says where to look when alerts are late.
+test('the Alerts sheet sends a test alert through the alarm service and says when it rings', async () => {
+  const r = testRepos();
+  r.repos.cookers.save(cookGear, NOW);
+  const alarms = fakeAlarms();
+  await render(
+    <GearScreen
+      version="0.3.0"
+      permissions={alarms}
+      alarms={alarms}
+      onResume={fakeResume().onResume}
+      onDebug={jest.fn()}
+    />,
+    { wrapper: storeWrapper(r.repos, () => NOW, alarms) },
+  );
+  await fireEvent.press(screen.getByRole('button', { name: /^Alerts/ }));
+  const sheet = within(screen.getByLabelText('Alerts'));
+  expect(
+    sheet.getByText("Alerts late or missing? Check the battery settings for Pit Planner in your phone's settings."),
+  ).toBeOnTheScreen();
+  expect(sheet.queryByText(/Test alert set for/)).toBeNull();
+  await fireEvent.press(sheet.getByRole('button', { name: 'Send a test alert in 10 sec' }));
+  await act(async () => {});
+  expect(alarms.calls).toContain('testAlarm 10');
+  expect(sheet.getByText(/Test alert set for .*\. Lock the phone to check it rings\./)).toBeOnTheScreen();
 });
