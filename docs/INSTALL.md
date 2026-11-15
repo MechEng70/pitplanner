@@ -56,6 +56,9 @@ plan and history are kept.
 When a newer version is out, Gear shows an "Update available" row. Tap it to download, then open the file
 to install.
 
+If you were sent a test version (a beta), Gear also offers newer test versions and the finished release
+when they come out.
+
 ### "Pit Planner has a new look"
 
 Version 0.3.0 was rebuilt from the ground up. The first time you open it after updating from 0.2.0, it
@@ -85,4 +88,4 @@ ask if you are sure. Choose "More details", then "Install anyway".
    will not install an older version over a newer one.
 
 If it still will not install, do not uninstall the app: that erases your smokers, cook rates and history.
-Tell the person who sent you the app which version you have and what the phone said.
+Email jason@medtechcto.com with the version you have and what the phone said.

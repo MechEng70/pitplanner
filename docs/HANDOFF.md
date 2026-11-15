@@ -1,9 +1,46 @@
-# Handoff (2026-11-15, end of the seventeenth session: T-030, T-032, T-033, T-063, T-065 on main and gated; device tests setup, cook-finished, gear, history, shared, followups pass at 115%)
+# Handoff (2026-11-15, end of the eighteenth session: T-067, T-059, T-065 tap to copy and the T-033 answers on main and gated; device tests fast-cook and followups pass at 115%)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## Restart, eighteenth session (written Sunday 2026-11-15, 5:15 PM; read this first)
+## Restart, nineteenth session (written Sunday 2026-11-15, end of the eighteenth; read this first)
+
+Everything is committed on `main`. Jason pushed `main` himself during the session (through `d0c3b49`); the
+commits after that are local until he pushes again. The gate passed on this `main`. Emulator and Metro are
+stopped. No agents, no worktrees. The sections below are history; the working rules and traps of the
+sixteenth session's "Restart" (items 2 to 4, 6 to 8) still hold.
+
+**Done in the eighteenth session (all on `main`, each through the gate):**
+- **T-067** fast test cook: `src/lib/fastCook.ts`, dev link `pitplanner://dev/plan?seed=fast` (`&x=<n>` for
+  another speed), device test `fast-cook` (240 times, saves a picture at every step and alert to
+  `tools/device/out/fast-cook-N.png`). Emulator only (Jason); he approved the pictures.
+- **T-059** whole turkey: in `data/foods.json` with cited sources, the 225F floor issue, its own "Unusual
+  rate" range from 0.33 hr/lb. Smoker flame icon, no size warning, rest 30 / 20. Not yet seen on a device.
+- **Prep steps** on every food are plain reminders ("Prep the brisket."), Jason's wording.
+- **T-065** tap the address to copy it (`expo-clipboard`, `src/platform/clipboard.ts`); dev build rebuilt and
+  on the emulator; `followups` passes at 115%; Jason approved `rn-debug-copied.png`.
+- **T-033** his answers are in INSTALL.md and RELEASING.md; TECH-DESIGN lists `sendFile` and the clipboard.
+
+**Gate facts:** as below (Snyk prints its monthly-limit notice in every run and still scans all 26 projects;
+five runs this session; stop and tell Jason the moment that step fails or skips; no `npm run snyk:monitor`
+before 2026-12-01).
+
+**Jason's rule (2026-11-15):** "You should be deleting things you don't need anymore." After an agent's work
+is merged and gated, remove its worktree and branch. The six older branches (`t030`, `t032`, `t033`,
+`worktree-agent-a666...`, `-a8dd...`, `-af59...`) were asked about again at the end of the session: see the
+last message for his answer.
+
+**Next, in this order:**
+1. A device test for whole turkey (Food details, the issue below 225F, 100/115/130%) and screenshots for him.
+2. T-037 prep: emulator images for Android 14 and 15, the `alarm` device test on each.
+3. Phone (list every action, wait for his yes): rebuild and reinstall the dev build, T-016 phone half, T-017
+   check, T-065 Send to developer with a real email app, T-031 with two phones.
+4. T-034 parity review, T-035 security pass, T-036 data export, T-066 user README, T-064, T-038 upgrade test
+   and cut 0.3.0 (the first GitHub release is done with Jason step by step).
+5. Small open points for him: the Serve alert reads "Serve Serve." (title and text); turkey at 275F plans
+   21.7 min per lb against his 15 to 20.
+
+## Restart, eighteenth session (written Sunday 2026-11-15, 5:15 PM)
 
 Everything is committed on `main`, 55 commits ahead of `origin/main`, **not pushed** (Jason pushes when he
 says so). The gate passed on this `main`. Emulator and Metro are stopped. No agents, no worktrees. The

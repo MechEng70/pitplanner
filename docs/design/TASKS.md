@@ -1138,7 +1138,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
       before: "Prep the brisket.", "Prep the tri-tip.", "Prep the ribs.", "Prep the pork butt.", "Prep the
       chicken breasts.", "Prep the turkey." (30 min ahead, not sourced); the two that come with a chosen option
       read "Brine the chicken breasts." and "Dry brine the wings." He also said "C" (take the prep steps out
-      of every food), which does not match his words; built to the words, and asked him to confirm.
+      of every food), which did not match his words; built to the words. Confirmed by him afterwards: "just
+      say prep that ... prep brisket, prep chicken, prep turkey, prep ribs." The reminders stay.
       `engine/plan.test.ts` checks every prep label has that form.
     - The numbers that relate to the smoking stay as built, not sourced: weight default 12 lb, min 8, max 24,
       step 0.5, reference weight 12 lb; carve time 15 min; hold limit 60 min; grate space 12 sq in per lb;
@@ -1455,6 +1456,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   (`docs/fidelity/rn-debug-copied.png`, for Jason to judge: the address is now on its own line as a text
   button; "Address copied." stays until the screen closes, his choice 4A). The clipboard's contents are not
   read by the test. Not checked on a phone.
+- **Jason's look (2026-11-15, eighteenth session):** `rn-debug-copied.png` approved ("I think that looks fine").
 - **Jason's answers to the build's questions (2026-11-15, 4:15 PM):** (1) Fill in his address: a few lines
   of Kotlin in one of our own modules so the email app opens with the address as the recipient (no new
   dependency; needs a dev build rebuild and a device test). **To build.** SPEC section 6 already says so.
@@ -2092,6 +2094,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - The dev build ("Pit Planner dev") checks too, once a day, as built (Jason, 2026-11-15). Nothing to change.
 
 ### T-033 Release docs: notes, install guide, releasing checklist
+- **Answers put in (2026-11-15, eighteenth session):** INSTALL.md has the contact address (the one the debug
+  screen uses) and a line on betas; RELEASING.md says testers get betas, describes the update check as built
+  (T-032) in place of the "Not built yet" note, and names where the contact address lives. TECH-DESIGN now
+  lists `pit-share`'s `sendFile` and the clipboard service. Left: INSTALL.md followed once on his wife's phone.
 - **Jason's review and answers (2026-11-15, 5:05 PM):** the four files are approved, no comments ("good to
   go"). Testers' phones: one has the latest Samsung; test Android 14, 15 and 16 (his own phone is 16). Testers
   get betas too (he sends a beta; the app then offers later betas and the final). A failed install: contact
@@ -2201,6 +2207,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   time order: `tools/device/out/fast-cook-1.png` to `-4.png` (not committed; `out/` is git-ignored). Passes
   at 115%. On the emulator the full-screen alert permission is off, so every picture shows "Alerts are off.
   Steps may not ring." (the alerts do ring).
+- **Jason's look (2026-11-15):** the four fast cook strips approved ("all the fast cook stuff I think look
+  pretty good").
 - **Tests:** unit test for the scaling (pure); a device test on the emulator.
 - **Real phone:** no (Jason, 2026-11-15: emulator only).
 

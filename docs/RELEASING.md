@@ -40,7 +40,8 @@ all of these, so 0.2.0 upgrades in place.
 Which kind to use:
 
 - **alpha:** internal builds, not given to anyone. Built with `--version` (below), from any branch state.
-- **beta, rc:** builds for testers. Published on GitHub as a prerelease.
+- **beta, rc:** builds for testers. Published on GitHub as a prerelease. Testers get betas (Jason,
+  2026-11-15): send a tester the beta APK once; from then on their app offers later betas and the final.
 - **final:** published as a normal release.
 
 ## 1. Before you start
@@ -152,16 +153,18 @@ is listed first and waits for his yes.
       `gh release create v<version> release/pitplanner-<version>.apk --notes-file docs/release-notes/<version>.md`
 - [ ] Alpha, beta or rc given to testers: the same command with `--prerelease`.
 
-Why it matters: the in-app update check asks GitHub for `/releases/latest`, which leaves out prereleases
-and drafts. A final release must not be marked prerelease, or people on 0.2.0 never see "Update available".
+Why it matters: 0.2.0's update check asks GitHub for `/releases/latest`, which leaves out prereleases and
+drafts. A final release must not be marked prerelease, or people on 0.2.0 never see "Update available".
 Betas are marked prerelease so they do not show up for everyone.
+
+From 0.3.0 on (T-032, `src/lib/update.ts`) the app reads the list of releases, at most once a day, on
+launch and on resume. An install of a final release is offered final releases only. An install of a
+prerelease (alpha, beta, rc) is offered anything newer: a later beta, an rc or the final.
 
 The update check links to the first release file whose name ends in `.apk`, so attach exactly one APK.
 
-Not built yet (T-032): the update check in the rebuilt app. `src/lib/update.ts` has the logic and Gear has
-the "Update available" row, but nothing in the app calls the check yet. Showing prereleases to testers is
-also T-032. Today the version compare ignores the `-beta.N` part, so a phone on `0.3.0-beta.1` would not be
-told about `0.3.0`.
+If an install fails, the tester writes to the address in `docs/INSTALL.md` (the one the debug screen uses,
+`DEVELOPER_EMAIL` in `src/lib/debugReport.ts`). Keep the two the same.
 
 A Google Drive copy of the APK is optional.
 
