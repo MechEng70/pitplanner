@@ -36,7 +36,7 @@
           "sliceMin": 20,
           "pull": { "label": "Check tenderness: pull at 200-205F when the probe slides in like butter.", "tempF": [200, 205], "checkStep": true },
           "holdLimitMin": 240,
-          "prep": [ { "leadMin": 75, "label": "Trim brisket, binder and rub. Let it sit while the smoker comes up." } ],
+          "prep": [ { "leadMin": 75, "label": "Prep the brisket." } ],
           "footprintSqInPerUnit": 16
         }
       ]
@@ -62,7 +62,7 @@
           "sliceMin": 5,
           "pull": { "label": "Tri-tip off at 130-135F (medium-rare, below the USDA 145F minimum) or 145F.", "tempF": [130, 145] },
           "holdLimitMin": 30,
-          "prep": [ { "leadMin": 60, "label": "Tri-tip: binder and rub, rest at room temp." } ],
+          "prep": [ { "leadMin": 60, "label": "Prep the tri-tip." } ],
           "footprintSqInPerUnit": 18
         },
         {
@@ -79,7 +79,7 @@
           "sliceMin": 10,
           "pull": { "label": "Check tenderness: pull at 200-205F.", "tempF": [200, 205], "checkStep": true },
           "holdLimitMin": 120,
-          "prep": [ { "leadMin": 60, "label": "Tri-tip: binder and rub, rest at room temp." } ],
+          "prep": [ { "leadMin": 60, "label": "Prep the tri-tip." } ],
           "footprintSqInPerUnit": 18
         }
       ]
@@ -109,7 +109,7 @@
         "sliceMin": 10,
         "pull": { "label": "Check the ribs: done when a probe slides between the bones (about 195-203F) and the rack bends.", "tempF": [195, 203], "checkStep": true },
         "holdLimitMin": 60,
-        "prep": [ { "leadMin": 45, "label": "Ribs: pull the membrane, binder, rub." } ]
+        "prep": [ { "leadMin": 45, "label": "Prep the ribs." } ]
       }
     },
     {
@@ -132,7 +132,7 @@
         "sliceMin": 10,
         "pull": { "label": "Check the ribs: probe slides between the bones and the rack bends.", "tempF": [195, 203], "checkStep": true },
         "holdLimitMin": 60,
-        "prep": [ { "leadMin": 45, "label": "Ribs: pull the membrane, binder, rub." } ]
+        "prep": [ { "leadMin": 45, "label": "Prep the ribs." } ]
       }
     },
     {
@@ -157,7 +157,7 @@
           "sliceMin": 15,
           "pull": { "label": "Check tenderness: pull at 200-205F when the bone wiggles free.", "tempF": [200, 205], "checkStep": true },
           "holdLimitMin": 240,
-          "prep": [ { "leadMin": 60, "label": "Pork butt: binder and rub." } ],
+          "prep": [ { "leadMin": 60, "label": "Prep the pork butt." } ],
           "footprintSqInPerUnit": 7
         }
       ]
@@ -179,13 +179,13 @@
           "thickness": { "label": "Thickness", "default": "pounded", "choices": {
             "pounded": { "label": "Pounded to 3/4 in", "short": "pounded", "note": "Thin breasts barely carry over, so pull close to 165F.", "minutes": { "griddle": 12, "smoker": 80 }, "pullF": [163, 165] },
             "whole": { "label": "As-is, about 1.25 in", "short": "as-is", "note": "Thick breasts carry over a few degrees. Confirm 165F after the rest.", "minutes": { "griddle": 20, "smoker": 110 }, "pullF": [160, 162] } } },
-          "brine": { "label": "Prep", "default": "none", "choices": { "none": { "label": "No brine" }, "wet": { "label": "Wet brine 1-2 hr", "prep": { "leadMin": 150, "label": "Brine chicken breasts (about 5%), 1-2 hr max, then pat dry." } } } }
+          "brine": { "label": "Prep", "default": "none", "choices": { "none": { "label": "No brine" }, "wet": { "label": "Wet brine 1-2 hr", "prep": { "leadMin": 150, "label": "Brine the chicken breasts." } } } }
         },
         "restMin": { "default": 8, "min": 5 },
         "sliceMin": 0,
         "pull": { "label": "Pull chicken breasts at the target temp and tent 5-10 min. Confirm 165F in the thickest part.", "tempF": [160, 165] },
         "holdLimitMin": 20,
-        "prep": [ { "leadMin": 30, "label": "Pat breasts dry and season (pound to an even thickness if chosen)." } ],
+        "prep": [ { "leadMin": 30, "label": "Prep the chicken breasts." } ],
         "footprintSqInPerUnit": 22
       }
     },
@@ -206,7 +206,7 @@
           "phases": [ { "id": "cook", "fixedMin": 28, "temp": 350, "label": "Wings on the griddle, medium (about 350F surface). Turn every 5 min; dome for the first 15.", "short": "Griddle" } ] }
       ],
       "shared": {
-        "options": { "drybrine": { "label": "Dry brine ahead", "default": "yes", "choices": { "yes": { "label": "Yes", "prep": { "leadMin": 480, "label": "Dry brine wings: kosher salt + aluminum-free baking powder, on a rack, uncovered in the fridge (8-24 hr ahead)." } }, "no": { "label": "No" } } } },
+        "options": { "drybrine": { "label": "Dry brine ahead", "default": "yes", "choices": { "yes": { "label": "Yes", "prep": { "leadMin": 480, "label": "Dry brine the wings." } }, "no": { "label": "No" } } } },
         "restMin": { "default": 5, "min": 0 },
         "sliceMin": 0,
         "pull": { "label": "Pull wings at 175-185F (165F is the safe minimum). Hold UNCOVERED; sauce right before serving.", "tempF": [175, 185] },
@@ -219,7 +219,7 @@
       "id": "turkey",
       "name": "Whole turkey",
       "group": "Turkey",
-      "$comment": "T-059. Unstuffed, whole. Food-safety numbers (done temp, smoker temp floor, rate) each have a source below; engine/rules.test.ts fails without one. The shared tempModel gives 30 min per lb at 225F, 25.5 at 250F, 21.7 at 275F, 18.4 at 300F and 15.7 at 325F. No size limit: none was given (Jason, 2026-11-15). No prep step: how to prep is the cook's own business (Jason, 2026-11-15). rateHint starts at the low end of the cited range, so a rate for a hotter smoker is not flagged as unusual.",
+      "$comment": "T-059. Unstuffed, whole. Food-safety numbers (done temp, smoker temp floor, rate) each have a source below; engine/rules.test.ts fails without one. The shared tempModel gives 30 min per lb at 225F, 25.5 at 250F, 21.7 at 275F, 18.4 at 300F and 15.7 at 325F. No size limit: none was given (Jason, 2026-11-15). Prep steps say when, not how (Jason, 2026-11-15); the 30 min lead is not sourced. rateHint starts at the low end of the cited range, so a rate for a hotter smoker is not flagged as unusual.",
       "rateHint": [0.33, 1.6],
       "sources": [
         { "cite": "USDA FSIS (fsis.usda.gov), read by Jason 2026-11-15", "covers": ["doneTemp", "minPitTemp", "rate"], "says": "Smoker air at 225F to 300F. 20 to 30 min per lb. Done at 165F in the innermost thigh, the innermost wing and the thickest part of the breast." },
@@ -240,6 +240,7 @@
           "sliceMin": 15,
           "pull": { "label": "Check the turkey: done at 165F in the innermost thigh, the innermost wing and the thickest part of the breast.", "tempF": [165, 165], "checkStep": true },
           "holdLimitMin": 60,
+          "prep": [ { "leadMin": 30, "label": "Prep the turkey." } ],
           "footprintSqInPerUnit": 12
         }
       ]

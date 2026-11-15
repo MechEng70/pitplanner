@@ -1743,8 +1743,17 @@ JSON
 # until Serve, which opens Cook finished. Checked: the Cook tab opens on the first step with the phone holding
 # the cook's alarms; alerts ring while it runs, in the plan's order; no keep-or-move question comes up when
 # every Done is on time; Cook finished shows; ending the cook leaves no alarms.
+# For Jason to read (he judges the fast cook from pictures, 2026-11-15): a screenshot of the Cook tab at every
+# step as it comes due, and of the notification shade each time a new alert shows, put side by side in time
+# order as out/fast-cook-1.png, -2.png ... (six pictures a strip).
 test_fast_cook() {
-  local s="$1" dir="$2" ok=1 n i title step="" last="" finished="" asked=0 dones=0 rang=() t r
+  local s="$1" dir="$2" ok=1 n i title step="" last="" finished="" asked=0 dones=0 rang=() t r pics=() k=0 f at
+  rm -f "$dir"/fast-step-*.png "$OUT"/fast-cook-*.png
+  pic() { # $1: the label under which the picture goes in the strip
+    k=$((k + 1))
+    f=$(printf '%s/fast-step-%02d.png' "$dir" "$k")
+    shot "$f" && pics+=("$1=$f")
+  }
   if ! is_emulator; then result "SKIP  fast-cook $s: emulator only"; return; fi
   rings() { # titles of the app's step alerts in the shade now
     A shell dumpsys notification --noredact </dev/null | grep -A60 "NotificationRecord.*pkg=$PKG " |
@@ -1762,12 +1771,24 @@ test_fast_cook() {
     shot "$dir/fast-start.png"
   else plan_miss "the Cook tab with the fast cook running"; fi
 
-  # About 3 minutes of cook; each look takes a few seconds. Stop at Cook finished or after 5 minutes.
+  # About 3 minutes of cook; each look and picture takes a few seconds. Stop at Cook finished or after 7 minutes.
   t=$(date +%s)
   for i in $(seq 150); do
-    [ $(($(date +%s) - t)) -lt 300 ] || break
+    [ $(($(date +%s) - t)) -lt 420 ] || break
     while IFS= read -r r; do
-      [ -n "$r" ] && [[ " ${rang[*]/#/|} " != *"|$r "* ]] && { rang+=("$r"); log "    alert in the shade at +$(($(date +%s) - t)) s: $r"; }
+      [ -n "$r" ] && [[ " ${rang[*]/#/|} " != *"|$r "* ]] && {
+        rang+=("$r")
+        at=$(($(date +%s) - t))
+        log "    alert in the shade at +$at s: $r"
+        # The shade, taken raw: `shot` reads the screen first, and reading it closes the shade (lib.sh dump).
+        A shell cmd statusbar expand-notifications </dev/null
+        sleep 2
+        k=$((k + 1))
+        f=$(printf '%s/fast-step-%02d.png' "$dir" "$k")
+        A exec-out screencap -p >"$f" && python3 -I crop.py "$(status_bar_px)" "$f" && pics+=("+$at s alert: ${r:0:28}=$f")
+        A shell cmd statusbar collapse </dev/null
+        sleep 1
+      }
     done < <(rings)
     look "$dir/fast-run.xml" || continue
     if says "$dir/fast-run.xml" "Cook finished"; then finished=1; break; fi
@@ -1779,7 +1800,11 @@ test_fast_cook() {
     title=$(next_title "$dir/fast-run.xml")
     step=$(sed -E 's/ (in [0-9].*|now|[0-9][^,]* overdue)$//' <<<"$title")
     if [[ "$title" =~ (now|overdue)$ ]]; then
-      [ "$step" = "$last" ] || log "    +$(($(date +%s) - t)) s due: $step"
+      if [ "$step" != "$last" ]; then
+        at=$(($(date +%s) - t))
+        log "    +$at s due: $step"
+        pic "+$at s ${step:0:34}"
+      fi
       last="$step"
       tap "Done" 1 >/dev/null
       dones=$((dones + 1))
@@ -1791,7 +1816,12 @@ test_fast_cook() {
       says "$dir/fast-run.xml" "$want" || plan_miss "$want (Cook finished)"
     done
     shot "$dir/fast-finished.png"
-  else plan_miss "Cook finished within 5 minutes (Next up is \"$title\" after $dones Done tap(s))"; fi
+    pics+=("Cook finished=$dir/fast-finished.png")
+  else plan_miss "Cook finished within 7 minutes (Next up is \"$title\" after $dones Done tap(s))"; fi
+  for ((i = 0; i < ${#pics[@]}; i += 6)); do
+    python3 -I compose.py "$OUT/fast-cook-$((i / 6 + 1)).png" "${pics[@]:i:6}" || plan_miss "the picture strip $((i / 6 + 1))"
+  done
+  log "    pictures: $(ls "$OUT"/fast-cook-*.png 2>/dev/null | tr '\n' ' ')"
   [ ${#rang[@]} -ge 2 ] || plan_miss "step alerts ringing while the fast cook ran (saw ${#rang[@]})"
   [ "$asked" = 0 ] || plan_miss "no keep-or-move question with every Done on time (asked $asked time(s))"
 

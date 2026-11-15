@@ -343,11 +343,26 @@ test('turkey: 12 lb at 225F is 6 hr on heat, a 30 min rest, fire 20 min ahead an
   assert.deepEqual(p.warnings, []);
 });
 
-test("turkey: no prep step (how to prep is the cook's own business; Jason, 2026-11-15)", () => {
+test('prep steps say when, not how (Jason, 2026-11-15): a plain "Prep the ..." reminder', () => {
   assert.deepEqual(
-    turkeyPlan().events.filter(e => e.kind === 'prep'),
-    [],
+    turkeyPlan()
+      .events.filter(e => e.kind === 'prep')
+      .map(e => [e.label, e.alarm]),
+    [['Prep the turkey.', false]],
   );
+  // Every prep label in the rules, a method's own or one that comes with a chosen option.
+  const labels: string[] = [];
+  const walk = (v: unknown, inPrep: boolean): void => {
+    if (Array.isArray(v)) v.forEach(x => walk(x, inPrep));
+    else if (v && typeof v === 'object')
+      for (const [k, x] of Object.entries(v)) {
+        if (inPrep && k === 'label' && typeof x === 'string') labels.push(x);
+        else walk(x, k === 'prep');
+      }
+  };
+  walk(rules.foods, false);
+  assert.ok(labels.length >= 10, `${labels.length} prep labels found`);
+  for (const l of labels) assert.match(l, /^(Prep|Brine|Dry brine) the [a-z -]+\.$/);
 });
 
 test("rate hint: turkey's own usual range starts at 0.33 hr/lb, other foods keep the shared one", () => {

@@ -1133,8 +1133,13 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     - Icon: turkey shows the smoker flame like every other food (he weighed a drumstick, a chicken, a cow,
       then "maybe we just show the smoker flame"). The drawn `TurkeyIcon` was taken out again.
     - Prep: "We're not really telling them how to prep their turkey or prep their ribs ... we're just doing
-      anything that relates to the actual smoking process." Turkey has no prep step. The other foods' prep
-      steps are as they were; whether they change is an open question to him.
+      anything that relates to the actual smoking process." Then (same session): "Take the how-tos out. Just
+      say prep brisket, prep breasts." Every food's prep step is now a plain reminder at the same time as
+      before: "Prep the brisket.", "Prep the tri-tip.", "Prep the ribs.", "Prep the pork butt.", "Prep the
+      chicken breasts.", "Prep the turkey." (30 min ahead, not sourced); the two that come with a chosen option
+      read "Brine the chicken breasts." and "Dry brine the wings." He also said "C" (take the prep steps out
+      of every food), which does not match his words; built to the words, and asked him to confirm.
+      `engine/plan.test.ts` checks every prep label has that form.
     - The numbers that relate to the smoking stay as built, not sourced: weight default 12 lb, min 8, max 24,
       step 0.5, reference weight 12 lb; carve time 15 min; hold limit 60 min; grate space 12 sq in per lb;
       group "Turkey"; smoke step "Turkey on the smoker. Probe in the thickest part of the breast."
@@ -2178,6 +2183,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Jason (2026-11-15, eighteenth session):** "that dev thing is just for testing. So maybe we only run that on
   an emulator then": no phone run. He wants to step through it and see how things happen; how is open (a
   visible emulator window he drives, or screenshots of every step from the device test).
+- **Jason (2026-11-15, later):** "You drive it, and then I read it." Built: the `fast-cook` device test saves
+  the Cook tab at every step as it comes due and the notification shade at every new alert, side by side in
+  time order: `tools/device/out/fast-cook-1.png` to `-4.png` (not committed; `out/` is git-ignored). Passes
+  at 115%. On the emulator the full-screen alert permission is off, so every picture shows "Alerts are off.
+  Steps may not ring." (the alerts do ring).
 - **Tests:** unit test for the scaling (pure); a device test on the emulator.
 - **Real phone:** no (Jason, 2026-11-15: emulator only).
 
