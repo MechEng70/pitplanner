@@ -83,9 +83,17 @@ export interface LegacyStore {
  */
 export type PickDateTime = (initial: number) => Promise<number | null>;
 
+/** A .pitplan handed to the app: its text (and file name when known), or why it could not be read. */
+export interface OpenedPlanFile {
+  text?: string;
+  name?: string;
+  error?: string;
+}
+
 export interface ShareService {
   sharePlanFile(name: string, text: string): Promise<void>;
-  onPlanOpened(fn: (file: { text?: string; name?: string; error?: string }) => void): Unsubscribe;
+  /** Each opened file is handed over once; one that opened the app from cold goes to the first listener. */
+  onPlanOpened(fn: (file: OpenedPlanFile) => void): Unsubscribe;
 }
 
 export interface AppLinks {

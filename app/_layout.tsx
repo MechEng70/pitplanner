@@ -8,7 +8,7 @@ import '../global.css';
 import Constants from 'expo-constants';
 import { Stack, ThemeProvider, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { LogBox } from 'react-native';
 import { openAppDb, rawDatabaseFiles } from '@/db/appDb';
 import type { Db } from '@/db/db';
@@ -24,7 +24,9 @@ import { onUncaughtError } from '@/platform/errors';
 import { getJson } from '@/platform/http';
 import { legacyStore } from '@/platform/legacy';
 import { onResume } from '@/platform/resume';
+import { shareService } from '@/platform/share';
 import { shareFilesAsTar, shareTextFile } from '@/platform/shareFile';
+import { OpenedPlanProvider } from '@/screens/shared/OpenedPlan';
 import { ImportNotice } from '@/screens/shared/ImportNotice';
 import { MigrationErrorScreen } from '@/screens/shared/MigrationError';
 import { navTheme } from '@/theme/navTheme';
@@ -64,6 +66,24 @@ function UpdateCheck() {
   return null;
 }
 
+/** A .pitplan opened from another app (T-030): the Plan tab opens and shows the Shared plan sheet. */
+function OpenedPlans({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  return (
+    <OpenedPlanProvider
+      onPlanOpened={shareService.onPlanOpened}
+      onArrive={() => {
+        // Before the navigator is ready (cold start) this throws; the file is kept and shows when Plan opens.
+        try {
+          router.navigate('/plan');
+        } catch {}
+      }}
+    >
+      {children}
+    </OpenedPlanProvider>
+  );
+}
+
 export default function RootLayout() {
   const [boot] = useState(() => openAppDb(__DEV__));
   // First start of 0.3.0 over 0.2.0: bring the old data across before the store loads (once; T-012).
@@ -82,9 +102,11 @@ export default function RootLayout() {
           <AlarmWiring />
           <EventLogWiring />
           <UpdateCheck />
-          <Stack
-            screenOptions={{ headerShown: false, contentStyle: { backgroundColor: navTheme.colors.background } }}
-          />
+          <OpenedPlans>
+            <Stack
+              screenOptions={{ headerShown: false, contentStyle: { backgroundColor: navTheme.colors.background } }}
+            />
+          </OpenedPlans>
           {notice ? <ImportNotice title={notice.title} body={notice.body} onClose={closeNotice} /> : null}
         </StoreProvider>
       ) : boot.ok ? null : (

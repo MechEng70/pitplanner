@@ -2,7 +2,8 @@
 // keep only what this app knows, map foods onto the receiver's cookers, pick a serve date.
 // Pure: rules are passed in (tests can't import rules.ts), no storage, no clock.
 
-import type { Cookers, ItemInput } from '../../engine/types.ts';
+import { buildPlan } from '../../engine/plan.ts';
+import type { Cookers, ItemInput, PlanInput, Warning } from '../../engine/types.ts';
 import { resolveMethod, type ResolvedMethod, type RuleFood, type Rules } from '../../engine/rules.ts';
 import { isSettable, settableTemps } from '../../engine/temps.ts';
 
@@ -129,6 +130,40 @@ export function mapToCookers(
     return { ...it, methodId: alt.id, options: cleanOptions(alt, it.options), restMin: alt.restMin.default };
   });
   return { items: out, moves, gaps };
+}
+
+/** A shared plan as the receiver will cook it: on their cookers, at a temp their smoker can be set to. */
+export interface ImportedPlan {
+  items: ItemInput[];
+  pitTempF: number;
+  moves: CookerMove[];
+  gaps: CookerGap[];
+  /** Ids of the foods that changed cooker. */
+  movedIds: string[];
+}
+
+export function importPlan(rules: Rules, shared: SharedPlan, cookers: Cookers): ImportedPlan {
+  const mapped = mapToCookers(rules, shared.items, cookers);
+  const movedIds = mapped.items.filter((it, i) => it.methodId !== shared.items[i]?.methodId).map(it => it.id);
+  return { ...mapped, pitTempF: fitPitTemp(shared.pitTempF, cookers), movedIds };
+}
+
+/**
+ * Conflicts the import itself made (T-030): the warnings of the receiver's plan that name a food which
+ * changed cooker. Breasts moved off a griddle the receiver does not have now share the smoker with the rest
+ * of the menu, so the plan can need two temps at once or hold a food too long. Notes (level info) and
+ * warnings about foods that stayed where the sender had them are not counted. `input` is the plan as it
+ * will be built on the receiver's phone (their cookers, rates and history).
+ */
+export function importConflicts(rules: Rules, input: PlanInput, movedIds: readonly string[]): Warning[] {
+  if (movedIds.length === 0) return [];
+  let warnings: Warning[];
+  try {
+    warnings = buildPlan(rules, input).warnings;
+  } catch {
+    return [];
+  }
+  return warnings.filter(w => w.level === 'warn' && (w.itemIds ?? []).some(id => movedIds.includes(id)));
 }
 
 /** The shared set point, or the nearest one the receiver's smoker can be set to (failure mode 12). */

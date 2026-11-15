@@ -28,7 +28,7 @@ mentions in CLAUDE.md are rewritten to match this file in T-002.
 | Files and sharing | `expo-file-system`, `expo-sharing`, intent filters via config plugin | `.pitplan` export and open. |
 | Fonts | `expo-font` + Roboto (`@expo-google-fonts/roboto`) | Bundled. |
 | Date and time | `@react-native-community/datetimepicker` 9.2 (added in T-017), only in `src/platform/dateTime.ts` | Android's own date dialog, then its time dialog (`PickDateTime`); what 0.2.0's `datetime-local` input opened. Dark through the app theme; no config plugin. |
-| Native code | Expo Modules API (Kotlin) in `modules/` | `pit-alarms` (setAlarmClock, receivers, notifications), `pit-legacy` (one-time read of 0.2.0 data). iOS implementations later behind the same TS interfaces. |
+| Native code | Expo Modules API (Kotlin) in `modules/` | `pit-alarms` (setAlarmClock, receivers, notifications), `pit-legacy` (one-time read of 0.2.0 data), `pit-share` (an opened `.pitplan`, read with a 256 KB cap). iOS implementations later behind the same TS interfaces. |
 | Engine | `engine/` pure TypeScript, unchanged | Runs in Metro and in `node --test`. |
 | Build | Continuous Native Generation: `npx expo prebuild` generates `android/`; local Gradle signed release | No EAS. `android/` is generated and git-ignored; native config lives in `app.config.ts`, `plugins/` and `modules/`. |
 | Server | none | No backend and no Redis: there is no server to run it on, and Redis does not run on a phone. All data is on the phone; Home Assistant is the user's own server and optional. |
@@ -48,6 +48,7 @@ src/
 modules/
   pit-alarms/           Expo module: alarm scheduler, receivers, notifications (+ JUnit tests)
   pit-legacy/           Expo module: reads the 0.2.0 Capacitor SharedPreferences once (+ JUnit tests)
+  pit-share/            Expo module: the file of a VIEW/SEND intent, read with a 256 KB cap (+ JUnit tests)
 plugins/                config plugins: release signing, intent filters, network security config
 engine/  data/          unchanged
 legacy/                 the Capacitor app (old src/ UI, android/ sources, capacitor.config.ts, vite config,
@@ -129,7 +130,7 @@ export interface AppLinks {
 | AlarmService, PermissionService | `modules/pit-alarms` (Kotlin port of the 0.2.0 plugin) | records calls | Swift module, same JS API: `UNUserNotificationCenter` time-sensitive alerts, AlarmKit where available; needs a Mac + Xcode and its own alarm review |
 | SecretStore | `expo-secure-store` | in-memory | `expo-secure-store` (Keychain), no change |
 | Storage (`Db`) | `expo-sqlite` | `better-sqlite3` in Jest | `expo-sqlite`, no change |
-| ShareService | `expo-sharing` + `expo-file-system` (reads `content://`), intent filters by config plugin, 256 KB cap | in-memory | `expo-sharing`; `.pitplan` document type via config plugin |
+| ShareService | Out: `expo-sharing` + `expo-file-system`. In (T-030): `modules/pit-share` reads the intent's `content://` or `file://` URI with a 256 KB cap (`expo-file-system` cannot see a SEND intent's file or cap a read); intent filters by `plugins/withPitplanIntents` | in-memory | `expo-sharing`; `.pitplan` document type via config plugin |
 | AppLinks | `expo-linking`, `expo-web-browser` (Custom Tab auth session), `AppState` | scripted | same packages |
 
 ## 5. Data model (SQLite)
@@ -355,7 +356,7 @@ Plan of record `docs/HA-INTEGRATION.md`, survey `docs/ha-entities.md`. Changes f
 | SQLite database | App-private; no secrets. Android auto-backup stays on for it (cook history matters); T-035 checks that secure-store entries are excluded from backup. |
 | `.pitplan` import | Untrusted: 256 KB cap, validated by `src/lib/sharedPlan.ts`, numbers clamped, unknown foods dropped. |
 | Network | HTTPS only for remote HA; anonymous GitHub update check. |
-| Exported components | Main activity only (launcher, `.pitplan` VIEW/SEND, `pitplanner://`); receivers `exported=false`. |
+| Exported components | Main activity only (launcher, `.pitplan` VIEW/SEND, `pitplanner://`); receivers `exported=false`. The `.pitplan` filters (`plugins/pitplanIntents.ts`): VIEW of `content://`/`file://` typed JSON, octet-stream or x-pitplan; VIEW of a path ending `.pitplan`; SEND of those three types. Category DEFAULT only, no BROWSABLE. |
 | Tool tokens | Snyk and GitHub tokens from the user's own CLI config only. |
 | Static checks | Semgrep + Snyk in `npm run check`; exceptions only via `SECURITY-EXCEPTIONS.md`. |
 

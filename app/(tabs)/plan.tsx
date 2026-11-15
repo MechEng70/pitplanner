@@ -5,12 +5,15 @@ import { permissionService } from '@/platform/permissions';
 import { onResume } from '@/platform/resume';
 import { sharePlanFile } from '@/platform/share';
 import { PlanTab } from '@/screens/plan/PlanTab';
+import { useOpenedPlan } from '@/screens/shared/OpenedPlan';
 
 export default function PlanRoute() {
   // Dev builds only: the plan seed (app/dev/plan.tsx) can open food details for the device tests.
   const { edit, add } = useLocalSearchParams<{ edit?: string; add?: string }>();
   const open = __DEV__ && (edit || add) ? { edit, add } : undefined;
   const router = useRouter();
+  // A .pitplan opened from another app (T-030), held by the root layout until this tab has shown it.
+  const opened = useOpenedPlan();
   return (
     <PlanTab
       key={`${edit ?? ''}:${add ?? ''}`}
@@ -20,6 +23,8 @@ export default function PlanRoute() {
       onCookStarted={() => router.navigate('/cook')}
       onCookAgain={() => router.navigate({ pathname: '/gear', params: { history: 'plan' } })}
       sharePlanFile={sharePlanFile}
+      opened={opened.file}
+      onOpenedDone={opened.done}
       open={open}
     />
   );

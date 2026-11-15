@@ -1,6 +1,6 @@
 // The Plan tab with what opens from it: the smoker temp menu, Add food and the Conflicts sheet (T-018) and
-// food details (T-019), Start cook with its alert check (T-021) and the share icon (T-029). Past plans
-// (T-028) join with their task.
+// food details (T-019), Start cook with its alert check (T-021), the share icon (T-029) and a shared plan
+// opened from another app (T-030). Past plans (T-028) join with their task.
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { HostInstance } from 'react-native';
 import { buildPlan } from '../../../engine/plan';
@@ -9,12 +9,14 @@ import type { Anchor } from '@/components/kit';
 import { newCook } from '@/lib/cook';
 import { newItemId } from '@/lib/itemId';
 import { method, newItem, rules } from '@/lib/rules';
+import { importConflicts, parsePitPlan, type ImportedPlan, type SharedPlan } from '@/lib/sharedPlan';
 import { planInput, useStore } from '@/lib/store';
 import { restorableFood } from '@/lib/uiState';
 import { PLAN_FILE_NAME, pitPlanText, toPitPlan } from '@/lib/pitPlanFile';
 import {
   allGranted,
   type AppLinks,
+  type OpenedPlanFile,
   type PermissionService,
   type PickDateTime,
   type ShareService,
@@ -24,6 +26,7 @@ import { FoodEdit } from './FoodEdit';
 import { FoodPick } from './FoodPick';
 import { IssuesSheet } from './IssuesSheet';
 import { PlanScreen } from './PlanScreen';
+import { openError, SharedPlanSheet } from './SharedPlanSheet';
 import { StartCheckSheet } from './StartCheckSheet';
 import { TempMenu } from './TempMenu';
 
@@ -47,6 +50,9 @@ function knownMethod(foodId: string, methodId: string): boolean {
 }
 const known = (it: ItemInput) => knownMethod(it.foodId, it.methodId);
 
+/** The sheet for a shared file that could not be opened says why and nothing else (0.2.0 SharedPlanError). */
+export const OPEN_FAILED_TITLE = 'Open shared plan';
+
 export const SHARE_FAILED = { title: "Couldn't share", body: 'The plan was not shared. Try again.' };
 
 export interface PlanTabProps {
@@ -60,6 +66,10 @@ export interface PlanTabProps {
   onCookAgain?: () => void;
   /** Hands the .pitplan file to the share sheet (T-029). Without it the share icon does nothing. */
   sharePlanFile?: ShareService['sharePlanFile'];
+  /** A .pitplan file opened from another app (T-030): the Shared plan sheet shows over the tab until done. */
+  opened?: OpenedPlanFile | null;
+  /** The opened file was used or its sheet closed. */
+  onOpenedDone?: () => void;
   now?: () => number;
   /** Open food details at once: for the item with this id, or for a new food of this kind (dev seed links). */
   open?: { edit?: string; add?: string };
@@ -72,6 +82,8 @@ export function PlanTab({
   onCookStarted,
   onCookAgain,
   sharePlanFile,
+  opened,
+  onOpenedDone,
   now = Date.now,
   open,
 }: PlanTabProps) {
@@ -180,6 +192,31 @@ export function PlanTab({
     }
   };
 
+  // A shared plan from another app (T-030). The file is untrusted: `parsePitPlan` keeps only what the rules
+  // know and gives every food a new id; nothing else in the file is used.
+  const draftIds = draft.items.map(i => i.id);
+  const incoming = useMemo((): SharedPlan | { error: string } | null => {
+    if (!opened) return null;
+    if (opened.text == null) return { error: openError(opened.error ?? '') };
+    const ids = [...draftIds];
+    return parsePitPlan(rules, opened.text, () => {
+      const id = newItemId(ids, now());
+      ids.push(id);
+      return id;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- read once per file, not on every draft change.
+  }, [opened]);
+  const closeOpened = () => onOpenedDone?.();
+  // Use this plan replaces the draft. If moving a food to a cooker this phone has made a conflict, the
+  // Conflicts sheet opens with its fixes; otherwise the plan shows.
+  const applyShared = (imported: ImportedPlan, serveAt: number) => {
+    const next = { mode: 'readyBy' as const, at: serveAt, pitTempF: imported.pitTempF, items: imported.items };
+    setDraft(() => next);
+    ui.write({ food: null });
+    const conflicts = importConflicts(rules, { ...input, ...next }, imported.movedIds);
+    setLayer(conflicts.length > 0 ? { kind: 'issues' } : null);
+  };
+
   return (
     <>
       <PlanScreen
@@ -193,6 +230,18 @@ export function PlanTab({
         onShare={share}
         onCookAgain={onCookAgain}
       />
+      {incoming && 'error' in incoming ? (
+        <ImportNotice title={OPEN_FAILED_TITLE} body={incoming.error} onClose={closeOpened} />
+      ) : null}
+      {incoming && !('error' in incoming) ? (
+        <SharedPlanSheet
+          shared={incoming}
+          pickDateTime={pickDateTime}
+          now={now}
+          onClose={closeOpened}
+          onUse={applyShared}
+        />
+      ) : null}
       {layer?.kind === 'shareFailed' ? (
         <ImportNotice title={SHARE_FAILED.title} body={SHARE_FAILED.body} onClose={close} />
       ) : null}

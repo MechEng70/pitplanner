@@ -1863,6 +1863,35 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 
 ### T-030 Open a shared plan (11), with the conflict fix
 - **Status:** todo
+- **Built (2026-11-15, branch `worktree-agent-a666a162b7613bda9`; unit-tested, not built or run on a device,
+  Kotlin tests not run, `npm run check` not run):**
+  - Intent filters: `plugins/pitplanIntents.ts` (pure) + `plugins/withPitplanIntents.ts` (TypeScript, as the
+    other plugins), on the main activity only: VIEW of `content://`/`file://` typed `application/json`,
+    `application/octet-stream` or `application/x-pitplan`; VIEW of a path ending `.pitplan`; SEND of the three
+    types. The 0.2.0 filters without BROWSABLE.
+  - Reading: new Expo module `modules/pit-share` (Kotlin `OpenedPlan`, `PitShareModule`; Robolectric tests).
+    It takes the URI from the launch intent or a new intent (VIEW data or SEND `EXTRA_STREAM`, `content`/`file`
+    only), reads at most 256 KB + 1 byte, and hands JS `{ text, name? }` or `{ error: 'tooBig' | 'unreadable' }`
+    once. Not `expo-file-system`: it cannot see a SEND intent's file and reads a file whole.
+  - `src/platform/share.ts`: `shareService` (`sharePlanFile` + `onPlanOpened`), the cap checked again in JS
+    (`checkOpened`, bytes not characters). `src/screens/shared/OpenedPlan.tsx` holds the file at the root and
+    opens the Plan tab; `app/+native-intent.ts` (`src/lib/systemPath.ts`) keeps Expo Router from treating the
+    file URI as a route. No new route.
+  - `SharedPlanSheet` (port of 0.2.0): menu, Serve on (offered day or the date and time pickers), the
+    receiver's smoker (read-only: one smoker per phone), "No griddle set up." notes, "Replaces the plan you
+    have now.". A file that cannot be opened shows the reason in the `ImportNotice` sheet with OK.
+  - Conflict fix: `importPlan` / `importConflicts` in `src/lib/sharedPlan.ts`. After Use this plan, if a food
+    that changed cooker is named in a warning (two temps at once, or a hold past its limit), the existing
+    Conflicts sheet opens with its fixes. Neither the mockup nor 0.2.0 shows a conflict inside the Shared plan
+    sheet, so nothing was added there (question for Jason below).
+  - **Questions for Jason:** (1) where the conflict shows: as built (Conflicts opens after Use this plan), or
+    inside the Shared plan sheet before Use this plan (needs a design), or only the orange Conflicts tile;
+    (2) first line says "Someone shared a Saturday plan." as 0.2.0 did (the file has no name in it; the
+    mockup says "Jason shared his Saturday plan."); (3) the too-big wording "That file is too big to be a Pit
+    Planner plan." (0.2.0 said "Could not read that file." for every failure); (4) the smoker field is
+    read-only with no chevron (the mockup shows one).
+  - **Device test:** see the T-030 report: a `file://` VIEW intent to a file in the app's own cache, and a
+    `content://` open from the Files app.
 - **Goal:** `.pitplan` opens the app (VIEW/SEND intent filters by config plugin); the file is read from
   `content://` with a 256 KB cap; the Shared plan sheet lets the receiver pick a date and cookers and maps or
   flags missing ones; if mapping creates a pit conflict, the sheet shows it and offers the fixes.

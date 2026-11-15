@@ -2,15 +2,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { buildPlan } from './plan.ts';
+import type { Cookers, GriddleProfile, ItemInput, PlanInput, SmokerProfile } from './types.ts';
 import {
   fitPitTemp,
+  importConflicts,
+  importPlan,
   mapToCookers,
   parsePitPlan,
   sharedLine,
   suggestServe,
   type SharedPlan,
 } from '../src/lib/sharedPlan.ts';
-import type { SmokerProfile } from './types.ts';
 
 const rules = JSON.parse(readFileSync(new URL('../data/foods.json', import.meta.url), 'utf8'));
 const id = (i: number) => `n${i}`;
@@ -114,6 +117,78 @@ test('share: import with no griddle moves breasts to the smoker (failure mode 13
   assert.deepEqual(m.gaps, []);
   const none = mapToCookers(rules, p.items, {});
   assert.equal(none.gaps.length, 3);
+});
+
+// T-030: a food moved off a cooker the receiver lacks now shares the smoker with the rest of the menu.
+const planOf = (items: ItemInput[], cookers: Cookers, pitTempF = 225): PlanInput => ({
+  mode: 'readyBy',
+  at: SERVE,
+  pitTempF,
+  cookers,
+  items,
+});
+const griddle: GriddleProfile = {
+  id: 'griddle',
+  name: 'Griddle',
+  sizeIn: 36,
+  burners: 4,
+  hasDome: false,
+  preheatMin: 15,
+};
+const twoWings = file({
+  items: [
+    { foodId: 'wings', methodId: 'hot', quantity: 2 },
+    { foodId: 'wings', methodId: 'griddle', quantity: 2 },
+  ],
+});
+
+test('regression: an import that moves a food to the smoker reports the pit conflict it makes', () => {
+  const shared = opened(parsePitPlan(rules, twoWings, id));
+  // On the sender's phone (smoker and griddle) the plan has no conflict.
+  const sender = importPlan(rules, shared, { smoker: traeger, griddle });
+  assert.deepEqual(sender.movedIds, []);
+  assert.deepEqual(importConflicts(rules, planOf(sender.items, { smoker: traeger, griddle }), sender.movedIds), []);
+  // The receiver has no griddle: the griddle wings move to the smoker, which now needs two temps at once.
+  const mine = importPlan(rules, shared, { smoker: traeger });
+  assert.deepEqual(mine.movedIds, ['n1']);
+  const conflicts = importConflicts(rules, planOf(mine.items, { smoker: traeger }), mine.movedIds);
+  assert.deepEqual(
+    conflicts.map(w => w.code),
+    ['PIT_CONFLICT'],
+  );
+  assert.ok(conflicts[0]!.itemIds!.includes('n1'));
+});
+
+test('share: the mockup menu with no griddle: breasts on the smoker hold too long, and the import says so', () => {
+  const shared = opened(parsePitPlan(rules, file(), id));
+  const mine = importPlan(rules, shared, { smoker: traeger });
+  assert.deepEqual(mine.movedIds, ['n2']);
+  assert.equal(mine.pitTempF, 225);
+  const conflicts = importConflicts(rules, planOf(mine.items, { smoker: traeger }), mine.movedIds);
+  assert.deepEqual(
+    conflicts.map(w => w.code),
+    ['HOLD_TOO_LONG'],
+  );
+  assert.deepEqual(conflicts[0]!.itemIds, ['n2']);
+});
+
+test('share: warnings about foods that did not move, and notes, are not import conflicts', () => {
+  const shared = opened(parsePitPlan(rules, file(), id));
+  const mine = importPlan(rules, shared, { smoker: traeger });
+  const input = planOf(mine.items, { smoker: traeger });
+  assert.ok(
+    buildPlan(rules, input).warnings.some(w => w.level === 'info'),
+    'the plan has a note to leave out',
+  );
+  assert.deepEqual(importConflicts(rules, input, []), []);
+  assert.deepEqual(importConflicts(rules, input, ['n0']), []);
+});
+
+test('share: a plan the engine cannot build has no import conflicts to show', () => {
+  assert.deepEqual(
+    importConflicts(rules, planOf([{ id: 'x', foodId: 'nope', methodId: 'nope', quantity: 1 }], {}), ['x']),
+    [],
+  );
 });
 
 test('share: pit temp snaps to what the receiver can set (failure mode 12)', () => {

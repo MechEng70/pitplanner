@@ -1,0 +1,7 @@
+{
+  "name": "pit-share",
+  "version": "0.0.0",
+  "private": true,
+  "main": "index.ts",
+  "description": "Hands an opened .pitplan file (VIEW or SEND intent) to JS, capped at 256 KB (T-030)."
+}
