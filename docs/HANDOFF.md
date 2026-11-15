@@ -30,6 +30,21 @@ worktrees off `main` cfc1428: **T-063** and **T-065** (no emulator, no gate; mer
 it reports). With agents running, the first gate run can fail step 4 on Jest 5 s timeouts (11 tests did);
 the second run passed unchanged. Next: `t030` (prebuild, dev build rebuild, emulator test).
 
+**Update, 4:10 PM:** **T-063** (`a96e198`) and **T-065** are on `main`, each through the gate (598 Jest
+tests). Neither has a device test. Their worktrees and `worktree-agent-*` branches are left over (delete with
+Jason's yes). Questions for Jason from the two agents (ask in plain words; full text in each TASKS entry):
+- T-063: (1) undo after a later change to the cook also takes that change back (built) or the Undo row goes
+  away; (2) row name as Next up words it, "Undo: Check the brisket" (built), or a shorter name per kind of
+  step; (3) an overdue step taken back rings again 10 min later (built) or right away; (4) the row uses Start
+  over's icon (the kit has no undo icon) or add one; (5) Serve marked Done lands on Cook finished with no
+  Undo there: leave it or add a way back.
+- T-065: (1) the share sheet cannot fill in the recipient (expo-sharing has no such option): the tester types
+  the address shown on screen (built), or a few lines of Kotlin in one of our modules to fill it in; SPEC
+  section 6 still says it is offered as the recipient, fix the line once he answers; (2) alarms that ring
+  while the app is closed are not in the log: accept, or a task for a native ring log; (3) cook history notes
+  are in the file: keep or leave out; (4) the section sits under the test alert button: keep or move to the top.
+Next: `t030` on his go.
+
 **State of step 5a (device tests for Setup, Cook finished, Gear, History):**
 
 - Four device tests are written in `tools/device/run.sh`: `setup`, `cook-finished`, `gear`, `history`. Each

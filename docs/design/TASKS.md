@@ -1389,6 +1389,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   drops rows.
 
 ### T-065 Debug switch and send to developer
+- **Gate (2026-11-15):** merged onto `main` and `npm run check` passed all six steps. No device test yet.
 - **Status:** built 2026-11-15, unit-tested on a worktree branch; `npm run check` and device test not run.
   0.3.0 (Jason, 2026-11-15: "since I'm going to send 0.3.0 to somebody, I'm going to need
   that debug switch and the send to developer thing").
@@ -2229,6 +2230,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 
 ### T-063 Take back a step marked Done by mistake
+- **Gate (2026-11-15):** merged onto `main` and `npm run check` passed all six steps. No device test yet.
 - **Status:** built 2026-11-15, unit-tested on a worktree branch; `npm run check` and device test not run.
   (0.3.0; Jason, 2026-11-14: "there needs to be somewhere to undo it in version 0.3.0. I don't want to wait
   till the next version")
