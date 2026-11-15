@@ -77,22 +77,40 @@ export function SetupActions({
   next,
   onNext,
   disabled,
+  hint,
 }: {
   onBack?: () => void;
   next: string;
   onNext: () => void;
   disabled?: boolean;
+  /** Why the main action is off ("Add a smoker or a griddle to continue"). Shown while `disabled`; its line
+   *  keeps its space when hidden, so the buttons never move (T-017 PR-3). */
+  hint?: string;
 }) {
+  const hinting = !!hint && !!disabled;
   return (
-    <View className="min-w-0 flex-1 flex-row gap-3 px-1 pb-1">
-      {onBack ? (
-        <Button kind="outline" onPress={onBack} className="min-h-[56px] flex-1 basis-0 self-auto rounded-primary">
-          <Text variant="tile">Back</Text>
-        </Button>
+    <View className="min-w-0 flex-1 gap-2 px-1 pb-1">
+      {hint ? (
+        <View
+          className={hinting ? undefined : 'opacity-0'}
+          aria-hidden={!hinting}
+          importantForAccessibility={hinting ? 'auto' : 'no-hide-descendants'}
+        >
+          <Text variant="label" tone="secondary" center>
+            {hint}
+          </Text>
+        </View>
       ) : null}
-      <Button onPress={onNext} disabled={disabled} className="min-w-0 flex-[2] basis-0 self-auto">
-        <Text>{next}</Text>
-      </Button>
+      <View className="min-w-0 flex-row gap-3">
+        {onBack ? (
+          <Button kind="outline" onPress={onBack} className="min-h-[56px] flex-1 basis-0 self-auto rounded-primary">
+            <Text variant="tile">Back</Text>
+          </Button>
+        ) : null}
+        <Button onPress={onNext} disabled={disabled} className="min-w-0 flex-[2] basis-0 self-auto">
+          <Text>{next}</Text>
+        </Button>
+      </View>
     </View>
   );
 }

@@ -1573,8 +1573,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Tests:** RNTL per step; picker groups from `data/cookers.json`.
 - **Device testing (Jason):** none (dev build fresh install).
 - **Jason's answers (2026-11-15):** the smoker card keeping its fields when switched off: OK. The manual
-  form's field order: OK. Step 1 built from 0.2.0: OK. Continue on step 2 staying off with no reason shown:
-  he did not follow the question; asked again.
+  form's field order: OK. Step 1 built from 0.2.0: OK. Continue on step 2 now says why it is off: "Add a
+  smoker or a griddle to continue" above the buttons (its line keeps its space when hidden); built the same
+  day.
 
 ### T-025 Alerts step, test alert, battery help
 - **Status:** built 2026-11-15 on branch `t025`, unit-tested (Jest). NOT run on a device or emulator, and

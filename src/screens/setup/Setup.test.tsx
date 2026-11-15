@@ -71,8 +71,11 @@ describe('Setup step 2: cookers (mockup 01)', () => {
     expect(box('Oven for holding')).toBeChecked();
     expect(within(box('Oven for holding')).getByText(/Lowest setting\s170F/)).toBeOnTheScreen();
     expect(button('Continue')).toBeDisabled();
+    // Jason, 2026-11-15: say why Continue is off.
+    expect(screen.getByText('Add a smoker or a griddle to continue')).toBeOnTheScreen();
     await fireEvent.press(box('Griddle'));
     expect(button('Continue')).toBeEnabled();
+    expect(screen.queryByText('Add a smoker or a griddle to continue')).toBeNull();
   });
 
   test('Back returns to the welcome step with the units kept', async () => {

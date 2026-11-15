@@ -115,6 +115,7 @@ export function Setup({
               onBack={back}
               next="Continue"
               disabled={!hasCooker}
+              hint="Add a smoker or a griddle to continue"
               onNext={alertsStep ? () => setStep(3) : finish}
             />
           }
