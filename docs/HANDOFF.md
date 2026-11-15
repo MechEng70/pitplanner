@@ -24,6 +24,12 @@ design to settle with him) before T-037. Still to ask on T-028: do the rate card
 brisket stay. Next: `t033`, then `t030`. He wants agents used where they fit: T-063 and T-065 are the
 candidates (tell him first; their worktrees must be gone before a gate run).
 
+**Update, 4:05 PM:** `t033` is on `main`, gate passed. The gate now skips `.claude/` (SE-004, Jason's
+choice), so agent worktrees no longer break it: the trap above is closed. Two agents are running in
+worktrees off `main` cfc1428: **T-063** and **T-065** (no emulator, no gate; merge each through the gate when
+it reports). With agents running, the first gate run can fail step 4 on Jest 5 s timeouts (11 tests did);
+the second run passed unchanged. Next: `t030` (prebuild, dev build rebuild, emulator test).
+
 **State of step 5a (device tests for Setup, Cook finished, Gear, History):**
 
 - Four device tests are written in `tools/device/run.sh`: `setup`, `cook-finished`, `gear`, `history`. Each
@@ -63,7 +69,7 @@ candidates (tell him first; their worktrees must be gone before a gate run).
 | Branch | Task | What to do |
 |---|---|---|
 | `t032` (2e30596) | Update check | **Merged onto `main` (cherry-picked) and gate-complete, 2026-11-15 3:55 PM; 554 Jest tests.** Was: cherry-pick or merge, `npm run check`. Jason's answers are in: a final install is offered finals only, a prerelease install anything newer; a failed check retries at the next launch or resume; the dev build checks too (as built). SPEC section 10 reworded on the branch. |
-| `t033` (3f65215) | Release docs | Merge, then Jason reviews. Docs only. |
+| `t033` (3f65215) | Release docs | **Merged onto `main` and gate-complete, 2026-11-15 4:05 PM.** Jason reviews `docs/RELEASING.md`, `docs/INSTALL.md`, `docs/release-notes/0.3.0.md`, `README.md`. |
 | `t030` (b2ab25a) | Open a shared plan | Merge last. New Expo module `modules/pit-share` (Kotlin never compiled, 16 JUnit tests never run), config plugin, `app/+native-intent.ts`. Needs `npx expo prebuild`, a dev build rebuild, then a device test (the agent's report: write a plan into the app's cache with `run-as`, open it with `am start -a android.intent.action.VIEW -t application/json -d file:///data/user/0/<pkg>/cache/test.pitplan`; an oversized file must show "That file is too big to be a Pit Planner plan."). Any Jest test that imports `@/platform/share` needs the `modules/pit-share` mock. `tools/snyk.test.mjs` lists Gradle projects; check it after adding the module. |
 
 Merge one at a time, each through the gate. TASKS.md is touched on all three branches and on `main` (expect

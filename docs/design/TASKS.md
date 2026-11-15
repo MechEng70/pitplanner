@@ -1887,7 +1887,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - The dev build ("Pit Planner dev") checks too, once a day, as built (Jason, 2026-11-15). Nothing to change.
 
 ### T-033 Release docs: notes, install guide, releasing checklist
-- **Status:** todo
+- **Status:** written, merged onto `main` and gate-complete 2026-11-15. Not done until Jason has reviewed the
+  four files, answered the six questions (HANDOFF) and followed INSTALL.md once on his wife's phone.
 - **Goal:** friends can install or upgrade; Claude can release by checklist.
 - **Files:** `docs/RELEASING.md`, `docs/INSTALL.md`, `docs/release-notes/0.3.0.md`, `README.md`.
 - **Depends on:** T-007.
