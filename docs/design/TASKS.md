@@ -1658,7 +1658,34 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** none.
 
 ### T-027 Cooker sheets: griddle, oven, smoker (17-19)
-- **Status:** todo
+- **Status:** built 2026-11-15 on branch `t027`, unit-tested (Jest). NOT run on a device or emulator, and
+  `npm run check` was NOT run (the session that built it was not allowed to): prettier, ESLint, typecheck,
+  Jest, engine and gate tests pass; Android tests, Semgrep and Snyk are still to run. No fidelity PNGs yet
+  (18, 19 need the emulator). Not done until the gate passes and Jason has seen the sheets.
+- **Built (2026-11-15):**
+  - `src/screens/gear/CookerSheets.tsx` (a port of the 0.2.0 file): `GriddleSheet` (mockup 18: Name, Cooking
+    surface 17/22/28/36 in, Burners 1-4, Dome or cover), `OvenSheet` (mockup 19: Lowest oven setting in 5F
+    steps from 140F to 250F, or 5C steps in Celsius, stored in F; Hold food in; Warming drawer, stored and
+    still unused, T-041), and `CookerSheets({ kind, onClose })`, which reads the store and shows the sheet for
+    that kind. For the smoker it is the T-024 `SmokerPicker` with its manual form, not a copy: a verified
+    model replaces the smoker, a model without checked specs opens the blank form.
+  - Nothing is saved until Save (`setGear`, so the `cookers` table and the plan input change together);
+    Close, the scrim and back discard. A sheet opened from Add a cooker starts from `defaultGriddle()` /
+    `defaultOven()` and adds nothing unless saved.
+  - Remove: the griddle only when it is saved and there is a smoker (0.2.0); the oven only when it is saved
+    and a smoker or griddle remains (0.2.0 let the oven go even as the only cooker, which here would send
+    the app back to Setup). The smoker has no Remove: it is replaced through the picker.
+  - `app/(tabs)/gear.tsx` keeps which cooker is open and passes `onCooker`; `GearScreen.tsx` is unchanged
+    (its header comment still says the route does not pass `onCooker`: left alone because T-028 edits the
+    same lines; fix it when the two are merged).
+  - Tests (`CookerSheets.test.tsx`, 18): over the Gear screen wired as the route wires it and a real
+    database: edit and Save persists in `cookers`, close discards, Remove rules, Add a cooker, Celsius and
+    kg, and the plan built from the store (oven-on step and temp, missing-griddle warning).
+- **Left:** `npm run check`; fidelity PNGs 18-19; a look on the emulator at 100/115/130% font.
+- **Questions for Jason:**
+  - In Celsius the oven stepper moves in 5C steps and shows 170F as 75 C, while the Gear row shows the same
+    oven as "Holding at 76C" (set points show in 2C steps). This is how 0.2.0 did it. Keep, or step by 2C?
+  - Remove oven is hidden when the oven is the only cooker (see above). OK?
 - **Goal:** edit and remove cookers (Remove only when another remains; changes saved only on Save).
 - **Files:** `src/screens/gear/CookerSheets.tsx`, tests, fidelity PNGs 18-19.
 - **Depends on:** T-026.
