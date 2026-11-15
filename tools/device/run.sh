@@ -2,7 +2,7 @@
 # One unattended device pass on the dev build (TASKS T-006).
 #   npm run device -- [--phone] [--no-build] [--repeat N] [--only <test>]...
 #   tests: smoke, sheet-keyboard, stable-controls, db, migration-error, db-unopenable, legacy-import, alarm,
-#   plan, plan-3button, plan-sheets, food-details, survive, cook, cook-options
+#   plan, plan-3button, plan-sheets, food-details, survive, cook, cook-options, cook-finished, setup, gear, history
 #   DEVICE_SCALES="1.0 1.15 1.3" adds or changes the font scales (default 1.15 and 1.3).
 #   (default: all).
 #   --repeat N runs the chosen tests N times at each font scale (to catch a test that only sometimes fails). --only repeats or takes a comma list.
@@ -19,7 +19,7 @@ set -uo pipefail
 . "$(dirname "$0")/lib.sh"
 cd "$DEVICE_DIR" || exit 1
 
-ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets food-details survive cook cook-options)
+ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets food-details survive cook cook-options cook-finished setup gear history)
 TESTS=()
 NOBUILD=""
 REPEAT=1
@@ -110,6 +110,8 @@ restore() {
     A shell device_config delete device_idle min_time_to_alarm >/dev/null 2>&1
   fi
   nav_back && [ -z "$NAV_BEFORE" ] || log "navigation mode NOT put back (was $NAV_BEFORE)"
+  # A test on an empty database that stopped half way: the real one goes back.
+  if is_emulator && db_app "[ -d db-aside/SQLite ]" 2>/dev/null; then db_back && log "database put back"; fi
   # The survive test turns "Don't keep activities" on (emulator only): never leave it on.
   if is_emulator; then A shell settings put global always_finish_activities 0 >/dev/null 2>&1; fi
   if [ -n "$BACKUP" ]; then ./db.sh restore "$BACKUP" | tee -a "$REPORT"; fi
@@ -191,6 +193,7 @@ if ! is_emulator; then
 fi
 
 SCREEN_H=$(A shell wm size | grep -oE '[0-9]+$')
+SCREEN_W=$(A shell wm size | grep -oE '[0-9]+x' | tr -d x)
 result() { RESULTS+=("$1"); log "$1"; }
 
 # Screenshot of the phone, cropped below the status bar. The keyboard never shows: its banners ("Emoji size
@@ -1170,6 +1173,505 @@ test_cook_options() {
   open_route "dev/alarm?cook=end"
   open_route "plan"
   if [ $ok = 1 ]; then result "PASS  cook-options $s"; else result "FAIL  cook-options $s"; fi
+}
+
+# An empty database for a test (emulator only), as legacy-import does it: the dev build's database is set
+# aside and the app starts on a new one, with no cookers, cooks, saved rates or flags, so a test sees only
+# what it puts there. db_back puts the real one back; the exit trap does too if a run stops half way.
+db_app() { A shell run-as "$PKG" sh -c "'$1'"; }
+db_back() {
+  A shell am force-stop "$PKG"
+  db_app "[ -d db-aside/SQLite ] && rm -rf files/SQLite && mv db-aside/SQLite files/ && rmdir db-aside"
+}
+db_fresh() {
+  A shell am force-stop "$PKG"
+  # A run that stopped half way left the real database aside: put it back before setting it aside again.
+  if db_app "[ -d db-aside/SQLite ]"; then db_back || return 1; fi
+  db_app "mkdir db-aside && mv files/SQLite db-aside/"
+}
+# Start on an empty database (Setup shows: no cookers), then open the dev seed $1, which saves its cookers.
+fresh_seed() {
+  db_fresh && launch "" && open_route "dev/plan?seed=$1"
+}
+# The end of such a test: the real database back, and the app starts on it.
+db_done() {
+  local dir="$1"
+  db_back || { plan_miss "the database put back"; return; }
+  if launch "dev/db" && dump >"$dir/db-back.xml" && has_text "$dir/db-back.xml" "user_version $SCHEMA_VERSION"; then :
+  else plan_miss "the app after the database was put back"; fi
+}
+
+# The tests below read numbers, which hold no-break spaces: `flat` writes a copy of a dump with plain spaces
+# (<dump>.txt) and `says` looks for a string in that copy.
+flat() { sed 's/\xc2\xa0/ /g' "$1" >"$1.txt"; }
+says() { grep -qF "$2" "$1.txt"; }
+# Dump the screen to $1 (and its plain-space copy).
+look() { dump >"$1" && flat "$1"; }
+# The tab that is open.
+on_tab() { grep -q "content-desc=\"$2\"[^>]*selected=\"true\"" "$1"; }
+# Tap LABEL once and report whether anything on or above it moved (T-017 PR-3). $1 names the files.
+tap_stays() {
+  local base="$1" label="$2" out line
+  dump >"$base-before.xml" || return 1
+  tap "$label" 1 | tee -a "$REPORT"
+  dump >"$base-after.xml" || return 1
+  if out=$(node check.mjs stable "$base-before.xml" "$base-after.xml" "$label"); then
+    log "    $label: nothing moved"
+  else
+    log "    $label: something moved"
+    while IFS= read -r line; do log "      $line"; done <<<"$out"
+    return 1
+  fi
+}
+
+# T-024, T-025: first run (mockups 01, 02, 03, 17). Emulator only: on an empty database (db_fresh) the app
+# starts with no cookers; the real database is put back at the end.
+# Welcome and units; the cookers step will not continue with no smoker or griddle; the picker, a checked
+# model fills the smoker card; Add another cooker offers what is not switched on; the alerts step with its
+# rows, the battery line and the test alert (nothing moves when its line appears); Back goes one step back and
+# keeps the choices; Finish setup opens Plan and the database holds the three cookers.
+test_setup() {
+  local s="$1" dir="$2" ok=1 want
+  if ! is_emulator; then result "SKIP  setup $s: emulator only"; return; fi
+  db_fresh || { result "FAIL  setup $s: could not set the database aside"; return; }
+
+  if launch "" && look "$dir/setup-1.xml" && says "$dir/setup-1.xml" "Welcome to Pit Planner"; then
+    for want in "Step 1 of 3" "Temperature" "Fahrenheit" "Celsius" "Weight" "Pounds" "Kilograms" "Continue"; do
+      says "$dir/setup-1.xml" "$want" || plan_miss "$want (welcome)"
+    done
+    shot "$dir/setup-welcome.png"
+    tap "Continue" 1 | tee -a "$REPORT"
+  else plan_miss "Setup's first step on a start with no cookers"; fi
+
+  if look "$dir/setup-2.xml" && says "$dir/setup-2.xml" "What do you cook on?"; then
+    for want in "Step 2 of 3" "Pick your model" "Griddle" "Oven for holding" "Lowest setting 170F" "Add another cooker" "Add a smoker or a griddle to continue"; do
+      says "$dir/setup-2.xml" "$want" || plan_miss "$want (cookers, nothing chosen)"
+    done
+    grep -q 'content-desc="Continue"[^>]*enabled="false"' "$dir/setup-2.xml" || plan_miss "Continue off with no smoker or griddle"
+    shot "$dir/setup-cookers-empty.png"
+    tap "Smoker" 1 | tee -a "$REPORT"
+    sleep 1
+    if look "$dir/setup-picker.xml" && says "$dir/setup-picker.xml" "Pick your smoker"; then
+      for want in "Search brand or model" "All" "Pellet" "Hopper alerts" "Pit Boss 820" "Pit Boss Sportsman 850" "Traeger Pro 780" "Not listed? Enter it yourself"; do
+        says "$dir/setup-picker.xml" "$want" || plan_miss "$want (smoker picker)"
+      done
+      shot "$dir/setup-picker.png"
+      tap "Pit Boss 820" 1 | tee -a "$REPORT"
+      sleep 1
+    else plan_miss "the smoker picker"; fi
+    if look "$dir/setup-smoker.xml"; then
+      for want in "Pellet smoker" "Hopper and grate filled from the model" "Model" "Pit Boss 820" "Hopper (lb)" "Main grate (sq in)" 'text="21"' 'text="593"'; do
+        says "$dir/setup-smoker.xml" "$want" || plan_miss "$want (smoker card after the pick)"
+      done
+      grep -q 'content-desc="Continue"[^>]*enabled="true"' "$dir/setup-smoker.xml" || plan_miss "Continue on once a smoker is chosen"
+    else plan_miss "the cookers step after the pick"; fi
+    # At 115% the button is half behind the pinned Back and Continue (it fades out there): scroll it clear.
+    scroll_bottom | tee -a "$REPORT"
+    tap "Add another cooker" 1 | tee -a "$REPORT"
+    sleep 1
+    if look "$dir/setup-add.xml" && says "$dir/setup-add.xml" "What are you adding?"; then
+      says "$dir/setup-add.xml" "Pellet, kamado, offset, drum, gravity, electric" || plan_miss "Smoker (Add a cooker)"
+      says "$dir/setup-add.xml" "Searing, chicken, wings" || plan_miss "Griddle (Add a cooker)"
+      # The oven is switched on already, so it is not offered.
+      says "$dir/setup-add.xml" "Holding food warm until serve" && plan_miss "no Oven row in Add a cooker while the oven is on"
+      shot "$dir/setup-add-cooker.png"
+      tap "Griddle" 1 | tee -a "$REPORT"
+      sleep 1
+    else plan_miss "the Add a cooker sheet"; fi
+    if look "$dir/setup-3cookers.xml" && grep -q 'content-desc="Griddle"[^>]*checked="true"' "$dir/setup-3cookers.xml"; then
+      log "    cookers: Pit Boss 820 picked and filled in, the griddle added from Add a cooker"
+    else plan_miss "the griddle switched on after Add a cooker"; fi
+    A shell input swipe 540 700 540 1700 200
+    sleep 1
+    shot "$dir/setup-cookers.png"
+    tap "Continue" 1 | tee -a "$REPORT"
+  else plan_miss "the cookers step"; fi
+
+  if look "$dir/setup-3.xml" && says "$dir/setup-3.xml" "Make sure alerts get through"; then
+    for want in "Step 3 of 3" "Notifications" "Shows each step on your lock screen" "Alarms and reminders" "No battery limits" \
+      "Alerts late or missing? Check the battery settings for Pit Planner in your phone's settings." \
+      "Send a test alert in 10 sec" "Back" "Finish setup"; do
+      says "$dir/setup-3.xml" "$want" || plan_miss "$want (alerts step)"
+    done
+    log "    alerts step: $(grep -oE 'content-desc="Allow [^"]*"' "$dir/setup-3.xml" | sed -E 's/content-desc="Allow |"//g' | paste -sd, - | sed 's/^$/nothing/') left to allow"
+    shot "$dir/setup-alerts.png"
+    on_screen "Send a test alert in 10 sec"
+    tap_stays "$dir/setup-test" "Send a test alert in 10 sec" || plan_miss "nothing moving when the test alert line appears"
+    look "$dir/setup-test-after.xml" && says "$dir/setup-test-after.xml" "Test alert set for" || plan_miss "Test alert set for ... after the tap"
+    shot "$dir/setup-alerts-sent.png"
+    A shell input keyevent KEYCODE_BACK
+    sleep 1
+    if look "$dir/setup-back.xml" && says "$dir/setup-back.xml" "What do you cook on?" && says "$dir/setup-back.xml" "Pit Boss 820" &&
+      grep -q 'content-desc="Griddle"[^>]*checked="true"' "$dir/setup-back.xml"; then
+      log "    back: one step back, the smoker and the griddle still chosen"
+    else plan_miss "the cookers step with its choices after the phone's back button"; fi
+    tap "Continue" 1 | tee -a "$REPORT"
+    tap "Finish setup" 1 | tee -a "$REPORT"
+    sleep 2
+    if look "$dir/setup-done.xml" && on_tab "$dir/setup-done.xml" "Plan"; then log "    Finish setup: Plan is open"
+    else plan_miss "Plan open after Finish setup"; fi
+    shot "$dir/setup-done.png"
+    if launch "dev/db" && look "$dir/setup-db.xml" && says "$dir/setup-db.xml" "data cookers 3, rates 0, cooks 0, plan items 0" &&
+      says "$dir/setup-db.xml" "units F lb"; then
+      log "    the database holds the three cookers; the next start skips Setup"
+    else plan_miss "three cookers saved (is: $(grep -oE 'data cookers[^"]*' "$dir/setup-db.xml.txt" | head -n 1))"; fi
+  else plan_miss "the alerts step"; fi
+
+  db_done "$dir"
+  if [ $ok = 1 ]; then result "PASS  setup $s"; else result "FAIL  setup $s"; fi
+}
+
+# T-023: Cook finished (mockup 15) and Full timeline. Emulator only (it runs and ends cooks).
+# 1. Full timeline on the mockup cook: every step, in a sheet.
+# 2. Mockup 15 (`?seed=finished`: all done but Serve): Done on Serve opens Cook finished: served on time,
+#    planned vs actual per food, the saved rate held, the support link (a first cook). Save to history goes to
+#    Plan with no alarms left; Cook history has the cook (mockup 20's card) and Remove takes it out again.
+# 3. With three logged briskets (`?seed=finished-blend`) the rate moves: the card says so in plain words and
+#    offers Use or Keep; choosing moves nothing; the support link does not show a second time; Discard this
+#    cook goes to Plan and saves nothing.
+test_cook_finished() {
+  local s="$1" dir="$2" ok=1 n want today
+  if ! is_emulator; then result "SKIP  cook-finished $s: emulator only"; return; fi
+  today=$(A shell date "'+%a, %b %e'" | tr -d '\r' | tr -s ' ')
+  fresh_seed cooking || { db_back; result "FAIL  cook-finished $s: app did not open on an empty database"; return; }
+  on_screen "Full timeline"
+  tap "Full timeline" 1 | tee -a "$REPORT"
+  sleep 1
+  if look "$dir/finish-timeline.xml" && grep -q 'content-desc="Close sheet"' "$dir/finish-timeline.xml"; then
+    for want in "Full timeline" "Fire the smoker to 225F" "Brisket on the smoker, unwrapped"; do
+      says "$dir/finish-timeline.xml" "$want" || plan_miss "$want (Full timeline)"
+    done
+    shot "$dir/cook-timeline.png"
+    # The last step is a screenful down.
+    scroll_bottom | tee -a "$REPORT"
+    look "$dir/finish-timeline-end.xml" && has_text "$dir/finish-timeline-end.xml" "Serve" || plan_miss "Serve as the last step (Full timeline, scrolled to the end)"
+    shot "$dir/cook-timeline-end.png"
+    tap "Close" 1 | tee -a "$REPORT"
+  else plan_miss "the Full timeline sheet"; fi
+
+  open_route "dev/plan?seed=finished"
+  if look "$dir/finish-serve.xml" && [[ "$(next_title "$dir/finish-serve.xml")" == Serve* ]]; then
+    tap "Done" 1 | tee -a "$REPORT"
+    sleep 1
+  else plan_miss "Serve as the one step left (Next up is \"$(next_title "$dir/finish-serve.xml")\")"; fi
+  if look "$dir/finish.xml" && says "$dir/finish.xml" "Cook finished"; then
+    for want in "Brisket" "Planned 9 hr, actual 8 hr 35 min" "25 min ahead" "Chicken wings" "Planned 1 hr 40 min, actual 1 hr 40 min" \
+      "On plan" "Chicken breasts" "Planned 12 min, actual 15 min" "3 min behind" "Your brisket rate stays" \
+      "1 of 3 logged cooks before it adjusts" "Notes for next time" "Save to history" "Discard this cook" "Buy me a bag of pellets"; do
+      says "$dir/finish.xml" "$want" || plan_miss "$want (Cook finished)"
+    done
+    grep -qE 'Served at [0-9:]+ [AP]M, on time\.' "$dir/finish.xml.txt" || plan_miss "Served at ..., on time. (is \"$(grep -oE 'Served at[^"]*|Ended at[^"]*' "$dir/finish.xml.txt" | head -n 1)\")"
+    grep -q 'content-desc="Cook"[^>]*selected="true"' "$dir/finish.xml" || plan_miss "the Cook tab still the open tab"
+    [ $ok = 1 ] && log "    Cook finished: $(grep -oE 'Served at[^"]*' "$dir/finish.xml.txt" | head -n 1) three foods, the saved rate held, the support link"
+    shot "$dir/cook-finished.png"
+    tap "Save to history" 1 | tee -a "$REPORT"
+    sleep 2
+    n=$(app_alarms | grep -c .)
+    if look "$dir/finish-saved.xml" && on_tab "$dir/finish-saved.xml" "Plan" && [ "$n" = 0 ]; then log "    Save to history: Plan is open, the phone holds no alarms of the app"
+    else plan_miss "Plan open and no alarms after Save to history (alarms: $n)"; fi
+    open_route "gear?history=1"
+    scroll_bottom | tee -a "$REPORT"
+    if look "$dir/finish-history.xml" && says "$dir/finish-history.xml" "Cook history"; then
+      for want in "$today" "On time" "Brisket 12 lb, chicken wings 2 lb, 4 chicken breasts" "Brisket 25 min ahead of plan"; do
+        says "$dir/finish-history.xml" "$want" || plan_miss "$want (the saved cook in Cook history)"
+      done
+      shot "$dir/cook-finished-history.png"
+      tap "$today" 1 | tee -a "$REPORT"
+      tap "Remove from history" 1 | tee -a "$REPORT"
+      tap "Tap again to remove from history" 1 | tee -a "$REPORT"
+      sleep 1
+      if look "$dir/finish-removed.xml" && says "$dir/finish-removed.xml" "No cooks saved yet"; then log "    the saved cook shows in Cook history; Remove (two taps) takes it out"
+      else plan_miss "the cook gone after Remove from history"; fi
+    else plan_miss "Cook history after Save to history"; fi
+  else plan_miss "Cook finished after Done on Serve"; fi
+
+  open_route "dev/plan?seed=finished-blend"
+  tap "Done" 1 | tee -a "$REPORT"
+  sleep 1
+  if look "$dir/finish-blend.xml" && says "$dir/finish-blend.xml" "Cook finished"; then
+    for want in "Brisket finished early" "Next time the plan uses 0.74 hr/lb instead of 0.75." "Use 0.74" "Keep 0.75" "1 hr ahead"; do
+      says "$dir/finish-blend.xml" "$want" || plan_miss "$want (Cook finished, the rate moves)"
+    done
+    says "$dir/finish-blend.xml" "Buy me a bag of pellets" && plan_miss "no support link on a second cook"
+    # Regression (2026-11-15): with no support link under it, Save to history was only as wide as Discard this cook.
+    n=$(node check.mjs bounds "$dir/finish-blend.xml" "Save to history") && set -- $n && n=$(($3 - $1)) || n=0
+    if [ "$n" -ge $((SCREEN_W * 8 / 10)) ]; then log "    Save to history is full width without the support link ($n of $SCREEN_W px)"
+    else plan_miss "Save to history full width without the support link (it is $n of $SCREEN_W px wide)"; fi
+    shot "$dir/cook-finished-rate.png"
+    tap_stays "$dir/finish-keep" "Keep 0.75" || plan_miss "nothing moving when Keep is chosen"
+    grep -qE 'content-desc="Keep 0.75"[^>]*(checked|selected)="true"' "$dir/finish-keep-after.xml" || plan_miss "Keep 0.75 chosen after the tap"
+    shot "$dir/cook-finished-keep.png"
+    tap "Discard this cook" 1 | tee -a "$REPORT"
+    sleep 2
+    n=$(app_alarms | grep -c .)
+    if look "$dir/finish-discarded.xml" && on_tab "$dir/finish-discarded.xml" "Plan" && [ "$n" = 0 ]; then :
+    else plan_miss "Plan open and no alarms after Discard this cook (alarms: $n)"; fi
+    open_route "gear?history=1"
+    scroll_bottom | tee -a "$REPORT"
+    if look "$dir/finish-discard-history.xml" && says "$dir/finish-discard-history.xml" "Cook history" && ! says "$dir/finish-discard-history.xml" "$today"; then
+      log "    the rate card offers Use 0.74 or Keep 0.75; Discard this cook goes to Plan and saves nothing"
+    else plan_miss "no cook saved after Discard this cook"; fi
+  else plan_miss "Cook finished with the rate moving"; fi
+  open_route "dev/alarm?cook=end"
+  db_done "$dir"
+  if [ $ok = 1 ]; then result "PASS  cook-finished $s"; else result "FAIL  cook-finished $s"; fi
+}
+
+# T-026, T-027: Gear (mockup 16) and what opens from it (mockups 17, 18, 19, 02), on the mockup cookers.
+# Emulator only (it changes the cookers and the units; the seed puts them back).
+# The rows; Griddle: a change shows on its row only after Save; Oven: the stepper moves nothing, Save shows the
+# new setting, Remove takes the oven away and Add a cooker offers only the oven, which comes back; the smoker
+# row opens the picker with the model marked; Alerts with the test alert (nothing moves when its line
+# appears); Units in Celsius changes the rows; Cook rates opens Cook history and back returns.
+test_gear() {
+  local s="$1" dir="$2" ok=1 want
+  if ! is_emulator; then result "SKIP  gear $s: emulator only"; return; fi
+  fresh_seed mockup || { db_back; result "FAIL  gear $s: app did not open on an empty database"; return; }
+  tap "Gear" 1 | tee -a "$REPORT"
+  if look "$dir/gear.xml" && on_tab "$dir/gear.xml" "Gear"; then
+    for want in "Cookers" "Pit Boss 820" "Pellet smoker, 21 lb hopper" "Griddle" "36 in, 4 burners" "Oven" "Holding at 170F" \
+      "Your numbers" "Cook rates" "App" "Alerts" "Units" "Fahrenheit, pounds"; do
+      says "$dir/gear.xml" "$want" || plan_miss "$want (Gear)"
+    done
+    says "$dir/gear.xml" "Add a cooker" && plan_miss "no Add a cooker row with all three cookers"
+    log "    Gear: cook rates \"$(grep -oE 'text="[^"]*hr/lb[^"]*"' "$dir/gear.xml.txt" | head -n 1 | sed -E 's/^text="|"$//g')\", alerts \"$(grep -oE 'text="(All set|Needs a fix|Checking)[^"]*"' "$dir/gear.xml.txt" | head -n 1 | sed -E 's/^text="|"$//g')\""
+    shot "$dir/gear.png"
+    scroll_bottom | tee -a "$REPORT"
+    if look "$dir/gear-end.xml"; then
+      for want in "Home Assistant" "Coming later" "Buy me a bag of pellets" "If the app saved your brisket"; do
+        says "$dir/gear-end.xml" "$want" || plan_miss "$want (Gear, scrolled to the end)"
+      done
+      grep -qE 'Pit Planner [0-9]+\.[0-9]+\.[0-9]+' "$dir/gear-end.xml.txt" || plan_miss "the version line"
+      shot "$dir/gear-end.png"
+    fi
+  else plan_miss "the Gear tab"; fi
+
+  on_screen "Griddle" UP
+  tap "Griddle" 1 | tee -a "$REPORT"
+  sleep 1
+  if look "$dir/gear-griddle.xml" && says "$dir/gear-griddle.xml" "Save griddle"; then
+    for want in "Name" "Cooking surface" "17 in" "22 in" "28 in" "36 in" "Burners (heat zones)" "Dome or cover" \
+      "Used to finish thick chicken and wings." "Remove griddle"; do
+      says "$dir/gear-griddle.xml" "$want" || plan_miss "$want (Griddle)"
+    done
+    shot "$dir/gear-griddle.png"
+    tap_stays "$dir/gear-griddle-size" "28 in" || plan_miss "nothing moving when a size is chosen"
+    tap "Save griddle" 1 | tee -a "$REPORT"
+    sleep 1
+    if look "$dir/gear-griddle-saved.xml" && says "$dir/gear-griddle-saved.xml" "28 in, 4 burners"; then log "    Griddle: 28 in chosen, Save griddle, the row reads 28 in, 4 burners"
+    else plan_miss "28 in, 4 burners on the griddle row after Save"; fi
+  else plan_miss "the Griddle sheet"; fi
+
+  tap "Oven" 1 | tee -a "$REPORT"
+  sleep 1
+  if look "$dir/gear-oven.xml" && says "$dir/gear-oven.xml" "Save oven"; then
+    for want in "Lowest oven setting" "Holding needs at least 140F. Most ovens bottom out at 170F." "Hold food in" \
+      "Towel-lined cooler" "Ask each time" "Warming drawer" "Remove oven"; do
+      says "$dir/gear-oven.xml" "$want" || plan_miss "$want (Oven)"
+    done
+    shot "$dir/gear-oven.png"
+    tap_stays "$dir/gear-oven-more" "More lowest oven setting" || plan_miss "nothing moving when the oven setting is stepped"
+    tap "Save oven" 1 | tee -a "$REPORT"
+    sleep 1
+    look "$dir/gear-oven-saved.xml" && says "$dir/gear-oven-saved.xml" "Holding at 175F" || plan_miss "Holding at 175F on the oven row after Save"
+    tap "Oven" 1 | tee -a "$REPORT"
+    tap "Remove oven" 1 | tee -a "$REPORT"
+    sleep 1
+    if look "$dir/gear-oven-removed.xml" && says "$dir/gear-oven-removed.xml" "Add a cooker" && ! has_text "$dir/gear-oven-removed.xml" "Oven"; then
+      tap "Add a cooker" 1 | tee -a "$REPORT"
+      sleep 1
+      if look "$dir/gear-add.xml" && says "$dir/gear-add.xml" "What are you adding?"; then
+        says "$dir/gear-add.xml" "Holding food warm until serve" || plan_miss "Oven (Add a cooker)"
+        says "$dir/gear-add.xml" "Searing, chicken, wings" && plan_miss "only the missing cooker in Add a cooker"
+        shot "$dir/gear-add-cooker.png"
+        tap "Oven" 1 | tee -a "$REPORT"
+        sleep 1
+        look "$dir/gear-oven-new.xml" && says "$dir/gear-oven-new.xml" "Save oven" || plan_miss "the Oven sheet from Add a cooker"
+        says "$dir/gear-oven-new.xml" "Remove oven" && plan_miss "no Remove on a cooker that is not saved yet"
+        tap "Save oven" 1 | tee -a "$REPORT"
+        sleep 1
+        if look "$dir/gear-oven-back.xml" && says "$dir/gear-oven-back.xml" "Holding at 170F" && ! says "$dir/gear-oven-back.xml" "Add a cooker"; then
+          log "    Oven: 175F saved; Remove oven takes it away; Add a cooker offers only the oven and brings it back"
+        else plan_miss "the oven back on Gear after Add a cooker"; fi
+      else plan_miss "the Add a cooker sheet"; fi
+    else plan_miss "the oven gone and Add a cooker showing after Remove oven"; fi
+  else plan_miss "the Oven sheet"; fi
+
+  # The seed's smoker is not from the catalog, so no row is marked yet: pick a catalog model, see it on Gear
+  # and marked in the picker, then pick the Pit Boss 820 from the catalog.
+  on_screen "Pit Boss 820" UP
+  tap "Pit Boss 820" 1 | tee -a "$REPORT"
+  sleep 1
+  if look "$dir/gear-smoker.xml" && says "$dir/gear-smoker.xml" "Pick your smoker" && says "$dir/gear-smoker.xml" "Not listed? Enter it yourself"; then
+    tap "Pit Boss Sportsman 850" 1 | tee -a "$REPORT"
+    sleep 1
+    look "$dir/gear-smoker-picked.xml" && has_text "$dir/gear-smoker-picked.xml" "Pit Boss Sportsman 850" && ! says "$dir/gear-smoker-picked.xml" "Pick your smoker" ||
+      plan_miss "Pit Boss Sportsman 850 on the smoker row after the pick"
+    tap "Pit Boss Sportsman 850" 1 | tee -a "$REPORT"
+    sleep 1
+    if look "$dir/gear-smoker-marked.xml" && grep -q 'content-desc="Pit Boss Sportsman 850"[^>]*selected="true"' "$dir/gear-smoker-marked.xml"; then
+      log "    the smoker row opens the picker; a picked model shows on the row and is marked in the picker"
+    else plan_miss "the picked model marked in the picker"; fi
+    shot "$dir/gear-smoker.png"
+    tap "Pit Boss 820" 1 | tee -a "$REPORT"
+    sleep 1
+    look "$dir/gear-smoker-back.xml" && says "$dir/gear-smoker-back.xml" "Pellet smoker, 21 lb hopper" && has_text "$dir/gear-smoker-back.xml" "Pit Boss 820" ||
+      plan_miss "Pit Boss 820 back on the smoker row"
+  else plan_miss "the smoker picker from the smoker row"; fi
+
+  on_screen "Alerts"
+  tap "Alerts" 1 | tee -a "$REPORT"
+  sleep 1
+  if look "$dir/gear-alerts.xml" && grep -q 'content-desc="Close sheet"' "$dir/gear-alerts.xml"; then
+    for want in "Notifications" "Alarms and reminders" "No battery limits" "Alerts late or missing?" "Send a test alert in 10 sec"; do
+      says "$dir/gear-alerts.xml" "$want" || plan_miss "$want (Alerts)"
+    done
+    shot "$dir/gear-alerts.png"
+    tap_stays "$dir/gear-alerts-test" "Send a test alert in 10 sec" || plan_miss "nothing moving when the test alert line appears"
+    look "$dir/gear-alerts-test-after.xml" && says "$dir/gear-alerts-test-after.xml" "Test alert set for" || plan_miss "Test alert set for ... after the tap"
+    shot "$dir/gear-alerts-sent.png"
+    tap "Close" 1 | tee -a "$REPORT"
+  else plan_miss "the Alerts sheet"; fi
+
+  tap "Units" 1 | tee -a "$REPORT"
+  sleep 1
+  if look "$dir/gear-units.xml" && says "$dir/gear-units.xml" "Temperature" && says "$dir/gear-units.xml" "Kilograms"; then
+    shot "$dir/gear-units.png"
+    tap "Celsius" 1 | tee -a "$REPORT"
+    tap "Kilograms" 1 | tee -a "$REPORT"
+    tap "Close" 1 | tee -a "$REPORT"
+    sleep 1
+    on_screen "Pit Boss 820" UP
+    if look "$dir/gear-metric.xml" && says "$dir/gear-metric.xml" "Celsius, kilograms" && says "$dir/gear-metric.xml" "Holding at 76C" &&
+      says "$dir/gear-metric.xml" "Pellet smoker, 9.5 kg hopper"; then
+      log "    Units: in Celsius and kilograms the rows read Holding at 76C and 9.5 kg hopper"
+    else plan_miss "Celsius, kilograms; Holding at 76C; 9.5 kg hopper on Gear"; fi
+    shot "$dir/gear-metric.png"
+    on_screen "Units"
+    tap "Units" 1 | tee -a "$REPORT"
+    tap "Fahrenheit" 1 | tee -a "$REPORT"
+    tap "Pounds" 1 | tee -a "$REPORT"
+    tap "Close" 1 | tee -a "$REPORT"
+  else plan_miss "the Units sheet"; fi
+
+  on_screen "Cook rates" UP
+  tap "Cook rates" 1 | tee -a "$REPORT"
+  sleep 1
+  if look "$dir/gear-history.xml" && says "$dir/gear-history.xml" "Cook history"; then
+    A shell input keyevent KEYCODE_BACK
+    sleep 1
+    if look "$dir/gear-history-back.xml" && says "$dir/gear-history-back.xml" "Your numbers" && says "$dir/gear-history-back.xml" "Fahrenheit, pounds"; then
+      log "    Cook rates opens Cook history; the phone's back button returns to Gear"
+    else plan_miss "Gear after back from Cook history"; fi
+  else plan_miss "Cook history from Cook rates"; fi
+  db_done "$dir"
+  if [ $ok = 1 ]; then result "PASS  gear $s"; else result "FAIL  gear $s"; fi
+}
+
+# T-028: Cook history (mockup 20) with the Saturday cook saved (`?seed=history`), on an empty database.
+# Emulator only.
+# The rate card and the cook card; the rate sheet: stepping the rate moves nothing and Save shows it on the
+# card; the cook's sheet: planned vs took, notes, Edit, Cook again, Remove; Edit: stepping moves nothing, a
+# food left out of rates reads Not logged afterwards; Cook again puts the menu on Plan; Remove asks with a
+# second tap and then the list is empty; back returns to Gear.
+test_history() {
+  local s="$1" dir="$2" ok=1 want
+  if ! is_emulator; then result "SKIP  history $s: emulator only"; return; fi
+  fresh_seed history || { db_back; result "FAIL  history $s: app did not open on an empty database"; return; }
+  if look "$dir/history.xml" && says "$dir/history.xml" "Cook history"; then
+    for want in "Brisket on Pit Boss 820" "hr/lb" "0.75" "yours" "logged" "Total" "None" "not set"; do
+      says "$dir/history.xml" "$want" || plan_miss "$want (Cook history)"
+    done
+    on_tab "$dir/history.xml" "Gear" || plan_miss "Gear as the open tab under Cook history"
+    shot "$dir/history.png"
+    # The cooks are under the rate cards (one per by-weight food), a screenful down.
+    scroll_bottom | tee -a "$REPORT"
+    if look "$dir/history-cooks.xml"; then
+      for want in "Rates are hours per lb at 225F. Tap a food to set your own rate or total hours." "Cooks" "Sat, Nov 14" "On time" \
+        "Brisket 12 lb, chicken wings 2 lb, 4 chicken breasts" "Brisket 25 min ahead of plan" \
+        "Tap a cook to see planned vs actual times, your notes, and to cook it again with a new serve time."; do
+        says "$dir/history-cooks.xml" "$want" || plan_miss "$want (Cook history, scrolled to the cooks)"
+      done
+      shot "$dir/history-cooks.png"
+    else plan_miss "Cook history scrolled to the cooks"; fi
+  else plan_miss "Cook history"; fi
+
+  on_screen "Brisket" UP
+  tap "Brisket" 1 | tee -a "$REPORT"
+  sleep 1
+  if look "$dir/history-rate.xml" && says "$dir/history-rate.xml" "Hours per lb at 225F"; then
+    for want in "Your setting. Plans use it as-is." "Keep my rate exactly" "After 3 logged cooks, plans adjust it to how your cooks went." \
+      "Clear my rate" "Total hours on heat" "Not set. Plans use the rate." "Set total hours" "Save"; do
+      says "$dir/history-rate.xml" "$want" || plan_miss "$want (rate sheet)"
+    done
+    shot "$dir/history-rate.png"
+    tap_stays "$dir/history-rate-more" "More hours per pound" || plan_miss "nothing moving when the rate is stepped"
+    tap "Save" 1 | tee -a "$REPORT"
+    sleep 1
+    if look "$dir/history-rate-saved.xml" && says "$dir/history-rate-saved.xml" "0.80"; then log "    rate sheet: 0.80 hr/lb saved, the card shows it"
+    else plan_miss "0.80 on the rate card after Save"; fi
+  else plan_miss "the rate sheet"; fi
+
+  on_screen "Sat, Nov 14"
+  tap "Sat, Nov 14" 1 | tee -a "$REPORT"
+  sleep 1
+  if look "$dir/history-cook.xml" && says "$dir/history-cook.xml" "Saturday, Nov 14, 2026"; then
+    for want in "Pit at 225F. On time." "Planned 9 hr, took 8 hr 35 min" "25 min ahead" "Planned 1 hr 40 min, took 1 hr 40 min" "On plan" \
+      "Planned 12 min, took 15 min" "3 min behind" "Notes" "Windy. Wrapped at 165F." "Edit" "Cook again" "Remove from history"; do
+      says "$dir/history-cook.xml" "$want" || plan_miss "$want (the cook's sheet)"
+    done
+    shot "$dir/history-cook.png"
+    tap "Edit" 1 | tee -a "$REPORT"
+    sleep 1
+    if look "$dir/history-edit.xml" && says "$dir/history-edit.xml" "Edit cook"; then
+      for want in "Smoker temp" "225F" "Brisket" "Planned 9 hr on heat." "hr on heat" "Save"; do
+        says "$dir/history-edit.xml" "$want" || plan_miss "$want (Edit cook)"
+      done
+      shot "$dir/history-edit.png"
+      tap_stays "$dir/history-edit-temp" "More smoker temp" || plan_miss "nothing moving when the smoker temp is stepped"
+      on_screen "More brisket minutes"
+      tap_stays "$dir/history-edit-min" "More brisket minutes" || plan_miss "nothing moving when the minutes are stepped"
+      on_screen "Leave brisket out of rates"
+      tap_stays "$dir/history-edit-out" "Leave brisket out of rates" || plan_miss "nothing moving when a food is left out of rates"
+      look "$dir/history-edit-out-after.xml" && says "$dir/history-edit-out-after.xml" "Rates do not learn from it." || plan_miss "Rates do not learn from it. after the tap"
+      shot "$dir/history-edit-changed.png"
+      tap "Save" 1 | tee -a "$REPORT"
+      sleep 1
+      on_screen "Sat, Nov 14"
+      tap "Sat, Nov 14" 1 | tee -a "$REPORT"
+      sleep 1
+      if look "$dir/history-edited.xml" && says "$dir/history-edited.xml" "Pit at 230F." && says "$dir/history-edited.xml" "Not logged"; then
+        log "    Edit: smoker temp 230F and the brisket left out of rates are saved; the cook's sheet says Not logged"
+      else plan_miss "Pit at 230F and Not logged on the cook's sheet after the edit"; fi
+      tap "Cook again" 1 | tee -a "$REPORT"
+      sleep 2
+      if look "$dir/history-again.xml" && on_tab "$dir/history-again.xml" "Plan" && says "$dir/history-again.xml" "Brisket" &&
+        grep -q 'content-desc="Start cook"' "$dir/history-again.xml"; then
+        log "    Cook again: Plan is open with the menu on it"
+        shot "$dir/history-again.png"
+      else plan_miss "Plan with the menu after Cook again"; fi
+    else plan_miss "the Edit cook sheet"; fi
+  else plan_miss "the cook's sheet"; fi
+
+  open_route "gear?history=1"
+  on_screen "Sat, Nov 14"
+  tap "Sat, Nov 14" 1 | tee -a "$REPORT"
+  tap "Remove from history" 1 | tee -a "$REPORT"
+  sleep 1
+  if look "$dir/history-ask.xml" && says "$dir/history-ask.xml" "Tap again to remove from history" && says "$dir/history-ask.xml" "Saturday, Nov 14, 2026"; then
+    shot "$dir/history-remove.png"
+    tap "Tap again to remove from history" 1 | tee -a "$REPORT"
+    sleep 1
+    if look "$dir/history-empty.xml" && says "$dir/history-empty.xml" "No cooks saved yet. Save a cook when it ends and your rates start to learn from it."; then
+      log "    Remove from history asks with a second tap; then no cooks are left"
+      shot "$dir/history-empty.png"
+    else plan_miss "No cooks saved yet after the second tap"; fi
+  else plan_miss "the second-tap question on Remove from history"; fi
+  tap "Back" 1 | tee -a "$REPORT"
+  sleep 1
+  look "$dir/history-back.xml" && says "$dir/history-back.xml" "Your numbers" || plan_miss "Gear after Back"
+  db_done "$dir"
+  if [ $ok = 1 ]; then result "PASS  history $s"; else result "FAIL  history $s"; fi
 }
 
 read -r -a SCALES <<<"${DEVICE_SCALES:-1.15 1.3}"

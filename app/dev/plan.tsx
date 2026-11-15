@@ -12,32 +12,30 @@
 //   pitplanner://dev/plan?seed=cooking  mockup 12: the mockup menu as a running cook, 6 hr 37 min before serve
 //                                       (10:23 AM on a 5:00 PM serve; up to 5 min more, as serve lands on a 5 minute mark), earlier steps done; opens the Cook tab.
 //                                       End it with pitplanner://dev/alarm?cook=end
+//   pitplanner://dev/plan?seed=finished mockup 15: the mockup cook with every step done but Serve, which is due in
+//                                       about a minute (brisket off 25 min early, breasts 3 min late); opens the
+//                                       Cook tab: Done on Serve leads to Cook finished. The saved 0.75 hr/lb
+//                                       has no logged cooks yet, so the rate card says the rate stays. The
+//                                       support link shows again (it shows once, on a first cook).
+//   pitplanner://dev/plan?seed=finished-blend  the same with three logged briskets and this one off an hour
+//                                       early, so the rate moves and the card offers Use or Keep
+//   pitplanner://dev/plan?seed=history  mockup 20: the mockup cookers and the Saturday cook saved in history
 // Add &edit=<item id> (b, w, c on the mockup seed) to open food details for that item, or &add=<food id> to
 // open it for a new food (mockups 08-10: seed=empty with add=brisket, stlribs or breasts).
-// The past cook has a fixed id; the other two seeds take it away again (only that one, never a real cook).
+// The seeds' saved cooks have fixed ids; every seed takes away those it does not use (only those, never a real cook).
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { buildPlan } from '../../engine/plan';
 import type { ItemInput, PlanInput } from '../../engine/types';
 import { newCook, steps } from '@/lib/cook';
+import { BLEND_RECORDS, finishedCook, HISTORY_RECORD, MOCKUP_MENU } from '@/lib/fixtures/finishedCook';
 import { saturday } from '@/lib/fixtures/saturday';
 import { defaultGriddle, defaultOven } from '@/lib/gear';
-import type { CookRecord } from '@/lib/history';
+import { logsOf, type CookRecord } from '@/lib/history';
 import { defaultOptions, method, rules } from '@/lib/rules';
 import { useStore } from '@/lib/store';
 
-const MENU: ItemInput[] = [
-  { id: 'b', foodId: 'brisket', methodId: 'smoked', quantity: 12, options: { wrap: 'paper' }, restMin: 60 },
-  { id: 'w', foodId: 'wings', methodId: 'smokeCrisp', quantity: 2, options: { drybrine: 'yes' }, restMin: 5 },
-  {
-    id: 'c',
-    foodId: 'breasts',
-    methodId: 'griddle',
-    quantity: 4,
-    options: { thickness: 'pounded', brine: 'none' },
-    restMin: 8,
-  },
-];
+const MENU = MOCKUP_MENU;
 
 /** The smoker cannot hold 225F and 350F at once: the Conflicts tile reads 1 (T-018 device test). */
 const CLASH: ItemInput[] = [
@@ -69,6 +67,9 @@ const SEEDS: Record<string, ItemInput[]> = {
   twins: [brisket('b1', 6), brisket('b2', 6)],
   tomorrow: MENU,
   cooking: MENU,
+  finished: MENU,
+  'finished-blend': MENU,
+  history: [],
 };
 
 const MIN = 60_000;
@@ -84,6 +85,8 @@ function serveAt(seed: string, now: number): number {
     return d.getTime();
   }
   // On a 5 minute mark, as a serve time picked on Plan would be.
+  // Serve is the one step left, due in 30 to 90 seconds: Done on it reads as served on time.
+  if (seed === 'finished' || seed === 'finished-blend') return Math.floor((now + 1.5 * MIN) / MIN) * MIN;
   if (seed === 'cooking') return Math.ceil((now + COOKING_BEFORE_SERVE_MIN * MIN) / (5 * MIN)) * 5 * MIN;
   return saturday.at;
 }
@@ -116,7 +119,9 @@ const PAST: CookRecord = {
 
 export default function PlanSeed() {
   const { seed, edit, add } = useLocalSearchParams<{ seed?: string; edit?: string; add?: string }>();
-  const { setGear, setDraft, setRate, setCook, addRecord, removeRecord, ui } = useStore();
+  const { state, setGear, setDraft, setRate, setRateLock, setCook, addRecord, removeRecord, setFlags, ui } = useStore();
+  // As they were when the seed opened: a change to them is not a reason to run the seed again.
+  const [flags] = useState(state.flags);
   const router = useRouter();
   useEffect(() => {
     const items = seed ? SEEDS[seed] : undefined;
@@ -126,11 +131,29 @@ export default function PlanSeed() {
     const at = serveAt(seed!, now);
     setGear(cookers);
     setRate('brisket', 0.75);
+    // Not locked: a lock left by an earlier run would hide the rate card on Cook finished.
+    setRateLock('brisket', false);
     setDraft(() => ({ mode: 'readyBy', at, pitTempF: 225, items }));
     // A seed starts clean: no food details left open by an earlier run (T-058 restores it otherwise).
     ui.write({ food: null });
-    if (seed === 'past') addRecord(PAST);
-    else removeRecord(PAST_ID);
+    const records: CookRecord[] =
+      seed === 'past' ? [PAST] : seed === 'history' ? [HISTORY_RECORD] : seed === 'finished-blend' ? BLEND_RECORDS : [];
+    for (const r of [PAST, HISTORY_RECORD, ...BLEND_RECORDS]) {
+      if (records.includes(r)) addRecord(r);
+      else removeRecord(r.id);
+    }
+    if (seed === 'history') {
+      router.replace({ pathname: '/gear', params: { history: '1' } });
+      return;
+    }
+    if (seed === 'finished' || seed === 'finished-blend') {
+      const input: PlanInput = { ...saturday, at, cookers, items, history: logsOf(records) };
+      // Mockup 15 is a first cook: the support link shows (it shows once, ever). The other seed leaves the flag alone.
+      if (seed === 'finished') setFlags({ ...flags, supportShown: false });
+      setCook(finishedCook(input, seed === 'finished' ? { b: -25, c: 3 } : { b: -60, c: 3 }));
+      router.replace('/cook');
+      return;
+    }
     if (seed === 'cooking') {
       // The cook as it would stand now: every step due before now was done on time.
       const input: PlanInput = { ...saturday, at, cookers, items };
@@ -145,7 +168,22 @@ export default function PlanSeed() {
       return;
     }
     router.replace({ pathname: '/plan', params: { ...(edit ? { edit } : {}), ...(add ? { add } : {}) } });
-  }, [seed, edit, add, setGear, setDraft, setRate, setCook, addRecord, removeRecord, ui, router]);
+  }, [
+    seed,
+    edit,
+    add,
+    setGear,
+    setDraft,
+    setRate,
+    setRateLock,
+    setCook,
+    addRecord,
+    removeRecord,
+    setFlags,
+    flags,
+    ui,
+    router,
+  ]);
   if (!__DEV__) return <Redirect href="/plan" />;
   return null;
 }

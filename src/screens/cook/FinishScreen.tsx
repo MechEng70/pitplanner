@@ -9,6 +9,7 @@ import {
   Button,
   Card,
   Field,
+  Fill,
   GroupCard,
   InfoRow,
   LinkButton,
@@ -69,21 +70,25 @@ export function FinishScreen({
       title="Cook finished"
       subtitle={<Nums text={summary.served} />}
       footer={
-        <Stack gap={4}>
-          <Button block disabled={busy} onPress={() => finish(true)}>
-            <Text>Save to history</Text>
-          </Button>
-          <Row justify="between" wrap gap={8}>
-            <Button kind="text" tone="danger" disabled={busy} onPress={() => finish(false)}>
-              <Text>Discard this cook</Text>
+        // Fill: the footer is a row, so without it the column is only as wide as its widest line, and Save to
+        // history shrank to the width of Discard this cook on every cook after the first (no support link).
+        <Fill>
+          <Stack gap={4}>
+            <Button block disabled={busy} onPress={() => finish(true)}>
+              <Text>Save to history</Text>
             </Button>
-            {support ? (
-              <LinkButton href={SUPPORT_URL}>
-                <Text>Buy me a bag of pellets</Text>
-              </LinkButton>
-            ) : null}
-          </Row>
-        </Stack>
+            <Row justify="between" wrap gap={8}>
+              <Button kind="text" tone="danger" disabled={busy} onPress={() => finish(false)}>
+                <Text>Discard this cook</Text>
+              </Button>
+              {support ? (
+                <LinkButton href={SUPPORT_URL}>
+                  <Text>Buy me a bag of pellets</Text>
+                </LinkButton>
+              ) : null}
+            </Row>
+          </Stack>
+        </Fill>
       }
     >
       <GroupCard>

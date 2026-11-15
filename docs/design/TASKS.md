@@ -1392,6 +1392,19 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Status:** todo; 0.3.0 (Jason, 2026-11-15: "since I'm going to send 0.3.0 to somebody, I'm going to need
   that debug switch and the send to developer thing"). Needs a SPEC line or mockup he approves before any
   UI, and the email address ("I'll give you the email address later").
+- **Jason's answers (2026-11-15):** it stays hidden: the existing 5 taps on the version line on Gear open the
+  debug screen, and he tells testers to do that (no visible switch; "keep it as is", not the tab's icon). Send opens the phone's share sheet with
+  one file; the tester picks Gmail or whatever they use. The address is
+  jason@medtechcto.com (his decision, knowing the repo is public and the address ships in the app; the name
+  he wanted for a dedicated one was taken, he may change it later): the debug screen shows it as where to
+  send the file, and it is offered as the recipient when the tester picks an email app. Keep it in one
+  constant so it is one line to change.
+  The file holds what is needed to see what went wrong, nothing from other apps, nothing sent until the
+  tester taps send: app version and build, Android version, phone model, font size, time zone; the alert
+  permissions as the phone reports them; the alarms the app has stored and their repeats; the app's data
+  (cookers, plan, running cook, cook history, rates, settings and flags); and the app's own log of recent
+  events (alarms set and fired, changes to a cook, errors). No location, no accounts, no contacts.
+  This is the approved SPEC line for the UI; write it into SPEC with the task.
 - **Why:** on 2026-11-15 nothing on his phone could show what 0.2.0 had saved without installing a
   debuggable build over it (T-064). A tester's phone cannot be reached that way at all.
 - **What exists:** the hidden debug screen (`/debug`, 5 taps on the Gear version, T-015 and T-026); Export
@@ -1471,6 +1484,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   NOT run (other sessions had the main checkout and the emulator): run `npm run check`, then look at Cook
   finished on the device against mockup 15 and save fidelity PNG 15. No device flow was added
   (`tools/device/flows/live.yaml` is still to write). Not done until that passes.
+- **Device test (2026-11-15):** `cook-finished` passes on the emulator at 115% (Full timeline, Cook finished,
+  the Use / Keep rate card, Save, Remove, Discard). It found one app bug, fixed: Save to history was narrow on
+  every cook after the first (`FinishScreen.tsx`; the check is in the device test). Fidelity PNGs
+  `docs/fidelity/rn-15-cook-finished.png` and `rn-15-cook-finished-rate.png`. Open: Jason's look at both.
 - **Built (2026-11-15):**
   - `src/screens/cook/FinishScreen.tsx` (a port of the legacy screen, mockup 15): the day as an overline,
     "Cook finished", "Served at 5:00 PM, on time." (or "Ended at 10:23 AM, before serve."), one row per food
@@ -1539,6 +1556,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   `npm run check` was NOT run (the session that built it was not allowed to): prettier, ESLint, typecheck,
   Jest, engine and gate tests pass; Android tests, Semgrep and Snyk are still to run. No fidelity PNGs yet
   (01, 02, 17 need the emulator). Not done until the gate passes and Jason has seen the screens.
+- **Device test (2026-11-15):** `setup` passes on the emulator at 115% (on `main`, on an empty database).
+  Fidelity PNGs `docs/fidelity/rn-01-setup-cookers.png`, `rn-02-smoker-picker.png`, `rn-17-add-cooker.png`.
+  Noted: at 115% Add another cooker is half behind Back and Continue until scrolled. Open: Jason's look.
 - **Built (2026-11-15):**
   - Kit (`src/components/kit/setup.tsx`, tests in `setup.test.tsx`): `SetupPage` (step bar, title, intro,
     pinned actions), `SetupActions` (Back 1 : main 2), `OptionCard`, `DashedButton`, `PickRow`; `GroupLabel`
@@ -1591,6 +1611,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   Jest, engine and gate tests pass; Android tests, Semgrep and Snyk are still to run. The battery help link is
   NOT on the screen (no approved wording or links, see Left). Not done until the gate passes, the link is
   settled and the real-phone checks are run.
+- **Device test (2026-11-15):** the alerts step and its test alert pass in `setup` on the emulator at 115%.
+  Fidelity PNG `docs/fidelity/rn-03-setup-alerts.png`. Open: the test alert in Doze on the phone; Jason's look.
 - **Built (2026-11-15):**
   - `src/screens/setup/AlertsStep.tsx` (mockup 03; a port of the legacy AlertsStep): title, intro, the
     permission rows (`AlertChecks`, read again on resume through `useAlarmStatus`), the test alert, Back and
@@ -1635,6 +1657,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   `npm run check` was NOT run (the session that built it was not allowed to): prettier, ESLint, typecheck,
   Jest, engine and gate tests pass; Android tests, Semgrep and Snyk are still to run. No fidelity PNG yet
   (16 needs the emulator). Not done until the gate passes and Jason has seen the screen.
+- **Device test (2026-11-15):** `gear` passes on the emulator at 115% (rows, Alerts, Units, Cook rates).
+  Fidelity PNG `docs/fidelity/rn-16-gear.png`. Open: Jason's look.
 - **Built (2026-11-15):**
   - `src/screens/gear/GearScreen.tsx` (a port of the 0.2.0 screen) and `app/(tabs)/gear.tsx`: Cookers (one
     row per cooker the user has; Add a cooker when one is missing, with the T-024 `AddCooker` sheet showing
@@ -1676,6 +1700,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   `npm run check` was NOT run (the session that built it was not allowed to): prettier, ESLint, typecheck,
   Jest, engine and gate tests pass; Android tests, Semgrep and Snyk are still to run. No fidelity PNGs yet
   (18, 19 need the emulator). Not done until the gate passes and Jason has seen the sheets.
+- **Device test (2026-11-15):** the Griddle and Oven sheets, Add a cooker and the picker pass in `gear` on the
+  emulator at 115%. Fidelity PNGs `docs/fidelity/rn-18-griddle.png`, `rn-19-oven.png`. Noted: the oven's
+  default is Ask each time (mockup 19 shows Oven). Open: Jason's look.
 - **Built (2026-11-15):**
   - `src/screens/gear/CookerSheets.tsx` (a port of the 0.2.0 file): `GriddleSheet` (mockup 18: Name, Cooking
     surface 17/22/28/36 in, Burners 1-4, Dome or cover), `OvenSheet` (mockup 19: Lowest oven setting in 5F
@@ -1713,6 +1740,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ### T-028 History and cook rates (20), with editing
 - **Status:** built and unit-tested on branch `t028` (2026-11-15); not run on a device, and `npm run check`
   (Android tests, Semgrep, Snyk) not run on it yet. Fidelity PNG 20 not taken.
+- **Device test (2026-11-15):** `history` passes on the emulator at 115% (rate sheet, cook sheet, Edit, Cook
+  again, Remove). Fidelity PNG `docs/fidelity/rn-20-cook-history.png`. Noted: the card reads "chicken wings
+  2 lb" (mockup 20: "wings 2 lb"), and a rate card shows for every by-weight food (mockup: brisket only).
+  Open: the seven questions below; Jason's look.
 - **Built:**
   - `src/screens/gear/HistoryScreen.tsx` (a port of the 0.2.0 screen): a rate card per by-weight food
     ("Brisket on Pit Boss 820": rate used and its source, cooks logged, saved total hours), the rate sheet
@@ -2124,6 +2155,11 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   don't want to wait till the next version")
 - **Why:** on his cook of 2026-11-14 the brisket's done step came up at 3:30 PM and he hit Done by accident.
   0.2.0 has no way back; the brisket was at about 170F and stayed on.
+- **Jason's answers (2026-11-15):** the undo is a row in Cook options that names the step ("Undo: Brisket off
+  the smoker"), not on the Cook screen itself. It is offered for the most recent Done only, until the next
+  step is marked done. He thought about tying it to the same food's steps and chose the simple rule: "let's
+  go with your recommendation. We can always change it later." This is the approved SPEC line for the UI;
+  write it into SPEC (Live cook, Cook options) with the task.
 - **Goal:** a step marked Done on the Cook screen can be put back to not done, with its alarms and the
   steps after it as they were before the tap.
 - **Not this:** editing any step on the full timeline (next version, BACKLOG.md).

@@ -1,7 +1,98 @@
-# Handoff (2026-11-15, sixteenth session: T-021 to T-029 built with parallel agents; device checks and Jason's questions are next)
+# Handoff (2026-11-15, seventeenth session: device tests for Setup, Cook finished, Gear and History written, three of four passing; T-030, T-032, T-033 built on branches)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
+
+## Restart, seventeenth session (written Sunday 2026-11-15, 1:50 PM; read this first)
+
+The sixteenth session's Restart list below still holds for items 1 to 4 and 6 to 8. Its step 5 is replaced by
+this. Nothing from this session is committed yet: the working tree on `main` holds step 5a.
+
+**Update, 3:45 PM the same day: step 5a is done and committed.** All four device tests pass at 115%
+(`history` rerun passed), the fidelity PNGs are in `docs/fidelity/`, the four tests are in the README table,
+T-023 to T-028 have a "Device test" line in TASKS, and `npm run check` passed all six steps (539 Jest tests).
+Jason still has to judge the screenshots against mockups 01-03 and 15-20. Next: merge `t032`, `t033`, `t030`
+one at a time, each through the gate; then the questions below. **Trap:** agent worktrees under
+`.claude/worktrees/` fail the gate at Prettier (it reads them, and rewrote two fixture files in each). The
+three were removed with Jason's yes (branches `t030`, `t032`, `t033` and `worktree-agent-*` kept). Remove
+an agent's worktree, with his yes, before the next gate run. The "Still to do" list below is history.
+
+**State of step 5a (device tests for Setup, Cook finished, Gear, History):**
+
+- Four device tests are written in `tools/device/run.sh`: `setup`, `cook-finished`, `gear`, `history`. Each
+  starts on an empty database (`db_fresh` sets the emulator's database aside, `db_done` puts it back; the exit
+  trap does too). On the emulator at 115%: `setup`, `cook-finished` and `gear` pass. `history` passed every
+  check but one, which was the test's fault (the label is "More brisket minutes", lower case; fixed, not
+  rerun). **Next: run `history` once more**, then the rest of this list.
+- Run one test per call, with the emulator started first, or the run goes past the Bash tool's 10 minutes:
+  `tools/device/avd.sh start`, then `DEVICE_SCALES=1.15 tools/device/run.sh --no-build --only history`
+  (about 7 minutes each), `tools/device/avd.sh stop` at the end. The emulator and Metro are stopped now.
+- New dev seeds (`app/dev/plan.tsx`, fixture `src/lib/fixtures/finishedCook.ts` with a Jest test):
+  `?seed=finished` (mockup 15: all done but Serve, due in about a minute; Done on Serve opens Cook finished),
+  `?seed=finished-blend` (three logged briskets, so the rate card offers Use 0.74 / Keep 0.75),
+  `?seed=history` (mockup 20). Every seed clears the brisket rate lock and the other seeds' saved cooks.
+- **App bug found and fixed:** on Cook finished, Save to history was only as wide as Discard this cook (753 of
+  1080 px) on every cook after the first, when the support link is not there (`FinishScreen.tsx`: the footer
+  is now in `Fill`). The regression check is in the `cook-finished` device test (full width without the link).
+- Not app bugs, noted for Jason: the history card reads "chicken wings 2 lb" (mockup 20: "wings 2 lb");
+  Cook history shows a rate card for every by-weight food (mockup: brisket only), so the cooks are a screenful
+  down; at 115% Setup's Add another cooker is half behind Back and Continue until scrolled; the oven's default
+  is Ask each time (mockup 19 shows Oven).
+- **Still to do for 5a, in order:** (1) `history` rerun passes; (2) save fidelity PNGs to `docs/fidelity/` as
+  `rn-01-setup-cookers.png`, `rn-02-smoker-picker.png`, `rn-03-setup-alerts.png`, `rn-15-cook-finished.png`
+  (and `rn-15-cook-finished-rate.png`, the Use / Keep card Jason has not seen), `rn-16-gear.png`,
+  `rn-17-add-cooker.png`, `rn-18-griddle.png`, `rn-19-oven.png`, `rn-20-cook-history.png`, from
+  `tools/device/out/1.15/` (`setup-cookers.png`, `setup-picker.png`, `setup-alerts.png`, `cook-finished.png`,
+  `cook-finished-keep.png`, `gear.png`, `gear-add-cooker.png`, `gear-griddle.png`, `gear-oven.png`,
+  `history.png`; raw cropped shots, like `rn-13-cook-options.png`); (3) add the four tests to the table in
+  `tools/device/README.md` and compose lines at the end of `run.sh` if wanted; (4) update the T-023 to T-028
+  status lines in TASKS (device test passes at 115%); (5) `npm run check`; (6) commit as
+  "T-023 to T-028: device tests ..."; (7) stop with the check summary and tell Jason which screenshots to
+  judge against which mockups (memory: device testing format).
+
+**Agent branches, built and unit-tested, not merged, not gated (each one commit series on top of `main`
+3bf0ae6; the worktrees are gone, the branches remain):**
+
+| Branch | Task | What to do |
+|---|---|---|
+| `t032` (2e30596) | Update check | Cherry-pick or merge, `npm run check`. Jason's answers are in: a final install is offered finals only, a prerelease install anything newer; a failed check retries at the next launch or resume; the dev build checks too (as built). SPEC section 10 reworded on the branch. |
+| `t033` (3f65215) | Release docs | Merge, then Jason reviews. Docs only. |
+| `t030` (b2ab25a) | Open a shared plan | Merge last. New Expo module `modules/pit-share` (Kotlin never compiled, 16 JUnit tests never run), config plugin, `app/+native-intent.ts`. Needs `npx expo prebuild`, a dev build rebuild, then a device test (the agent's report: write a plan into the app's cache with `run-as`, open it with `am start -a android.intent.action.VIEW -t application/json -d file:///data/user/0/<pkg>/cache/test.pitplan`; an oversized file must show "That file is too big to be a Pit Planner plan."). Any Jest test that imports `@/platform/share` needs the `modules/pit-share` mock. `tools/snyk.test.mjs` lists Gradle projects; check it after adding the module. |
+
+Merge one at a time, each through the gate. TASKS.md is touched on all three branches and on `main` (expect
+small conflicts in the T-030, T-032, T-033 entries only). **Trap:** an agent's worktree starts at
+`origin/main` (3e77bca), 34 commits behind local `main`: tell every agent to move onto local `main` first.
+
+**Jason's decisions this session (already in TASKS):** T-063: undo is a row in Cook options naming the step,
+the most recent Done only, until the next step is marked done. T-065: hidden (5 taps on the version line on
+Gear), share sheet with one file, his address as where to send it, the file's contents listed. Both tasks are
+unblocked. T-032: as in the table.
+
+**Questions still to ask Jason (plain words, two choices spelled out, a few at a time, no caveman):**
+
+1. (Answered 2026-11-15: the test copy, "Pit Planner dev", also asks GitHub once a day, as built. Add this
+   to the T-032 note in TASKS when `t032` is merged; nothing to change in the code.)
+2. T-028's seven questions (its TASKS entry). Not asked yet.
+3. T-030 (agent's report, also noted in its TASKS entry on `t030`): where an import-made conflict shows (as
+   built: the Conflicts sheet opens after Use this plan); whether "holds too long" counts as such a conflict;
+   "Someone shared a Saturday plan." (no sender name in the file) or a name; the too-big wording; the
+   read-only smoker field (mockup shows a chevron); OK as the error sheet's button.
+4. T-033: which phones and Android versions his friends and wife have; will testers get betas; a contact
+   line for a failed install; commit the version bump before the build (the script needs a clean tree) or
+   change the script; is 0.2.0 on GitHub Releases or only Drive; is whole turkey (T-059) in 0.3.0.
+5. Carried: T-022's 15 min control; `src/lib/maker.ts` remove or keep; delete branches `t025`, `t026`
+   (and later `t030`, `t032`, `t033` and the `worktree-agent-*` branches and worktrees, with his yes).
+
+**Dashboard (Jason, 2026-11-15):** `dashboard.html` at the repo root, a local file ignored through
+`.git/info/exclude` (never commit or push it). Rewrite its `D` data block (between the DATA markers; keep the
+field names and the `st` values done, built, doing, todo, blocked, wait) and set `updated` to the current
+local time **at every one of these**: a device test passes or fails, an agent finishes, a branch is merged,
+the gate runs, a commit is made, Jason answers a question, and at least every 20 minutes while work is under
+way. It went stale once this session and he noticed. After editing, check the block still parses (run the
+`D` block through `node`).
+
+**Usage:** he was at 87% at 1:40 PM with a reset at 3:30 PM. Four agents ran this session. Ask before
+starting more, and keep the dashboard's usage note current with what he reports.
 
 ## Restart (written Sunday 2026-11-15, end of the sixteenth session)
 
