@@ -75,6 +75,8 @@ const ICON_AVATAR = {
   ok: { bg: 'bg-ok-container', color: colors.ok },
   warn: { bg: 'bg-warn-container', color: colors.warn },
   gold: { bg: 'bg-gold-container', color: colors.warn },
+  // No circle, the icon in the accent color: the plus of an "Add" row, lined up with the avatars above it.
+  bare: { bg: '', color: colors.accent },
 } as const;
 
 /** 40 dp round holder for a non-cooker icon (Gear: rates, alerts, support). */

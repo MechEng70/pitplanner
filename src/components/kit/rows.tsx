@@ -269,3 +269,18 @@ export function LinkButton({ href, children }: { href: string; children: React.R
     </TextContext.Provider>
   );
 }
+
+/**
+ * A quiet centered line at the end of a screen (ui.css .gear-version; Gear: the version). It sits at the
+ * bottom of the screen when the content is short, and after the content when it is long. The whole 48 dp
+ * line takes the press, with no ripple.
+ */
+export function FootLine({ text, onPress }: { text: string; onPress: () => void }) {
+  return (
+    <Pressable role="button" onPress={onPress} className="mt-auto min-h-[48px] items-center justify-center pb-2 pt-6">
+      <Text variant="body" tone="tertiary" center>
+        {text}
+      </Text>
+    </Pressable>
+  );
+}

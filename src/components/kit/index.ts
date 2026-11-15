@@ -17,7 +17,7 @@ export * from './icons';
 export { Divider, Fill, Fixed, Inset, Row, Spacer, Stack, type Gap } from './layout';
 export { BottomNav, type NavItem } from './nav';
 export { Num, Nums, type NumProps } from './num';
-export { ActionRow, CheckRow, GroupLabel, InfoRow, LinkButton, ListRow, StatusRow } from './rows';
+export { ActionRow, CheckRow, FootLine, GroupLabel, InfoRow, LinkButton, ListRow, StatusRow } from './rows';
 export { ResultBar, type ResultCell } from './ResultBar';
 export { AppBar, Screen } from './screen';
 export { DashedButton, OptionCard, PickRow, SetupActions, SetupPage } from './setup';

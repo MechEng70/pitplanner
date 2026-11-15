@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { Linking, View } from 'react-native';
-import { ActionRow, CheckRow, InfoRow, LinkButton, ListRow, StatusRow } from './rows';
+import { ActionRow, CheckRow, FootLine, InfoRow, LinkButton, ListRow, StatusRow } from './rows';
 import { IconColor, StopSquare } from './icons';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
@@ -122,4 +122,13 @@ test('LinkButton is a link that opens the browser, with a 48 dp target', async (
   await fireEvent.press(link);
   expect(open).toHaveBeenCalledWith('https://example.org/support');
   open.mockRestore();
+});
+
+test('FootLine is one button with its text, and reports each press (T-026)', async () => {
+  const onPress = jest.fn();
+  await render(<FootLine text="Pit Planner 0.3.0" onPress={onPress} />);
+  const line = screen.getByRole('button', { name: 'Pit Planner 0.3.0' });
+  await fireEvent.press(line);
+  await fireEvent.press(line);
+  expect(onPress).toHaveBeenCalledTimes(2);
 });

@@ -169,3 +169,12 @@ test('a banner action is a small button: 40 dp tall with a 48 dp touch target', 
   await fireEvent.press(fix);
   expect(onPress).toHaveBeenCalledTimes(1);
 });
+
+test('IconAvatar bare has no circle and gives its icon the accent color (T-026)', async () => {
+  await render(
+    <IconAvatar tone="bare">
+      <Bell testID="bell" />
+    </IconAvatar>,
+  );
+  expect(screen.getByTestId('bell', { includeHiddenElements: true }).props.stroke).toBe(colors.accent);
+});

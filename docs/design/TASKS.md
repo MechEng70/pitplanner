@@ -1582,7 +1582,33 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ## Phase 8: Gear and history (mockups 16-20)
 
 ### T-026 Gear screen (16)
-- **Status:** todo
+- **Status:** built 2026-11-15 on branch `t026`, unit-tested (Jest). NOT run on a device or emulator, and
+  `npm run check` was NOT run (the session that built it was not allowed to): prettier, ESLint, typecheck,
+  Jest, engine and gate tests pass; Android tests, Semgrep and Snyk are still to run. No fidelity PNG yet
+  (16 needs the emulator). Not done until the gate passes and Jason has seen the screen.
+- **Built (2026-11-15):**
+  - `src/screens/gear/GearScreen.tsx` (a port of the 0.2.0 screen) and `app/(tabs)/gear.tsx`: Cookers (one
+    row per cooker the user has; Add a cooker when one is missing, with the T-024 `AddCooker` sheet showing
+    only the missing kinds), Your numbers (Cook rates with the `ratesSummary` line), App (Update available
+    from `state.update` as a link to the download, Alerts with live status and the Alerts sheet of
+    `AlertChecks`, Units with the Units sheet, Home Assistant "Coming later" with no chevron, Buy me a bag
+    of pellets), then the version. Five taps on the version call `grantDebugPass()` and open `/debug`.
+  - Props the route does not pass yet: `onCooker(kind)` (T-027: a cooker row, and the kind chosen in Add a
+    cooker) and `onHistory` (T-028). Until then those rows do nothing. The route passes `version`
+    (`Constants.expoConfig.version`), `permissions`, `onResume` and `onDebug`.
+  - Units: the sheet calls `setUnits`; the hopper weight, the oven's holding temp and the cook rate are shown
+    in the chosen units and stored as before (F, lb), which the test checks in the repos.
+  - Kit (additive): `FootLine` (`rows.tsx`: the quiet centered line at the end of a screen, a 48 dp button)
+    and the `bare` tone of `IconAvatar` (`surfaces.tsx`: no circle, accent icon, for the plus of Add a cooker).
+- **Left:** `npm run check`; fidelity PNG 16; a look on the emulator at 100/115/130% font. T-027 passes
+  `onCooker`, T-028 `onHistory`, T-032 writes `state.update`.
+- **Questions for Jason:**
+  - The 0.2.0 Alerts sheet had "Send a test alert in 10 sec" under the rows. It is left out here: its
+    "Test alert set for ..." line appears after the tap and makes the sheet taller. Add it (with the line's
+    space kept from the start), or leave the test alert to Setup and the hidden test screen?
+  - Tapping the smoker row: 0.2.0 opened the smoker picker. Here it is `onCooker('smoker')` for T-027 to
+    decide (there is no smoker sheet mockup; 17-19 are Add a cooker, griddle and oven).
+  - Mockup 16 shows a chevron on Home Assistant; the screen follows 0.2.0 (no chevron, not tappable).
 - **Goal:** cookers list, Cook rates and history links, Alerts sheet, Units sheet, Home Assistant "Coming
   later", support link, version (tap 5 times for debug), update row.
   The 5 taps call `grantDebugPass()` (`src/lib/debugPass.ts`) and then open `/debug`: in a release build
