@@ -5,8 +5,9 @@
 // The Cook options button and Adjust open Cook options (mockup 13, CookOptions.tsx). A Done that is 5 min or
 // more early or late, and Back up to temp after the pit went out, ask Keep serve or Move serve
 // (KeepMoveSheet.tsx). Start over asks first, then drops the cook and goes to Plan; the menu on Plan and the
-// cook history are not touched. What belongs to T-023 arrives as a handler from the route: Full timeline
-// (`onTimeline`) and Cook finished (`onEnd`, from End cook). Until then those two do nothing.
+// cook history are not touched. Full timeline opens a sheet with every step, the done ones dimmed with the
+// time they were done. End cook and Done on the Serve step (the last one) call `onEnd`: Cook finished
+// (FinishScreen.tsx), which CookFlow.tsx shows in place of this screen.
 //
 // The cook is saved through the store's `setCook`, which also replaces the phone's alarm set: this screen
 // never talks to the alarm service.
@@ -31,7 +32,7 @@ import {
   Text,
   Timer,
 } from '@/components/kit';
-import { doneStep, driftMin, dueAt, pending, pitUp, stepText, type ActiveCook } from '@/lib/cook';
+import { doneStep, driftMin, dueAt, pending, pitUp, stepText, steps, type ActiveCook } from '@/lib/cook';
 import {
   cookStatus,
   countdown,
@@ -78,15 +79,12 @@ export interface CookScreenProps {
   onResume: AppLinks['onResume'];
   onGoPlan: () => void;
   now?: () => number;
-  /** Full timeline: T-023. */
-  onTimeline?: () => void;
-  /** End cook leads to Cook finished, which is T-023: the route does not pass this yet, so End cook only
-   *  closes the sheet. */
+  /** End cook, and Done on the Serve step: on to Cook finished (CookFlow). */
   onEnd?: () => void;
 }
 
-/** The sheet over Live cook: Cook options, the Start over question, or a keep or move question. */
-type Open = null | 'options' | 'startOver' | Ask;
+/** The sheet over Live cook: Cook options, the Start over question, the full timeline, or a keep or move question. */
+type Open = null | 'options' | 'startOver' | 'timeline' | Ask;
 
 export function CookScreen(props: CookScreenProps) {
   const cook = useStore().state.cook;
@@ -113,7 +111,6 @@ function LiveCook({
   onResume,
   onGoPlan,
   now: clock = Date.now,
-  onTimeline,
   onEnd,
 }: CookScreenProps & { cook: ActiveCook }) {
   const { state, setCook } = useStore();
@@ -134,6 +131,11 @@ function LiveCook({
     if (!next) return;
     const at = clock();
     const r = doneStep(cook, next.key, at);
+    // Serve is the last step: it is marked done, then on to Cook finished.
+    if (next.event.kind === 'serve') {
+      setCook(r.cook);
+      return onEnd?.();
+    }
     if (!r.ask) return setCook(r.cook);
     // 5 min or more early or late: nothing is saved until Keep serve or Move serve is picked.
     const d = r.ask.deltaMin;
@@ -318,7 +320,7 @@ function LiveCook({
               After that
             </Text>
           ) : null}
-          <Button kind="text" onPress={() => onTimeline?.()}>
+          <Button kind="text" onPress={() => setOpen('timeline')}>
             <Text>Full timeline</Text>
           </Button>
         </Row>
@@ -345,6 +347,20 @@ function LiveCook({
           onClose={() => setOpen(null)}
         />
       ) : null}
+      {open === 'timeline' ? (
+        <Sheet title="Full timeline" onClose={() => setOpen(null)}>
+          <Stack gap={10}>
+            {steps(cook).map(k => (
+              <StepRow
+                key={k.key}
+                at={cook.done[k.key] ?? dueAt(cook, k)}
+                label={tx(k.event.label, units)}
+                done={k.key in cook.done}
+              />
+            ))}
+          </Stack>
+        </Sheet>
+      ) : null}
       {open === 'startOver' ? <StartOverSheet onStartOver={startOver} onClose={() => setOpen(null)} /> : null}
       {open && typeof open === 'object' ? (
         <KeepMoveSheet ask={open} before={plan} onPick={setCook} onClose={() => setOpen(null)} />
@@ -353,18 +369,23 @@ function LiveCook({
   );
 }
 
-/** A coming step: its time in a column that keeps its width, then what to do. */
-function StepRow({ at, label }: { at: number; label: string }) {
+/**
+ * A step: its time in a column that keeps its width, then what to do. A `done` step is dimmed and `at` is
+ * when it was done.
+ */
+function StepRow({ at, label, done }: { at: number; label: string; done?: boolean }) {
   const { fontScale } = useWindowDimensions();
   return (
     <Row gap={16} align="start">
       <View style={{ minWidth: Math.round(STEP_TIME_DP * fontScale) }}>
-        <Num variant="bodyL" tone="accentHi">
+        <Num variant="bodyL" tone={done ? 'tertiary' : 'accentHi'}>
           {fmtTime(at)}
         </Num>
       </View>
       <Fill>
-        <Text variant="bodyL">{label.replace(/\.$/, '')}</Text>
+        <Text variant="bodyL" tone={done ? 'tertiary' : undefined}>
+          {label.replace(/\.$/, '')}
+        </Text>
       </Fill>
     </Row>
   );

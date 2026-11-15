@@ -326,7 +326,7 @@ describe('End cook', () => {
     expect(repos.history.list()).toEqual(history);
   });
 
-  test('without Cook finished wired (the route today) it only closes the sheet', async () => {
+  test('without an `onEnd` handler it only closes the sheet', async () => {
     const { repos } = await show(cookAt(AT_1023), AT_1023, false);
     await act1(/^End cook/);
     expect(optionsSheet()).toBeUndefined();

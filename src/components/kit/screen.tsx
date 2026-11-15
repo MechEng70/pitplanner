@@ -17,13 +17,16 @@ const TOP = ['top'] as const;
 export function AppBar({
   title,
   subtitle,
+  overline,
   actions,
 }: {
   title: string;
   subtitle?: React.ReactNode;
+  /** Accent line above the title (Cook finished: the day of the cook). */
+  overline?: string;
   actions?: React.ReactNode;
 }) {
-  const sub = subtitle != null;
+  const sub = subtitle != null || overline != null;
   return (
     <View
       className={cn(
@@ -32,10 +35,15 @@ export function AppBar({
       )}
     >
       <View className="min-w-0 flex-1 gap-0.5">
+        {overline != null ? (
+          <Text variant="overline" tone="accentHi" className="uppercase">
+            {overline}
+          </Text>
+        ) : null}
         <Text variant="title" role="heading">
           {title}
         </Text>
-        {sub ? (
+        {subtitle != null ? (
           <Text variant="bodyM" tone="secondary">
             {subtitle}
           </Text>
@@ -49,12 +57,14 @@ export function AppBar({
 export function Screen({
   title,
   subtitle,
+  overline,
   actions,
   footer,
   children,
 }: {
   title: string;
   subtitle?: React.ReactNode;
+  overline?: string;
   actions?: React.ReactNode;
   /** Pinned at the bottom (Start cook); the body scrolls under it. */
   footer?: React.ReactNode;
@@ -62,7 +72,7 @@ export function Screen({
 }) {
   return (
     <SafeAreaView edges={TOP} className="flex-1 bg-bg">
-      <AppBar title={title} subtitle={subtitle} actions={actions} />
+      <AppBar title={title} subtitle={subtitle} overline={overline} actions={actions} />
       <FooterScroll fill fadeTo="bg" footer={footer} contentClassName="gap-3 px-4">
         {children}
       </FooterScroll>

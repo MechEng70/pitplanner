@@ -102,3 +102,16 @@ test('a subtitle sits under the title; the title is still the heading', async ()
   expect(sub.props.className).toContain('text-ink-2');
   expect(StyleSheet.flatten(sub.props.style)).toMatchObject({ fontSize: 15 });
 });
+
+test('an overline sits above the title in capitals; the title is still the heading', async () => {
+  await render(
+    <Screen title="Cook finished" overline="Saturday, Nov 14" subtitle={<Text>Served at 5:00 PM, on time.</Text>}>
+      <Text>Body</Text>
+    </Screen>,
+  );
+  const over = screen.getByText('Saturday, Nov 14');
+  expect(over.props.className).toContain('uppercase');
+  expect(over.props.className).toContain('text-ember-hi');
+  expect(screen.getByRole('heading', { name: 'Cook finished' })).toBeOnTheScreen();
+  expect(screen.getByText('Served at 5:00 PM, on time.')).toBeOnTheScreen();
+});

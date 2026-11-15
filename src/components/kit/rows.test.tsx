@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { Linking, View } from 'react-native';
-import { ActionRow, CheckRow, ListRow, StatusRow } from './rows';
+import { ActionRow, CheckRow, InfoRow, LinkButton, ListRow, StatusRow } from './rows';
 import { IconColor, StopSquare } from './icons';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
@@ -90,4 +90,36 @@ test('ActionRow is one button with its title and what it does; danger draws the 
   // The subtitle wraps, it is never cut.
   await rerender(<ActionRow icon={<StopSquare />} title="Pit went out" subtitle="Stops the clock" onPress={onPress} />);
   expect(screen.getByText('Stops the clock').props.numberOfLines).toBeUndefined();
+});
+
+test('InfoRow shows a title, a trailing result in its tone and a line under it; it is not a button', async () => {
+  await render(
+    <>
+      <InfoRow title="Brisket" trailing="25 min ahead" tone="ok" subtitle="Planned 9 hr, actual 8 hr 35 min" />
+      <InfoRow title="Chicken wings" />
+    </>,
+  );
+  expect(screen.getByText('Brisket')).toBeOnTheScreen();
+  expect(screen.getByText('25 min ahead').props.className).toContain('text-ok');
+  // The result keeps its width; the title takes the rest and wraps.
+  expect(screen.getByText('25 min ahead').props.className).toContain('shrink-0');
+  expect(screen.getByText('Brisket').props.numberOfLines).toBeUndefined();
+  expect(screen.getByText('Planned 9 hr, actual 8 hr 35 min').props.className).toContain('text-ink-2');
+  expect(screen.getByText('Chicken wings')).toBeOnTheScreen();
+  expect(screen.queryByRole('button')).toBeNull();
+});
+
+test('LinkButton is a link that opens the browser, with a 48 dp target', async () => {
+  const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+  await render(
+    <LinkButton href="https://example.org/support">
+      <Text>Buy me a bag of pellets</Text>
+    </LinkButton>,
+  );
+  const link = screen.getByRole('link', { name: 'Buy me a bag of pellets' });
+  expect(link.props.className).toContain('min-h-[48px]');
+  expect(screen.getByText('Buy me a bag of pellets').props.className).toContain('text-ember-hi');
+  await fireEvent.press(link);
+  expect(open).toHaveBeenCalledWith('https://example.org/support');
+  open.mockRestore();
 });

@@ -1459,7 +1459,51 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** none.
 
 ### T-023 Notification actions, lock-screen alert, Cook finished (14, 15)
-- **Status:** todo
+- **Status:** built 2026-11-15, unit-tested (Prettier, ESLint, typecheck, Jest, the engine tests and the gate
+  tests pass in the task's worktree). `npm run check` (Semgrep, Snyk, Android tests) and the device run were
+  NOT run (other sessions had the main checkout and the emulator): run `npm run check`, then look at Cook
+  finished on the device against mockup 15 and save fidelity PNG 15. No device flow was added
+  (`tools/device/flows/live.yaml` is still to write). Not done until that passes.
+- **Built (2026-11-15):**
+  - `src/screens/cook/FinishScreen.tsx` (a port of the legacy screen, mockup 15): the day as an overline,
+    "Cook finished", "Served at 5:00 PM, on time." (or "Ended at 10:23 AM, before serve."), one row per food
+    with planned vs actual and On plan / N ahead / N behind / Not logged, a card per food whose rate this cook
+    moves ("Your brisket rate updates"), Notes for next time, Save to history, Discard this cook and, the
+    first time the screen is ever reached, Buy me a bag of pellets (opens the browser; `flags.supportShown`
+    is set by Save or Discard).
+  - `src/screens/cook/CookFlow.tsx`: what the Cook tab route renders. Live cook, then Cook finished after
+    End cook in Cook options or Done on the Serve step. Save writes one history record (`addRecord`), then
+    both Save and Discard end the cook with `setCook(null)` (one `cancelAll`) and go to Plan. Until one of
+    them is tapped the cook and its alarms stay. Leaving the app on Cook finished keeps the cook; it comes
+    back as Live cook.
+  - `CookScreen.tsx`: Full timeline opens a sheet with every step, done ones dimmed with the time they were
+    done (`onTimeline` is gone; the sheet lives in the screen). Done on Serve marks it done and calls `onEnd`.
+  - Kit, additive: `InfoRow`, `LinkButton` (rows), `TextArea` (input), `Screen` / `AppBar` `overline`.
+  - Notification actions: nothing rebuilt. `src/screens/cook/alertActions.test.tsx` runs `useAlarmWiring`
+    and Live cook over one store: Done and +15 min queued while the app was closed are applied at start, and
+    on resume when it was in the background; the notice shows on Live cook until OK; one alarm set per
+    change; +15 then Done on one step apply in tap order; Open and an empty queue change nothing.
+  - Overdue counting: nothing was missing against the legacy screen ("Overdue since 11:35 AM", "Check the
+    brisket, 12 min overdue" in the warn color, Behind; counted on by the 30 s clock, tested). "N min past
+    the step." is the text of the repeat notification (native, `Notifications.kt`, already built and tested);
+    neither 0.2.0 nor SPEC puts it on Live cook, so it is not on the screen.
+  - T-064 regression tests: Save adds one row and leaves the earlier row as it was; Discard leaves the
+    history exactly as it was (`FinishScreen.test.tsx`).
+- **What a saved record does today (for T-063, no UI built):** a food counts as logged as soon as its pull
+  step is marked Done, from the app or from an alert, and its minutes on heat are that Done minus the Done of
+  its first step (the planned start when that one was never tapped). There is no check on the number: a pull
+  marked Done by mistake, or on and off marked together (0 min), is saved as a real cook and goes into the
+  rate. Only a food whose pull was never marked Done is saved as not logged and teaches nothing.
+- **Questions for Jason:**
+  1. Rate card wording. Mockup 15: "0.75 to 0.73 hr/lb at 225F. 1 of 3 cooks toward size-adjusted timing."
+     Built as 0.2.0: "0.75 to 0.73 hr/lb at 225F, from 1 cook.", and with a saved rate "Plans keep your
+     0.75 hr/lb. 1 of 3 logged cooks before it adjusts. Lock it in Gear, Cook rates." Keep the 0.2.0 wording?
+  2. Mockup 15 has no tab bar. Built as 0.2.0: Cook finished takes the place of Live cook inside the Cook
+     tab, so the tab bar stays. Hide it?
+  3. Ending early with nothing off the heat still offers Save to history and saves a record with every food
+     not logged (as 0.2.0). Keep?
+  4. Leaving Cook finished for another tab or app and coming back shows Live cook again, notes gone (as
+     0.2.0). Should it come back to Cook finished?
 - **Goal:** Done and +15 from the notification applied on resume; overdue counting; Cook finished with planned
   vs actual, rate update, notes, Save/Discard and the one-time support link.
 - **Files:** `src/screens/cook/FinishScreen.tsx`, `src/lib/cook.ts`, tests, fidelity PNGs 14-15,

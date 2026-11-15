@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { SHEET_OUT_MS } from '@/components/kit/sheet';
-import type { ActiveCook } from '@/lib/cook';
+import { pending, steps, type ActiveCook } from '@/lib/cook';
+import { fmtTime } from '@/lib/format';
 import { fakeAlarms, fakeResume } from '@/platform/fakes';
 import { AT_1023, MIN, cookAt, cookGear, cookMenu } from '@/test/cook';
 import { storeWrapper, testRepos } from '@/test/store';
@@ -26,6 +27,10 @@ async function show(cook: ActiveCook | null, at = AT_1023) {
   return { repos: r.repos, alarms, resume, clock, onGoPlan };
 }
 const button = (name: string | RegExp) => screen.getByRole('button', { name });
+/** A Num draws its spaces as no-break spaces. */
+const nbsp = (s: string) => s.replace(/ /g, '\u00a0');
+/** The text color class of a Text (its tone). */
+const tone = (el: { props: { className?: string } }) => /text-(ink|ember)[\w-]*/.exec(el.props.className ?? '')?.[0];
 const replaced = (calls: string[]) => calls.filter(c => c.startsWith('replaceAll')).length;
 
 describe('no cook running (T-064)', () => {
@@ -222,5 +227,71 @@ describe('what an alert changed', () => {
     await fireEvent.press(button('OK'));
     expect(screen.queryByText(/from the alert/)).toBeNull();
     expect(repos.activeCook.load()!.notice).toBeNull();
+  });
+});
+
+describe('Full timeline (T-023)', () => {
+  test('lists every step: done ones dimmed with the time they were done, the rest with the time they are due', async () => {
+    const cook = cookAt(AT_1023);
+    // The brisket went on 6 min late.
+    const on = Object.keys(cook.done).find(k => k.startsWith('phase:b:'))!;
+    const { repos, alarms } = await show({ ...cook, done: { ...cook.done, [on]: cook.done[on]! + 6 * MIN } });
+    const calls = alarms.calls.length;
+    await fireEvent.press(button('Full timeline'));
+    const sheet = within(screen.getByLabelText('Full timeline'));
+    const rows = steps(cook);
+    expect(rows.length).toBeGreaterThan(6);
+    for (const k of rows) {
+      const label = sheet.getByText(k.event.label.replace(/\.$/, ''));
+      expect(tone(label)).toBe(k.key in cook.done ? 'text-ink-3' : 'text-ink');
+    }
+    // Done: when it was done, dimmed. Still to do: when it is due, in the accent.
+    expect(tone(sheet.getByText(nbsp(fmtTime(cook.done[on]! + 6 * MIN))))).toBe('text-ink-3');
+    expect(sheet.queryByText(nbsp(fmtTime(cook.done[on]!)))).toBeNull();
+    expect(tone(sheet.getByText(nbsp('11:35 AM')))).toBe('text-ember-hi');
+    expect(tone(sheet.getByText(nbsp('5:00 PM')))).toBe('text-ember-hi');
+
+    await fireEvent.press(sheet.getByRole('button', { name: 'Close' }));
+    await act(() => jest.advanceTimersByTime(SHEET_OUT_MS));
+    expect(screen.queryByLabelText('Full timeline')).toBeNull();
+    // Looking changes nothing.
+    expect(alarms.calls.length).toBe(calls);
+    expect(repos.activeCook.load()!.done[on]).toBe(cook.done[on]! + 6 * MIN);
+  });
+
+  test('with one step left the button is still there', async () => {
+    const at = Date.UTC(2026, 10, 14, 21, 58);
+    await show(cookAt(at), at);
+    expect(screen.queryByRole('heading', { name: 'After that' })).toBeNull();
+    await fireEvent.press(button('Full timeline'));
+    expect(screen.getByLabelText('Full timeline')).toBeOnTheScreen();
+  });
+});
+
+describe('Done on Serve (T-023)', () => {
+  test('marks the step done and hands over to Cook finished', async () => {
+    const at = Date.UTC(2026, 10, 14, 22, 0);
+    const cook = cookAt(at);
+    const r = testRepos();
+    r.repos.activeCook.save(cook, at);
+    const alarms = fakeAlarms();
+    const onEnd = jest.fn();
+    await render(
+      <CookScreen
+        permissions={alarms}
+        onResume={fakeResume().onResume}
+        onGoPlan={() => {}}
+        onEnd={onEnd}
+        now={() => at}
+      />,
+      { wrapper: storeWrapper(r.repos, () => at, alarms) },
+    );
+    expect(screen.getByRole('heading', { name: /^Serve/ })).toBeOnTheScreen();
+    await fireEvent.press(button('Done'));
+    await act(async () => {});
+    expect(onEnd).toHaveBeenCalledTimes(1);
+    expect(pending(r.repos.activeCook.load()!)).toEqual([]);
+    // No keep or move question on the last step.
+    expect(screen.queryByRole('radio')).toBeNull();
   });
 });

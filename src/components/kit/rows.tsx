@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Linking, Pressable, View } from 'react-native';
 import { Check, ChevronRight, IconColor } from '@/components/kit/icons';
-import { Text } from '@/components/ui/text';
+import { Text, TextContext, type TextTone } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import { withAlpha } from '@/theme/color';
 import { colors } from '@/theme/tokens';
@@ -210,5 +210,62 @@ export function ActionRow({
         ) : null}
       </View>
     </Pressable>
+  );
+}
+
+/**
+ * A title with a trailing result and a line under it, not tappable (Cook finished: "Brisket", "25 min ahead",
+ * "Planned 9 hr, actual 8 hr 35 min"). The title wraps; the trailing result keeps its width.
+ */
+export function InfoRow({
+  title,
+  trailing,
+  subtitle,
+  tone,
+}: {
+  title: React.ReactNode;
+  trailing?: React.ReactNode;
+  subtitle?: React.ReactNode;
+  tone?: TextTone;
+}) {
+  return (
+    <View className="gap-0.5 px-4 py-3.5">
+      <View className="flex-row items-baseline gap-3">
+        <Text variant="bodyL" weight="500" className="min-w-0 flex-1 basis-0">
+          {title}
+        </Text>
+        {trailing != null ? (
+          <Text variant="body" weight="500" tone={tone} className="shrink-0">
+            {trailing}
+          </Text>
+        ) : null}
+      </View>
+      {subtitle != null ? (
+        <Text variant="body" tone="secondary">
+          {subtitle}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+const LINK_LABEL = { variant: 'bodyM', tone: 'accentHi' } as const;
+
+/**
+ * A text link that opens the browser (ui.css `.btn-link`): the text button's size, in the high accent. Its
+ * label is a Text, as in a Button.
+ */
+export function LinkButton({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <TextContext.Provider value={LINK_LABEL}>
+      <Pressable
+        role="link"
+        onPress={() => void Linking.openURL(href)}
+        android_ripple={RIPPLE}
+        className="min-h-[48px] flex-row items-center justify-center self-start overflow-hidden rounded-pill px-3"
+      >
+        {children}
+      </Pressable>
+    </TextContext.Provider>
   );
 }

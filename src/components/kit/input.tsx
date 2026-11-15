@@ -57,6 +57,45 @@ export function InputField({
   );
 }
 
+/**
+ * Text box for a few lines (ui.css `.textarea`: 56 dp at least, grows with what is typed). It has no label of
+ * its own: put it in a `Field`; `label` is its accessibility label.
+ */
+export function TextArea({
+  label,
+  value,
+  onInput,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onInput: (v: string) => void;
+  placeholder: string;
+}) {
+  const [focused, setFocused] = React.useState(false);
+  const ref = React.useRef<TextInputInstance>(null);
+  const reveal = useReveal();
+  return (
+    <TextInput
+      aria-label={label}
+      value={value}
+      onChangeText={onInput}
+      placeholder={placeholder}
+      placeholderTextColor={colors.text3}
+      multiline
+      selectionColor={colors.accent}
+      cursorColor={colors.accent}
+      ref={ref}
+      onFocus={() => {
+        setFocused(true);
+        reveal(ref.current);
+      }}
+      onBlur={() => setFocused(false)}
+      style={[styles.area, focused ? styles.areaFocused : styles.areaIdle]}
+    />
+  );
+}
+
 /** Search box (ui.css `.search`): a pill with the magnifier; the placeholder is also its accessibility label. */
 export function SearchField({
   value,
@@ -95,6 +134,16 @@ const styles = StyleSheet.create({
     color: colors.text,
     paddingVertical: 0,
   },
+  area: {
+    ...textStyle('bodyL', '400', true),
+    minHeight: 56,
+    borderRadius: 16,
+    color: colors.text,
+    backgroundColor: colors.surface,
+    textAlignVertical: 'top',
+  },
+  areaIdle: { borderWidth: 1, borderColor: colors.outline, paddingHorizontal: 16, paddingVertical: 14 },
+  areaFocused: { borderWidth: 2, borderColor: colors.accent, paddingHorizontal: 15, paddingVertical: 13 },
   num: { fontVariant: ['tabular-nums'] },
   idle: { borderWidth: 1, borderColor: colors.outline, paddingHorizontal: 16 },
   focused: { borderWidth: 2, borderColor: colors.accent, paddingHorizontal: 15, backgroundColor: colors.fieldOpen },
