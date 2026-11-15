@@ -1528,6 +1528,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Jason's answers (2026-11-15):** coming back to the app mid-cook shows Live cook (as built). Ending a
   cook with nothing off the heat still offers Save to history: keep (the record holds what was cooked, to
   reuse later). The rate card wording question was asked again in plainer words.
+- **Rate card (Jason, 2026-11-15):** plain words and a choice. "Brisket finished early" (or late), "Next time
+  the plan uses 0.73 hr/lb instead of 0.75.", then Use 0.73 / Keep 0.75. Keep saves the cook with that food
+  left out of rates (`toRecord(..., keepRate)`). No change: "Brisket finished on time" / "Your rate stays
+  0.75 hr/lb." A saved rate still held reads "Your brisket rate stays". Built to his words; he has not seen
+  the screen yet.
 
 ### T-024 Setup steps and smoker picker
 - **Status:** built 2026-11-15 on branch `t024`, unit-tested (Jest). NOT run on a device or emulator, and

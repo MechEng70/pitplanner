@@ -1,51 +1,65 @@
-# Handoff (2026-11-15, sixteenth session: T-021 done; T-022 and T-024 merged, not device-tested)
+# Handoff (2026-11-15, sixteenth session: T-021 to T-029 built with parallel agents; device checks and Jason's questions are next)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## Restart (written Sunday 2026-11-15, end of the fifteenth session)
+## Restart (written Sunday 2026-11-15, end of the sixteenth session)
 
 Do these in order:
 
-1. **Push:** `main` is ahead of `origin/main` (3e77bca) by the fifteenth session's commits, all local. Jason
-   pushes when he says so. **Snyk monitor is paused until December 2026**: do not run `npm run snyk:monitor`
-   before 2026-12-01; run it once on the first push in December. The gate's Snyk step is unchanged and
-   passed on 2026-11-15. If `npm run check` starts failing or skipping on Snyk's monthly limit, stop and ask
-   Jason: do not remove the step.
-2. **Phone: the hold is lifted** (Jason, 2026-11-15; `tools/device/PHONE-BLOCKED` is deleted). Every phone
-   action is still listed first and waits for his yes. 0.2.0 on the phone has no cook running and no alarms
-   (checked 2026-11-15 after his End cook, Discard). Never touch the release app without his yes.
-3. **Done on 2026-11-15:** the Sunday asks (charts `pitboss_002` to `_006` deleted, `pitboss_001.jpg` stays
-   by his call; T-060 phone reads in `tools/device/out/t060-2026-11-15/`, the app's logcat was empty);
-   T-061 passed his read; T-064 written (his 2026-11-14 cook IS saved in 0.2.0's history, read from the
-   phone; he could not find it because "Cook a past plan again" does nothing in 0.2.0 and the list is under
-   Gear, Cook rates).
-4. **Decided on 2026-11-15 (do not ask again; all in SPEC "Cook tab" and TASKS T-021, T-064, T-065, T-066):**
-   - Only Start cook on Plan starts a cook, then the Cook tab opens. The Cook tab with no cook shows "No cook
-     running" and Go to Plan, and never starts one.
-   - Start cook on Plan is greyed out while a cook runs.
-   - Start over asks first (T-022): "Start over?" / "This cook won't be saved." / buttons "Start over" and
-     "Keep cooking". Ending a cook goes back to Plan.
-   - Debug switch and send to developer are in 0.3.0 (T-065); he gives the email address later. A user
-     README with screenshots comes after the screens (T-066).
-   - Still to ask when it matters: whether "erase it" on ending a cook means the cook only (assumed; the
-     menu stays on Plan as in 0.2.0) or the menu too. Probe pairing for T-060: only when T-060 is picked up.
-5. **T-021 is done (2026-11-15):** gate passes, `cook` and `survive` pass on the emulator at 115%. Jason's
-   decisions of the day are in SPEC "Cook tab" and TASKS T-021: the Next up title is one sentence with the
-   countdown; a day or more away reads "in 1 day 22 hr"; a refused alarm set shows a banner with Try again.
-   - **Jason's working rules from 2026-11-15:** run tasks in parallel where it makes sense (agents, each in
-     its own git worktree off `main`, no emulator, no phone, no `npm run check`; the main session merges,
-     gates and runs the emulator), and run the emulator at 115% only (`DEVICE_SCALES=1.15`).
-   - **Worktree trap:** never `git add -A` in a worktree that has a `node_modules` link. A committed link
-     replaced `main`'s `node_modules` on merge (fixed with `npm ci`; `.gitignore` now ignores the link too).
-     After adding a route, Expo's route types are stale until Metro runs once: typecheck fails until then.
-   - **Merged, unit-tested, gate green, NOT run on a device:** T-022 (Cook options, keep or move serve,
-     Start over asks) and T-024 (Setup steps 1 and 2, smoker picker, Add a cooker). Each has questions for
-     Jason in its TASKS entry. Device tests for them are still to write.
-   - **In flight when this was written (agents, branches `t023`, `t026`, `t029`):** T-023 Cook finished and
-     Full timeline, T-026 Gear screen, T-029 Share plan export. Check `git branch` and TASKS for what landed.
-   - T-063 (take back a Done) needs a mockup or SPEC line he approves before any UI. T-059 waits for the
-     FSIS pages.
+1. **Push:** `main` is ahead of `origin/main` (3e77bca), all local. Jason pushes when he says so. **Snyk
+   monitor is paused until December 2026**: do not run `npm run snyk:monitor` before 2026-12-01; run it once
+   on the first push in December. If `npm run check` starts failing or skipping on Snyk's monthly limit, stop
+   and ask Jason: do not remove the step.
+2. **Phone:** the hold is lifted, and the phone is plugged in (`adb devices` shows it next to the emulator).
+   Every phone action is still listed first and waits for his yes. Hand-written adb commands must name the
+   emulator (`adb -s emulator-5554 ...`). Never touch the release app without his yes.
+3. **Jason's working rules (2026-11-15):**
+   - Run tasks in parallel where it makes sense: agents, each in its own git worktree off `main`, no
+     emulator, no phone, no `npm run check`; the main session merges, gates and runs the emulator. He was
+     at 56% session usage after eight agent tasks; watch the usage he reports and stop adding agents when it
+     runs hot.
+   - Emulator at 115% only: `DEVICE_SCALES=1.15 tools/device/run.sh --no-build --only <tests>`.
+   - The mockups are a starting point, not a contract: where a built screen follows 0.2.0 and he approved
+     it, the screen wins (SPEC "Cook tab").
+   - He reads on the move: ask questions in plain words with the two choices spelled out, never by quoting
+     UI strings alone.
+4. **Traps found this session:**
+   - Never `git add -A` in a worktree: a committed `node_modules` link replaced `main`'s `node_modules` on
+     merge (fixed with `npm ci`; `.gitignore` now ignores the link too). Agents add files by path.
+   - A worktree needs the git-ignored `.expo/`, `nativewind-env.d.ts` and `expo-env.d.ts` copied in, or
+     `tsc` fails there. After adding a route, Expo's route types are stale until Metro runs once.
+   - Do not edit `tools/device/run.sh` or app source while a device run is in flight (bash reads the script
+     as it goes; Metro reloads the app). Edit in a worktree and merge when the run ends.
+   - `pkill -f` and `pgrep -f` match the shell that runs them. A background device run started through the
+     Bash tool is killed at its 10 minute limit: the full suite takes longer, so run it in parts.
+   - Under emulator or agent load the first Jest run can fail with 5 s timeouts; a second run passes. Do not
+     raise the timeout.
+5. **Where the tasks stand (all on `main`; `npm run check` passed on this `main`, all six steps, on 2026-11-15; 537 Jest tests):**
+
+   | Task | Built | Emulator at 115% | Open with Jason |
+   |---|---|---|---|
+   | T-021 Live cook, Start cook | done | `cook`, `survive` pass | none |
+   | T-022 Cook options, keep or move, Start over asks | yes | `cook-options` passes | the 15 min control: built stepper stays unless he says mockup 13's two buttons |
+   | T-023 Cook finished, Full timeline | yes | not run | rate card now plain with Use / Keep (built to his words; he has not seen it) |
+   | T-024 Setup steps 1 and 2, picker, Add a cooker | yes | not run | none |
+   | T-025 Setup alerts step | yes | not run; test alert in Doze needs the phone | none (battery note is a plain line, no link) |
+   | T-026 Gear | yes | `smoke` opens the tab | none |
+   | T-027 Cooker sheets | yes | not run | none |
+   | T-028 History and cook rates, with Edit | yes | not run | seven questions in its TASKS entry, not asked yet |
+   | T-029 Share export | yes | not run; Gmail and Drive in the share sheet need a device | none |
+
+   - **Next, in this order:** (a) device tests for Setup, Cook finished, Gear with its sheets and History
+     (write them in `tools/device/run.sh` in the style of `test_cook_options`, run at 115%, save fidelity
+     PNGs 01-03, 15-20); Setup needs a state with no cookers (see how `legacy-import` gets "cookers 0").
+     (b) Ask Jason T-028's questions in plain words, a few at a time. (c) Then T-030 (open a shared plan:
+     intent filters by config plugin, content:// read, so a native rebuild), T-032, T-033, T-063 (needs his
+     approved mockup or SPEC line), T-065.
+   - Decisions of 2026-11-15 are in SPEC ("Cook tab", "First launch", section 5) and in each task's
+     "Jason's answers" lines in TASKS; do not ask them again.
+   - `src/lib/maker.ts` (battery help links per maker) is unused since he chose a plain line; remove it or
+     keep it for later, his call.
+   - T-059 waits for the FSIS pages (403 to automated fetches: read in a browser).
 6. **Dev seeds added on 2026-11-15:** `pitplanner://dev/plan?seed=briskets` (11.5 lb and 6 lb),
    `?seed=twins` (two 6 lb), `?seed=tomorrow` (mockup menu for 5:00 PM tomorrow) and `?seed=cooking` (mockup 12
    as a running cook; end it with `pitplanner://dev/alarm?cook=end`).
