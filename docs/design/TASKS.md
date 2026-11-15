@@ -1394,6 +1394,23 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   dependency; needs a dev build rebuild and a device test). **To build.** SPEC section 6 already says so.
   (2) Rings while the app is closed: a later task for a native ring log (T-068). (3) Cook history notes stay
   in the file. (4) The section stays under the test alert button.
+- **Built (follow-up, 2026-11-15):** the recipient is filled in. Jest, ESLint and typecheck pass in the
+  task's worktree. The Kotlin was NOT compiled or run there (no Gradle): `npm run check` (JUnit) and a device
+  test are still to do.
+  - `modules/pit-share`: `sendFile(fileUri, mimeType, recipient, subject, title)`. Kotlin `SendFile.kt`
+    (path check, fields, the `ACTION_SEND` intent with `EXTRA_STREAM`, `EXTRA_EMAIL`, `EXTRA_SUBJECT`, a read
+    grant, wrapped in the system chooser) with `SendFileTest.kt`; `PitShareModule.kt` starts it. Only a
+    `file://` URL inside the app's cache or files folder is taken (`..` and symlinks out are refused).
+  - No new provider, plugin or dependency: the `content://` URI comes from expo-file-system's
+    `<applicationId>.FileSystemFileProvider`, already in the manifest (not exported, files and cache folders
+    only, one read grant for the one file).
+  - `src/platform/shareFile.ts`: `reportSharer` writes the file once and calls `sendFile`; if the native
+    function is missing or throws, the same file goes through expo-sharing as before (address in the sheet's
+    title). Subject: "Pit Planner debug file" (`REPORT_SUBJECT`).
+  - Debug screen: "Tap Send and pick your email app. The file goes to <address>" and "If the address isn't
+    filled in, type it."
+  - Needs a device (after a rebuild): Send, pick Gmail: To holds the address, the subject is set, the JSON is
+    attached and opens. Pick a non-email app (Drive): the file still arrives.
 - **Gate (2026-11-15):** merged onto `main` and `npm run check` passed all six steps. No device test yet.
 - **Status:** built 2026-11-15, unit-tested on a worktree branch; `npm run check` and device test not run.
   0.3.0 (Jason, 2026-11-15: "since I'm going to send 0.3.0 to somebody, I'm going to need
@@ -1420,9 +1437,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     `repos.dump`.
   - SPEC section 6 has the approved line.
 - **Open:**
-  - Recipient: expo-sharing cannot hand an email app a recipient (it has no EXTRA_EMAIL). Today the address
-    is on the screen and in the share sheet's title; the tester types it. Filling it in needs a few lines of
-    Kotlin in one of our own modules (no new dependency). Jason to choose.
+  - Recipient: built, see "Built (follow-up)" above. (Was: expo-sharing cannot hand an email app a
+    recipient, it has no EXTRA_EMAIL.)
   - Alarms that ring while the app is closed are not in the log (the native side keeps no log); Done / +15
     taps made then are logged when the app next reads them. A native ring log would be a new task.
   - The event log is a kv row, so Export my data includes it too.

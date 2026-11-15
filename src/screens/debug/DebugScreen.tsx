@@ -155,7 +155,10 @@ export function DebugScreen({
           Send to developer
         </Text>
         <Text variant="label" relaxed>
-          Tap Send, pick your email app and send the file to {DEVELOPER_EMAIL}
+          Tap Send and pick your email app. The file goes to {DEVELOPER_EMAIL}
+        </Text>
+        <Text variant="label" tone="secondary" relaxed>
+          {"If the address isn't filled in, type it."}
         </Text>
         <Stack gap={4}>
           <Text variant="label" tone="secondary">

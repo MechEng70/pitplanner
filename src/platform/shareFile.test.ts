@@ -1,6 +1,20 @@
-import { shareFilesAsTar, shareReport, shareTextFile } from './shareFile';
+import { REPORT_SUBJECT, shareFilesAsTar, shareReport, shareTextFile } from './shareFile';
 
 const mockCalls: unknown[][] = [];
+/** What the native sendFile does next: nothing (it opened the sheet), or throw this. */
+let mockSendFails: Error | null = null;
+/** False for a build made before the function existed: the native module has no sendFile. */
+let mockHasSendFile = true;
+// The native module is not in Jest.
+jest.mock('../../modules/pit-share', () => ({
+  pitShare: {
+    sendFile: async (...args: unknown[]) => {
+      if (!mockHasSendFile) throw new TypeError('native.sendFile is not a function');
+      mockCalls.push(['sendFile', ...args]);
+      if (mockSendFails) throw mockSendFails;
+    },
+  },
+}));
 jest.mock('expo-file-system', () => ({
   Paths: { cache: 'CACHE' },
   File: class {
@@ -29,7 +43,11 @@ jest.mock('expo-sharing', () => ({
   shareAsync: async (uri: string, options: unknown) => void mockCalls.push(['share', uri, options]),
 }));
 
-beforeEach(() => mockCalls.splice(0));
+beforeEach(() => {
+  mockCalls.splice(0);
+  mockSendFails = null;
+  mockHasSendFile = true;
+});
 
 test('writes the text to a cache file (replacing an old one), then opens the share sheet for it', async () => {
   await shareTextFile('pitplanner-export.json', '{"a":1}', 'application/json', 'Export my data');
@@ -40,17 +58,45 @@ test('writes the text to a cache file (replacing an old one), then opens the sha
   ]);
 });
 
-test('Send to developer: one JSON file, the address in the share sheet title', async () => {
-  await shareReport('pitplanner-debug.json', '{"a":1}', 'dev@example.com');
-  expect(mockCalls).toEqual([
+describe('Send to developer (T-065)', () => {
+  const written = [
     ['create', { overwrite: true }],
     ['write', '{"a":1}'],
-    [
-      'share',
-      'file:///CACHE/pitplanner-debug.json',
-      { mimeType: 'application/json', dialogTitle: 'Send to dev@example.com' },
-    ],
-  ]);
+  ];
+  const sendFile = [
+    'sendFile',
+    'file:///CACHE/pitplanner-debug.json',
+    'application/json',
+    'dev@example.com',
+    REPORT_SUBJECT,
+    'Send to dev@example.com',
+  ];
+  const oldShare = [
+    'share',
+    'file:///CACHE/pitplanner-debug.json',
+    { mimeType: 'application/json', dialogTitle: 'Send to dev@example.com' },
+  ];
+
+  test('one JSON file through the native share sheet, with the address as the recipient', async () => {
+    await shareReport('pitplanner-debug.json', '{"a":1}', 'dev@example.com');
+    expect(mockCalls).toEqual([...written, sendFile]);
+  });
+
+  test('the subject is plain and one line', () => {
+    expect(REPORT_SUBJECT).toBe('Pit Planner debug file');
+  });
+
+  test('a build without the native function still shares the file, the address in the sheet title', async () => {
+    mockHasSendFile = false;
+    await shareReport('pitplanner-debug.json', '{"a":1}', 'dev@example.com');
+    expect(mockCalls).toEqual([...written, oldShare]);
+  });
+
+  test('when the native function throws, the same file goes to the old share sheet, written once', async () => {
+    mockSendFails = new Error('no activity');
+    await shareReport('pitplanner-debug.json', '{"a":1}', 'dev@example.com');
+    expect(mockCalls).toEqual([...written, sendFile, oldShare]);
+  });
 });
 
 test('shares the files that exist as one tar; the originals are only read', async () => {

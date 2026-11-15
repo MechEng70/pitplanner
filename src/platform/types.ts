@@ -125,8 +125,9 @@ export interface DeviceFacts {
 export type ReadDeviceFacts = () => DeviceFacts;
 
 /**
- * Open the share sheet with one text file for the developer. `recipient` is the address to offer when the
- * tester picks an email app; an implementation that cannot pass it on still shows it in the sheet's title.
+ * Open the share sheet with one text file for the developer. `recipient` is the address offered when the
+ * tester picks an email app (Android: `modules/pit-share` sendFile); an implementation that cannot pass it
+ * on still shows it in the sheet's title.
  */
 export type ShareReport = (name: string, text: string, recipient: string) => Promise<void>;
 

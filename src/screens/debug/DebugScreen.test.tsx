@@ -107,7 +107,8 @@ test('notification taps are read and cleared; Cancel all alarms clears the phone
 test('Send to developer says where the file goes and what it holds, and sends nothing until Send', async () => {
   const { report } = await show(false);
   expect(screen.getByRole('heading', { name: 'Send to developer' })).toBeOnTheScreen();
-  expect(screen.getByText(`Tap Send, pick your email app and send the file to ${DEVELOPER_EMAIL}`)).toBeOnTheScreen();
+  expect(screen.getByText(`Tap Send and pick your email app. The file goes to ${DEVELOPER_EMAIL}`)).toBeOnTheScreen();
+  expect(screen.getByText("If the address isn't filled in, type it.")).toBeOnTheScreen();
   for (const line of REPORT_HOLDS) expect(screen.getByText(line)).toBeOnTheScreen();
   expect(screen.getByText(REPORT_HOLDS_NOT)).toBeOnTheScreen();
   expect(report.sent).toEqual([]);
