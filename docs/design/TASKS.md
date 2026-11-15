@@ -1480,6 +1480,13 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   Android-only module; `expo-clipboard` works on Android and iOS), behind an interface in `src/platform/` with
   a fake for tests. It is a new native dependency: prebuild, dev build rebuild, gate (Snyk reads the new
   package).
+- **Built (tap to copy, 2026-11-15):** `expo-clipboard` ~58.0.4 behind `CopyText` (`src/platform/types.ts`),
+  `copyText` in `src/platform/clipboard.ts` (its only import), fake `fakeClipboard`. On the debug screen the
+  address is its own line, a text button (label "Copy <address>", 48 dp tall, wraps, never cut), so the line
+  above it now ends "The file goes to". Under it: "Tap the address to copy it." and, after a tap that worked,
+  "Address copied."; a clipboard that fails shows nothing. `followups` checks the new line, taps the address
+  and looks for "Address copied." (written, not run). Jest, ESLint, Prettier and typecheck pass in the task's
+  worktree. Still to do: prebuild, a dev build rebuild, `npm run check` (the gate) and the device test.
 - **Device test (2026-11-15):** in `followups` the debug screen shows Send to developer, where the file goes and
   what it holds (emulator, 115%; `docs/fidelity/rn-debug-send.png`). Send is not tapped by the test. Not
   checked anywhere: the share sheet, the To field in an email app, the file's contents from a real phone.

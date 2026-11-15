@@ -3,6 +3,7 @@
 // sent to Plan. Dev builds: the link opens it (device test `alarm`).
 import { Redirect, useRouter } from 'expo-router';
 import { alarmService } from '@/platform/alarms';
+import { copyText } from '@/platform/clipboard';
 import { readDeviceFacts } from '@/platform/device';
 import { permissionService } from '@/platform/permissions';
 import { shareReport } from '@/platform/shareFile';
@@ -19,6 +20,7 @@ export default function Debug() {
         permissions={permissionService}
         device={readDeviceFacts}
         share={shareReport}
+        copy={copyText}
         onClose={close}
       />
     </DebugGate>

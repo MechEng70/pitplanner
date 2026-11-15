@@ -6,6 +6,7 @@ import type {
   AlarmService,
   AlarmStatus,
   AppLinks,
+  CopyText,
   DeviceFacts,
   GetJson,
   NotificationAction,
@@ -194,6 +195,30 @@ export function fakeReportShare(): FakeReportShare {
     failNext: null,
     async share(name, text, recipient) {
       f.sent.push({ name, text, recipient });
+      if (f.failNext) {
+        const e = f.failNext;
+        f.failNext = null;
+        throw e;
+      }
+    },
+  };
+  return f;
+}
+
+export interface FakeClipboard {
+  copy: CopyText;
+  /** Every text handed to the clipboard, in order. */
+  copied: string[];
+  /** Set to make the next copy reject (the call is still recorded). */
+  failNext: Error | null;
+}
+
+export function fakeClipboard(): FakeClipboard {
+  const f: FakeClipboard = {
+    copied: [],
+    failNext: null,
+    async copy(text) {
+      f.copied.push(text);
       if (f.failNext) {
         const e = f.failNext;
         f.failNext = null;

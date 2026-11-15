@@ -131,6 +131,9 @@ export type ReadDeviceFacts = () => DeviceFacts;
  */
 export type ShareReport = (name: string, text: string, recipient: string) => Promise<void>;
 
+/** Put plain text on the phone's clipboard (T-065: the developer's address). Rejects when it was not copied. */
+export type CopyText = (text: string) => Promise<void>;
+
 /** Errors nothing caught (the app is about to show its crash). The handler that was there still runs. */
 export type OnUncaughtError = (fn: (error: unknown, fatal: boolean) => void) => Unsubscribe;
 

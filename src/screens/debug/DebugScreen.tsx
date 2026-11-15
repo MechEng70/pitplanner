@@ -25,6 +25,7 @@ import { planInput, useStore } from '@/lib/store';
 import type {
   AlarmService,
   AlarmStatus,
+  CopyText,
   NotificationAction,
   PermissionService,
   ReadDeviceFacts,
@@ -40,6 +41,7 @@ export function DebugScreen({
   permissions,
   device,
   share,
+  copy,
   onClose,
   now = Date.now,
 }: {
@@ -47,12 +49,15 @@ export function DebugScreen({
   permissions: PermissionService;
   device: ReadDeviceFacts;
   share: ShareReport;
+  /** The clipboard, for the developer's address. */
+  copy: CopyText;
   onClose: () => void;
   /** The clock for the file's time and name; tests pass a fixed one. */
   now?: () => number;
 }) {
   const { state, debugData } = useStore();
   const [sendNote, setSendNote] = useState('');
+  const [copied, setCopied] = useState(false);
   const [status, setStatus] = useState<AlarmStatus | null>(null);
   const [stored, setStored] = useState<Stored | null>(null);
   const [actions, setActions] = useState<NotificationAction[] | null>(null);
@@ -122,6 +127,17 @@ export function DebugScreen({
     }
   };
 
+  // A tester pastes the address into the email when the email app did not fill it in. A clipboard that
+  // fails says nothing: the address is still on the screen to type.
+  const copyAddress = async () => {
+    try {
+      await copy(DEVELOPER_EMAIL);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView contentContainerClassName="gap-4 p-4 pb-10">
@@ -155,8 +171,19 @@ export function DebugScreen({
           Send to developer
         </Text>
         <Text variant="label" relaxed>
-          Tap Send and pick your email app. The file goes to {DEVELOPER_EMAIL}
+          Tap Send and pick your email app. The file goes to
         </Text>
+        <Button kind="text" onPress={() => void copyAddress()} accessibilityLabel={`Copy ${DEVELOPER_EMAIL}`}>
+          <Text className="shrink">{DEVELOPER_EMAIL}</Text>
+        </Button>
+        <Text variant="label" tone="secondary" relaxed>
+          Tap the address to copy it.
+        </Text>
+        {copied ? (
+          <Text variant="label" tone="secondary" relaxed>
+            Address copied.
+          </Text>
+        ) : null}
         <Text variant="label" tone="secondary" relaxed>
           {"If the address isn't filled in, type it."}
         </Text>

@@ -1730,13 +1730,6 @@ JSON
   if [ $ok = 1 ]; then result "PASS  shared $s"; else result "FAIL  shared $s"; fi
 }
 
-# T-063, T-065: what was built on 2026-11-15 after the first device pass. Emulator only (it runs cooks).
-# 1. Undo: on the mockup cook, Done on the next step, then Cook options offers "Undo: <that step>" first;
-#    tapping it puts Next up back as it was.
-# 2. Back to the cook: with all done but Serve (`?seed=finished`), Done on Serve opens Cook finished with
-#    Back to the cook on its own line; tapping it shows Live cook on Serve again. The cook is ended after.
-# 3. The hidden debug screen has Send to developer with where the file goes and what it holds. Send is not
-#    tapped: the share sheet lists other apps and is never dumped or photographed.
 # T-067: the fast test cook (dev link, emulator only). The mockup menu runs as a real cook squeezed in time,
 # here 240 times faster so the whole cook fits one device run (about 3 minutes; Jason's own run is 60 times
 # faster, about 12 minutes). Followed step by step: each step that comes due is marked Done from Next up
@@ -1834,8 +1827,16 @@ test_fast_cook() {
   if [ $ok = 1 ]; then result "PASS  fast-cook $s"; else result "FAIL  fast-cook $s"; fi
 }
 
+# T-063, T-065: what was built on 2026-11-15 after the first device pass. Emulator only (it runs cooks).
+# 1. Undo: on the mockup cook, Done on the next step, then Cook options offers "Undo: <that step>" first;
+#    tapping it puts Next up back as it was.
+# 2. Back to the cook: with all done but Serve (`?seed=finished`), Done on Serve opens Cook finished with
+#    Back to the cook on its own line; tapping it shows Live cook on Serve again. The cook is ended after.
+# 3. The hidden debug screen has Send to developer with where the file goes and what it holds. Send is not
+#    tapped: the share sheet lists other apps and is never dumped or photographed. Tapping the address
+#    copies it and the screen says "Address copied." (the clipboard itself is not read).
 test_followups() {
-  local s="$1" dir="$2" ok=1 want before after row
+  local s="$1" dir="$2" ok=1 want before after row address
   if ! is_emulator; then result "SKIP  followups $s: emulator only"; return; fi
   launch "dev/plan?seed=cooking" || { result "FAIL  followups $s: app did not open"; return; }
   look "$dir/undo-before.xml" && before=$(next_title "$dir/undo-before.xml" | sed -E 's/ (in [0-9].*|now|[0-9][^,]* overdue)$//')
@@ -1879,10 +1880,20 @@ test_followups() {
 
   open_route "debug"
   if look "$dir/debug-send.xml" && says "$dir/debug-send.xml" "Send to developer"; then
-    for want in "The file goes to" "If the address isn't filled in, type it."; do
+    for want in "The file goes to" "Tap the address to copy it." "If the address isn't filled in, type it."; do
       says "$dir/debug-send.xml" "$want" || plan_miss "$want (debug screen)"
     done
+    says "$dir/debug-send.xml" "Address copied." && plan_miss "no \"Address copied.\" before the address is tapped"
     shot "$dir/debug-send.png"
+    address=$(sed -nE "s/^export const DEVELOPER_EMAIL = '([^']+)';.*/\1/p" "$ROOT/src/lib/debugReport.ts")
+    if [ -n "$address" ] && says "$dir/debug-send.xml" "$address"; then
+      tap "$address" 1 | tee -a "$REPORT"
+      sleep 1
+      if look "$dir/debug-copied.xml" && says "$dir/debug-copied.xml" "Address copied."; then
+        log "    the address: tapped, the screen says Address copied."
+        shot "$dir/debug-copied.png"
+      else plan_miss "Address copied. after a tap on the address"; fi
+    else plan_miss "the developer's address on the debug screen"; fi
   else plan_miss "Send to developer on the debug screen"; fi
   if [ $ok = 1 ]; then result "PASS  followups $s"; else result "FAIL  followups $s"; fi
 }

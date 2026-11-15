@@ -6,7 +6,7 @@ import { saturday } from '@/lib/fixtures/saturday';
 import { rules } from '@/lib/rules';
 import { DEVELOPER_EMAIL, REPORT_HOLDS, REPORT_HOLDS_NOT, type DebugReport } from '@/lib/debugReport';
 import { EVENT_LOG_KEY } from '@/lib/eventLog';
-import { fakeAlarms, fakeDevice, fakeReportShare } from '@/platform/fakes';
+import { fakeAlarms, fakeClipboard, fakeDevice, fakeReportShare } from '@/platform/fakes';
 import { NOW, storeWrapper, testRepos } from '@/test/store';
 import { DebugScreen } from './DebugScreen';
 
@@ -18,18 +18,20 @@ async function show(withCook: boolean) {
   const alarms = fakeAlarms();
   const onClose = jest.fn();
   const report = fakeReportShare();
+  const clipboard = fakeClipboard();
   await render(
     <DebugScreen
       alarms={alarms}
       permissions={alarms}
       device={fakeDevice}
       share={report.share}
+      copy={clipboard.copy}
       onClose={onClose}
       now={() => NOW}
     />,
     { wrapper: storeWrapper(r.repos, () => NOW) },
   );
-  return { alarms, onClose, report, repos: r.repos };
+  return { alarms, onClose, report, clipboard, repos: r.repos };
 }
 
 test('lists every step of the running cook and rings any of them in 10 seconds', async () => {
@@ -78,6 +80,7 @@ test('shows the alert status and what is stored on the phone: alarms and repeats
       permissions={alarms}
       device={fakeDevice}
       share={fakeReportShare().share}
+      copy={fakeClipboard().copy}
       onClose={() => {}}
     />,
     { wrapper: storeWrapper(r.repos, () => NOW) },
@@ -107,11 +110,42 @@ test('notification taps are read and cleared; Cancel all alarms clears the phone
 test('Send to developer says where the file goes and what it holds, and sends nothing until Send', async () => {
   const { report } = await show(false);
   expect(screen.getByRole('heading', { name: 'Send to developer' })).toBeOnTheScreen();
-  expect(screen.getByText(`Tap Send and pick your email app. The file goes to ${DEVELOPER_EMAIL}`)).toBeOnTheScreen();
+  expect(screen.getByText('Tap Send and pick your email app. The file goes to')).toBeOnTheScreen();
+  expect(screen.getByText(DEVELOPER_EMAIL)).toBeOnTheScreen();
+  expect(screen.getByText('Tap the address to copy it.')).toBeOnTheScreen();
   expect(screen.getByText("If the address isn't filled in, type it.")).toBeOnTheScreen();
   for (const line of REPORT_HOLDS) expect(screen.getByText(line)).toBeOnTheScreen();
   expect(screen.getByText(REPORT_HOLDS_NOT)).toBeOnTheScreen();
   expect(report.sent).toEqual([]);
+});
+
+test('tapping the address copies it and the screen says so', async () => {
+  const { clipboard, report } = await show(false);
+  expect(screen.queryByText('Address copied.')).toBeNull();
+  await fireEvent.press(screen.getByRole('button', { name: `Copy ${DEVELOPER_EMAIL}` }));
+  expect(await screen.findByText('Address copied.')).toBeOnTheScreen();
+  expect(clipboard.copied).toEqual([DEVELOPER_EMAIL]);
+  expect(report.sent).toEqual([]);
+});
+
+test('the address is never cut short: no line limit, so it wraps at a large font size', async () => {
+  await show(false);
+  const address = screen.getByText(DEVELOPER_EMAIL);
+  expect(address.props.numberOfLines).toBeUndefined();
+  expect(address.props.ellipsizeMode).toBeUndefined();
+});
+
+test('a clipboard that fails does not crash the screen and says nothing was copied', async () => {
+  const { clipboard } = await show(false);
+  clipboard.failNext = new Error('no clipboard');
+  await fireEvent.press(screen.getByRole('button', { name: `Copy ${DEVELOPER_EMAIL}` }));
+  await waitFor(() => expect(clipboard.copied).toEqual([DEVELOPER_EMAIL]));
+  expect(screen.queryByText('Address copied.')).toBeNull();
+  expect(screen.getByRole('heading', { name: 'Send to developer' })).toBeOnTheScreen();
+  // The next tap works again.
+  await fireEvent.press(screen.getByRole('button', { name: `Copy ${DEVELOPER_EMAIL}` }));
+  expect(await screen.findByText('Address copied.')).toBeOnTheScreen();
+  expect(clipboard.copied).toEqual([DEVELOPER_EMAIL, DEVELOPER_EMAIL]);
 });
 
 test('Send opens the share sheet once with one file for the address: phone, permissions, alarms, data, log', async () => {
