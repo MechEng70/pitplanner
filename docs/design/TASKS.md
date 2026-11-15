@@ -1289,6 +1289,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   and T-024 merged). Emulator at 115% only (Jason, 2026-11-15): `cook` and `survive` pass, including the
   mid-cook half of T-058 (font-size change and process kill on Cook: same Next up). Not run at 130% and not
   on the phone. Fidelity: `docs/fidelity/rn-12-live-cook.png` (live, scrolled to the end, no cook).
+- **Jason (2026-11-15):** the Live cook screenshot is approved ("looks fine").
 - **Built (2026-11-15):**
   - `src/screens/cook/CookScreen.tsx`: no cook: "No cook running" and Go to Plan, never starts one (T-064).
     Live cook: header with the smoker temp and serve time, status chip, Next up card (overline "Check at" for
@@ -1457,6 +1458,12 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Acceptance:** each action re-plans and replaces alarms once; Quiet calls `setQuiet`.
 - **Tests:** RNTL per action with fakes; regression cases from the 2026-11-11 live test (HANDOFF list).
 - **Device testing (Jason):** none.
+- **Jason's answers (2026-11-15):** (1) Running behind with Keep serve naming only the most-changed food:
+  leave as 0.2.0 for now; backlog a clearer version (`docs/design/BACKLOG.md`). (3) The "raise the smoker
+  25F" suggestion on Not yet is dropped from SPEC section 5. (4) Start over sheet (Keep cooking left as text,
+  Start over right, filled): OK. (2) The -15/+15 control: "keep it for now"; asked again whether he means
+  the built stepper or mockup 13's two buttons.
+- **Device (2026-11-15):** `cook-options` on the emulator at 115%: see the status line.
 
 ### T-023 Notification actions, lock-screen alert, Cook finished (14, 15)
 - **Status:** built 2026-11-15, unit-tested (Prettier, ESLint, typecheck, Jest, the engine tests and the gate
@@ -1565,6 +1572,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   never prefill specs (CLAUDE.md).
 - **Tests:** RNTL per step; picker groups from `data/cookers.json`.
 - **Device testing (Jason):** none (dev build fresh install).
+- **Jason's answers (2026-11-15):** the smoker card keeping its fields when switched off: OK. The manual
+  form's field order: OK. Step 1 built from 0.2.0: OK. Continue on step 2 staying off with no reason shown:
+  he did not follow the question; asked again.
 
 ### T-025 Alerts step, test alert, battery help
 - **Status:** built 2026-11-15 on branch `t025`, unit-tested (Jest). NOT run on a device or emulator, and

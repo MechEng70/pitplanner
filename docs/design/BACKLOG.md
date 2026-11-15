@@ -17,6 +17,7 @@ decided until Jason triages it. New ideas that come up during the port are added
 | Item | Task | State |
 |---|---|---|
 | Lane chart full screen | T-040 | Mockup first |
+| Running behind, Keep serve: name every food that would come off after serve and select Move serve then (today only the most-changed hold is named, as 0.2.0) | T-022 note | Jason, 2026-11-15: maybe a future update |
 | Oven warming drawer: use it or drop it | T-041 | Jason decides |
 | Home Assistant: sign-in, sensors, probes on Live cook, publish the cook, blueprint, suggestions, learning from probes, set-temp button | T-042 to T-055 | Plan in `docs/HA-INTEGRATION.md`; mockups first (T-042) |
 | iOS readiness (interfaces only, no Xcode work) | T-056 | Depends on T-015, T-030, T-045 |

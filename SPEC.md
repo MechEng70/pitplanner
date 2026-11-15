@@ -62,6 +62,8 @@ Artboard names refer to the mockup canvas.
 - Only Start cook on Plan starts a cook (permission check, save, schedule alarms), and it opens the Cook tab. With no cook running the Cook tab shows "No cook running" and Go to Plan, whatever is on the plan (Jason, 2026-11-15; 0.2.0 started a cook from the tab, so a discarded cook came back on the next look). While a cook is running, Start cook on Plan is greyed out. Ending a cook (Save, Discard or Start over) goes back to Plan.
 - **Live cook** (`Cook`): header with smoker temp and serve time, status chip (On plan / Behind / Ahead), Next up card worded as a check where the step is temperature or tenderness based ("Check at 11:35 AM: wrap once the bark is set"), its title one sentence with the countdown, wrapped where it fits ("Check the brisket in 1 hr 12 min", no seconds; a day or more away "Fire the smoker to 225F in 1 day 22 hr", days and whole hours; Jason, 2026-11-15, in place of mockup 12's countdown on its own line), Done and Adjust buttons, a lane chart (10 AM to serve) with a now line and smoker-overlap highlight, then the next three steps.
 - **Alarms could not be set**: when the phone refuses the cook's alarm set, Live cook shows "Alarms could not be set. Steps will not ring." with Try again, which clears every alarm and sets the whole list again from the plan (Jason, 2026-11-15).
+- **Start over** asks first ("Start over?", "This cook won't be saved.", Keep cooking / Start over); it drops the cook without saving, leaves the menu on Plan and never changes cook history. A Done 5 min or more early or late, and Back up to temp, ask Keep serve or Move serve; Move is selected when keeping would leave a food short of its minimum rest.
+- The mockups are a starting point, not a contract (Jason, 2026-11-15): where a built screen follows 0.2.0 and he has approved it, the screen wins.
 - **Cook options** (`Controls`): Running behind or ahead (-15/+15, Keep serve vs Move serve, with the hold impact spelled out); Quiet alerts for 30 min; Pit went out (stops the clock until "Back up to temp"); Start over; End cook (Save to history or Discard, cancels all alarms).
 - **Lock-screen alert** (`Notify`): actions Done, +15 min, Open. Unacknowledged alerts repeat every 10 min.
 - **Cook finished** (`EndCook`): planned vs actual per food, rate update, notes, Save / Discard, one-time support link.
@@ -94,7 +96,7 @@ Artboard names refer to the mockup canvas.
 |---|---|---|
 | Done on a check step, early or late | `markStepDone` | That food's later phases move by the difference. UI then asks: shift the rest, or keep serve time (hold absorbs it). |
 | Running behind / ahead | `shiftRemaining(now, delta, keepServe)` | Every not-yet-finished phase moves; keepServe keeps serve time and shows the hold impact. |
-| Not yet at a pull check | `shiftRemaining(now, +30, keepServe, itemId)` | That food only; suggests raising the smoker 25F to make up time. |
+| Not yet at a pull check | `shiftRemaining(now, +30, keepServe, itemId)` | That food only. Serve stays while every food keeps its minimum rest, else serve moves; the row says which. (No "raise the smoker 25F" suggestion: dropped, Jason, 2026-11-15.) |
 | Pit went out / Back up to temp | `pitOutage(down, up, recovery=15)` | Smoker foods lose the downtime plus recovery. |
 | Quiet alerts 30 min | UI only | Alarms inside the window are held and fire as one summary at the end; steps stay overdue. |
 | Start over | UI | Back to Plan with the same menu. |
