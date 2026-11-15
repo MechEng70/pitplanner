@@ -1389,9 +1389,39 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   drops rows.
 
 ### T-065 Debug switch and send to developer
-- **Status:** todo; 0.3.0 (Jason, 2026-11-15: "since I'm going to send 0.3.0 to somebody, I'm going to need
-  that debug switch and the send to developer thing"). Needs a SPEC line or mockup he approves before any
-  UI, and the email address ("I'll give you the email address later").
+- **Status:** built 2026-11-15, unit-tested on a worktree branch; `npm run check` and device test not run.
+  0.3.0 (Jason, 2026-11-15: "since I'm going to send 0.3.0 to somebody, I'm going to need
+  that debug switch and the send to developer thing").
+- **Built:**
+  - `src/lib/debugReport.ts` (pure): `buildDebugReport` makes the file (`pitplanner-debug-<date>-<time>.json`):
+    `app`, `phone`, `permissions`, `alarms` (alarms and repeats), `data` (the tables `active_cook`,
+    `cook_history`, `cook_history_items`, `cookers`, `kv`, `rate_overrides`), `log`, `leftOut`, `problems`.
+    Every field is copied by name. Any other table is left out by name. `DEVELOPER_EMAIL` is the one constant.
+  - Secrets: the app stores none today (no secure store yet, nothing secret in kv or settings). As a guard,
+    a kv row, column or JSON field whose name says token, secret, password, credential, api key or
+    authorization is left out and named in `leftOut`. Bytes columns are left out too.
+  - `src/lib/eventLog.ts` (pure) and the store: the event log is one kv row, `eventLog`, the last 300 events
+    (`at`, `kind`, `text`; text cut at 400 characters). No migration. The store notes: each change to the
+    running cook (started, ended, done, not done, reminder, pit out or back, quiet, plan changed), each alarm
+    set given to the phone (count, exact or not) or cancelled, Done / +15 taps read from alerts, and alarm
+    errors. `src/lib/eventLogWiring.ts` (root layout) notes each alarm that rings while the app is open and
+    errors nothing caught (`src/platform/errors.ts`). A failed log write never stops a cook change.
+  - Platform: `DeviceFacts`, `ShareReport`, `OnUncaughtError` in `src/platform/types.ts`;
+    `src/platform/device.ts` (expo-constants and React Native only: no serial, fingerprint or device name);
+    `shareReport` in `src/platform/shareFile.ts`; fakes `fakeDevice`, `fakeReportShare`.
+  - Debug screen: a "Send to developer" section under the test alert button: where to send it, what the
+    file holds, the Send button, and a line when sharing fails. Store: `logEvent`, `debugData`;
+    `repos.dump`.
+  - SPEC section 6 has the approved line.
+- **Open:**
+  - Recipient: expo-sharing cannot hand an email app a recipient (it has no EXTRA_EMAIL). Today the address
+    is on the screen and in the share sheet's title; the tester types it. Filling it in needs a few lines of
+    Kotlin in one of our own modules (no new dependency). Jason to choose.
+  - Alarms that ring while the app is closed are not in the log (the native side keeps no log); Done / +15
+    taps made then are logged when the app next reads them. A native ring log would be a new task.
+  - The event log is a kv row, so Export my data includes it too.
+  - Not checked on a phone: `build` (versionCode from the embedded config), `Platform.constants` Release and
+    Model, the share sheet title, and the look at 100/115/130% font size.
 - **Jason's answers (2026-11-15):** it stays hidden: the existing 5 taps on the version line on Gear open the
   debug screen, and he tells testers to do that (no visible switch; "keep it as is", not the tab's icon). Send opens the phone's share sheet with
   one file; the tester picks Gmail or whatever they use. The address is

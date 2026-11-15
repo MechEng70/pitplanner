@@ -1,6 +1,7 @@
 // Every repository over one Db (TASKS T-009). The store (T-010) is the only caller in the app.
 
 import type { Db } from '../db.ts';
+import { exportDump } from '../export.ts';
 import { activeCookRepo } from './activeCook.ts';
 import { cookersRepo } from './cookers.ts';
 import { historyRepo } from './history.ts';
@@ -20,6 +21,8 @@ export function repos(db: Db) {
     history: historyRepo(db),
     /** Unreadable values kept before a write replaced them (quarantine.ts). */
     quarantined: () => quarantined(db),
+    /** Every row of every table, for "Send to developer" (T-065); the same read as Export my data. */
+    dump: (now: number) => exportDump(db, now, ''),
   };
 }
 export type Repos = ReturnType<typeof repos>;

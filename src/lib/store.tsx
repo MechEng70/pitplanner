@@ -3,6 +3,8 @@
 // Alarms (T-015): after every change to the running cook the phone's alarm set is replaced as a whole
 // (`syncAlarms`: cancel all, schedule the new set, never a patch), one sync at a time and in order.
 // The update check (T-032) runs from src/lib/updateWiring.ts and saves its result with `setUpdate`.
+// The event log (T-065): cook changes, alarm syncs, alert taps and errors are noted in a capped kv row
+// (src/lib/eventLog.ts) for "Send to developer". Noting one never throws and never changes `state`.
 
 import { createContext, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { CookLog, Cookers, PlanInput } from '../../engine/types.ts';
@@ -10,7 +12,9 @@ import type { Repos } from '../db/repos/index.ts';
 import type { Flags } from '../db/repos/settings.ts';
 import type { AlarmService } from '../platform/types.ts';
 import { applyActions, syncAlarms, type ActiveCook } from './cook.ts';
+import type { ReportData } from './debugReport.ts';
 import type { Draft } from './draft.ts';
+import { EVENT_LOG_KEY, appendEvent, describeCookChange, errorText, parseEventLog, type LogKind } from './eventLog.ts';
 import type { Units } from './format.ts';
 import { logsOf, type CookRecord } from './history.ts';
 import type { UiState } from './uiState.ts';
@@ -115,6 +119,10 @@ export interface Store {
    * it re-renders nothing, so it can be written on every stepper tap.
    */
   ui: { read: () => UiState; write: (patch: Partial<UiState>) => void };
+  /** Note one of the app's own events in its log (T-065). Never throws; empty text is not logged. */
+  logEvent: (kind: LogKind, text: string) => void;
+  /** Every stored row, for the file "Send to developer" builds (T-065). Read only. */
+  debugData: () => ReportData;
 }
 
 const Ctx = createContext<Store | null>(null);
@@ -140,6 +148,16 @@ export function StoreProvider({ repos, clock = Date.now, alarms, children }: Pro
       latest.current = { ...latest.current, ...patch };
       setState(latest.current);
     };
+    const logEvent = (kind: LogKind, text: string) => {
+      if (!text) return;
+      try {
+        const now = clock();
+        const log = repos.kv.get(EVENT_LOG_KEY, parseEventLog) ?? [];
+        repos.kv.set(EVENT_LOG_KEY, appendEvent(log, { at: now, kind, text }), now, parseEventLog);
+      } catch {
+        // The log is a help, never a reason for a cook change to fail.
+      }
+    };
     /** Replace the phone's alarm set with what the cook needs now (or clear it when there is no cook). */
     const sync = () => {
       if (!alarms) return;
@@ -149,16 +167,20 @@ export function StoreProvider({ repos, clock = Date.now, alarms, children }: Pro
           if (!cook) {
             await alarms.cancelAll();
             commit({ alarmSync: null });
+            logEvent('alarms', 'all cancelled: no cook running');
           } else {
             const r = await syncAlarms(cook, clock(), alarms, units);
             commit({ alarmSync: r.exact ? 'ok' : 'inexact' });
+            logEvent('alarms', `set ${r.scheduled}, ${r.exact ? 'exact' : 'inexact'}`);
           }
-        } catch {
+        } catch (e) {
           commit({ alarmSync: 'failed' });
+          logEvent('error', `alarm sync failed: ${errorText(e)}`);
         }
       });
     };
     const saveCook = (cook: ActiveCook | null) => {
+      logEvent('cook', describeCookChange(latest.current.cook, cook));
       if (cook) repos.activeCook.save(cook, clock());
       else repos.activeCook.clear(clock());
       commit({ cook });
@@ -198,9 +220,11 @@ export function StoreProvider({ repos, clock = Date.now, alarms, children }: Pro
         let actions: Awaited<ReturnType<AlarmService['drainActions']>> = [];
         try {
           actions = await alarms.drainActions();
-        } catch {
+        } catch (e) {
           // Nothing read, nothing lost: the phone keeps the taps for the next try.
+          logEvent('error', `alert taps not read: ${errorText(e)}`);
         }
+        for (const a of actions) logEvent('tap', `${a.type} ${a.keys.join(',')} at ${new Date(a.at).toISOString()}`);
         const cook = latest.current.cook;
         const next = cook && actions.length > 0 ? applyActions(cook, actions) : cook;
         if (cook && next && next !== cook) {
@@ -252,6 +276,8 @@ export function StoreProvider({ repos, clock = Date.now, alarms, children }: Pro
         repos.settings.setUpdate(update, clock());
         commit({ update });
       },
+      logEvent,
+      debugData: () => repos.dump(clock()),
       ui: {
         read: () => repos.settings.ui(),
         write(patch) {

@@ -6,9 +6,11 @@ import type {
   AlarmService,
   AlarmStatus,
   AppLinks,
+  DeviceFacts,
   GetJson,
   NotificationAction,
   PermissionService,
+  ShareReport,
   ShareService,
   StoredNag,
 } from './types';
@@ -161,6 +163,42 @@ export function fakeHttp(answer: FakeHttp['answer'] = { ok: true, json: [] }): F
       f.requests.push({ url, headers });
       if (f.answer instanceof Error) throw f.answer;
       return f.answer;
+    },
+  };
+  return f;
+}
+
+/** A phone for "Send to developer" tests. */
+export const fakeDevice = (over: Partial<DeviceFacts> = {}): DeviceFacts => ({
+  appVersion: '0.3.0',
+  build: 300,
+  androidVersion: '16',
+  apiLevel: 36,
+  model: 'Pixel 8',
+  fontScale: 1.15,
+  timeZone: 'America/Chicago',
+  ...over,
+});
+
+export interface FakeReportShare {
+  share: ShareReport;
+  /** Every file handed to the share sheet, in order. */
+  sent: { name: string; text: string; recipient: string }[];
+  /** Set to make the next share reject (the call is still recorded). */
+  failNext: Error | null;
+}
+
+export function fakeReportShare(): FakeReportShare {
+  const f: FakeReportShare = {
+    sent: [],
+    failNext: null,
+    async share(name, text, recipient) {
+      f.sent.push({ name, text, recipient });
+      if (f.failNext) {
+        const e = f.failNext;
+        f.failNext = null;
+        throw e;
+      }
     },
   };
   return f;

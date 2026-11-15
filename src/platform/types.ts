@@ -100,5 +100,30 @@ export interface AppLinks {
  */
 export type GetJson = (url: string, headers: Record<string, string>) => Promise<{ ok: boolean; json: unknown }>;
 
+/** What "Send to developer" says about the app and the phone (T-065). Nothing that names the person. */
+export interface DeviceFacts {
+  appVersion: string;
+  /** Android versionCode; null when the build does not say. */
+  build: number | null;
+  /** Android release, e.g. "16". */
+  androidVersion: string;
+  apiLevel: number | null;
+  model: string;
+  /** The system font size as a scale: 1 is the default, 1.3 is 130%. */
+  fontScale: number;
+  /** IANA name, e.g. "America/Chicago". */
+  timeZone: string;
+}
+export type ReadDeviceFacts = () => DeviceFacts;
+
+/**
+ * Open the share sheet with one text file for the developer. `recipient` is the address to offer when the
+ * tester picks an email app; an implementation that cannot pass it on still shows it in the sheet's title.
+ */
+export type ShareReport = (name: string, text: string, recipient: string) => Promise<void>;
+
+/** Errors nothing caught (the app is about to show its crash). The handler that was there still runs. */
+export type OnUncaughtError = (fn: (error: unknown, fatal: boolean) => void) => Unsubscribe;
+
 /** Everything Start cook needs. Missing items block it until fixed or acknowledged (failure mode 9). */
 export const allGranted = (s: AlarmStatus) => s.notifications && s.exactAlarms && s.batteryUnrestricted;

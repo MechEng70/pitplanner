@@ -2,16 +2,34 @@
 // version on Gear 5 times (the Gear screen, T-026) or `pitplanner://debug`. Lists what is stored to fire and
 // rings any step of the cook (or the draft plan) in 10 seconds through the real alarm path.
 // Doze and reboot commands for testing are in docs/alarm-testing.md.
+// Send to developer (T-065, SPEC section 6): one file through the share sheet, built by src/lib/debugReport.ts
+// from the phone's facts, the alert permissions, the stored alarms, the app's data and its event log.
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { alarmsFromPlan, type AlarmSpec } from '../../../engine/alarms';
 import { buildPlan } from '../../../engine/plan';
 import { Button, Card, Fill, Fixed, Num, Row, Stack, Text } from '@/components/kit';
+import {
+  buildDebugReport,
+  debugReportFileName,
+  debugReportText,
+  DEVELOPER_EMAIL,
+  REPORT_HOLDS,
+  REPORT_HOLDS_NOT,
+} from '@/lib/debugReport';
+import { errorText } from '@/lib/eventLog';
 import { fmtDayTime, fmtTime } from '@/lib/format';
 import { rules } from '@/lib/rules';
 import { planInput, useStore } from '@/lib/store';
-import type { AlarmService, AlarmStatus, NotificationAction, PermissionService } from '@/platform/types';
+import type {
+  AlarmService,
+  AlarmStatus,
+  NotificationAction,
+  PermissionService,
+  ReadDeviceFacts,
+  ShareReport,
+} from '@/platform/types';
 
 type Stored = Awaited<ReturnType<AlarmService['scheduled']>>;
 
@@ -20,13 +38,21 @@ const onOff = (v: boolean) => (v ? 'on' : 'off');
 export function DebugScreen({
   alarms,
   permissions,
+  device,
+  share,
   onClose,
+  now = Date.now,
 }: {
   alarms: AlarmService;
   permissions: PermissionService;
+  device: ReadDeviceFacts;
+  share: ShareReport;
   onClose: () => void;
+  /** The clock for the file's time and name; tests pass a fixed one. */
+  now?: () => number;
 }) {
-  const { state } = useStore();
+  const { state, debugData } = useStore();
+  const [sendNote, setSendNote] = useState('');
   const [status, setStatus] = useState<AlarmStatus | null>(null);
   const [stored, setStored] = useState<Stored | null>(null);
   const [actions, setActions] = useState<NotificationAction[] | null>(null);
@@ -68,6 +94,34 @@ export function DebugScreen({
     await reload();
   };
 
+  // Nothing leaves the phone here: the file is built and handed to the share sheet, where the tester sends it.
+  const send = async () => {
+    setSendNote('');
+    try {
+      const at = now();
+      const problems: string[] = [];
+      const read = async <T,>(what: string, fn: () => T | Promise<T>): Promise<T | null> => {
+        try {
+          return await fn();
+        } catch (e) {
+          problems.push(`${what} not read: ${errorText(e)}`);
+          return null;
+        }
+      };
+      const report = buildDebugReport({
+        now: at,
+        device: device(),
+        permissions: await read('alert permissions', () => permissions.status()),
+        scheduled: await read('stored alarms', () => alarms.scheduled()),
+        data: await read('app data', () => debugData()),
+        problems,
+      });
+      await share(debugReportFileName(at), debugReportText(report), DEVELOPER_EMAIL);
+    } catch (e) {
+      setSendNote(`Could not share the file. ${errorText(e)}`);
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView contentContainerClassName="gap-4 p-4 pb-10">
@@ -94,6 +148,34 @@ export function DebugScreen({
         {note ? (
           <Text variant="label" tone="secondary">
             {note}
+          </Text>
+        ) : null}
+
+        <Text variant="section" role="heading">
+          Send to developer
+        </Text>
+        <Text variant="label" relaxed>
+          Tap Send, pick your email app and send the file to {DEVELOPER_EMAIL}
+        </Text>
+        <Stack gap={4}>
+          <Text variant="label" tone="secondary">
+            The file holds:
+          </Text>
+          {REPORT_HOLDS.map(line => (
+            <Text key={line} variant="label" tone="secondary" relaxed>
+              {line}
+            </Text>
+          ))}
+        </Stack>
+        <Text variant="label" tone="secondary" relaxed>
+          {REPORT_HOLDS_NOT}
+        </Text>
+        <Button block onPress={() => void send()}>
+          <Text>Send</Text>
+        </Button>
+        {sendNote ? (
+          <Text variant="label" tone="warn">
+            {sendNote}
           </Text>
         ) : null}
 

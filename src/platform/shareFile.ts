@@ -4,6 +4,7 @@
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { tar } from '../lib/tar.ts';
+import type { ShareReport } from './types';
 
 export async function shareTextFile(name: string, text: string, mimeType: string, title: string): Promise<void> {
   const file = new File(Paths.cache, name);
@@ -11,6 +12,14 @@ export async function shareTextFile(name: string, text: string, mimeType: string
   file.writeSync(text);
   await Sharing.shareAsync(file.uri, { mimeType, dialogTitle: title });
 }
+
+/**
+ * "Send to developer" (T-065): one JSON file in the share sheet. expo-sharing has no way to hand an email
+ * app a recipient (Android's EXTRA_EMAIL), so the address goes in the sheet's title and the debug screen
+ * shows it; the tester types or pastes it.
+ */
+export const shareReport: ShareReport = (name, text, recipient) =>
+  shareTextFile(name, text, 'application/json', `Send to ${recipient}`);
 
 /**
  * Share existing files as one tar (the originals are only read). Files that do not exist are left out; with

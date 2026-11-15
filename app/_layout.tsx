@@ -16,9 +16,11 @@ import { exportDump, exportFileName } from '@/db/export';
 import { importLegacy, importNotice, markNoticeSeen } from '@/db/legacyImport';
 import { repos } from '@/db/repos';
 import { useAlarmWiring } from '@/lib/alarmWiring';
+import { useEventLogWiring } from '@/lib/eventLogWiring';
 import { StoreProvider } from '@/lib/store';
 import { useUpdateCheck } from '@/lib/updateWiring';
 import { alarmService } from '@/platform/alarms';
+import { onUncaughtError } from '@/platform/errors';
 import { getJson } from '@/platform/http';
 import { legacyStore } from '@/platform/legacy';
 import { onResume } from '@/platform/resume';
@@ -50,6 +52,12 @@ function AlarmWiring() {
   return null;
 }
 
+/** The app's own log hears alarms ring and uncaught errors (T-065); "Send to developer" sends it. */
+function EventLogWiring() {
+  useEventLogWiring(alarmService, onUncaughtError);
+  return null;
+}
+
 /** Looks for a newer release at launch and on resume, at most daily; Gear shows it (T-032). */
 function UpdateCheck() {
   useUpdateCheck(getJson, onResume, Constants.expoConfig?.version ?? '');
@@ -72,6 +80,7 @@ export default function RootLayout() {
       {data ? (
         <StoreProvider repos={data} alarms={alarmService}>
           <AlarmWiring />
+          <EventLogWiring />
           <UpdateCheck />
           <Stack
             screenOptions={{ headerShown: false, contentStyle: { backgroundColor: navTheme.colors.background } }}

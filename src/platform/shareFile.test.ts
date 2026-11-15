@@ -1,4 +1,4 @@
-import { shareFilesAsTar, shareTextFile } from './shareFile';
+import { shareFilesAsTar, shareReport, shareTextFile } from './shareFile';
 
 const mockCalls: unknown[][] = [];
 jest.mock('expo-file-system', () => ({
@@ -37,6 +37,19 @@ test('writes the text to a cache file (replacing an old one), then opens the sha
     ['create', { overwrite: true }],
     ['write', '{"a":1}'],
     ['share', 'file:///CACHE/pitplanner-export.json', { mimeType: 'application/json', dialogTitle: 'Export my data' }],
+  ]);
+});
+
+test('Send to developer: one JSON file, the address in the share sheet title', async () => {
+  await shareReport('pitplanner-debug.json', '{"a":1}', 'dev@example.com');
+  expect(mockCalls).toEqual([
+    ['create', { overwrite: true }],
+    ['write', '{"a":1}'],
+    [
+      'share',
+      'file:///CACHE/pitplanner-debug.json',
+      { mimeType: 'application/json', dialogTitle: 'Send to dev@example.com' },
+    ],
   ]);
 });
 
