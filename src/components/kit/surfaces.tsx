@@ -1,7 +1,7 @@
 // Surfaces (legacy/src/ui/components.tsx "Surfaces"; sizes and colors from ui.css): cards, avatars, tiles,
 // info box, result card, banner, empty state, grouped rows.
 import * as React from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { CookerIcon, IconColor, type CookerKind } from '@/components/kit/icons';
 import { Num } from '@/components/kit/num';
 import { Text, type TextTone } from '@/components/ui/text';
@@ -215,6 +215,47 @@ export function Banner({
     </View>
   );
 }
+
+const CHIP = {
+  ok: { box: 'bg-ok-container', dot: 'bg-ok', tone: 'ok' },
+  warn: { box: 'bg-warn-container', dot: 'bg-warn', tone: 'warn' },
+  error: { box: 'bg-error-container', dot: 'bg-error', tone: 'error' },
+} as const;
+
+/** Pill with a dot: how the cook is going (On plan, Behind, Ahead). */
+export function StatusChip({ tone, children }: Kids & { tone: keyof typeof CHIP }) {
+  const c = CHIP[tone];
+  return (
+    <View className={cn('min-h-[32px] shrink-0 flex-row items-center gap-2 rounded-control px-3.5', c.box)}>
+      <View className={cn('h-2 w-2 rounded-statusDot', c.dot)} />
+      <Text weight="500" tone={c.tone}>
+        {children}
+      </Text>
+    </View>
+  );
+}
+
+/** Note under the lane chart about its highlighted band: the band's swatch, a bold lead, then the rest. */
+export function BandNote({ lead, children }: Kids & { lead: React.ReactNode }) {
+  return (
+    <View className="flex-row items-start gap-3 rounded-inset bg-surface-2 px-3.5 py-3">
+      <View
+        className="mt-0.5 h-[18px] w-[18px] shrink-0 rounded-[5px] border-2 border-ember-on-container"
+        style={styles.band}
+      />
+      <Text tone="soft" relaxed className="min-w-0 flex-1">
+        <Text weight="500" tone="primary">
+          {lead}
+        </Text>
+        {children ? <> {children}</> : null}
+      </Text>
+    </View>
+  );
+}
+
+/** The lane chart's band fill (ui.css .lane-band, .band-swatch): a trace of the band's border color. */
+export const BAND_FILL = withAlpha(colors.onAccentContainer, 0.08);
+const styles = StyleSheet.create({ band: { backgroundColor: BAND_FILL } });
 
 /** Centered icon, title and line, with actions at the bottom (Plan and Cook with nothing planned). */
 export function EmptyState({

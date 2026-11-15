@@ -217,7 +217,7 @@ export function PlanScreen({
         ) : null
       }
       footer={
-        <Button block disabled={!plan} onPress={() => plan && onStartCook?.(plan)}>
+        <Button block disabled={!plan || state.cook != null} onPress={() => plan && !state.cook && onStartCook?.(plan)}>
           <Text>Start cook</Text>
         </Button>
       }

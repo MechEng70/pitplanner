@@ -1,4 +1,4 @@
-# Handoff (2026-11-15, fifteenth session: Sunday asks done, T-061 passed, T-064 found, T-021 scoped)
+# Handoff (2026-11-15, sixteenth session: T-021 built and unit-tested, its device tests not run yet)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
@@ -30,30 +30,20 @@ Do these in order:
      README with screenshots comes after the screens (T-066).
    - Still to ask when it matters: whether "erase it" on ending a cook means the cook only (assumed; the
      menu stays on Plan as in 0.2.0) or the menu too. Probe pairing for T-060: only when T-060 is picked up.
-5. **Next task: T-021 (Start cook and Live cook, mockup 12). Not started; no code written.** Read on
-   2026-11-15, to save the next session the search:
-   - Port from `legacy/src/screens/cook/CookScreen.tsx` (leave out Cook options, Cook finished, the keep or
-     move sheet and the Full timeline sheet: T-022 and T-023) and `legacy/src/screens/plan/StartCheckSheet.tsx`
-     with `legacy/src/screens/shared/AlertChecks.tsx`.
-   - Already here: `src/lib/cook.ts` (`newCook`, `pending`, `dueAt`, `driftMin`, `doneStep`, `stepText`),
-     `src/lib/cookView.ts` (`cookStatus`, `countdown`, `overline`, `lanes`, `laneWindow`, `laneTicks`,
-     `overlapNote`, `dayWord`, `hourText`), `engine/cookState.ts`, the store's `setCook` (saves, then
-     replaces the alarm set: never call the alarm service from a screen) and `state.alarmSync`,
-     `permissionService` (`src/platform/permissions.ts`), `onResume` (`src/platform/resume.ts`),
-     `fakeAlarms()` and `fakeResume()` for tests.
-   - Missing from the kit, to port from `legacy/src/ui/components.tsx` as the screen needs them:
-     `StatusChip`, `Lanes`, `BandNote`; the Next up card (`Card tone="result"`), `Banner` with an action.
-   - Wiring: `app/(tabs)/cook.tsx` is a placeholder; `PlanTab` does not pass `onStartCook` to `PlanScreen`
-     yet (`PlanScreen` already takes it and disables the button with no plan). `PlannedItem.label` and the
-     event text carry the T-061 label already.
-   - New rules to build in (T-064): Start cook disabled while `state.cook` is set, with a regression test
-     written failing first; the Cook tab never starts a cook.
-   - T-058's leftover: add the mid-cook half to the `survive` device test (font change and process kill on
-     the Cook screen: same Next up and countdown).
+5. **T-021 (Start cook and Live cook, mockup 12) is built and unit-tested (sixteenth session, 2026-11-15);
+   its device tests are written and NOT RUN.** The emulator run was not allowed in that session. First thing:
+   `npm run device -- --only cook,survive` (emulator only, no phone), fix what it finds, save
+   `docs/fidelity/rn-12-live-cook.png` from `tools/device/out/cook-live.png`, compare it with
+   `docs/mockups/12-live-cook.png`, then close T-021 in TASKS. What was built, what is left to T-022 and
+   T-023 on purpose, and the two questions open with Jason (Next up layout: mockup 12 or 0.2.0's countdown
+   in the title; copy for a refused alarm set) are in TASKS T-021.
+   - Next after that: T-022 (Cook options, keep or move serve, Start over asks first). `CookScreen` takes
+     `onOptions` and `onTimeline`; the route does not pass them yet.
    - T-063 (take back a Done) needs a mockup or SPEC line he approves before any UI. T-059 waits for the
      FSIS pages.
-6. **Dev seeds added on 2026-11-15:** `pitplanner://dev/plan?seed=briskets` (11.5 lb and 6 lb) and
-   `?seed=twins` (two 6 lb).
+6. **Dev seeds added on 2026-11-15:** `pitplanner://dev/plan?seed=briskets` (11.5 lb and 6 lb),
+   `?seed=twins` (two 6 lb), `?seed=tomorrow` (mockup menu for 5:00 PM tomorrow) and `?seed=cooking` (mockup 12
+   as a running cook; end it with `pitplanner://dev/alarm?cook=end`).
 7. **Gate note:** right after the emulator stops, the first `npm run check` can fail step 4 with Jest 5 s
    timeouts (cold cache, high load); a second run passed with no change. Do not raise the timeout for it.
 8. **Session habit (Jason, 2026-11-14):** before the context needs compacting, park the work, ask him the

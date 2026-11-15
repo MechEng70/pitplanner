@@ -6,28 +6,55 @@ import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FooterScroll } from '@/components/kit/sheet';
 import { Text } from '@/components/ui/text';
+import { cn } from '@/lib/utils';
 
 const TOP = ['top'] as const;
 
-/** 64 dp title bar: the title on the left, icon buttons on the right. */
-export function AppBar({ title, actions }: { title: string; actions?: React.ReactNode }) {
+/**
+ * 64 dp title bar: the title on the left, icon buttons (or a status chip) on the right. With a `subtitle`
+ * (Cooking: "Smoker 225F, serve 5:00 PM") the line sits under the title and the actions stay at the top.
+ */
+export function AppBar({
+  title,
+  subtitle,
+  actions,
+}: {
+  title: string;
+  subtitle?: React.ReactNode;
+  actions?: React.ReactNode;
+}) {
+  const sub = subtitle != null;
   return (
-    <View className="min-h-[64px] shrink-0 flex-row items-center justify-between gap-2 pl-5 pr-2">
-      <Text variant="title" role="heading" className="min-w-0 shrink">
-        {title}
-      </Text>
-      {actions != null ? <View className="shrink-0 flex-row items-center">{actions}</View> : null}
+    <View
+      className={cn(
+        'min-h-[64px] shrink-0 flex-row justify-between gap-2 pl-5 pr-2',
+        sub ? 'items-start py-2' : 'items-center',
+      )}
+    >
+      <View className="min-w-0 flex-1 gap-0.5">
+        <Text variant="title" role="heading">
+          {title}
+        </Text>
+        {sub ? (
+          <Text variant="bodyM" tone="secondary">
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
+      {actions != null ? <View className="min-h-[48px] shrink-0 flex-row items-center">{actions}</View> : null}
     </View>
   );
 }
 
 export function Screen({
   title,
+  subtitle,
   actions,
   footer,
   children,
 }: {
   title: string;
+  subtitle?: React.ReactNode;
   actions?: React.ReactNode;
   /** Pinned at the bottom (Start cook); the body scrolls under it. */
   footer?: React.ReactNode;
@@ -35,7 +62,7 @@ export function Screen({
 }) {
   return (
     <SafeAreaView edges={TOP} className="flex-1 bg-bg">
-      <AppBar title={title} actions={actions} />
+      <AppBar title={title} subtitle={subtitle} actions={actions} />
       <FooterScroll fill fadeTo="bg" footer={footer} contentClassName="gap-3 px-4">
         {children}
       </FooterScroll>

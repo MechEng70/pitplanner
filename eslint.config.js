@@ -46,7 +46,7 @@ export default tsConfig(
       'react-native/no-color-literals': 'error',
       'react-native/no-inline-styles': 'error',
       // These kit components wrap their children in a Text (src/components/kit), so literals inside are fine.
-      'react-native/no-raw-text': ['error', { skip: ['Num', 'Banner', 'InfoBox'] }],
+      'react-native/no-raw-text': ['error', { skip: ['Num', 'Banner', 'InfoBox', 'StatusChip', 'BandNote'] }],
       // Font scale rule (TECH-DESIGN section 8): nothing truncates or shrinks a Num.
       'pitplanner/num-text-size': 'error',
     },

@@ -1,6 +1,20 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
-import { Avatar, Banner, Card, EmptyState, GroupCard, IconAvatar, InfoBox, ResultCard, Tile, Tiles } from './surfaces';
+import {
+  Avatar,
+  BandNote,
+  Banner,
+  Card,
+  EmptyState,
+  GroupCard,
+  IconAvatar,
+  InfoBox,
+  ResultCard,
+  StatusChip,
+  Tile,
+  Tiles,
+} from './surfaces';
+import { Button } from '@/components/ui/button';
 import { Bell } from './icons';
 import { Text } from '@/components/ui/text';
 import { colors } from '@/theme/tokens';
@@ -117,5 +131,41 @@ test('each tile is one element read as "label value", in an equal row too', asyn
   // The equal widths are measured on a device (the `plan` device test): class names are not laid out in Jest.
   expect(tiles).toHaveLength(3);
   await fireEvent.press(tiles[1]!);
+  expect(onPress).toHaveBeenCalledTimes(1);
+});
+
+test('StatusChip shows its label in the tone color on the tone container', async () => {
+  await render(<StatusChip tone="warn">Behind</StatusChip>);
+  const label = screen.getByText('Behind');
+  expect(label.props.className).toContain('text-warn');
+  expect(StyleSheet.flatten(label.props.style)).toMatchObject({ fontSize: 14, fontWeight: '500' });
+});
+
+test('BandNote shows the lead in bold, then the rest', async () => {
+  await render(
+    <BandNote lead="3:15 to 3:40 PM: brisket and wings share the smoker at 225F.">Brisket comes off.</BandNote>,
+  );
+  const lead = screen.getByText('3:15 to 3:40 PM: brisket and wings share the smoker at 225F.');
+  expect(StyleSheet.flatten(lead.props.style)).toMatchObject({ fontWeight: '500' });
+  expect(screen.getByText(/Brisket comes off\./)).toBeOnTheScreen();
+});
+
+test('a banner action is a small button: 40 dp tall with a 48 dp touch target', async () => {
+  const onPress = jest.fn();
+  await render(
+    <Banner
+      action={
+        <Button kind="small" onPress={onPress}>
+          <Text>Fix</Text>
+        </Button>
+      }
+    >
+      Alerts are off. Steps may not ring.
+    </Banner>,
+  );
+  const fix = screen.getByRole('button', { name: 'Fix' });
+  expect(fix.props.className).toContain('min-h-[40px]');
+  expect(fix.props.hitSlop).toEqual({ top: 4, bottom: 4 });
+  await fireEvent.press(fix);
   expect(onPress).toHaveBeenCalledTimes(1);
 });

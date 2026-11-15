@@ -1196,7 +1196,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 
 ### T-058 Survive font-size changes and process death
 - **Status:** built 2026-11-14 (emulator: `survive` passes at 115% and 130%). The mid-cook half of the
-  acceptance (on Cook: same Next up and countdown) waits for T-021, as there is no Cook screen yet. Not run
+  acceptance (on Cook: same Next up and countdown) is written into `survive` with T-021 (2026-11-15) and not run yet. Not run
   on the phone (hold). Gate: `npm run check` passes, all six steps (2026-11-14, Snyk back up).
 - **Built (2026-11-14):**
   - Font size. `plugins/fontScaleConfigChange.ts` (pure, tested) through `plugins/withFontScaleConfigChange.ts`
@@ -1285,7 +1285,40 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** none.
 
 ### T-021 Start cook and Live cook (12)
-- **Status:** todo
+- **Status:** built 2026-11-15, unit-tested. Gate: `npm run check` passes, all six steps (2026-11-15). Device tests `cook` and the mid-cook half of
+  `survive` are written and NOT RUN yet (the emulator run was not allowed in the session that built it):
+  run `npm run device -- --only cook,survive`, fix what it finds, then save fidelity PNG 12
+  (`docs/fidelity/rn-12-live-cook.png` from `tools/device/out/cook-live.png`). Not done until that passes.
+- **Built (2026-11-15):**
+  - `src/screens/cook/CookScreen.tsx`: no cook: "No cook running" and Go to Plan, never starts one (T-064).
+    Live cook: header with the smoker temp and serve time, status chip, Next up card (overline "Check at" for
+    a check step, title, detail with "Not ready? Tap Adjust." on check steps, countdown, Done, Adjust), lane
+    chart with the now line, the shared-smoker band and its note, After that (three steps), Full timeline.
+    The clock is read every 30 s and when the app comes back to the front. Red banner "Alerts are off. Steps
+    may not ring." with Fix (a sheet with the permission rows), re-checked on resume. The notice of what an
+    alert changed (`cook.notice`) shows with OK.
+  - Start cook: `PlanTab` checks the permissions (`StartCheckSheet`: "Alerts may not ring", Start anyway or
+    Start cook once all are on), saves the cook through `setCook` (one alarm set) and opens the Cook tab. A
+    status that cannot be read counts as missing. One tap starts one cook.
+  - T-064 rules: Start cook is disabled while `state.cook` is set (`PlanScreen`, regression test written
+    failing first) and `PlanTab` never replaces a running cook; the Cook tab never starts a cook.
+  - Kit: `Lanes` (`src/components/kit/Lanes.tsx`; lane, track and tick heights grow with the font size),
+    `StatusChip`, `BandNote`, `Button kind="small"` (40 dp pill, 48 dp target: Fix, OK, Allow), `Screen` and
+    `AppBar` `subtitle`. Tokens `laneSmoke2`, `laneHot`. `src/screens/shared/AlertChecks.tsx` (the permission
+    rows and `useAlarmStatus`; Setup's alerts step reuses it).
+  - Dev seeds: `pitplanner://dev/plan?seed=tomorrow` (mockup menu for 5:00 PM tomorrow) and `?seed=cooking`
+    (mockup 12 as a running cook, 6 hr 37 min before serve). Test fixture `src/test/cook.ts`.
+- **Left for T-022 and T-023, on purpose:** the Cook options button, Adjust and Full timeline are drawn and
+  do nothing (handler props `onOptions`, `onTimeline`, not passed by the route). A Done that is 5 min or
+  more early or late keeps serve when the holds cover it, else moves serve (as a Done from an alert does),
+  until the keep or move sheet. After the last step (Serve) the card goes away and the cook stays until Cook
+  finished exists; `pitplanner://dev/alarm?cook=end` ends it in a dev build. No pit-out banner yet (pit out
+  is set from Cook options).
+- **Open with Jason (asked 2026-11-15):**
+  1. Next up layout: built as mockup 12 (title, then the countdown on its own large line). 0.2.0 had the
+     countdown inside the title ("Fire the smoker to 225F in 45 hr 50 min"). Which one stays?
+  2. `state.alarmSync === 'failed'` (the phone refused the alarm set) shows nothing yet: it needs a line of
+     copy he approves. `inexact` is covered by the red banner (exact alarms are off).
 - **Goal:** Start cook (permission check sheet, save, schedule alarms), then the Cook tab opens. The Cook tab
   with no cook running shows "No cook running" and Go to Plan and never starts a cook; Start cook on Plan is
   greyed out while a cook runs (Jason, 2026-11-15, T-064; SPEC "Cook tab"). Live cook: header, status chip, Next up with Done/Adjust, countdown, lane chart with now line and
@@ -1299,7 +1332,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** none (Claude runs a short live cook flow).
 
 ### T-064 A cook is never lost without the user choosing it
-- **Status:** todo; waits for Jason's answers (asked 2026-11-15). Belongs with T-021 to T-023.
+- **Status:** partly built. Done with T-021 (2026-11-15): Start cook greyed out while a cook runs and never
+  replacing it; the Cook tab never starts a cook (regression tests in `PlanScreen.test.tsx`,
+  `StartCook.test.tsx`, `CookScreen.test.tsx`). Left: Start over asks first (T-022); ending or starting over
+  never changes `cook_history` (T-022, T-023).
 - **Why (Jason, 2026-11-15):** his cook of 2026-11-14 is not in 0.2.0's history, and he sees no earlier
   cooks either. He believes he saved it. Afterwards he started a cook for 2026-11-21 and ended it with
   Start over. The phone's copy of `history.json` cannot be read over adb (release build), so what happened

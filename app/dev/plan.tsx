@@ -8,16 +8,22 @@
 //   pitplanner://dev/plan?seed=clash    two batches of wings, smoked at 225F and hot at 350F: one conflict
 //   pitplanner://dev/plan?seed=briskets an 11.5 lb and a 6 lb brisket: labelled cards (T-061)
 //   pitplanner://dev/plan?seed=twins    two 6 lb briskets: the labels are numbered (T-061)
+//   pitplanner://dev/plan?seed=tomorrow the mockup menu for 5:00 PM tomorrow, so Start cook has alarms to set (T-021)
+//   pitplanner://dev/plan?seed=cooking  mockup 12: the mockup menu as a running cook, 6 hr 37 min before serve
+//                                       (10:23 AM on a 5:00 PM serve), earlier steps done; opens the Cook tab.
+//                                       End it with pitplanner://dev/alarm?cook=end
 // Add &edit=<item id> (b, w, c on the mockup seed) to open food details for that item, or &add=<food id> to
 // open it for a new food (mockups 08-10: seed=empty with add=brisket, stlribs or breasts).
 // The past cook has a fixed id; the other two seeds take it away again (only that one, never a real cook).
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import type { ItemInput } from '../../engine/types';
+import { buildPlan } from '../../engine/plan';
+import type { ItemInput, PlanInput } from '../../engine/types';
+import { newCook, steps } from '@/lib/cook';
 import { saturday } from '@/lib/fixtures/saturday';
 import { defaultGriddle, defaultOven } from '@/lib/gear';
 import type { CookRecord } from '@/lib/history';
-import { defaultOptions, method } from '@/lib/rules';
+import { defaultOptions, method, rules } from '@/lib/rules';
 import { useStore } from '@/lib/store';
 
 const MENU: ItemInput[] = [
@@ -61,7 +67,26 @@ const SEEDS: Record<string, ItemInput[]> = {
   past: [],
   briskets: [brisket('b1', 11.5), brisket('b2', 6)],
   twins: [brisket('b1', 6), brisket('b2', 6)],
+  tomorrow: MENU,
+  cooking: MENU,
 };
+
+const MIN = 60_000;
+/** Mockup 12 shows 10:23 AM on a 5:00 PM serve. */
+const COOKING_BEFORE_SERVE_MIN = 397;
+
+/** When the seed's plan serves: the fixture's Saturday, or a time set from the clock for the two cook seeds. */
+function serveAt(seed: string, now: number): number {
+  if (seed === 'tomorrow') {
+    const d = new Date(now);
+    d.setDate(d.getDate() + 1);
+    d.setHours(17, 0, 0, 0);
+    return d.getTime();
+  }
+  // On a 5 minute mark, as a serve time picked on Plan would be.
+  if (seed === 'cooking') return Math.ceil((now + COOKING_BEFORE_SERVE_MIN * MIN) / (5 * MIN)) * 5 * MIN;
+  return saturday.at;
+}
 
 const PAST_ID = 'dev-seed-past';
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -91,20 +116,36 @@ const PAST: CookRecord = {
 
 export default function PlanSeed() {
   const { seed, edit, add } = useLocalSearchParams<{ seed?: string; edit?: string; add?: string }>();
-  const { setGear, setDraft, setRate, addRecord, removeRecord, ui } = useStore();
+  const { setGear, setDraft, setRate, setCook, addRecord, removeRecord, ui } = useStore();
   const router = useRouter();
   useEffect(() => {
     const items = seed ? SEEDS[seed] : undefined;
     if (!__DEV__ || !items) return;
-    setGear({ smoker: saturday.cookers.smoker!, griddle: defaultGriddle(), oven: defaultOven() });
+    const now = Date.now();
+    const cookers = { smoker: saturday.cookers.smoker!, griddle: defaultGriddle(), oven: defaultOven() };
+    const at = serveAt(seed!, now);
+    setGear(cookers);
     setRate('brisket', 0.75);
-    setDraft(() => ({ mode: 'readyBy', at: saturday.at, pitTempF: 225, items }));
+    setDraft(() => ({ mode: 'readyBy', at, pitTempF: 225, items }));
     // A seed starts clean: no food details left open by an earlier run (T-058 restores it otherwise).
     ui.write({ food: null });
     if (seed === 'past') addRecord(PAST);
     else removeRecord(PAST_ID);
+    if (seed === 'cooking') {
+      // The cook as it would stand now: every step due before now was done on time.
+      const input: PlanInput = { ...saturday, at, cookers, items };
+      const cook = newCook(input, buildPlan(rules, input), now);
+      const done = Object.fromEntries(
+        steps(cook)
+          .filter(k => k.event.at < now)
+          .map(k => [k.key, k.event.at]),
+      );
+      setCook({ ...cook, done });
+      router.replace('/cook');
+      return;
+    }
     router.replace({ pathname: '/plan', params: { ...(edit ? { edit } : {}), ...(add ? { add } : {}) } });
-  }, [seed, edit, add, setGear, setDraft, setRate, addRecord, removeRecord, ui, router]);
+  }, [seed, edit, add, setGear, setDraft, setRate, setCook, addRecord, removeRecord, ui, router]);
   if (!__DEV__) return <Redirect href="/plan" />;
   return null;
 }

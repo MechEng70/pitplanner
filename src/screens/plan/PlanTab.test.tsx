@@ -6,6 +6,7 @@ import type { Draft } from '@/lib/draft';
 import { saturday } from '@/lib/fixtures/saturday';
 import { defaultGriddle, defaultOven } from '@/lib/gear';
 import { defaultOptions, method } from '@/lib/rules';
+import { fakeAlarms, fakeResume } from '@/platform/fakes';
 import { NOW, storeWrapper, testRepos } from '@/test/store';
 import { PlanTab } from './PlanTab';
 
@@ -31,6 +32,14 @@ afterEach(() => {
   jest.useRealTimers();
   jest.restoreAllMocks();
 });
+/** What the route gives the tab: nothing here starts a cook (StartCook.test.tsx does). */
+const tabProps = () => ({
+  pickDateTime: jest.fn(async () => null),
+  permissions: fakeAlarms(),
+  onResume: fakeResume().onResume,
+  onCookStarted: jest.fn(),
+  now: () => NOW,
+});
 const settle = () => act(() => jest.advanceTimersByTime(SHEET_OUT_MS));
 
 async function show(items: ItemInput[]) {
@@ -39,9 +48,7 @@ async function show(items: ItemInput[]) {
   r.repos.rates.setRate('brisket', 0.75, NOW);
   const draft: Draft = { mode: 'readyBy', at: saturday.at, pitTempF: 225, items };
   r.repos.settings.setDraft(draft, NOW);
-  await render(<PlanTab pickDateTime={jest.fn(async () => null)} now={() => NOW} />, {
-    wrapper: storeWrapper(r.repos),
-  });
+  await render(<PlanTab {...tabProps()} />, { wrapper: storeWrapper(r.repos) });
   return r.repos;
 }
 const button = (name: string | RegExp) => screen.getByRole('button', { name });
@@ -140,15 +147,12 @@ describe('Food details', () => {
     const r = testRepos();
     r.repos.cookers.save(gear, NOW);
     r.repos.settings.setDraft({ mode: 'readyBy', at: saturday.at, pitTempF: 225, items: [brisket] }, NOW);
-    const first = await render(
-      <PlanTab pickDateTime={jest.fn(async () => null)} now={() => NOW} open={{ edit: 'b' }} />,
-      {
-        wrapper: storeWrapper(r.repos),
-      },
-    );
+    const first = await render(<PlanTab {...tabProps()} open={{ edit: 'b' }} />, {
+      wrapper: storeWrapper(r.repos),
+    });
     expect(button('Save')).toBeOnTheScreen();
     await first.unmount();
-    await render(<PlanTab pickDateTime={jest.fn(async () => null)} now={() => NOW} open={{ add: 'stlribs' }} />, {
+    await render(<PlanTab {...tabProps()} open={{ add: 'stlribs' }} />, {
       wrapper: storeWrapper(r.repos),
     });
     expect(screen.getByRole('heading', { name: 'St. Louis ribs' })).toBeOnTheScreen();
@@ -196,7 +200,7 @@ describe('Conflicts', () => {
 // it was left, unsaved changes included.
 describe('after the app was killed', () => {
   const again = (repos: Awaited<ReturnType<typeof show>>) =>
-    render(<PlanTab pickDateTime={jest.fn(async () => null)} now={() => NOW} />, { wrapper: storeWrapper(repos) });
+    render(<PlanTab {...tabProps()} />, { wrapper: storeWrapper(repos) });
 
   test('food details reopens with the unsaved change and Use for future; Save then writes it', async () => {
     const repos = await show([brisket]);

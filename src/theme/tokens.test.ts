@@ -48,6 +48,8 @@ test('status container colors match the ui.css components that write them as lit
   expect(statusColors.errorContainer).toBe(rule('.banner-error').background);
   expect(statusColors.onErrorContainer).toBe(rule('.banner-error').color);
   expect(statusColors.scrimMenu).toBe(rule('.scrim-menu').background);
+  expect(statusColors.laneSmoke2).toBe(rule('.seg-smoke2').background);
+  expect(statusColors.laneHot).toBe(rule('.seg-hot').background);
 });
 
 test('relaxed line height and the chip hint size match ui.css', () => {

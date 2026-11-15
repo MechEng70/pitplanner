@@ -90,3 +90,15 @@ test('without a footer the fade at the end is no taller than the space under the
   expect(pad).toBe(16);
   expect(fade.height).toBeLessThanOrEqual(pad);
 });
+
+test('a subtitle sits under the title; the title is still the heading', async () => {
+  await render(
+    <Screen title="Cooking" subtitle={<Text>Smoker 225F, serve 5:00 PM</Text>}>
+      <Text>Next up</Text>
+    </Screen>,
+  );
+  expect(screen.getByRole('heading', { name: 'Cooking' })).toBeOnTheScreen();
+  const sub = screen.getByText('Smoker 225F, serve 5:00 PM');
+  expect(sub.props.className).toContain('text-ink-2');
+  expect(StyleSheet.flatten(sub.props.style)).toMatchObject({ fontSize: 15 });
+});

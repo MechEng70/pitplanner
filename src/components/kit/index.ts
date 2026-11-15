@@ -13,4 +13,18 @@ export { AppBar, Screen } from './screen';
 export { InputField, SearchField } from './input';
 export { Menu, MenuRow, type Anchor } from './menu';
 export { FooterScroll, Sheet, useReveal, useSheet } from './sheet';
-export { Avatar, Banner, Card, EmptyState, GroupCard, IconAvatar, InfoBox, ResultCard, Tile, Tiles } from './surfaces';
+export {
+  Avatar,
+  BandNote,
+  Banner,
+  Card,
+  EmptyState,
+  GroupCard,
+  IconAvatar,
+  InfoBox,
+  ResultCard,
+  StatusChip,
+  Tile,
+  Tiles,
+} from './surfaces';
+export { Lanes, type Lane, type LaneSegment } from './Lanes';

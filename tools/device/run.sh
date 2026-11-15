@@ -2,7 +2,7 @@
 # One unattended device pass on the dev build (TASKS T-006).
 #   npm run device -- [--phone] [--no-build] [--repeat N] [--only <test>]...
 #   tests: smoke, sheet-keyboard, stable-controls, db, migration-error, db-unopenable, legacy-import, alarm,
-#   plan, plan-3button, plan-sheets, food-details, survive
+#   plan, plan-3button, plan-sheets, food-details, survive, cook
 #   DEVICE_SCALES="1.0 1.15 1.3" adds or changes the font scales (default 1.15 and 1.3).
 #   (default: all).
 #   --repeat N runs the chosen tests N times at each font scale (to catch a test that only sometimes fails). --only repeats or takes a comma list.
@@ -19,7 +19,7 @@ set -uo pipefail
 . "$(dirname "$0")/lib.sh"
 cd "$DEVICE_DIR" || exit 1
 
-ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets food-details survive)
+ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets food-details survive cook)
 TESTS=()
 NOBUILD=""
 REPEAT=1
@@ -886,8 +886,19 @@ reopen() {
     -d "pitplanner://expo-development-client/?url=http%3A%2F%2Flocalhost%3A$METRO_PORT" "$PKG" >/dev/null
   wait_for_app 90 && wait_for_refresh
 }
+# Open a route in the running app (no force-stop: that would also cancel the app's alarms).
+open_route() {
+  A shell am start -W -a android.intent.action.VIEW -d "'pitplanner://$1'" "$PKG" >/dev/null
+  sleep 2
+}
+# The Next up card in a dump: its overline ("CHECK AT 11:35 AM") and its countdown ("in 1 hr 12 min").
+# Numbers hold no-break spaces, so they are matched loosely and printed with plain ones.
+next_overline() { grep -oiE 'text="(check.at|at|overdue.since).[0-9][^"]*"' "$1" | head -n 1 | sed -E 's/^text="|"$//g' | tr '\302\240' '  ' | tr -s ' '; }
+next_countdown() { grep -oE 'content-desc="(in [^"]*|now|[^"]* overdue)"' "$1" | head -n 1 | sed -E 's/^content-desc="|"$//g'; }
+countdown_min() { local h m; h=$(grep -oE '[0-9]+ hr' <<<"$1" | grep -oE '[0-9]+'); m=$(grep -oE '[0-9]+ min' <<<"$1" | grep -oE '[0-9]+'); echo $((${h:-0} * 60 + ${m:-0})); }
+
 test_survive() {
-  local s="$1" dir="$2" ok=1 other h0 h1 r0 r1 a0 a1 a2
+  local s="$1" dir="$2" ok=1 other h0 h1 r0 r1 a0 a1 a2 o0 o1 o2 c0 c1 c2
   if ! is_emulator; then result "SKIP  survive $s: emulator only"; return; fi
   [ "$s" = 1.3 ] && other=1.15 || other=1.3
 
@@ -962,7 +973,134 @@ test_survive() {
     A shell am start -W -a android.intent.action.VIEW -d "'pitplanner://plan'" "$PKG" >/dev/null
     sleep 2
   else plan_miss "the test cook (the app did not open)"; fi
+
+  # Mid-cook (T-058's leftover, with T-021's Cook screen): on Cook with the mockup cook running, a font-size
+  # change and then the process killed in the background: the same Next up and countdown (the countdown may
+  # have moved on by the minute that passed).
+  if launch "dev/plan?seed=cooking" && dump >"$dir/survive-cook-before.xml"; then
+    o0=$(next_overline "$dir/survive-cook-before.xml"); c0=$(next_countdown "$dir/survive-cook-before.xml")
+    has_text "$dir/survive-cook-before.xml" "Check the brisket" && [ -n "$o0" ] && [ -n "$c0" ] || plan_miss "Next up on Cook (overline \"$o0\", countdown \"$c0\")"
+    r0=$(activity_view)
+    A shell settings put system font_scale "$other"
+    sleep 1
+    if dump >"$dir/survive-cook-font.xml"; then
+      o1=$(next_overline "$dir/survive-cook-font.xml"); c1=$(next_countdown "$dir/survive-cook-font.xml")
+      r1=$(activity_view)
+      [ -n "$r0" ] && [ "$r0" = "$r1" ] || plan_miss "the same activity after the font-size change on Cook"
+      grep -q 'content-desc="Cook"[^>]*selected="true"' "$dir/survive-cook-font.xml" || plan_miss "Cook still open after the font-size change"
+      if has_text "$dir/survive-cook-font.xml" "Check the brisket" && [ "$o0" = "$o1" ] && [ -n "$c1" ] &&
+        [ $(($(countdown_min "$c0") - $(countdown_min "$c1"))) -le 1 ] && [ $(($(countdown_min "$c0") - $(countdown_min "$c1"))) -ge 0 ]; then
+        log "    mid-cook font size $s -> $other: Next up is still \"$o1\", \"$c1\" (was \"$c0\")"
+      else plan_miss "the same Next up after the font-size change (was \"$o0\", \"$c0\"; is \"$o1\", \"$c1\")"; fi
+      shot "$dir/survive-cook-font.png"
+    else plan_miss "the Cook screen after the font-size change"; fi
+    A shell settings put system font_scale "$s"
+    sleep 1
+    A shell input keyevent KEYCODE_HOME
+    sleep 2
+    A shell am kill "$PKG"
+    sleep 1
+    if [ -n "$(A shell pidof "$PKG" | tr -d '\r')" ]; then plan_miss "the process killed mid-cook (it is still running)"; fi
+    if reopen && sleep 1 && dump >"$dir/survive-cook-kill.xml"; then
+      o2=$(next_overline "$dir/survive-cook-kill.xml"); c2=$(next_countdown "$dir/survive-cook-kill.xml")
+      grep -q 'content-desc="Cook"[^>]*selected="true"' "$dir/survive-cook-kill.xml" || plan_miss "Cook open after the process was killed"
+      if has_text "$dir/survive-cook-kill.xml" "Check the brisket" && [ "$o0" = "$o2" ] && [ -n "$c2" ] &&
+        [ $(($(countdown_min "$c0") - $(countdown_min "$c2"))) -le 2 ] && [ $(($(countdown_min "$c0") - $(countdown_min "$c2"))) -ge 0 ]; then
+        log "    mid-cook process killed: the app came back on Cook with Next up \"$o2\", \"$c2\""
+      else plan_miss "the same Next up after the process was killed (was \"$o0\", \"$c0\"; is \"$o2\", \"$c2\")"; fi
+    else plan_miss "the app after the process was killed mid-cook"; fi
+    open_route "dev/alarm?cook=end"
+    open_route "plan"
+  else plan_miss "the Cook screen with the mockup cook (the app did not open)"; fi
   if [ $ok = 1 ]; then result "PASS  survive $s"; else result "FAIL  survive $s"; fi
+}
+
+# T-021: Start cook and Live cook (mockup 12), with the T-064 rules. Emulator only (it starts and ends cooks).
+# 1. No cook: the Cook tab says "No cook running" and starts nothing, with food on the plan; Go to Plan goes
+#    to Plan.
+# 2. Start cook on a plan for tomorrow: with an alert permission off the check sheet shows first (Start
+#    anyway); the Cook tab opens on the first step and the phone holds the cook's alarms.
+# 3. With the cook running, Start cook on Plan is greyed out.
+# 4. Done moves Next up to the next step.
+# 5. The mockup cook (seed=cooking): Next up worded as a check, the countdown, the lane chart's note and the
+#    next steps. Screenshots for docs/fidelity.
+# The cook is ended at the end (its alarms go with it).
+test_cook() {
+  local s="$1" dir="$2" ok=1 n want
+  if ! is_emulator; then result "SKIP  cook $s: emulator only"; return; fi
+  launch "dev/alarm?cook=end" || { result "FAIL  cook $s: app did not open"; return; }
+  open_route "dev/plan?seed=tomorrow"
+  tap "Cook" 1 | tee -a "$REPORT"
+  if dump >"$dir/cook-none.xml"; then
+    has_text "$dir/cook-none.xml" "No cook running" || plan_miss "No cook running"
+    has_label "$dir/cook-none.xml" "Go to Plan" || plan_miss "Go to Plan"
+    n=$(app_alarms | grep -c .)
+    if [ "$n" = 0 ]; then log "    no cook: the Cook tab says so and the phone holds no alarms of the app"
+    else plan_miss "no alarms with no cook running (the phone holds $n)"; fi
+    shot "$dir/cook-none.png"
+    tap "Go to Plan" 1 | tee -a "$REPORT"
+    dump >"$dir/cook-goplan.xml" && grep -q 'content-desc="Plan"[^>]*selected="true"' "$dir/cook-goplan.xml" || plan_miss "Plan open after Go to Plan"
+  else plan_miss "the Cook tab with no cook"; fi
+
+  tap "Start cook" 1 | tee -a "$REPORT"
+  sleep 1
+  if dump >"$dir/cook-start.xml" && has_text "$dir/cook-start.xml" "Alerts may not ring"; then
+    log "    Start cook: an alert permission is off, the check sheet shows ($(grep -oE 'content-desc="Allow [^"]*"' "$dir/cook-start.xml" | sed -E 's/content-desc="Allow |"//g' | paste -sd, -) to allow)"
+    shot "$dir/cook-check.png"
+    tap "Start anyway" 1 | tee -a "$REPORT"
+    sleep 1
+  else log "    Start cook: every alert permission is on, no check sheet"; fi
+  if dump >"$dir/cook-started.xml"; then
+    grep -q 'content-desc="Cook"[^>]*selected="true"' "$dir/cook-started.xml" || plan_miss "the Cook tab open after Start cook"
+    has_text "$dir/cook-started.xml" "Cooking" || plan_miss "Cooking"
+    has_text "$dir/cook-started.xml" "Fire the smoker to 225F" || plan_miss "Next up: Fire the smoker to 225F"
+    [ -n "$(next_countdown "$dir/cook-started.xml")" ] || plan_miss "the countdown"
+    n=$(app_alarms | grep -c .)
+    if [ "$n" -gt 0 ]; then log "    cook started: Next up \"$(next_overline "$dir/cook-started.xml")\", $(next_countdown "$dir/cook-started.xml"); the phone holds $n alarm(s) of the app"
+    else plan_miss "the cook's alarms on the phone"; fi
+    shot "$dir/cook-started.png"
+  else plan_miss "the screen after Start cook"; fi
+
+  tap "Plan" 1 | tee -a "$REPORT"
+  if dump >"$dir/cook-plan.xml" && grep -q 'content-desc="Start cook"[^>]*enabled="false"' "$dir/cook-plan.xml"; then
+    log "    with the cook running, Start cook on Plan is greyed out"
+    shot "$dir/cook-plan.png"
+  else plan_miss "Start cook greyed out while a cook runs"; fi
+
+  tap "Cook" 1 | tee -a "$REPORT"
+  tap "Done" 1 | tee -a "$REPORT"
+  sleep 1
+  if dump >"$dir/cook-done.xml" && has_text "$dir/cook-done.xml" "Brisket on the smoker, unwrapped"; then
+    log "    Done: Next up moved on to \"Brisket on the smoker, unwrapped\""
+  else plan_miss "the next step after Done (Brisket on the smoker, unwrapped)"; fi
+
+  open_route "dev/plan?seed=cooking"
+  if dump >"$dir/cook-live.xml"; then
+    for want in "Cooking" "On plan" "Check the brisket" "After that" "Brisket" "Wings" "Breasts"; do
+      has_text "$dir/cook-live.xml" "$want" || plan_miss "$want (mockup cook)"
+    done
+    for want in "Done" "Adjust" "Cook options" "Full timeline"; do
+      has_label "$dir/cook-live.xml" "$want" || has_text "$dir/cook-live.xml" "$want" || plan_miss "$want (mockup cook)"
+    done
+    grep -qiE 'text="check.at.[0-9][^"]*"' "$dir/cook-live.xml" || plan_miss "the overline \"Check at ...\""
+    grep -qE 'content-desc="in 1 hr 1[0-2] min"' "$dir/cook-live.xml" || plan_miss "the countdown \"in 1 hr 12 min\" (is \"$(next_countdown "$dir/cook-live.xml")\")"
+    grep -qE 'text="Smoker.225F, serve.[0-9:]+.[AP]M"' "$dir/cook-live.xml" || plan_miss "the header line \"Smoker 225F, serve ...\""
+    [ $ok = 1 ] && log "    mockup cook: \"$(next_overline "$dir/cook-live.xml")\", Check the brisket, $(next_countdown "$dir/cook-live.xml")"
+    shot "$dir/cook-live.png"
+    scroll_bottom | tee -a "$REPORT"
+    if dump >"$dir/cook-live-end.xml"; then
+      grep -qE 'share the smoker at.225F' "$dir/cook-live-end.xml" || plan_miss "the shared smoker note under the chart"
+      has_text "$dir/cook-live-end.xml" "Wings on the smoker on a wire rack" || plan_miss "the next step (Wings on the smoker on a wire rack)"
+      shot "$dir/cook-live-end.png"
+    else plan_miss "the end of the Cook screen"; fi
+  else plan_miss "the Cook screen with the mockup cook"; fi
+
+  # Put things back: end the cook (clears its alarms) and leave the app on Plan.
+  open_route "dev/alarm?cook=end"
+  n=$(app_alarms | grep -c .)
+  [ "$n" = 0 ] || plan_miss "no alarms after the cook was ended (the phone holds $n)"
+  open_route "plan"
+  if [ $ok = 1 ]; then result "PASS  cook $s"; else result "FAIL  cook $s"; fi
 }
 
 read -r -a SCALES <<<"${DEVICE_SCALES:-1.15 1.3}"
@@ -1034,6 +1172,16 @@ if [[ " ${TESTS[*]} " == *" food-details "* ]]; then
       "Result $pct%=$OUT/$s/food-result.png" "Ribs $pct%=$OUT/$s/food-ribs.png" \
       "Chicken $pct%=$OUT/$s/food-chicken.png" && IMAGES+=("$OUT/food-details-$pct.png")
   done
+fi
+if [[ " ${TESTS[*]} " == *" cook "* ]]; then
+  cook_imgs=()
+  for s in "${SCALES[@]}"; do
+    pct=$(awk -v s="$s" 'BEGIN { printf "%d", s * 100 + 0.5 }')
+    [ -f "$OUT/$s/cook-live.png" ] && cook_imgs+=("Live $pct%=$OUT/$s/cook-live.png")
+    [ -f "$OUT/$s/cook-live-end.png" ] && cook_imgs+=("End $pct%=$OUT/$s/cook-live-end.png")
+    [ -f "$OUT/$s/cook-none.png" ] && cook_imgs+=("No cook $pct%=$OUT/$s/cook-none.png")
+  done
+  [ ${#cook_imgs[@]} -eq 0 ] || { python3 -I compose.py "$OUT/cook-live.png" "${cook_imgs[@]}" && IMAGES+=("$OUT/cook-live.png"); }
 fi
 log ""
 log "=== device summary ==="

@@ -1,5 +1,6 @@
-// Button (React Native Reusables `button`, rewritten for the Pit Planner tokens): the four kinds of the
-// 0.2.0 kit (legacy/src/ui/ui.css `.btn-*`). Android ripple on press, 48 dp minimum touch height. Icons in
+// Button (React Native Reusables `button`, rewritten for the Pit Planner tokens): the five kinds of the
+// 0.2.0 kit (legacy/src/ui/ui.css `.btn-*`). `small` is the 40 dp accent pill in a row or banner (Allow, Fix,
+// OK); it reaches 48 dp to the finger through its hit slop. Android ripple on press, 48 dp minimum touch height. Icons in
 // the button take the label color (IconColor). `tone`: outline `accent`, text `danger` (ui.css .btn-accent,
 // .btn-danger). A disabled primary turns grey (.btn-primary:disabled); the other kinds fade to 50%.
 import { cva, type VariantProps } from 'class-variance-authority';
@@ -18,6 +19,7 @@ const buttonVariants = cva('flex-row items-center justify-center gap-2 overflow-
       outline: 'min-h-[48px] rounded-pill border border-outline px-5',
       tonal: 'min-h-[48px] rounded-pill bg-ember-container px-[18px]',
       text: 'min-h-[48px] rounded-pill px-3',
+      small: 'min-h-[40px] shrink-0 rounded-pill bg-primary px-4',
     },
     block: { true: 'w-full', false: 'self-start' },
   },
@@ -32,6 +34,7 @@ const LABEL: Record<Kind, { variant: TextVariant; weight: TextWeight; tone: Text
   outline: { variant: 'bodyM', weight: '500', tone: 'primary' },
   tonal: { variant: 'body', weight: '500', tone: 'onAccentContainer' },
   text: { variant: 'bodyM', weight: '400', tone: 'accent' },
+  small: { variant: 'body', weight: '400', tone: 'onAccent' },
 };
 
 const RIPPLE: Record<Kind, string> = {
@@ -39,7 +42,11 @@ const RIPPLE: Record<Kind, string> = {
   outline: withAlpha(colors.text, 0.12),
   tonal: withAlpha(colors.onAccentContainer, 0.16),
   text: withAlpha(colors.accent, 0.16),
+  small: withAlpha(colors.onAccent, 0.16),
 };
+
+/** `small` is 40 dp tall: 4 dp more above and below makes the 48 dp touch target (ui.css .btn-small). */
+const SMALL_SLOP = { top: 4, bottom: 4 };
 
 type ButtonProps = React.ComponentProps<typeof Pressable> &
   VariantProps<typeof buttonVariants> & { tone?: 'accent' | 'danger' };
@@ -68,6 +75,7 @@ function Button({ className, kind, block, tone, disabled, ...props }: ButtonProp
           role="button"
           aria-disabled={off}
           disabled={off}
+          hitSlop={k === 'small' ? SMALL_SLOP : undefined}
           {...props}
         />
       </IconColor.Provider>

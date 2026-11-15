@@ -1,9 +1,12 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
+import { buildPlan } from '../../../engine/plan';
 import type { Cookers, ItemInput } from '../../../engine/types';
+import { newCook } from '@/lib/cook';
 import type { Draft } from '@/lib/draft';
 import { saturday } from '@/lib/fixtures/saturday';
 import { defaultGriddle, defaultOven } from '@/lib/gear';
 import type { CookRecord } from '@/lib/history';
+import { rules } from '@/lib/rules';
 import { NOW, storeWrapper, testRepos } from '@/test/store';
 import { DRAFT_LOST } from './PlanEmpty';
 import { PlanScreen, UNKNOWN_ITEM, type PlanScreenProps } from './PlanScreen';
@@ -50,13 +53,14 @@ const record: CookRecord = {
 };
 
 /** Plan over a real database holding the Saturday setup (brisket at 0.75 hr/lb) with `items` on the menu. */
-async function show(items: ItemInput[], opts: { cookers?: Cookers; history?: boolean } = {}) {
+async function show(items: ItemInput[], opts: { cookers?: Cookers; history?: boolean; cooking?: boolean } = {}) {
   const r = testRepos();
   r.repos.cookers.save(opts.cookers ?? gear, NOW);
   r.repos.rates.setRate('brisket', 0.75, NOW);
   const draft: Draft = { mode: 'readyBy', at: saturday.at, pitTempF: 225, items };
   r.repos.settings.setDraft(draft, NOW);
   if (opts.history) r.repos.history.save(record, NOW);
+  if (opts.cooking) r.repos.activeCook.save(newCook(saturday, buildPlan(rules, saturday), NOW), NOW);
   const props = {
     pickDateTime: jest.fn(async (): Promise<number | null> => null),
     onAddFood: jest.fn(),
@@ -288,5 +292,16 @@ describe('plan (mockup 05)', () => {
     // The item can still be opened (to remove it).
     await fireEvent.press(button('goat, edit'));
     expect(props.onEditItem).toHaveBeenCalledWith('y');
+  });
+});
+
+// T-064 (Jason, 2026-11-15): in 0.2.0 Start cook with a cook running replaced it, with no save and no
+// question. "Once you do one cook, you can't start another until it's ended."
+describe('while a cook is running (T-064)', () => {
+  test('Start cook is greyed out and does nothing', async () => {
+    const { props } = await show([brisket, wings], { cooking: true });
+    expect(button('Start cook')).toBeDisabled();
+    await fireEvent.press(button('Start cook'));
+    expect(props.onStartCook).not.toHaveBeenCalled();
   });
 });

@@ -48,6 +48,8 @@ export const statusColors = {
   errorContainer: '#3a1c18', // .status-error, .banner-error
   onErrorContainer: '#ffd9d2', // .banner-error text
   scrimMenu: 'rgba(10, 9, 9, 0.7)', // .scrim-menu: darker than the sheet scrim, the field shows over it
+  laneSmoke2: '#c9733f', // .seg-smoke2: a food's second smoker phase on the lane chart (wrapped)
+  laneHot: '#f2603f', // .seg-hot: a smoker phase well above the set temp (wings at 400F)
 } as const;
 
 /** Font family registered natively by the expo-font config plugin (app.config.ts) with these weights. */
