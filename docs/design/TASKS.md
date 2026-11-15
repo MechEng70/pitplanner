@@ -1895,6 +1895,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Tests:** none (docs).
 - **Real phone:** yes: the install guide on his wife's phone.
 - **Device testing (Jason):** follow INSTALL.md once on his wife's phone.
+- **Notes (2026-11-15):** the four files are written, not yet reviewed by Jason. The release notes are a
+  draft with a "Check before release" list. RELEASING.md commits the version bump before `npm run release`
+  (the script needs a clean tree; TECH-DESIGN section 12 lists the commit after the build). The Android
+  install prompts in INSTALL.md are written from stock Android, not checked on a phone.
 
 ### T-034 Parity review
 - **Status:** todo
