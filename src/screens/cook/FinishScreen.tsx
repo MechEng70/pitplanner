@@ -85,17 +85,20 @@ export function FinishScreen({
               <Button kind="text" tone="danger" disabled={busy} onPress={() => finish(false)}>
                 <Text>Discard this cook</Text>
               </Button>
-              {serveUndoable(cook) ? (
-                <Button kind="text" disabled={busy} onPress={onBack}>
-                  <Text>Back to the cook</Text>
-                </Button>
-              ) : null}
               {support ? (
                 <LinkButton href={SUPPORT_URL}>
                   <Text>Buy me a bag of pellets</Text>
                 </LinkButton>
               ) : null}
             </Row>
+            {/* Always on its own line, so the row above never wraps because of it (Jason, 2026-11-15). */}
+            {serveUndoable(cook) ? (
+              <Row>
+                <Button kind="text" disabled={busy} onPress={onBack}>
+                  <Text>Back to the cook</Text>
+                </Button>
+              </Row>
+            ) : null}
           </Stack>
         </Fill>
       }

@@ -1,7 +1,56 @@
-# Handoff (2026-11-15, seventeenth session: device tests for Setup, Cook finished, Gear and History written, three of four passing; T-030, T-032, T-033 built on branches)
+# Handoff (2026-11-15, end of the seventeenth session: T-030, T-032, T-033, T-063, T-065 on main and gated; device tests setup, cook-finished, gear, history, shared, followups pass at 115%)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
+
+## Restart, eighteenth session (written Sunday 2026-11-15, 5:15 PM; read this first)
+
+Everything is committed on `main`, 50-odd commits ahead of `origin/main`, **not pushed** (Jason pushes when he
+says so). The gate passed on this `main`. Emulator and Metro are stopped. No agents, no worktrees. The
+sections below this one are history; the sixteenth session's working rules and traps (items 2 to 4, 6 to 8
+of "Restart" further down) still hold.
+
+**Done this session (all on `main`, each through the gate):** step 5a (device tests `setup`,
+`cook-finished`, `gear`, `history`); `t032`, `t033`, `t030` merged; T-063 (undo, the undo icon, Back to the
+cook); T-065 (Send to developer, the event log, the recipient filled in by `pit-share`); T-028's two changes
+(rate cards only for foods cooked or with a saved rate; Cook again asks first); `maker.ts` removed; device
+tests `shared` and `followups`. Jason approved fidelity PNGs 01-03, 15-20 and the release docs. His answers
+are in each task's TASKS entry (T-022, T-028, T-030, T-033, T-037, T-059, T-063, T-065, T-067).
+
+**Gate facts:**
+- The gate skips `.claude/` (SE-004), so agent worktrees do not break it.
+- **Snyk prints "You have reached your monthly limit of 200 private tests"** in every run since 2026-11-15.
+  Scans still complete (26 projects, Snyk Code 0 issues). Jason: keep running the gate, once per merged
+  change, and stop and tell him the moment the Snyk step fails or skips. Never remove the step. No
+  `npm run snyk:monitor` before 2026-12-01.
+- With agents running, a first gate run can fail step 4 on Jest 5 s timeouts; a second run passes. Do not
+  raise the timeout.
+
+**Next, in this order (ask Jason which to start; he wants agents used where tasks are independent, told
+first, each in a worktree off local `main`, no emulator, no gate; `git reset --hard main` first in each):**
+1. Jason's look at the newest screenshots: `docs/fidelity/rn-11-open-shared-plan.png` (mockup 11),
+   `rn-13-cook-options-undo.png`, `rn-15-cook-finished-back.png` (he confirms Back to the cook on its own
+   line), `rn-debug-send.png`, `rn-20-cook-history.png` (fewer rate cards), `rn-20-edit-cook.png` (the Edit
+   cook wording, T-028 question 3).
+2. **T-067** fast test cook: a dev-only link, the Saturday fixture, 60 times faster; nothing left to settle.
+3. **T-059** whole turkey, now in 0.3.0: needs the source links for the numbers he pasted (in the T-059
+   entry) and his OK on the food-safety note (new UI).
+4. T-033 leftovers: put his answers into INSTALL.md and RELEASING.md (contact line, betas for testers); fix
+   `docs/design/TECH-DESIGN.md` where it calls `pit-share` read-only.
+5. T-037 prep: emulator images for Android 14 and 15, `alarm` device test on each (`avd.sh` is fixed to API
+   36 today).
+6. Phone (list every action, wait for his yes): rebuild and reinstall the dev build (it is far behind), T-016
+   phone half, T-017 check, T-065 Send to developer with a real email app, T-031 with two phones.
+7. T-034 parity review, T-035 security pass, T-036 data export, T-066 user README, T-064 (partly built),
+   T-038 upgrade test and cut 0.3.0. The first GitHub release is done with Jason step by step (0.2.0 is
+   only on Drive; GitHub has a tag and no release).
+8. Leftover branches, safe to delete with his yes (their commits are on `main`): `t030`, `t032`, `t033`,
+   `worktree-agent-a666a162b7613bda9`, `worktree-agent-a8dd0046dfd3a9168`, `worktree-agent-af599cf2f6236d017`.
+
+**Dashboard:** `dashboard.html` (local, never committed). Rules: update at every milestone and at least
+every 20 minutes; the queue lists only what is left; the label for his items is "Needs Developer Insight"
+and the section is "Waiting on Developer"; the "App bugs found" tile counts the current session and starts
+again at 0 in a new one.
 
 ## Restart, seventeenth session (written Sunday 2026-11-15, 1:50 PM; read this first)
 

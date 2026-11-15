@@ -2,7 +2,7 @@
 # One unattended device pass on the dev build (TASKS T-006).
 #   npm run device -- [--phone] [--no-build] [--repeat N] [--only <test>]...
 #   tests: smoke, sheet-keyboard, stable-controls, db, migration-error, db-unopenable, legacy-import, alarm,
-#   plan, plan-3button, plan-sheets, food-details, survive, cook, cook-options, cook-finished, setup, gear, history, shared
+#   plan, plan-3button, plan-sheets, food-details, survive, cook, cook-options, cook-finished, setup, gear, history, shared, followups
 #   DEVICE_SCALES="1.0 1.15 1.3" adds or changes the font scales (default 1.15 and 1.3).
 #   (default: all).
 #   --repeat N runs the chosen tests N times at each font scale (to catch a test that only sometimes fails). --only repeats or takes a comma list.
@@ -19,7 +19,7 @@ set -uo pipefail
 . "$(dirname "$0")/lib.sh"
 cd "$DEVICE_DIR" || exit 1
 
-ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets food-details survive cook cook-options cook-finished setup gear history shared)
+ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets food-details survive cook cook-options cook-finished setup gear history shared followups)
 TESTS=()
 NOBUILD=""
 REPEAT=1
@@ -1727,6 +1727,66 @@ JSON
 
   db_app "rm -f cache/test.pitplan cache/big.pitplan cache/bad.pitplan"
   if [ $ok = 1 ]; then result "PASS  shared $s"; else result "FAIL  shared $s"; fi
+}
+
+# T-063, T-065: what was built on 2026-11-15 after the first device pass. Emulator only (it runs cooks).
+# 1. Undo: on the mockup cook, Done on the next step, then Cook options offers "Undo: <that step>" first;
+#    tapping it puts Next up back as it was.
+# 2. Back to the cook: with all done but Serve (`?seed=finished`), Done on Serve opens Cook finished with
+#    Back to the cook on its own line; tapping it shows Live cook on Serve again. The cook is ended after.
+# 3. The hidden debug screen has Send to developer with where the file goes and what it holds. Send is not
+#    tapped: the share sheet lists other apps and is never dumped or photographed.
+test_followups() {
+  local s="$1" dir="$2" ok=1 want before after row
+  if ! is_emulator; then result "SKIP  followups $s: emulator only"; return; fi
+  launch "dev/plan?seed=cooking" || { result "FAIL  followups $s: app did not open"; return; }
+  look "$dir/undo-before.xml" && before=$(next_title "$dir/undo-before.xml" | sed -E 's/ (in [0-9].*|now|[0-9][^,]* overdue)$//')
+  tap "Done" 1 | tee -a "$REPORT"
+  sleep 1
+  # The step is done over an hour early, so the app asks: keep serve or move it. Keep (the default), Apply.
+  if look "$dir/undo-ask.xml" && says "$dir/undo-ask.xml" "earlier than planned"; then tap "Apply" 1 | tee -a "$REPORT"; sleep 1; fi
+  tap "Cook options" 1 | tee -a "$REPORT"
+  if look "$dir/undo-options.xml" && row=$(grep -oE 'text="Undo: [^"]*"' "$dir/undo-options.xml.txt" | head -n 1 | sed -E 's/^text="|"$//g') && [ -n "$row" ]; then
+    [ "$row" = "Undo: $before" ] || plan_miss "the Undo row naming the step just done (is \"$row\", the step was \"$before\")"
+    says "$dir/undo-options.xml" "Puts the step and its alerts back." || says "$dir/undo-options.xml" "Also takes back the changes made since." ||
+      plan_miss "what Undo does, under the row"
+    shot "$dir/undo-options.png"
+    tap "$row" 1 | tee -a "$REPORT"
+    sleep 2
+    look "$dir/undo-after.xml" && after=$(next_title "$dir/undo-after.xml" | sed -E 's/ (in [0-9].*|now|[0-9][^,]* overdue)$//')
+    if [ -n "$before" ] && [ "$after" = "$before" ]; then log "    $row: Next up is \"$after\" again"
+    else plan_miss "Next up back to \"$before\" after Undo (is \"$after\")"; fi
+    tap "Cook options" 1 | tee -a "$REPORT"
+    look "$dir/undo-gone.xml" && ! says "$dir/undo-gone.xml" "Undo: " || plan_miss "no Undo row once the Done is taken back"
+    tap "Close" 1 | tee -a "$REPORT"
+  else plan_miss "an Undo row in Cook options after Done"; fi
+
+  open_route "dev/plan?seed=finished"
+  if look "$dir/back-serve.xml" && [[ "$(next_title "$dir/back-serve.xml")" == Serve* ]]; then
+    tap "Done" 1 | tee -a "$REPORT"
+    sleep 1
+  else plan_miss "Serve as the one step left (Next up is \"$(next_title "$dir/back-serve.xml")\")"; fi
+  if look "$dir/back-finish.xml" && says "$dir/back-finish.xml" "Cook finished"; then
+    for want in "Save to history" "Discard this cook" "Back to the cook"; do
+      says "$dir/back-finish.xml" "$want" || plan_miss "$want (Cook finished)"
+    done
+    shot "$dir/cook-finished-back.png"
+    tap "Back to the cook" 1 | tee -a "$REPORT"
+    sleep 2
+    if look "$dir/back-live.xml" && [[ "$(next_title "$dir/back-live.xml")" == Serve* ]] && ! says "$dir/back-live.xml" "Cook finished"; then
+      log "    Back to the cook: Live cook again, Next up is Serve"
+    else plan_miss "Live cook on Serve after Back to the cook"; fi
+  else plan_miss "Cook finished after Done on Serve"; fi
+  open_route "dev/alarm?cook=end"
+
+  open_route "debug"
+  if look "$dir/debug-send.xml" && says "$dir/debug-send.xml" "Send to developer"; then
+    for want in "The file goes to" "If the address isn't filled in, type it."; do
+      says "$dir/debug-send.xml" "$want" || plan_miss "$want (debug screen)"
+    done
+    shot "$dir/debug-send.png"
+  else plan_miss "Send to developer on the debug screen"; fi
+  if [ $ok = 1 ]; then result "PASS  followups $s"; else result "FAIL  followups $s"; fi
 }
 
 read -r -a SCALES <<<"${DEVICE_SCALES:-1.15 1.3}"

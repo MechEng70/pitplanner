@@ -1087,6 +1087,19 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   the thumb and the screen does not scroll, compared with 0.2.0 on his phone, where it jumps.
 
 ### T-059 Whole turkey in `data/foods.json`
+- **Jason (2026-11-15, 5:10 PM): whole turkey goes into 0.3.0**, with a note that the cook is responsible for
+  cooking food to a safe temperature (wording and where it shows need his OK: it is new UI). He pasted two
+  sets of numbers, neither with a link, so nothing goes into `data/foods.json` until each has its source
+  (CLAUDE.md: no numbers without a source). Ask him for the two links, or read the pages in a browser:
+  - Set 1 (source not given): at 275F to 325F a whole turkey takes 15 to 20 min per lb (0.25 to 0.33 hr/lb),
+    spatchcocked 10 to 12 min per lb (0.17 to 0.20 hr/lb); at 225F to 250F closer to 30 min per lb (0.50
+    hr/lb). Pull the breast at 160F (carries over to 165F in the rest), thigh and leg 175F to 180F. Cook to
+    internal temperature, not time.
+  - Set 2 (reads like the USDA page on smoking; source not given): smoker air 225F to 300F, checked with its
+    own thermometer; 20 to 30 min per lb; safe at 165F in the innermost thigh, the innermost wing and the
+    thickest part of the breast; pink smoked meat is safe at 165F.
+  - They differ on the pull temperature (160F with carryover, or 165F in three spots). Use the 165F rule
+    unless he says otherwise, and say so in the step text.
 - **Status:** todo
 - **Goal:** whole turkey on the smoker, planned and learned like every other food (Jason, 2026-11-12).
 - **Files:** `data/foods.json`, `engine/rules.ts` (schema: sources, a minimum smoker temp per method, a size
@@ -1411,8 +1424,12 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     filled in, type it."
   - Needs a device (after a rebuild): Send, pick Gmail: To holds the address, the subject is set, the JSON is
     attached and opens. Pick a non-email app (Drive): the file still arrives.
+- **Jason's answers (2026-11-15, 5:00 PM):** the subject "Pit Planner debug file" stays; the line "If the address isn't filled in, type it." stays. He asked whether the file could go to GitHub instead of his email: not built (the repo is public and the file holds a tester's cooks and notes; it would also need a token in the app). "Things we can always upgrade later."
 - **Gate, follow-up (2026-11-15):** the recipient code is on `main`; `npm run check` passed (the Kotlin compiles, 13 new JUnit tests pass). Not on a device: needs a dev build rebuild and an email app with an account to judge the To field.
 - **Gate (2026-11-15):** merged onto `main` and `npm run check` passed all six steps. No device test yet.
+- **Device test (2026-11-15):** in `followups` the debug screen shows Send to developer, where the file goes and
+  what it holds (emulator, 115%; `docs/fidelity/rn-debug-send.png`). Send is not tapped by the test. Not
+  checked anywhere: the share sheet, the To field in an email app, the file's contents from a real phone.
 - **Status:** built 2026-11-15, unit-tested on a worktree branch; `npm run check` and device test not run.
   0.3.0 (Jason, 2026-11-15: "since I'm going to send 0.3.0 to somebody, I'm going to need
   that debug switch and the send to developer thing").
@@ -1489,6 +1506,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Depends on:** the 0.3.0 screens, T-065.
 
 ### T-022 Cook options (13) and keep or move serve
+- **Jason (2026-11-15, 5:05 PM):** the 15 min stepper stays as built ("I've already approved that one"). Closed.
 - **Status:** built 2026-11-15, unit-tested (Prettier, ESLint, typecheck, Jest and the engine tests pass in
   the task's worktree). `npm run check` and the device run were NOT run (another session had the emulator):
   run `npm run check`, then look at Cook options on the device and save fidelity PNG 13
@@ -1865,6 +1883,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   you have now. Tap Cook again to go on." under the buttons, the second tap does it; an empty plan is
   replaced at once. SPEC "Cook history" updated. Not on a device yet; the `history` device test still fits
   (its seed has a saved brisket rate).
+- **Device test rerun (2026-11-15, 5:03 PM):** `history` passes at 115% with the rate-card change.
+  `docs/fidelity/rn-20-cook-history.png` retaken; `rn-20-edit-cook.png` is the Edit cook sheet for Jason's
+  look at its wording (question 3). Cook again asking first is covered by Jest only.
 - **Goal:** rate cards (rate used, source, cooks logged, total hours; edit; "Keep my rate exactly"); cook list;
   cook sheet with Cook again, Remove and Edit (failure mode 14: correct actual minutes, quantity, pit temp, notes,
   or exclude from rates).
@@ -2001,6 +2022,13 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - The dev build ("Pit Planner dev") checks too, once a day, as built (Jason, 2026-11-15). Nothing to change.
 
 ### T-033 Release docs: notes, install guide, releasing checklist
+- **Jason's review and answers (2026-11-15, 5:05 PM):** the four files are approved, no comments ("good to
+  go"). Testers' phones: one has the latest Samsung; test Android 14, 15 and 16 (his own phone is 16). Testers
+  get betas too (he sends a beta; the app then offers later betas and the final). A failed install: contact
+  him at the address the debug screen uses. The version bump is committed before the build (as RELEASING.md
+  says). 0.2.0 is only on Google Drive: GitHub has one tag and no release with an APK, and he has not made a
+  GitHub release before, so the first one is done with him, step by step, from RELEASING.md. Left: INSTALL.md
+  followed once on his wife's phone; update the docs where these answers change them (the contact line, betas).
 - **Status:** written, merged onto `main` and gate-complete 2026-11-15. Not done until Jason has reviewed the
   four files, answered the six questions (HANDOFF) and followed INSTALL.md once on his wife's phone.
 - **Goal:** friends can install or upgrade; Claude can release by checklist.
@@ -2071,6 +2099,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Real phone:** yes, with Jason's yes to the listed actions.
 
 ### T-037 Saturday cook on the Expo build (SPEC definition of done)
+- **Android versions (Jason, 2026-11-15):** run the `alarm` device test on emulator images for Android 14 and
+  15 as well as 16 (one tester has the latest Samsung; none known below 14).
 - **Status:** todo (Jason, hands-on)
 - **Goal:** a full cook (brisket, wings, breasts) on the dev build with every alarm on time with the screen off,
   including after a reboot mid-cook; Adjust, Pit went out, Not yet and End cook leave no duplicate alarms.
@@ -2322,8 +2352,14 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   (4) Add a proper undo arrow icon to the kit; the row stops using Start over's icon. **Built.** (5) Cook
   finished gets a way back to the cook for a Serve marked Done by mistake ("Back to the cook"; approved as a
   new control on that screen; write the SPEC line with it). **Built.**
+- **Jason's answers (2026-11-15, 5:00 PM):** Back to the cook stays in the accent colour; it always gets its own line under Discard this cook (built; he confirms from the screenshot).
 - **Gate, follow-up (2026-11-15):** the undo arrow icon and Back to the cook are on `main`; `npm run check` passed. Not on a device. Two small questions for Jason: the button's colour (accent as built, or grey) and whether it gets its own line when the row wraps.
 - **Gate (2026-11-15):** merged onto `main` and `npm run check` passed all six steps. No device test yet.
+- **Device test (2026-11-15):** `followups` passes on the emulator at 115%: Done on the next step, the Undo row
+  is first in Cook options and names the step, Undo puts Next up back and the row is gone; Done on Serve,
+  Back to the cook on its own line on Cook finished, tapping it shows Live cook on Serve. Fidelity PNGs
+  `docs/fidelity/rn-13-cook-options-undo.png`, `rn-15-cook-finished-back.png`. Open: Jason's look at both
+  (on a first cook the footer holds Save and three lines, so less of the screen scrolls above it).
 - **Status:** built 2026-11-15, unit-tested on a worktree branch; `npm run check` and device test not run.
   (0.3.0; Jason, 2026-11-14: "there needs to be somewhere to undo it in version 0.3.0. I don't want to wait
   till the next version")
