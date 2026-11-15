@@ -1,54 +1,61 @@
-# Handoff (2026-11-14, fourteenth session: main pushed, charts read into T-060, T-061 built)
+# Handoff (2026-11-15, fifteenth session: Sunday asks done, T-061 passed, T-064 found, T-021 scoped)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## Restart (written Saturday 2026-11-14, end of the fourteenth session)
+## Restart (written Sunday 2026-11-15, end of the fifteenth session)
 
 Do these in order:
 
-1. **Nothing is owed on push.** `origin/main` has everything up to the end of the fourteenth session
-   (T-061 included).
-   **Snyk monitor is paused until December 2026** (Jason, 2026-11-14: "pause on that until next month"):
-   Snyk says the org reached its monthly limit of 200 private tests. Do not run `npm run snyk:monitor`
-   before 2026-12-01, even after a push; the push of 2026-11-14 with T-061 has no monitor run, so run it
-   once on the first push in December. The gate's Snyk step is unchanged and still passes ("all 25
-   projects tested, none skipped"); this was read as a pause of the monitor only, not of the gate. If
-   `npm run check` starts failing or skipping on the limit, stop and ask Jason: do not remove the step.
-2. **Phone: the hold is lifted** (Jason, 2026-11-15: the cook is done; `tools/device/PHONE-BLOCKED` is
-   deleted). Every phone action is still listed first and waits for his yes. 0.2.0 on the phone has a cook
-   started for Saturday 2026-11-21 (18 alarms pending, 6:30 AM to 5:00 PM); Jason kept the hold off knowing
-   that. Never touch the release app or its alarms; the dev build is a separate app.
-3. **Sunday asks, done 2026-11-15:** the T-060 phone reads are in `tools/device/out/t060-2026-11-15/`
-   (git-ignored; the app's logcat was empty, notes in TASKS T-060). The charts `pitboss_002` to `_006` are
-   deleted; `pitboss_001.jpg` stays in the repo (his call: no git rm, no history rewrite).
-   - Probe pairing: only Jason knows which Pit Boss probe sat with which Chef iQ probe and in which
-     food; it is written up in T-060 ("The pairing is not settled by the images"). Ask him when T-060 is
-     picked up, not now.
-4. **T-061 is built and gate-complete; Jason tests it on Sunday 2026-11-15** ("we will do that
-   tomorrow"). What he judges is in TASKS T-061 "Device testing": two briskets on Plan, the card titles
-   against "11.5 lb brisket" / "6 lb brisket" with no weight in the line under them, the "1" and "2" on
-   equal weights, the Conflicts buttons. Settled by him on 2026-11-14: the summary does not repeat the
-   weight; the alarm's title is the label.
-4a. **T-061 passed Jason's read on 2026-11-15** (card titles, the 1 and 2, the Conflicts buttons).
-    **T-064 is new** (his 2026-11-14 cook is missing from 0.2.0's history): the code read is in TASKS T-064;
-    two questions are open with him and gate the Start cook part of T-021.
-5. **Next task: T-021 (Cook screen).** Its cards and step list use `PlannedItem.label` and the event text
-   as it comes (the label is already in front). T-063 (take back a step marked Done by mistake) is in
-   0.3.0 by his decision of 2026-11-14 and belongs with the Cook screen tasks; it needs a mockup or a SPEC
-   line he approves before any UI. T-059 waits for the FSIS pages (Jason opens or pastes them).
-6. **Decided on 2026-11-14 (do not ask again):**
-   - Finishing a cook cancels all alarms on entering Finishing, as the TECH-DESIGN table says ("follow
-     the table for now"); 0.2.0 cancelled only on Save or Discard. Applies at T-023.
-   - Undo for Done: 0.3.0 (T-063). Editing a step on the full timeline: next version (BACKLOG).
-   - T-061: two of the same food get a default label, "11.5 lb brisket", shown only when there are two or
-     more of the same food; equal labels are numbered in menu order; count foods read "3 racks St. Louis
-     ribs"; a step reads "<label>: <the step as written>". A typed name is T-062, next version. New ideas
-     go to `docs/design/BACKLOG.md`, not into the port.
-7. **T-058 leftovers:** the mid-cook half of its acceptance (font change and process kill on the Cook
-   screen: same Next up and countdown) is to be added to the `survive` device test when T-021 builds the
-   Cook screen. The app now reopens where it was left (tab, Food details with unsaved values), so a device
-   test that opens the app with no route gets any left-open food sheet closed by `launch`.
+1. **Push:** `main` is ahead of `origin/main` (3e77bca) by the fifteenth session's commits, all local. Jason
+   pushes when he says so. **Snyk monitor is paused until December 2026**: do not run `npm run snyk:monitor`
+   before 2026-12-01; run it once on the first push in December. The gate's Snyk step is unchanged and
+   passed on 2026-11-15. If `npm run check` starts failing or skipping on Snyk's monthly limit, stop and ask
+   Jason: do not remove the step.
+2. **Phone: the hold is lifted** (Jason, 2026-11-15; `tools/device/PHONE-BLOCKED` is deleted). Every phone
+   action is still listed first and waits for his yes. 0.2.0 on the phone has no cook running and no alarms
+   (checked 2026-11-15 after his End cook, Discard). Never touch the release app without his yes.
+3. **Done on 2026-11-15:** the Sunday asks (charts `pitboss_002` to `_006` deleted, `pitboss_001.jpg` stays
+   by his call; T-060 phone reads in `tools/device/out/t060-2026-11-15/`, the app's logcat was empty);
+   T-061 passed his read; T-064 written (his 2026-11-14 cook IS saved in 0.2.0's history, read from the
+   phone; he could not find it because "Cook a past plan again" does nothing in 0.2.0 and the list is under
+   Gear, Cook rates).
+4. **Decided on 2026-11-15 (do not ask again; all in SPEC "Cook tab" and TASKS T-021, T-064, T-065, T-066):**
+   - Only Start cook on Plan starts a cook, then the Cook tab opens. The Cook tab with no cook shows "No cook
+     running" and Go to Plan, and never starts one.
+   - Start cook on Plan is greyed out while a cook runs.
+   - Start over asks first (T-022): "Start over?" / "This cook won't be saved." / buttons "Start over" and
+     "Keep cooking". Ending a cook goes back to Plan.
+   - Debug switch and send to developer are in 0.3.0 (T-065); he gives the email address later. A user
+     README with screenshots comes after the screens (T-066).
+   - Still to ask when it matters: whether "erase it" on ending a cook means the cook only (assumed; the
+     menu stays on Plan as in 0.2.0) or the menu too. Probe pairing for T-060: only when T-060 is picked up.
+5. **Next task: T-021 (Start cook and Live cook, mockup 12). Not started; no code written.** Read on
+   2026-11-15, to save the next session the search:
+   - Port from `legacy/src/screens/cook/CookScreen.tsx` (leave out Cook options, Cook finished, the keep or
+     move sheet and the Full timeline sheet: T-022 and T-023) and `legacy/src/screens/plan/StartCheckSheet.tsx`
+     with `legacy/src/screens/shared/AlertChecks.tsx`.
+   - Already here: `src/lib/cook.ts` (`newCook`, `pending`, `dueAt`, `driftMin`, `doneStep`, `stepText`),
+     `src/lib/cookView.ts` (`cookStatus`, `countdown`, `overline`, `lanes`, `laneWindow`, `laneTicks`,
+     `overlapNote`, `dayWord`, `hourText`), `engine/cookState.ts`, the store's `setCook` (saves, then
+     replaces the alarm set: never call the alarm service from a screen) and `state.alarmSync`,
+     `permissionService` (`src/platform/permissions.ts`), `onResume` (`src/platform/resume.ts`),
+     `fakeAlarms()` and `fakeResume()` for tests.
+   - Missing from the kit, to port from `legacy/src/ui/components.tsx` as the screen needs them:
+     `StatusChip`, `Lanes`, `BandNote`; the Next up card (`Card tone="result"`), `Banner` with an action.
+   - Wiring: `app/(tabs)/cook.tsx` is a placeholder; `PlanTab` does not pass `onStartCook` to `PlanScreen`
+     yet (`PlanScreen` already takes it and disables the button with no plan). `PlannedItem.label` and the
+     event text carry the T-061 label already.
+   - New rules to build in (T-064): Start cook disabled while `state.cook` is set, with a regression test
+     written failing first; the Cook tab never starts a cook.
+   - T-058's leftover: add the mid-cook half to the `survive` device test (font change and process kill on
+     the Cook screen: same Next up and countdown).
+   - T-063 (take back a Done) needs a mockup or SPEC line he approves before any UI. T-059 waits for the
+     FSIS pages.
+6. **Dev seeds added on 2026-11-15:** `pitplanner://dev/plan?seed=briskets` (11.5 lb and 6 lb) and
+   `?seed=twins` (two 6 lb).
+7. **Gate note:** right after the emulator stops, the first `npm run check` can fail step 4 with Jest 5 s
+   timeouts (cold cache, high load); a second run passed with no change. Do not raise the timeout for it.
 8. **Session habit (Jason, 2026-11-14):** before the context needs compacting, park the work, ask him the
    open questions in one batch, write his answers into the docs, then tell him to clear and give him the
    restart prompt.
@@ -66,8 +73,6 @@ Where things stand:
 - T-019 is built: `src/screens/plan/FoodEdit.tsx`, kit `ResultBar` and `Sheet tall`; Add food opens it and
   the Conflicts sheet has its Edit buttons. Device tests `food-details` and the `food` targets pass at 115%
   and 130% on the emulator.
-- `main` is clean. `origin/main` is at `279fc45`; commits after it are local only (Jason pushes when he
-  says so).
 - Emulator and Metro are stopped. The emulator is 1080x2376, gesture navigation.
 - **The phone hold is lifted** (Jason, 2026-11-15). Older notes below that say "do not touch the phone" are
   history.
