@@ -102,6 +102,17 @@ describe('empty (mockup 04)', () => {
     expect(button('Add food')).toBeOnTheScreen();
   });
 
+  // Found with T-028: the button counted the logs rates learn from, so a saved cook that ended before any
+  // food came off (nothing logged) did not count as a past cook.
+  test('a saved cook with nothing logged still counts as a past cook', async () => {
+    const r = testRepos();
+    r.repos.cookers.save(gear, NOW);
+    r.repos.settings.setDraft({ mode: 'readyBy', at: saturday.at, pitTempF: 225, items: [] }, NOW);
+    r.repos.history.save({ ...record, id: 'cook-empty', items: [] }, NOW);
+    await render(<PlanScreen pickDateTime={jest.fn(async () => null)} />, { wrapper: storeWrapper(r.repos) });
+    expect(button('Cook a past plan again')).toBeOnTheScreen();
+  });
+
   test('with a past cook it opens the history', async () => {
     const { props } = await show([], { history: true });
     expect(button('Cook a past plan again')).toBeEnabled();
