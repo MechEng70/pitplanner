@@ -2,7 +2,7 @@
 // GroupCard or on a sheet; the whole row is the touch target.
 import * as React from 'react';
 import { Linking, Pressable, View } from 'react-native';
-import { Check, ChevronRight } from '@/components/kit/icons';
+import { Check, ChevronRight, IconColor } from '@/components/kit/icons';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
 import { withAlpha } from '@/theme/color';
@@ -156,6 +156,50 @@ export function CheckRow({
         )}
       >
         {checked ? <Check size={22} color={colors.onAccent} /> : null}
+      </View>
+    </Pressable>
+  );
+}
+
+/**
+ * An action on a sheet (ui.css .action-row; Cook options, mockup 13): icon, title, what it does. The whole
+ * row is the button. `danger` draws the icon and title in the error color (End cook). An icon with its own
+ * `color` keeps it.
+ */
+export function ActionRow({
+  icon,
+  title,
+  subtitle,
+  onPress,
+  tone,
+}: {
+  icon: React.ReactNode;
+  /** A string, or a Text holding a Num. */
+  title: React.ReactNode;
+  subtitle?: React.ReactNode;
+  onPress: () => void;
+  tone?: 'danger';
+}) {
+  const danger = tone === 'danger';
+  return (
+    <Pressable
+      role="button"
+      onPress={onPress}
+      android_ripple={RIPPLE}
+      className="min-h-[64px] w-full flex-row items-center gap-4 overflow-hidden rounded-[12px] px-1 py-2.5"
+    >
+      <View className="w-8 shrink-0 items-center">
+        <IconColor.Provider value={danger ? colors.error : colors.text1}>{icon}</IconColor.Provider>
+      </View>
+      <View className="min-w-0 flex-1 basis-0 gap-0.5">
+        <Text variant="bodyL" tone={danger ? 'error' : undefined}>
+          {title}
+        </Text>
+        {subtitle != null ? (
+          <Text variant="label" tone="secondary" relaxed>
+            {subtitle}
+          </Text>
+        ) : null}
       </View>
     </Pressable>
   );

@@ -1,7 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
-import { Chips, Field, IconButton, Segmented, SelectField, Stepper } from './controls';
+import { Chips, ChoiceCards, Field, IconButton, Segmented, SelectField, Stepper } from './controls';
 import { Close } from './icons';
+import { Num } from './num';
 import { Text } from '@/components/ui/text';
 
 const opts = [
@@ -142,5 +143,38 @@ describe('SelectField', () => {
     await render(<SelectField label="Hopper" value="21 lb" />);
     expect(screen.getByText('21 lb')).toBeOnTheScreen();
     expect(screen.queryByRole('button')).toBeNull();
+  });
+});
+
+describe('ChoiceCards', () => {
+  const cards = [
+    {
+      id: 'keep',
+      title: (
+        <Text>
+          Keep serve at <Num>5:00 PM</Num>
+        </Text>
+      ),
+      subtitle: 'use up hold time',
+    },
+    { id: 'move', title: <Text>Move serve</Text> },
+  ];
+
+  test('one card is checked, read as its title and subtitle; pressing another reports its id', async () => {
+    const onChange = jest.fn();
+    await render(<ChoiceCards label="Serve time" options={cards} value="keep" onChange={onChange} />);
+    expect(screen.getByLabelText('Serve time').props.role).toBe('radiogroup');
+    expect(screen.getByRole('radio', { name: 'Keep serve at 5:00 PM use up hold time' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Move serve' })).not.toBeChecked();
+    await fireEvent.press(screen.getByRole('radio', { name: 'Move serve' }));
+    expect(onChange).toHaveBeenCalledWith('move');
+  });
+
+  test('the selected card has the accent border; the text wraps and is never cut', async () => {
+    await render(<ChoiceCards label="Serve time" options={cards} value="keep" onChange={jest.fn()} />);
+    expect(screen.getByRole('radio', { name: /^Keep serve/ }).props.className).toContain('border-ember');
+    expect(screen.getByRole('radio', { name: 'Move serve' }).props.className).not.toContain('border-ember');
+    expect(screen.getByText('use up hold time').props.numberOfLines).toBeUndefined();
+    expect(screen.getByText('5:00 PM').props.numberOfLines).toBeUndefined();
   });
 });

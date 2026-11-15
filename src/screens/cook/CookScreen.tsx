@@ -2,10 +2,11 @@
 // says so and sends the user to Plan: only Start cook on Plan starts a cook (Jason, 2026-11-15, T-064; 0.2.0
 // started one from this tab, so a discarded cook came back on the next look).
 //
-// What opens from here arrives as a handler from the route, with its task: Cook options and Adjust (T-022),
-// Full timeline and Cook finished (T-023). Until then those controls do nothing. Until the keep or move
-// sheet (T-022), a Done that is early or late keeps serve when the holds cover it, else moves serve, as a
-// Done from an alert does.
+// The Cook options button and Adjust open Cook options (mockup 13, CookOptions.tsx). A Done that is 5 min or
+// more early or late, and Back up to temp after the pit went out, ask Keep serve or Move serve
+// (KeepMoveSheet.tsx). Start over asks first, then drops the cook and goes to Plan; the menu on Plan and the
+// cook history are not touched. What belongs to T-023 arrives as a handler from the route: Full timeline
+// (`onTimeline`) and Cook finished (`onEnd`, from End cook). Until then those two do nothing.
 //
 // The cook is saved through the store's `setCook`, which also replaces the phone's alarm set: this screen
 // never talks to the alarm service.
@@ -30,7 +31,7 @@ import {
   Text,
   Timer,
 } from '@/components/kit';
-import { doneStep, driftMin, dueAt, keepServeIfCovered, pending, stepText, type ActiveCook } from '@/lib/cook';
+import { doneStep, driftMin, dueAt, pending, pitUp, stepText, type ActiveCook } from '@/lib/cook';
 import {
   cookStatus,
   countdown,
@@ -42,11 +43,13 @@ import {
   overlapNote,
   overline,
 } from '@/lib/cookView';
-import { fmtTemp, fmtTime, tx } from '@/lib/format';
+import { fmtDuration, fmtTemp, fmtTime, tx } from '@/lib/format';
 import { useStore } from '@/lib/store';
 import { allGranted, type AppLinks, type PermissionService } from '@/platform/types';
 import { AlertChecks, useAlarmStatus } from '@/screens/shared/AlertChecks';
 import { colors } from '@/theme/tokens';
+import { CookOptions, StartOverSheet } from './CookOptions';
+import { KeepMoveSheet, type Ask } from './KeepMoveSheet';
 
 const TICK_MS = 30_000;
 /** ui.css `.step-time`: the time column of a step row, wide enough for "12:55 PM" at the body size. */
@@ -75,15 +78,20 @@ export interface CookScreenProps {
   onResume: AppLinks['onResume'];
   onGoPlan: () => void;
   now?: () => number;
-  /** Cook options (mockup 13), from the menu button and from Adjust: T-022. */
-  onOptions?: () => void;
   /** Full timeline: T-023. */
   onTimeline?: () => void;
+  /** End cook leads to Cook finished, which is T-023: the route does not pass this yet, so End cook only
+   *  closes the sheet. */
+  onEnd?: () => void;
 }
 
-export function CookScreen({ onGoPlan, ...rest }: CookScreenProps) {
+/** The sheet over Live cook: Cook options, the Start over question, or a keep or move question. */
+type Open = null | 'options' | 'startOver' | Ask;
+
+export function CookScreen(props: CookScreenProps) {
   const cook = useStore().state.cook;
-  if (cook) return <LiveCook cook={cook} {...rest} />;
+  const { onGoPlan } = props;
+  if (cook) return <LiveCook cook={cook} {...props} />;
   return (
     <Screen title="Cook">
       <EmptyState
@@ -103,15 +111,17 @@ function LiveCook({
   cook,
   permissions,
   onResume,
+  onGoPlan,
   now: clock = Date.now,
-  onOptions,
   onTimeline,
-}: Omit<CookScreenProps, 'onGoPlan'> & { cook: ActiveCook }) {
+  onEnd,
+}: CookScreenProps & { cook: ActiveCook }) {
   const { state, setCook } = useStore();
   const { units } = state;
   const now = useNow(clock, onResume);
   const [alerts, refreshAlerts] = useAlarmStatus(permissions, onResume);
   const [fixing, setFixing] = useState(false);
+  const [open, setOpen] = useState<Open>(null);
 
   const { plan } = cook;
   const todo = pending(cook);
@@ -124,7 +134,42 @@ function LiveCook({
     if (!next) return;
     const at = clock();
     const r = doneStep(cook, next.key, at);
-    setCook(r.ask ? keepServeIfCovered(keep => doneStep(cook, next.key, at, keep).cook) : r.cook);
+    if (!r.ask) return setCook(r.cook);
+    // 5 min or more early or late: nothing is saved until Keep serve or Move serve is picked.
+    const d = r.ask.deltaMin;
+    const name = plan.items.find(i => i.input.id === next.event.itemId)?.name ?? 'This step';
+    setOpen({
+      title: `${fmtDuration(Math.abs(d))} ${d > 0 ? 'later' : 'earlier'} than planned`,
+      body: (
+        <Text>
+          {name} {d > 0 ? 'is behind' : 'is ahead'}. Keep serve time and change the hold, or move serve?
+        </Text>
+      ),
+      keep: r.ask.keepServe,
+      move: r.ask.moveServe,
+      itemId: next.event.itemId,
+    });
+  };
+
+  const onPitUp = () => {
+    if (cook.pitDownAt == null) return;
+    const at = clock();
+    setOpen({
+      title: 'Pit back up to temp',
+      body: (
+        <Text>
+          The pit was out from <Num>{fmtTime(cook.pitDownAt)}</Num>. Keep serve time and shorten holds, or move serve?
+        </Text>
+      ),
+      keep: pitUp(cook, at, true),
+      move: pitUp(cook, at, false),
+    });
+  };
+
+  const startOver = () => {
+    // The cook is dropped, not saved: history and the menu on Plan stay as they are.
+    setCook(null);
+    onGoPlan();
   };
 
   const win = laneWindow(plan, now);
@@ -150,7 +195,7 @@ function LiveCook({
       actions={
         <>
           <StatusChip tone={status.tone}>{status.label}</StatusChip>
-          <IconButton label="Cook options" onPress={() => onOptions?.()}>
+          <IconButton label="Cook options" onPress={() => setOpen('options')}>
             <MoreVert />
           </IconButton>
         </>
@@ -179,6 +224,18 @@ function LiveCook({
           }
         >
           {ALARMS_NOT_SET}
+        </Banner>
+      ) : null}
+      {cook.pitDownAt != null ? (
+        <Banner
+          tone="warn"
+          action={
+            <Button kind="small" onPress={onPitUp}>
+              <Text>Back up to temp</Text>
+            </Button>
+          }
+        >
+          Pit out since <Num>{fmtTime(cook.pitDownAt)}</Num>. Steps are on hold.
         </Banner>
       ) : null}
       {cook.notice ? (
@@ -223,7 +280,7 @@ function LiveCook({
                   <Text>Done</Text>
                 </Button>
               </Fill>
-              <Button kind="outline" onPress={() => onOptions?.()}>
+              <Button kind="outline" onPress={() => setOpen('options')}>
                 <Timer size={20} />
                 <Text>Adjust</Text>
               </Button>
@@ -277,6 +334,20 @@ function LiveCook({
           </Text>
           <AlertChecks status={alerts} permissions={permissions} onChange={refreshAlerts} />
         </Sheet>
+      ) : null}
+      {open === 'options' ? (
+        <CookOptions
+          cook={cook}
+          now={clock}
+          onChange={setCook}
+          onStartOver={() => setOpen('startOver')}
+          onEnd={() => onEnd?.()}
+          onClose={() => setOpen(null)}
+        />
+      ) : null}
+      {open === 'startOver' ? <StartOverSheet onStartOver={startOver} onClose={() => setOpen(null)} /> : null}
+      {open && typeof open === 'object' ? (
+        <KeepMoveSheet ask={open} before={plan} onPick={setCook} onClose={() => setOpen(null)} />
       ) : null}
     </Screen>
   );

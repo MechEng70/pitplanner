@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
-import { Num, numText } from './num';
+import { Num, Nums, numText } from './num';
 import { Text } from '@/components/ui/text';
 
 const styleOf = (el: ReturnType<typeof screen.getByText>) => StyleSheet.flatten(el.props.style);
@@ -47,4 +47,19 @@ test('a clamped Text is one line; relaxed text gets the 1.4 line height', async 
   );
   expect(screen.getByText('Secondary').props.numberOfLines).toBe(1);
   expect(styleOf(screen.getByText('Note'))).toMatchObject({ fontSize: 13, lineHeight: 18 });
+});
+
+test('Nums: each time and duration in a sentence is a Num, the words around them are not', async () => {
+  await render(
+    <Text variant="label" tone="warn">
+      <Nums text="Brisket hold drops from 1 hr to 30 min. Serve moves to 5:30 PM." />
+    </Text>,
+  );
+  expect(screen.getByText('Brisket hold drops from 1 hr to 30 min. Serve moves to 5:30 PM.')).toBeOnTheScreen();
+  for (const value of ['1 hr', '30 min', '5:30 PM']) {
+    const n = screen.getByText(value);
+    expect(styleOf(n)).toMatchObject({ fontSize: 13, fontVariant: ['tabular-nums'] });
+    expect(n.props.className).toContain('text-warn');
+    expect(n.props.children).toBe(numText(value));
+  }
 });

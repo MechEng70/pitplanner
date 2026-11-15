@@ -133,16 +133,7 @@ describe('Done', () => {
     expect(screen.getByText('At 3:15 PM')).toBeOnTheScreen();
   });
 
-  // Until the keep or move sheet (T-022): as a Done from an alert, serve stays when the holds cover the change.
-  test('an hour early keeps serve time when the holds cover it', async () => {
-    const { repos, clock } = await show(cookAt(AT_1023));
-    await fireEvent.press(button('Done'));
-    await act(async () => {});
-    const saved = repos.activeCook.load()!;
-    expect(saved.done['phase:b:wrap']).toBe(clock.now);
-    expect(saved.plan.serveAt).toBe(cookAt(AT_1023).plan.serveAt);
-    expect(screen.getByText('Smoker 225F, serve 5:00 PM')).toBeOnTheScreen();
-  });
+  // A Done that is 5 min or more early or late asks keep or move: CookOptions.test.tsx.
 
   test('after the last step there is no Next up card, and the cook is still there', async () => {
     const at = Date.UTC(2026, 10, 14, 22, 5);
@@ -197,8 +188,9 @@ describe('alert permissions (SPEC section 6)', () => {
 
 describe('the phone refuses the alarm set', () => {
   test('a banner says steps will not ring; Try again clears and sets the whole list again', async () => {
-    const { alarms } = await show(cookAt(AT_1023));
+    const { alarms, clock } = await show(cookAt(AT_1023));
     expect(screen.queryByText(ALARMS_NOT_SET)).toBeNull();
+    clock.now = AT_1023 + 70 * MIN; // on time, so Done has no question to ask
     alarms.failNext = new Error('refused');
     await fireEvent.press(button('Done'));
     await act(async () => {});

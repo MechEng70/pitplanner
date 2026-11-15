@@ -1327,8 +1327,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ### T-064 A cook is never lost without the user choosing it
 - **Status:** partly built. Done with T-021 (2026-11-15): Start cook greyed out while a cook runs and never
   replacing it; the Cook tab never starts a cook (regression tests in `PlanScreen.test.tsx`,
-  `StartCook.test.tsx`, `CookScreen.test.tsx`). Left: Start over asks first (T-022); ending or starting over
-  never changes `cook_history` (T-022, T-023).
+  `StartCook.test.tsx`, `CookScreen.test.tsx`). Done with T-022 (2026-11-15): Start over asks first and
+  never changes `cook_history` (`CookOptions.test.tsx`). Left: Save and Discard on Cook finished never
+  change other records (T-023).
 - **Why (Jason, 2026-11-15):** his cook of 2026-11-14 is not in 0.2.0's history, and he sees no earlier
   cooks either. He believes he saved it. Afterwards he started a cook for 2026-11-21 and ended it with
   Start over. The phone's copy of `history.json` cannot be read over adb (release build), so what happened
@@ -1409,10 +1410,48 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Depends on:** the 0.3.0 screens, T-065.
 
 ### T-022 Cook options (13) and keep or move serve
-- **Status:** todo
+- **Status:** built 2026-11-15, unit-tested (Prettier, ESLint, typecheck, Jest and the engine tests pass in
+  the task's worktree). `npm run check` and the device run were NOT run (another session had the emulator):
+  run `npm run check`, then look at Cook options on the device and save fidelity PNG 13
+  (`docs/fidelity/rn-13-cook-options.png`). Not done until that passes.
 - **Goal:** Running behind/ahead (+-15, keep/move with the hold impact), Quiet 30 min, Pit went out / Back up to
   temp, Not yet, Start over, End cook; the keep/move sheet with "X: off heat N min after serve." and Move
   preselected when keep leaves a food late.
+- **Built (2026-11-15):**
+  - `src/screens/cook/CookOptions.tsx` (a port of the legacy sheet): Running behind or ahead (stepper in
+    15 min steps to 3 hr either way; once a shift is picked, Keep serve at / Move serve to with the hold
+    impact line, and Apply), Not yet (only when the next step is a check: that food 30 min; serve stays
+    while every food keeps its minimum rest, else moves, and the row says which), Quiet alerts for 30 min
+    (while quiet: Alerts back on), Pit went out, Start over, End cook. Each row closes the sheet, then acts.
+  - `src/screens/cook/KeepMoveSheet.tsx` (the legacy `AskSheet`): Keep serve / Move serve with what each
+    does to the hold or to serve; "Brisket: off heat 1 hr after serve." when keeping would leave the food
+    on past serve, and Move serve selected whenever the holds do not cover the change (`holdsCover`).
+    Used by a Done 5 min or more early or late (nothing is saved until Apply; closing leaves the step not
+    done) and by Back up to temp. The interim `keepServeIfCovered` in the screen's Done is gone.
+  - `CookScreen.tsx`: the Cook options button and Adjust open the sheet (state in the screen; `onOptions`
+    is gone). Warn banner "Pit out since 10:23 AM. Steps are on hold." with Back up to temp.
+    Start over asks first (`StartOverSheet`: "Start over?", "This cook won't be saved.", Keep cooking /
+    Start over), then `setCook(null)` and `onGoPlan`; the draft and `cook_history` are not touched
+    (regression test, T-064). End cook closes the sheet and calls `onEnd`, which the route does not pass
+    yet (Cook finished is T-023).
+  - Every change goes through the store's `setCook`: one save and one alarm set per action (asserted per
+    action with `fakeAlarms`); Quiet reaches the phone as `setQuiet`.
+  - Kit: `ChoiceCards`, `ActionRow`, `Nums` (the times and durations inside a sentence as `Num`s), with
+    tests in the kit's test files.
+  - Regression tests for the 2026-11-11 live-test fixes that touch this screen: Not yet moves serve when
+    the hold no longer covers it; the keep or move sheet says "off heat N after serve" and selects Move.
+- **Left, on purpose:** End cook does nothing visible until T-023 passes `onEnd`. Done on the last step
+  (Serve) still only marks it done (the legacy went on to Cook finished: T-023). No device test added.
+- **Questions for Jason:**
+  1. Running behind with Keep serve: the impact line names only the food whose hold changes most
+     ("Brisket hold drops from 1 hr to 45 min. Still OK.") and Keep serve stays selected, even when another
+     food would then come off after serve (+15 on the mockup-12 cook: wings 10 min and breasts 7 min after
+     serve). Same as 0.2.0. Should it select Move serve and name the late food, as the keep or move sheet does?
+  2. Mockup 13 shows the stepper buttons as "-15" and "+15" and the serve choice at once; built as 0.2.0:
+     minus and plus icons, and the choice appears once a shift is picked. Keep that?
+  3. SPEC section 5 says Not yet "suggests raising the smoker 25F to make up time"; 0.2.0 never did and
+     this does not either. Drop it from SPEC or build it?
+  4. The Start over question is a sheet with Keep cooking (text button) left of Start over (primary). OK?
 - **Files:** `src/screens/cook/CookOptions.tsx`, `KeepMoveSheet.tsx`, tests, fidelity PNG 13.
 - **Depends on:** T-021.
 - **Acceptance:** each action re-plans and replaces alarms once; Quiet calls `setQuiet`.

@@ -2,12 +2,22 @@
 // one-off styles. Ported component by component from the 0.2.0 kit, legacy/src/ui/components.tsx.
 export { Button, type ButtonProps } from '@/components/ui/button';
 export { Text, TextContext, type TextProps, type TextTone, type TextVariant } from '@/components/ui/text';
-export { Chips, Field, IconButton, Segmented, SelectField, Stepper, type ChipOpt } from './controls';
+export {
+  Chips,
+  ChoiceCards,
+  Field,
+  IconButton,
+  Segmented,
+  SelectField,
+  Stepper,
+  type ChipOpt,
+  type Choice,
+} from './controls';
 export * from './icons';
 export { Divider, Fill, Fixed, Inset, Row, Spacer, Stack, type Gap } from './layout';
 export { BottomNav, type NavItem } from './nav';
-export { Num, type NumProps } from './num';
-export { CheckRow, GroupLabel, ListRow, StatusRow } from './rows';
+export { Num, Nums, type NumProps } from './num';
+export { ActionRow, CheckRow, GroupLabel, ListRow, StatusRow } from './rows';
 export { ResultBar, type ResultCell } from './ResultBar';
 export { AppBar, Screen } from './screen';
 export { InputField, SearchField } from './input';

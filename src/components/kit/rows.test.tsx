@@ -1,8 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { Linking } from 'react-native';
-import { CheckRow, ListRow, StatusRow } from './rows';
+import { Linking, View } from 'react-native';
+import { ActionRow, CheckRow, ListRow, StatusRow } from './rows';
+import { IconColor, StopSquare } from './icons';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
+import { colors } from '@/theme/tokens';
 
 test('CheckRow toggles: pressing reports the opposite of checked', async () => {
   const onChange = jest.fn();
@@ -64,4 +66,28 @@ test('ListRow subtitle is one line unless wrap', async () => {
   );
   expect(screen.getByText('one line').props.numberOfLines).toBe(1);
   expect(screen.getByText('wraps').props.numberOfLines).toBeUndefined();
+});
+
+/** Stands in for an icon: shows the color an icon without its own would draw in. */
+function IconProbe() {
+  return <IconColor.Consumer>{c => <View testID="icon" accessibilityValue={{ text: c }} />}</IconColor.Consumer>;
+}
+const iconColor = () => screen.getByTestId('icon', { includeHiddenElements: true }).props.accessibilityValue.text;
+
+test('ActionRow is one button with its title and what it does; danger draws the title and icon in the error color', async () => {
+  const onPress = jest.fn();
+  const { rerender } = await render(
+    <ActionRow icon={<IconProbe />} title="Start over" subtitle="Back to Plan with the same menu" onPress={onPress} />,
+  );
+  await fireEvent.press(screen.getByRole('button', { name: 'Start over Back to Plan with the same menu' }));
+  expect(onPress).toHaveBeenCalledTimes(1);
+  expect(screen.getByText('Start over').props.className).not.toContain('text-error');
+  expect(iconColor()).toBe(colors.text1);
+
+  await rerender(<ActionRow icon={<IconProbe />} title="End cook" onPress={onPress} tone="danger" />);
+  expect(screen.getByText('End cook').props.className).toContain('text-error');
+  expect(iconColor()).toBe(colors.error);
+  // The subtitle wraps, it is never cut.
+  await rerender(<ActionRow icon={<StopSquare />} title="Pit went out" subtitle="Stops the clock" onPress={onPress} />);
+  expect(screen.getByText('Stops the clock').props.numberOfLines).toBeUndefined();
 });

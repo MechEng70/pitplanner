@@ -28,4 +28,15 @@ export function Num({ children, style, ...props }: NumProps) {
   );
 }
 
+/** A time ("5:30 PM") or one part of a duration ("1 hr", "45 min", "2 days") inside a sentence. */
+const VALUE = /(\d{1,2}:\d{2} [AP]M|\d+ (?:days?|hr|min))/;
+
+/**
+ * A sentence built by the pure view code ("Brisket hold drops from 1 hr to 30 min. Still OK."), with each
+ * time and duration in it as a Num, so none breaks across lines. Goes inside a Text and takes its type and tone.
+ */
+export function Nums({ text }: { text: string }) {
+  return <>{text.split(VALUE).map((part, i) => (i % 2 ? <Num key={i}>{part}</Num> : part))}</>;
+}
+
 const styles = StyleSheet.create({ num: { fontVariant: ['tabular-nums'] } });

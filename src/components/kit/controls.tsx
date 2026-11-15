@@ -270,7 +270,61 @@ export function Stepper({
   );
 }
 
-/** Label above a control, optional note below. */
+export interface Choice {
+  id: string;
+  /** A Text (it may hold a Num); it takes the card's type. */
+  title: React.ReactNode;
+  subtitle?: React.ReactNode;
+}
+
+/**
+ * Two or three cards side by side, one selected (ui.css .choice-cards; Keep serve / Move serve, mockup 13).
+ * A card is at least 130 dp wide and they share the row; when they no longer fit (large font) they stack.
+ * The text wraps, it is never cut.
+ */
+export function ChoiceCards({
+  options,
+  value,
+  onChange,
+  label,
+}: {
+  options: Choice[];
+  value: string;
+  onChange: (id: string) => void;
+  label: string;
+}) {
+  return (
+    <View role="radiogroup" aria-label={label} className="flex-row flex-wrap gap-2">
+      {options.map(o => {
+        const on = o.id === value;
+        return (
+          <Pressable
+            key={o.id}
+            role="radio"
+            aria-checked={on}
+            onPress={() => onChange(o.id)}
+            android_ripple={RIPPLE}
+            className={cn(
+              'min-h-[64px] shrink-0 grow basis-[130px] items-center justify-center gap-0.5 overflow-hidden rounded-control',
+              // The selected border is 1 dp thicker; the padding gives that back so nothing moves.
+              on ? 'border-2 border-ember bg-ember-soft px-[9px] py-[7px]' : 'border border-outline px-2.5 py-2',
+            )}
+          >
+            <Text variant="bodyM" center>
+              {o.title}
+            </Text>
+            {o.subtitle != null ? (
+              <Text variant="label" tone="secondary" center>
+                {o.subtitle}
+              </Text>
+            ) : null}
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 /**
  * A field that opens a menu (ui.css .select): caption, value, and anything `trailing` before the edge
  * (Plan's smoker temp shows the fire time and a chevron). Without `onPress` it is a read-only field with the
@@ -319,6 +373,7 @@ export function SelectField({
   );
 }
 
+/** Label above a control, optional note below. */
 export function Field({ label, note, children }: { label: string; note?: React.ReactNode; children: React.ReactNode }) {
   return (
     <View className="gap-2">
