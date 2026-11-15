@@ -6,6 +6,8 @@
 //   pitplanner://dev/plan?seed=empty    the same cookers, nothing on the menu (mockup 04, no past cook)
 //   pitplanner://dev/plan?seed=past     as empty, plus one past cook, so Cook a past plan again shows
 //   pitplanner://dev/plan?seed=clash    two batches of wings, smoked at 225F and hot at 350F: one conflict
+//   pitplanner://dev/plan?seed=briskets an 11.5 lb and a 6 lb brisket: labelled cards (T-061)
+//   pitplanner://dev/plan?seed=twins    two 6 lb briskets: the labels are numbered (T-061)
 // Add &edit=<item id> (b, w, c on the mockup seed) to open food details for that item, or &add=<food id> to
 // open it for a new food (mockups 08-10: seed=empty with add=brisket, stlribs or breasts).
 // The past cook has a fixed id; the other two seeds take it away again (only that one, never a real cook).
@@ -43,7 +45,23 @@ const CLASH: ItemInput[] = [
     restMin: 5,
   },
 ];
-const SEEDS: Record<string, ItemInput[]> = { mockup: MENU, clash: CLASH, empty: [], past: [] };
+/** Two of the same food (T-061): by weight they differ, at the same weight they are numbered. */
+const brisket = (id: string, quantity: number): ItemInput => ({
+  id,
+  foodId: 'brisket',
+  methodId: 'smoked',
+  quantity,
+  options: { wrap: 'paper' },
+  restMin: 60,
+});
+const SEEDS: Record<string, ItemInput[]> = {
+  mockup: MENU,
+  clash: CLASH,
+  empty: [],
+  past: [],
+  briskets: [brisket('b1', 11.5), brisket('b2', 6)],
+  twins: [brisket('b1', 6), brisket('b2', 6)],
+};
 
 const PAST_ID = 'dev-seed-past';
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;

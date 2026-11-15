@@ -1184,6 +1184,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Tests:** engine: two briskets give steps that differ by their labels, and each pull step names its
   food; one brisket reads as today. Weights in kg when the user's unit is kg.
 - **Device testing (Jason):** a plan with two briskets: read the steps and say which brisket each is for.
+  Shown to him on 2026-11-15 from the emulator at 115% (dev seeds `pitplanner://dev/plan?seed=briskets`
+  and `?seed=twins`, added for this; the Conflicts sheet from `?seed=clash`; the step text printed from the
+  engine, since no screen lists the steps before T-021). His verdict is not in yet.
   Until the Cook screen exists (T-021) the steps show nowhere in 0.3.0, so for now: on Plan, add two
   briskets of different weights and judge the two card titles against the answers above ("11.5 lb brisket",
   "6 lb brisket") and the line under each, which should not repeat the weight; make them the same weight
