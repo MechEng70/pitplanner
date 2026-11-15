@@ -56,8 +56,14 @@ export const legacyRecords: CookRecord[] = [
 
 export const legacyDraft = { mode: 'readyBy' as const, at: saturday.at, pitTempF: 225, items: saturday.items };
 
-/** The running cook as 0.2.0 saved it, started at `startedAt` for the Saturday plan. */
-export const legacyCook = (startedAt: number) => newCook(saturday, buildPlan(rules, saturday), startedAt);
+/**
+ * The running cook as 0.2.0 saved it, started at `startedAt` for the Saturday plan: without the fields added
+ * since (`ringAgain`, `undo`, T-063), which loading fills in.
+ */
+export const legacyCook = (startedAt: number) => {
+  const { ringAgain: _r, undo: _u, ...cook } = newCook(saturday, buildPlan(rules, saturday), startedAt);
+  return cook;
+};
 
 /** The CapacitorStorage entries: every value a JSON string, as @capacitor/preferences wrote them. */
 export function legacyPrefs(startedAt: number): Record<string, string> {

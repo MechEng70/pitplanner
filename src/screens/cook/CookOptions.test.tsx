@@ -396,3 +396,121 @@ describe('Done early or late asks keep or move', () => {
     expect(screen.getByText('Smoker 225F, serve 7:00 PM')).toBeOnTheScreen();
   });
 });
+
+// T-063: a step marked Done by mistake is taken back from Cook options (Jason, 2026-11-15: a row that names
+// the step, for the most recent Done only, until the next step is marked done).
+describe('Undo the most recent Done', () => {
+  const undoRow = /^Undo: /;
+  /** 11:33 AM: the wrap check is 2 min away, so Done asks nothing. */
+  const at1133 = async () => {
+    const r = await show();
+    r.clock.now = AT_1023 + 70 * MIN;
+    await act(() => jest.advanceTimersByTime(30_000));
+    return r;
+  };
+  const tapDone = async () => {
+    await fireEvent.press(button('Done'));
+    await act(async () => {});
+  };
+
+  test('no row until a step has been marked done', async () => {
+    await show();
+    const sheet = await openOptions();
+    expect(sheet.queryByRole('button', { name: undoRow })).toBeNull();
+  });
+
+  test('the row names the step; tapping it puts the step, Next up and the alarms back', async () => {
+    const { repos, alarms } = await at1133();
+    const cookBefore = repos.activeCook.load()!;
+    const rings = () => alarms.sets.at(-1)!.find(a => a.keys.includes('phase:b:wrap'))?.at;
+    const heading = screen.getByTestId('next-title').props.children;
+    await tapDone();
+    expect(repos.activeCook.load()!.done['phase:b:wrap']).toBe(AT_1023 + 70 * MIN);
+    expect(screen.getByText('At 3:15 PM')).toBeOnTheScreen();
+    expect(rings()).toBeUndefined();
+    const afterDone = alarms.sets.at(-1)!;
+
+    const sheet = await openOptions();
+    const row = sheet.getByRole('button', { name: undoRow });
+    expect(within(row).getByText('Undo: Check the brisket')).toBeOnTheScreen();
+    expect(within(row).getByText('Done at 11:33 AM. Puts the step and its alerts back.')).toBeOnTheScreen();
+    const before = replaced(alarms.calls);
+    await fireEvent.press(row);
+    await settle();
+
+    expect(optionsSheet()).toBeUndefined();
+    expect(repos.activeCook.load()).toEqual(cookBefore);
+    expect(replaced(alarms.calls) - before).toBe(1);
+    // The step's own alarm is back at its time; every other alarm is as it was.
+    expect(rings()).toBe(AT_1023 + 72 * MIN);
+    expect(alarms.sets.at(-1)!.filter(a => !a.keys.includes('phase:b:wrap'))).toEqual(afterDone);
+    expect(screen.getByText('Check at 11:35 AM')).toBeOnTheScreen();
+    expect(screen.getByTestId('next-title').props.children).toEqual(heading);
+    // Taken back: nothing more to undo.
+    const again = await openOptions();
+    expect(again.queryByRole('button', { name: undoRow })).toBeNull();
+  });
+
+  test('a Done that moved serve: undo brings serve and the later steps back', async () => {
+    const { repos } = await show();
+    await fireEvent.press(button('Done')); // 1 hr 12 min early
+    await fireEvent.press(radio(/^Move serve/));
+    await fireEvent.press(button('Apply'));
+    await settle();
+    expect(repos.activeCook.load()!.plan.serveAt).toBe(SERVE - 70 * MIN);
+    await act1(undoRow);
+    expect(repos.activeCook.load()).toEqual(cookAt(AT_1023));
+    expect(screen.getByText('Smoker 225F, serve 5:00 PM')).toBeOnTheScreen();
+    expect(screen.getByText('Check at 11:35 AM')).toBeOnTheScreen();
+  });
+
+  test('only the most recent Done is offered', async () => {
+    const { repos, clock } = await at1133();
+    await tapDone(); // the wrap check
+    clock.now = Date.UTC(2026, 10, 14, 20, 14); // 3:14 PM, a minute before the wings go on
+    await act(() => jest.advanceTimersByTime(30_000));
+    await tapDone();
+    const sheet = await openOptions();
+    expect(sheet.getAllByRole('button', { name: undoRow })).toHaveLength(1);
+    expect(sheet.queryByText('Undo: Check the brisket')).toBeNull();
+    await fireEvent.press(sheet.getByRole('button', { name: undoRow }));
+    await settle();
+    // The wrap check stays done and cannot be taken back any more.
+    expect(repos.activeCook.load()!.done['phase:b:wrap']).toBe(AT_1023 + 70 * MIN);
+    const again = await openOptions();
+    expect(again.queryByRole('button', { name: undoRow })).toBeNull();
+  });
+
+  test('after a change made since the tap, the row says the change is taken back too', async () => {
+    const { repos } = await at1133();
+    const cookBefore = repos.activeCook.load()!;
+    await tapDone();
+    const shiftSheet = await openOptions();
+    await fireEvent.press(shiftSheet.getByRole('button', { name: 'More shift' }));
+    await fireEvent.press(shiftSheet.getByRole('button', { name: 'Apply' }));
+    await settle();
+    expect(repos.activeCook.load()!.plan).not.toEqual(cookBefore.plan);
+    const sheet = await openOptions();
+    const row = sheet.getByRole('button', { name: undoRow });
+    expect(within(row).getByText('Done at 11:33 AM. Also takes back the changes made since.')).toBeOnTheScreen();
+    await fireEvent.press(row);
+    await settle();
+    expect(repos.activeCook.load()).toEqual(cookBefore);
+  });
+
+  test('an overdue step taken back rings again in 10 min and still shows as overdue', async () => {
+    const { repos, alarms, clock } = await show();
+    clock.now = AT_1023 + 75 * MIN; // 11:38 AM, 3 min after the wrap check came due
+    await act(() => jest.advanceTimersByTime(30_000));
+    await tapDone();
+    clock.now += MIN;
+    await act1(undoRow);
+    const saved = repos.activeCook.load()!;
+    expect(saved.done['phase:b:wrap']).toBeUndefined();
+    expect(saved.ringAgain).toEqual({ 'phase:b:wrap': clock.now + 10 * MIN });
+    expect(await alarms.scheduled()).toMatchObject({
+      alarms: expect.arrayContaining([expect.objectContaining({ at: clock.now + 10 * MIN })]),
+    });
+    expect(screen.getByText('Overdue since 11:35 AM')).toBeOnTheScreen();
+  });
+});

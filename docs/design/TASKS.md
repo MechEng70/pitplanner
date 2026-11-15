@@ -2199,8 +2199,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 
 ### T-063 Take back a step marked Done by mistake
-- **Status:** todo (0.3.0; Jason, 2026-11-14: "there needs to be somewhere to undo it in version 0.3.0. I
-  don't want to wait till the next version")
+- **Status:** built 2026-11-15, unit-tested on a worktree branch; `npm run check` and device test not run.
+  (0.3.0; Jason, 2026-11-14: "there needs to be somewhere to undo it in version 0.3.0. I don't want to wait
+  till the next version")
 - **Why:** on his cook of 2026-11-14 the brisket's done step came up at 3:30 PM and he hit Done by accident.
   0.2.0 has no way back; the brisket was at about 170F and stayed on.
 - **Jason's answers (2026-11-15):** the undo is a row in Cook options that names the step ("Undo: Brisket off
@@ -2221,6 +2222,43 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Tests:** engine unit tests (done then undone equals never done); RNTL for the control.
 - **Device testing (Jason):** mark a step Done in a test cook, take it back, judge Next up and the alarm
   against what showed before the tap.
+- **Built (2026-11-15):**
+  - `engine/undo.ts` (pure, `engine/undo.test.ts`): `rememberDone` keeps the cook's progress as it is just
+    before a Done (plan, reminders, on / off heat times, notice); `undoDone` puts it back and takes the step
+    out of `done`; `ringTimes` merges reminders and ring-agains for the alarm set. Done then undone equals
+    never done, for a pull and for a Done that moved later steps and serve.
+  - `src/lib/cook.ts`: `ActiveCook.undo` (the snapshot, set by every `doneStep`, so the next Done replaces
+    it) and `ActiveCook.ringAgain`; `undoable`, `undoStep`. Both live in the saved cook JSON: no schema
+    change, no migration. A cook saved before this loads with nothing to undo (`normalize`).
+  - `src/screens/cook/CookOptions.tsx`: the row "Undo: Check the brisket" (the step's title as Next up
+    words it), first in the list, with "Done at 11:33 AM. Puts the step and its alerts back." It closes the
+    sheet and saves through `setCook` (one save, one alarm set). SPEC sections 3, 5 and 9 updated.
+  - Rules built:
+    - Done from an alert with the app closed is a Done like any other: it can be taken back the same way.
+      When one alert holds two steps, only the last of them can be.
+    - Serve: Done on Serve goes to Cook finished, which has no way back. If the app is left and reopened,
+      Live cook shows again and Cook options offers "Undo: Serve".
+    - A Done that re-timed later steps or moved serve: all of it goes back (the whole plan from before the
+      tap is restored).
+    - A change made between the tap and the undo (Running behind, Not yet, +15, Back up to temp) is taken
+      back too; the row then reads "Done at 11:33 AM. Also takes back the changes made since." Quiet and
+      Pit went out are left as they are.
+    - A step that was already due when it was marked done had its alert and repeats stopped by the Done.
+      Taken back, it rings again 10 min after the undo; its time on Cook does not move ("Overdue since").
+  - Not done: no kit icon for undo exists, so the row uses the Start over icon (`Restart`). The live-cook
+    state table (`engine/cookState.ts`, TECH-DESIGN section 7) does not list undo as an action; nothing
+    reads it for Cook options. No device test, no fidelity PNG.
+- **Questions for Jason:**
+  1. You mark a step Done by mistake, then shift the cook (say Running behind 15 min), then tap Undo.
+     (a) Undo also takes the shift back and the row says so (built), or (b) once you change the plan, the
+     Undo row goes away.
+  2. The row's name is the step as Next up words it: "Undo: Check the brisket". (a) Keep that, or (b) a
+     shorter name per kind of step, like your "Undo: Brisket off the smoker" (needs wording for each kind).
+  3. An overdue step you take back: (a) it rings again 10 min later (built), or (b) it rings again right
+     away.
+  4. The Undo row has the same icon as Start over. (a) Fine for now, or (b) add an undo arrow icon.
+  5. Serve marked Done by mistake lands on Cook finished with no Undo there. (a) Leave it (reopen the app
+     to get back to the cook), or (b) add a way back from Cook finished.
 
 ### T-042 Mock the HA screens (HA-INTEGRATION 4.5)
 - **Status:** todo

@@ -64,7 +64,7 @@ Artboard names refer to the mockup canvas.
 - **Alarms could not be set**: when the phone refuses the cook's alarm set, Live cook shows "Alarms could not be set. Steps will not ring." with Try again, which clears every alarm and sets the whole list again from the plan (Jason, 2026-11-15).
 - **Start over** asks first ("Start over?", "This cook won't be saved.", Keep cooking / Start over); it drops the cook without saving, leaves the menu on Plan and never changes cook history. A Done 5 min or more early or late, and Back up to temp, ask Keep serve or Move serve; Move is selected when keeping would leave a food short of its minimum rest.
 - The mockups are a starting point, not a contract (Jason, 2026-11-15): where a built screen follows 0.2.0 and he has approved it, the screen wins.
-- **Cook options** (`Controls`): Running behind or ahead (-15/+15, Keep serve vs Move serve, with the hold impact spelled out); Quiet alerts for 30 min; Pit went out (stops the clock until "Back up to temp"); Start over; End cook (Save to history or Discard, cancels all alarms).
+- **Cook options** (`Controls`): Running behind or ahead (-15/+15, Keep serve vs Move serve, with the hold impact spelled out); Quiet alerts for 30 min; Pit went out (stops the clock until "Back up to temp"); Start over; End cook (Save to history or Discard, cancels all alarms). **Undo** (Jason, 2026-11-15; not in the mockup): after a step is marked Done, a row that names the step ("Undo: Brisket off the smoker") puts it back to not done. It is in Cook options, not on the Cook screen itself, and is offered for the most recent Done only, until the next step is marked done.
 - **Lock-screen alert** (`Notify`): actions Done, +15 min, Open. Unacknowledged alerts repeat every 10 min.
 - **Cook finished** (`EndCook`): planned vs actual per food, rate update, notes, Save / Discard, one-time support link.
 
@@ -98,6 +98,7 @@ Artboard names refer to the mockup canvas.
 | Running behind / ahead | `shiftRemaining(now, delta, keepServe)` | Every not-yet-finished phase moves; keepServe keeps serve time and shows the hold impact. |
 | Not yet at a pull check | `shiftRemaining(now, +30, keepServe, itemId)` | That food only. Serve stays while every food keeps its minimum rest, else serve moves; the row says which. (No "raise the smoker 25F" suggestion: dropped, Jason, 2026-11-15.) |
 | Pit went out / Back up to temp | `pitOutage(down, up, recovery=15)` | Smoker foods lose the downtime plus recovery. |
+| Undo (the most recent Done) | `undoDone` (`engine/undo.ts`) | The cook goes back to what it was just before the tap: the step is not done, and the plan, serve time, reminders and on / off heat times are as they were, so the alarm set is too. A Done tapped on an alert counts the same. A change made after the tap (Running behind, Not yet, +15, Back up to temp) is taken back with it, and the row says so. A step that was already due rings again 10 min after the undo and still reads as overdue. |
 | Quiet alerts 30 min | UI only | Alarms inside the window are held and fire as one summary at the end; steps stay overdue. |
 | Start over | UI | Back to Plan with the same menu. |
 | End cook | UI + history | Save logs actual minutes on heat per food (feeds rates) or Discard (logs nothing). Cancels all alarms. |
@@ -147,7 +148,7 @@ Scheduled times set by these changes round to 5 minutes (actual times, like when
 - `rateLocks`: per foodId, the saved rate never blends with logged cooks.
 - `totalHours`: per foodId saved default total hours; new items of that food start on Total hours.
 - `history`: CookLog[] (see `engine/types.ts`), plus notes, date, planned vs actual per step.
-- `activeCook`: PlanInput + Plan + acknowledgements; written on every change so a reboot can restore it.
+- `activeCook`: PlanInput + Plan + acknowledgements; written on every change so a reboot can restore it. It also holds the cook as it was before the most recent Done (for Undo), replaced at each Done.
 - `.pitplan` share file: `{ "app": "pit-planner", "version": 1, "serveAt": iso, "pitTempF": n, "items": ItemInput[] }`. No personal data, no history.
 
 ## 10. Distribution and updates

@@ -177,6 +177,8 @@ test('finish: planned vs actual per food, record logs only foods that came off, 
     pitDownAt: null,
     quietUntil: null,
     notice: null,
+    ringAgain: {},
+    undo: null,
   };
   const b = plan.items.find(i => i.input.id === 'b')!;
   const span = onHeatSpan(b);

@@ -1,5 +1,6 @@
 // Cook options (mockup 13), a port of legacy/src/screens/cook/CookOptions.tsx: Running behind or ahead,
-// Not yet (when the next step is a check), Quiet alerts, Pit went out, Start over, End cook. Each action
+// Not yet (when the next step is a check), Quiet alerts, Pit went out, Start over, End cook, and Undo for the
+// most recent Done (T-063; not in the mockup, approved as a SPEC line by Jason, 2026-11-15). Each action
 // closes the sheet first and then hands the changed cook to `onChange`, which saves it through the store
 // (one save, one alarm set). This sheet never talks to the alarm service.
 import { useMemo, useState, type ReactNode } from 'react';
@@ -31,6 +32,8 @@ import {
   quiet,
   shift,
   stepText,
+  undoStep,
+  undoable,
   type ActiveCook,
 } from '@/lib/cook';
 import { shiftImpact } from '@/lib/cookView';
@@ -75,6 +78,8 @@ export function CookOptions({
     () => (next?.event.checkStep ? keepServeIfCovered(keep => postpone(cook, next.key, now, NOT_YET_MIN, keep)) : null),
     [cook, next, now],
   );
+  // The most recent Done can be taken back until the next step is marked done.
+  const undo = undoable(cook);
   const quietNow = cook.quietUntil != null && cook.quietUntil > now;
   const serve = fmtTime(cook.plan.serveAt);
 
@@ -149,6 +154,20 @@ export function CookOptions({
       </Card>
 
       <Stack>
+        {undo ? (
+          <Action
+            icon={<Restart />}
+            title={`Undo: ${stepText(tx(undo.label, units)).title}`}
+            subtitle={
+              <Nums
+                text={`Done at ${fmtTime(undo.doneAt)}. ${
+                  undo.changed ? 'Also takes back the changes made since.' : 'Puts the step and its alerts back.'
+                }`}
+              />
+            }
+            run={() => onChange(undoStep(cook, clock()))}
+          />
+        ) : null}
         {next && later ? (
           <Action
             icon={<Timer />}

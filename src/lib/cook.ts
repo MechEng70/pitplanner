@@ -4,6 +4,7 @@
 import { markStepDone, shiftRemaining, pitOutage, markPullDone, postponeStep, holdsCover } from '../../engine/live.ts';
 import { alarmsFromPlan, keyedEvents, type KeyedEvent } from '../../engine/alarms.ts';
 import type { Plan, PlanInput } from '../../engine/types.ts';
+import { rememberDone, ringTimes, undoDone, type DoneUndo } from '../../engine/undo.ts';
 import { rules } from './rules.ts';
 import type { AlarmService, NotificationAction } from '../platform/types.ts';
 import { fmtTime, tx, type Units } from './format.ts';
@@ -26,6 +27,13 @@ export interface ActiveCook {
   pitDownAt: number | null;
   quietUntil: number | null;
   notice: string | null; // what an automatic change did, shown once on Cook
+  ringAgain: Record<string, number>; // step key -> ring again at, the step's time unmoved (overdue step taken back)
+  /**
+   * The cook just before the most recent Done, so that Done can be taken back (T-063). Replaced by the next
+   * Done, so only the most recent one is ever on offer. `changed`: the plan was adjusted after the tap
+   * (Running behind, Not yet, +15, Back up to temp); taking the step back takes that back too.
+   */
+  undo: (DoneUndo & { changed: boolean }) | null;
 }
 
 export function newCook(input: PlanInput, plan: Plan, now: number): ActiveCook {
@@ -41,6 +49,8 @@ export function newCook(input: PlanInput, plan: Plan, now: number): ActiveCook {
     pitDownAt: null,
     quietUntil: null,
     notice: null,
+    ringAgain: {},
+    undo: null,
   };
 }
 
@@ -78,7 +88,13 @@ export type DoneResult = { cook: ActiveCook; ask?: { deltaMin: number; keepServe
 export function doneStep(c: ActiveCook, key: string, at: number, keepServe?: boolean): DoneResult {
   const k = steps(c).find(s => s.key === key);
   if (!k) return { cook: c };
-  const base: ActiveCook = { ...c, done: { ...c.done, [key]: at }, reminders: without(c.reminders, key) };
+  const base: ActiveCook = {
+    ...c,
+    done: { ...c.done, [key]: at },
+    reminders: without(c.reminders, key),
+    ringAgain: without(c.ringAgain, key),
+    undo: { ...rememberDone(c, key), changed: false },
+  };
   const e = k.event;
 
   if (e.kind === 'phase' && e.itemId && e.phaseId) {
@@ -109,23 +125,46 @@ export function doneStep(c: ActiveCook, key: string, at: number, keepServe?: boo
 export function postpone(c: ActiveCook, key: string, now: number, minutes: number, keepServe: boolean): ActiveCook {
   const r = postponeStep(rules, c.input, c.plan, key, now, minutes, keepServe);
   return {
-    ...c,
+    ...adjusted(c),
     plan: r.plan,
     reminders: r.reminderAt ? { ...c.reminders, [key]: r.reminderAt } : without(c.reminders, key),
+    ringAgain: without(c.ringAgain, key),
   };
 }
 
 export const shift = (c: ActiveCook, now: number, deltaMin: number, keepServe: boolean): ActiveCook => ({
-  ...c,
+  ...adjusted(c),
   plan: shiftRemaining(rules, c.input, c.plan, now, deltaMin, keepServe),
 });
+
+/** The plan is being adjusted: a Done that can still be taken back now takes this change back with it. */
+const adjusted = (c: ActiveCook): ActiveCook => (c.undo ? { ...c, undo: { ...c.undo, changed: true } } : c);
+
+/** The Done that can be taken back: the most recent one, until the next step is marked done. */
+export function undoable(c: ActiveCook): { key: string; label: string; doneAt: number; changed: boolean } | null {
+  const u = c.undo;
+  const doneAt = u ? c.done[u.key] : undefined;
+  if (!u || doneAt == null) return null;
+  const step = keyedEvents(u.plan).find(k => k.key === u.key);
+  return step ? { key: u.key, label: step.event.label, doneAt, changed: u.changed } : null;
+}
+
+/**
+ * Take back the most recent Done (T-063): the step is not done again and the plan, reminders and on / off
+ * heat times are what they were before the tap. A step that was already due rings again in 10 min. The
+ * pit-out and quiet states are left as they are now.
+ */
+export function undoStep(c: ActiveCook, now: number): ActiveCook {
+  if (!c.undo || !undoable(c)) return c;
+  return { ...c, ...undoDone(c, c.undo, now), undo: null };
+}
 
 export const pitDown = (c: ActiveCook, now: number): ActiveCook => ({ ...c, pitDownAt: now });
 
 export function pitUp(c: ActiveCook, now: number, keepServe: boolean): ActiveCook {
   if (c.pitDownAt == null) return c;
   return {
-    ...c,
+    ...adjusted(c),
     pitDownAt: null,
     plan: pitOutage(rules, c.input, c.plan, c.pitDownAt, now, PIT_RECOVERY_MIN, keepServe),
   };
@@ -157,7 +196,7 @@ export async function syncAlarms(c: ActiveCook, now: number, alarms: AlarmServic
   return alarms.replaceAll(
     alarmsFromPlan(c.plan, now, undefined, {
       done,
-      reminders: c.reminders,
+      reminders: ringTimes(c.reminders, c.ringAgain),
       quietUntil: c.quietUntil ?? undefined,
       text: s => tx(s, units),
     }),
