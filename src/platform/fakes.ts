@@ -6,6 +6,7 @@ import type {
   AlarmService,
   AlarmStatus,
   AppLinks,
+  GetJson,
   NotificationAction,
   PermissionService,
   ShareService,
@@ -140,6 +141,27 @@ export function fakeShare(): FakeShare {
       return () => void fns.delete(fn);
     },
     open: file => fns.forEach(fn => fn(file)),
+  };
+  return f;
+}
+
+export interface FakeHttp {
+  get: GetJson;
+  /** Every request made, in order. */
+  requests: { url: string; headers: Record<string, string> }[];
+  /** What each request gets: an answer, or an Error for no network. */
+  answer: { ok: boolean; json: unknown } | Error;
+}
+
+export function fakeHttp(answer: FakeHttp['answer'] = { ok: true, json: [] }): FakeHttp {
+  const f: FakeHttp = {
+    requests: [],
+    answer,
+    async get(url, headers) {
+      f.requests.push({ url, headers });
+      if (f.answer instanceof Error) throw f.answer;
+      return f.answer;
+    },
   };
   return f;
 }

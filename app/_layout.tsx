@@ -17,7 +17,9 @@ import { importLegacy, importNotice, markNoticeSeen } from '@/db/legacyImport';
 import { repos } from '@/db/repos';
 import { useAlarmWiring } from '@/lib/alarmWiring';
 import { StoreProvider } from '@/lib/store';
+import { useUpdateCheck } from '@/lib/updateWiring';
 import { alarmService } from '@/platform/alarms';
+import { getJson } from '@/platform/http';
 import { legacyStore } from '@/platform/legacy';
 import { onResume } from '@/platform/resume';
 import { shareFilesAsTar, shareTextFile } from '@/platform/shareFile';
@@ -48,6 +50,12 @@ function AlarmWiring() {
   return null;
 }
 
+/** Looks for a newer release at launch and on resume, at most daily; Gear shows it (T-032). */
+function UpdateCheck() {
+  useUpdateCheck(getJson, onResume);
+  return null;
+}
+
 export default function RootLayout() {
   const [boot] = useState(() => openAppDb(__DEV__));
   // First start of 0.3.0 over 0.2.0: bring the old data across before the store loads (once; T-012).
@@ -64,6 +72,7 @@ export default function RootLayout() {
       {data ? (
         <StoreProvider repos={data} alarms={alarmService}>
           <AlarmWiring />
+          <UpdateCheck />
           <Stack
             screenOptions={{ headerShown: false, contentStyle: { backgroundColor: navTheme.colors.background } }}
           />

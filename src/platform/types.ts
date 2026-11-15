@@ -94,5 +94,11 @@ export interface AppLinks {
   onResume(fn: () => void): Unsubscribe;
 }
 
+/**
+ * An anonymous GET that reads JSON (the update check): no cookies or credentials, only the headers given.
+ * Rejects when there is no answer (offline, timeout); `json` is null when the answer is not ok.
+ */
+export type GetJson = (url: string, headers: Record<string, string>) => Promise<{ ok: boolean; json: unknown }>;
+
 /** Everything Start cook needs. Missing items block it until fixed or acknowledged (failure mode 9). */
 export const allGranted = (s: AlarmStatus) => s.notifications && s.exactAlarms && s.batteryUnrestricted;

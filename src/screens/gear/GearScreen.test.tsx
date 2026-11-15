@@ -3,7 +3,9 @@ import { Linking } from 'react-native';
 import type { Cookers } from '../../../engine/types';
 import { SHEET_OUT_MS } from '@/components/kit/sheet';
 import { takeDebugPass } from '@/lib/debugPass';
-import { fakeAlarms, fakeResume } from '@/platform/fakes';
+import { useUpdateCheck } from '@/lib/updateWiring';
+import { fakeAlarms, fakeHttp, fakeResume, type FakeHttp } from '@/platform/fakes';
+import type { AppLinks } from '@/platform/types';
 import { cookGear } from '@/test/cook';
 import { NOW, storeWrapper, testRepos } from '@/test/store';
 import { GearScreen, SUPPORT_URL } from './GearScreen';
@@ -16,12 +18,35 @@ afterEach(() => {
 });
 const settle = () => act(() => jest.advanceTimersByTime(SHEET_OUT_MS));
 
-/** The Gear tab over a real database. `handlers` false: as the route shows it today, without T-027 and T-028. */
+const DAY = 24 * 3_600_000;
+/** The time the update check reads; a test moves it forward. */
+const clock = { now: NOW };
+const checkClock = () => clock.now;
+beforeEach(() => {
+  clock.now = NOW;
+});
+
+/** The update check as the root layout runs it (T-032), over a scripted GitHub. */
+function UpdateCheck({ http, onResume }: { http: FakeHttp; onResume: AppLinks['onResume'] }) {
+  useUpdateCheck(http.get, onResume, checkClock);
+  return null;
+}
+
+/**
+ * The Gear tab over a real database. `handlers` false: as the route shows it today, without T-027 and T-028.
+ * `http`: the update check runs too, at launch and on `resume.resume()`.
+ */
 async function show({
   gear = cookGear,
   handlers = true,
   seed,
-}: { gear?: Cookers; handlers?: boolean; seed?: (r: ReturnType<typeof testRepos>['repos']) => void } = {}) {
+  http,
+}: {
+  gear?: Cookers;
+  handlers?: boolean;
+  seed?: (r: ReturnType<typeof testRepos>['repos']) => void;
+  http?: FakeHttp;
+} = {}) {
   const { repos } = testRepos();
   repos.cookers.save(gear, NOW);
   repos.rates.setRate('brisket', 0.75, NOW);
@@ -33,14 +58,17 @@ async function show({
   const onHistory = jest.fn();
   const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
   await render(
-    <GearScreen
-      version="0.3.0"
-      permissions={alarms}
-      alarms={alarms}
-      onResume={resume.onResume}
-      onDebug={onDebug}
-      {...(handlers ? { onCooker, onHistory } : {})}
-    />,
+    <>
+      {http ? <UpdateCheck http={http} onResume={resume.onResume} /> : null}
+      <GearScreen
+        version="0.3.0"
+        permissions={alarms}
+        alarms={alarms}
+        onResume={resume.onResume}
+        onDebug={onDebug}
+        {...(handlers ? { onCooker, onHistory } : {})}
+      />
+    </>,
     { wrapper: storeWrapper(repos, () => NOW, alarms) },
   );
   return { repos, alarms, resume, onDebug, onCooker, onHistory, open };
@@ -234,6 +262,119 @@ describe('Update available (the check is T-032)', () => {
   test('the release this build is does not show the row', async () => {
     await show({ seed: r => r.settings.setUpdate({ checkedAt: NOW, latest: 'v0.3.0', url: null }, NOW) });
     expect(screen.queryByText('Update available')).toBeNull();
+  });
+});
+
+describe('the update check (T-032)', () => {
+  const release = (tag: string) => ({
+    tag_name: tag,
+    html_url: `https://github.com/MechEng70/pitplanner/releases/tag/${tag}`,
+    prerelease: tag.includes('-'),
+    draft: false,
+    assets: [{ name: `pitplanner-${tag.slice(1)}.apk`, browser_download_url: `https://example.org/${tag}.apk` }],
+  });
+  const resumed = (resume: { resume(): void }) => act(async () => resume.resume());
+
+  test('a newer release, here a prerelease, shows the row with its download, and is saved', async () => {
+    const http = fakeHttp({ ok: true, json: [release('v0.3.1'), release('v0.4.0-beta.1'), release('v0.3.0')] });
+    const { open, repos } = await show({ http });
+    const link = await screen.findByRole('link', { name: /Update available/ });
+    expect(
+      within(link).getByText('Version 0.4.0-beta.1. Download it in your browser, then open it to install.'),
+    ).toBeOnTheScreen();
+    await fireEvent.press(link);
+    expect(open).toHaveBeenCalledWith('https://example.org/v0.4.0-beta.1.apk');
+    expect(repos.settings.update()).toEqual({
+      checkedAt: NOW,
+      latest: 'v0.4.0-beta.1',
+      url: 'https://example.org/v0.4.0-beta.1.apk',
+    });
+  });
+
+  test('the same release shows no row', async () => {
+    const http = fakeHttp({ ok: true, json: [release('v0.3.0'), release('v0.3.0-rc.1'), release('v0.2.0')] });
+    const { repos } = await show({ http });
+    expect(http.requests).toHaveLength(1);
+    expect(repos.settings.update()).toMatchObject({ checkedAt: NOW, latest: 'v0.3.0' });
+    expect(screen.queryByText('Update available')).toBeNull();
+  });
+
+  test('a network error shows no row and nothing else', async () => {
+    const http = fakeHttp(new TypeError('Network request failed'));
+    const { repos } = await show({ http });
+    expect(http.requests).toHaveLength(1);
+    expect(repos.settings.update()).toEqual({ checkedAt: NOW, latest: null, url: null });
+    expect(screen.queryByText('Update available')).toBeNull();
+    expect(screen.getByRole('heading', { name: 'App' })).toBeOnTheScreen();
+  });
+
+  test('a network error keeps the update found before', async () => {
+    const http = fakeHttp(new TypeError('Network request failed'));
+    const { open } = await show({
+      http,
+      seed: r =>
+        r.settings.setUpdate({ checkedAt: NOW - DAY, latest: 'v0.4.0', url: 'https://example.org/pit.apk' }, NOW),
+    });
+    expect(http.requests).toHaveLength(1);
+    await fireEvent.press(screen.getByRole('link', { name: /Update available/ }));
+    expect(open).toHaveBeenCalledWith('https://example.org/pit.apk');
+  });
+
+  test('one anonymous request at launch, then none on resume until a day has passed', async () => {
+    const http = fakeHttp({ ok: true, json: [release('v0.3.0')] });
+    const { resume } = await show({ http });
+    expect(http.requests).toEqual([
+      {
+        url: 'https://api.github.com/repos/MechEng70/pitplanner/releases?per_page=30',
+        headers: { Accept: 'application/vnd.github+json' },
+      },
+    ]);
+    await resumed(resume);
+    clock.now = NOW + DAY - 1;
+    await resumed(resume);
+    expect(http.requests).toHaveLength(1);
+    expect(screen.queryByText('Update available')).toBeNull();
+
+    // The next day a release is out: the resume finds it.
+    http.answer = { ok: true, json: [release('v0.3.1'), release('v0.3.0')] };
+    clock.now = NOW + DAY;
+    await resumed(resume);
+    expect(http.requests).toHaveLength(2);
+    expect(await screen.findByRole('link', { name: /Update available/ })).toBeOnTheScreen();
+    await resumed(resume);
+    expect(http.requests).toHaveLength(2);
+  });
+
+  test('a check made less than a day ago, by an earlier run of the app, is not repeated at launch', async () => {
+    const http = fakeHttp({ ok: true, json: [release('v0.4.0')] });
+    const { resume } = await show({
+      http,
+      seed: r => r.settings.setUpdate({ checkedAt: NOW - DAY + 60_000, latest: 'v0.3.0', url: null }, NOW),
+    });
+    await resumed(resume);
+    expect(http.requests).toHaveLength(0);
+    expect(screen.queryByText('Update available')).toBeNull();
+  });
+
+  test('a failed check counts as the check of the day', async () => {
+    const http = fakeHttp(new TypeError('Network request failed'));
+    const { resume } = await show({ http });
+    await resumed(resume);
+    clock.now = NOW + 3_600_000;
+    await resumed(resume);
+    expect(http.requests).toHaveLength(1);
+  });
+
+  test('two resumes while a check is still out make one request', async () => {
+    let answer: (v: { ok: boolean; json: unknown }) => void = () => {};
+    const http = fakeHttp();
+    const slow = { ...http, get: jest.fn(() => new Promise<{ ok: boolean; json: unknown }>(r => (answer = r))) };
+    const { resume } = await show({ http: slow });
+    await resumed(resume);
+    await resumed(resume);
+    expect(slow.get).toHaveBeenCalledTimes(1);
+    await act(async () => answer({ ok: true, json: [release('v0.4.0')] }));
+    expect(await screen.findByRole('link', { name: /Update available/ })).toBeOnTheScreen();
   });
 });
 

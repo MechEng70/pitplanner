@@ -1862,6 +1862,17 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Acceptance:** newer, same and network-error fixture cases; anonymous request at most daily.
 - **Tests:** as above.
 - **Device testing (Jason):** none here (see T-038).
+- **Built (2026-11-15, on a worktree branch, `npm run check` not run there):**
+  - `src/lib/update.ts`: full semver compare (a prerelease sorts below its final release, alpha.2 < alpha.10 <
+    beta.1 < rc.1); the check reads the release list (`/releases?per_page=30`, not `/releases/latest`, which
+    leaves prereleases out) and takes the highest version, skipping drafts and tags that are not versions.
+    The request is passed in (`GetJson` in `src/platform/types.ts`, `src/platform/http.ts`: one GET, an Accept
+    header, no credentials, 15 s timeout).
+  - `src/lib/updateWiring.ts` (`useUpdateCheck`), mounted in `app/_layout.tsx`: at launch and on resume, only
+    when the saved `checkedAt` is a day old or more. A failed check keeps the last result and counts as the
+    day's check, as in 0.2.0.
+  - A build on a final release is offered a newer prerelease too (the goal says prereleases included). SPEC
+    section 10 still says "latest release tag"; open question for Jason whether to reword it.
 
 ### T-033 Release docs: notes, install guide, releasing checklist
 - **Status:** todo

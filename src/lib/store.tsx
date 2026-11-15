@@ -2,7 +2,7 @@
 // of legacy/src/lib/store.tsx; the write is synchronous, so a change is on disk before the screen redraws.
 // Alarms (T-015): after every change to the running cook the phone's alarm set is replaced as a whole
 // (`syncAlarms`: cancel all, schedule the new set, never a patch), one sync at a time and in order.
-// The update check joins in T-034.
+// The update check (T-032) runs from src/lib/updateWiring.ts and saves its result with `setUpdate`.
 
 import { createContext, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { CookLog, Cookers, PlanInput } from '../../engine/types.ts';
