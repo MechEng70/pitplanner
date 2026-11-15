@@ -5,7 +5,7 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
 
 ## Restart, eighteenth session (written Sunday 2026-11-15, 5:15 PM; read this first)
 
-Everything is committed on `main`, 50-odd commits ahead of `origin/main`, **not pushed** (Jason pushes when he
+Everything is committed on `main`, 55 commits ahead of `origin/main`, **not pushed** (Jason pushes when he
 says so). The gate passed on this `main`. Emulator and Metro are stopped. No agents, no worktrees. The
 sections below this one are history; the sixteenth session's working rules and traps (items 2 to 4, 6 to 8
 of "Restart" further down) still hold.
