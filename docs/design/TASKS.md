@@ -1487,7 +1487,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device test (2026-11-15):** `cook-finished` passes on the emulator at 115% (Full timeline, Cook finished,
   the Use / Keep rate card, Save, Remove, Discard). It found one app bug, fixed: Save to history was narrow on
   every cook after the first (`FinishScreen.tsx`; the check is in the device test). Fidelity PNGs
-  `docs/fidelity/rn-15-cook-finished.png` and `rn-15-cook-finished-rate.png`. Open: Jason's look at both.
+  `docs/fidelity/rn-15-cook-finished.png` and `rn-15-cook-finished-rate.png`. Jason approved both on 2026-11-15 ("I like the wording, use 0.74 or keep 0.75").
 - **Built (2026-11-15):**
   - `src/screens/cook/FinishScreen.tsx` (a port of the legacy screen, mockup 15): the day as an overline,
     "Cook finished", "Served at 5:00 PM, on time." (or "Ended at 10:23 AM, before serve."), one row per food
@@ -1558,7 +1558,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   (01, 02, 17 need the emulator). Not done until the gate passes and Jason has seen the screens.
 - **Device test (2026-11-15):** `setup` passes on the emulator at 115% (on `main`, on an empty database).
   Fidelity PNGs `docs/fidelity/rn-01-setup-cookers.png`, `rn-02-smoker-picker.png`, `rn-17-add-cooker.png`.
-  Noted: at 115% Add another cooker is half behind Back and Continue until scrolled. Open: Jason's look.
+  Noted: at 115% Add another cooker is half behind Back and Continue until scrolled. Jason approved 01 to 03 on
+  2026-11-15. On 17 he asked what Add a cooker adds when it only says Oven: someone may have two smokers or
+  two griddles. More than one of a kind is for the next version (BACKLOG.md).
 - **Built (2026-11-15):**
   - Kit (`src/components/kit/setup.tsx`, tests in `setup.test.tsx`): `SetupPage` (step bar, title, intro,
     pinned actions), `SetupActions` (Back 1 : main 2), `OptionCard`, `DashedButton`, `PickRow`; `GroupLabel`
@@ -1612,7 +1614,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   NOT on the screen (no approved wording or links, see Left). Not done until the gate passes, the link is
   settled and the real-phone checks are run.
 - **Device test (2026-11-15):** the alerts step and its test alert pass in `setup` on the emulator at 115%.
-  Fidelity PNG `docs/fidelity/rn-03-setup-alerts.png`. Open: the test alert in Doze on the phone; Jason's look.
+  Fidelity PNG `docs/fidelity/rn-03-setup-alerts.png`. Jason approved it on 2026-11-15. Open: the test alert in Doze on the phone.
 - **Built (2026-11-15):**
   - `src/screens/setup/AlertsStep.tsx` (mockup 03; a port of the legacy AlertsStep): title, intro, the
     permission rows (`AlertChecks`, read again on resume through `useAlarmStatus`), the test alert, Back and
@@ -1658,7 +1660,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   Jest, engine and gate tests pass; Android tests, Semgrep and Snyk are still to run. No fidelity PNG yet
   (16 needs the emulator). Not done until the gate passes and Jason has seen the screen.
 - **Device test (2026-11-15):** `gear` passes on the emulator at 115% (rows, Alerts, Units, Cook rates).
-  Fidelity PNG `docs/fidelity/rn-16-gear.png`. Open: Jason's look.
+  Fidelity PNG `docs/fidelity/rn-16-gear.png`. Jason approved it on 2026-11-15.
 - **Built (2026-11-15):**
   - `src/screens/gear/GearScreen.tsx` (a port of the 0.2.0 screen) and `app/(tabs)/gear.tsx`: Cookers (one
     row per cooker the user has; Add a cooker when one is missing, with the T-024 `AddCooker` sheet showing
@@ -1702,7 +1704,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   (18, 19 need the emulator). Not done until the gate passes and Jason has seen the sheets.
 - **Device test (2026-11-15):** the Griddle and Oven sheets, Add a cooker and the picker pass in `gear` on the
   emulator at 115%. Fidelity PNGs `docs/fidelity/rn-18-griddle.png`, `rn-19-oven.png`. Noted: the oven's
-  default is Ask each time (mockup 19 shows Oven). Open: Jason's look.
+  default is Ask each time (mockup 19 shows Oven). Jason approved both on 2026-11-15.
 - **Built (2026-11-15):**
   - `src/screens/gear/CookerSheets.tsx` (a port of the 0.2.0 file): `GriddleSheet` (mockup 18: Name, Cooking
     surface 17/22/28/36 in, Burners 1-4, Dome or cover), `OvenSheet` (mockup 19: Lowest oven setting in 5F
@@ -1743,7 +1745,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device test (2026-11-15):** `history` passes on the emulator at 115% (rate sheet, cook sheet, Edit, Cook
   again, Remove). Fidelity PNG `docs/fidelity/rn-20-cook-history.png`. Noted: the card reads "chicken wings
   2 lb" (mockup 20: "wings 2 lb"), and a rate card shows for every by-weight food (mockup: brisket only).
-  Open: the seven questions below; Jason's look.
+  Jason looked on 2026-11-15: "wings 2 lb" or "chicken wings 2 lb" are both fine to him ("we know wings are
+  chicken"). Open: the seven questions below; whether the rate cards for other foods stay.
 - **Built:**
   - `src/screens/gear/HistoryScreen.tsx` (a port of the 0.2.0 screen): a rate card per by-weight food
     ("Brisket on Pit Boss 820": rate used and its source, cooks logged, saved total hours), the rate sheet
@@ -1854,7 +1857,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ## Phase 10: Beta 0.3.0
 
 ### T-032 Update check against GitHub Releases
-- **Status:** todo
+- **Status:** built, merged onto `main` and gate-complete 2026-11-15 (`npm run check`, all six steps). Not run on a
+  device; the real check against GitHub is part of T-038.
 - **Goal:** Gear shows "Update available" for a newer release, prereleases included, compared by semver.
 - **Files:** `src/lib/update.ts`, `engine/update.test.ts` (new cases added; existing ones unchanged),
   `GearScreen` test.
@@ -1880,7 +1884,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     next launch or resume tries again: one attempt each, no retry on a timer. Only an answer starts the 24
     hour wait. This differs from 0.2.0, where a failure waited a day.
   - SPEC section 10 reworded to match both.
-  - Still open: the check also runs in the dev build.
+  - The dev build ("Pit Planner dev") checks too, once a day, as built (Jason, 2026-11-15). Nothing to change.
 
 ### T-033 Release docs: notes, install guide, releasing checklist
 - **Status:** todo
@@ -1923,6 +1927,26 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Acceptance:** export on the dev build, import on a fresh install, rates and history match.
 - **Tests:** Jest round trip; bad-file validation.
 - **Device testing (Jason):** none.
+
+### T-067 Fast test cook: a whole cook in minutes
+- **Status:** todo (Jason, 2026-11-15: "we should run a test cook, using minutes as hours and seconds as
+  minutes to simulate"). Design not settled; ask before building.
+- **Goal:** a real menu's cook runs on the phone 60 times faster, so an 11 hr 25 min cook takes 11 min 25 s:
+  every step, alarm, notification action and the Cook finished screen can be seen in one sitting before the
+  real Saturday cook (T-037).
+- **Not this:** a change to how real cooks are timed. Dev builds only; nothing of it in a release build.
+- **To settle with Jason:** how it is started (a dev link like the other seeds, or a row on the hidden debug
+  screen); whether the screen shows the scaled clock (5:00 PM) or real time; which menu (the Saturday
+  fixture, or the plan on screen).
+- **Notes for the build:** the engine takes time as an input, so the scaling belongs outside `engine/`: the
+  plan's instants squeezed toward now by 60 before the cook is saved, alarms set from that. Steps 5 minutes
+  apart become 5 seconds apart, so check what `setAlarmClock` and the notification grouping do with alarms
+  seconds apart, and that "N min past the step" repeats do not flood.
+- **Depends on:** T-021, T-023. Before T-037.
+- **Acceptance:** the test cook runs start to Cook finished on the emulator with every alarm in order;
+  then on the phone with the screen off.
+- **Tests:** unit test for the scaling (pure); a device test on the emulator.
+- **Real phone:** yes, with Jason's yes to the listed actions.
 
 ### T-037 Saturday cook on the Expo build (SPEC definition of done)
 - **Status:** todo (Jason, hands-on)

@@ -17,6 +17,13 @@ one at a time, each through the gate; then the questions below. **Trap:** agent 
 three were removed with Jason's yes (branches `t030`, `t032`, `t033` and `worktree-agent-*` kept). Remove
 an agent's worktree, with his yes, before the next gate run. The "Still to do" list below is history.
 
+**Update, 3:55 PM:** `t032` is on `main`, gate passed. Jason reviewed the ten fidelity PNGs: all approved
+(his words are in the T-023 to T-028 "Device test" lines). From that review: more than one smoker or griddle
+is for the next version (BACKLOG.md); new task **T-067**, a fast test cook (60 times faster, dev builds only,
+design to settle with him) before T-037. Still to ask on T-028: do the rate cards for foods other than
+brisket stay. Next: `t033`, then `t030`. He wants agents used where they fit: T-063 and T-065 are the
+candidates (tell him first; their worktrees must be gone before a gate run).
+
 **State of step 5a (device tests for Setup, Cook finished, Gear, History):**
 
 - Four device tests are written in `tools/device/run.sh`: `setup`, `cook-finished`, `gear`, `history`. Each
@@ -55,7 +62,7 @@ an agent's worktree, with his yes, before the next gate run. The "Still to do" l
 
 | Branch | Task | What to do |
 |---|---|---|
-| `t032` (2e30596) | Update check | Cherry-pick or merge, `npm run check`. Jason's answers are in: a final install is offered finals only, a prerelease install anything newer; a failed check retries at the next launch or resume; the dev build checks too (as built). SPEC section 10 reworded on the branch. |
+| `t032` (2e30596) | Update check | **Merged onto `main` (cherry-picked) and gate-complete, 2026-11-15 3:55 PM; 554 Jest tests.** Was: cherry-pick or merge, `npm run check`. Jason's answers are in: a final install is offered finals only, a prerelease install anything newer; a failed check retries at the next launch or resume; the dev build checks too (as built). SPEC section 10 reworded on the branch. |
 | `t033` (3f65215) | Release docs | Merge, then Jason reviews. Docs only. |
 | `t030` (b2ab25a) | Open a shared plan | Merge last. New Expo module `modules/pit-share` (Kotlin never compiled, 16 JUnit tests never run), config plugin, `app/+native-intent.ts`. Needs `npx expo prebuild`, a dev build rebuild, then a device test (the agent's report: write a plan into the app's cache with `run-as`, open it with `am start -a android.intent.action.VIEW -t application/json -d file:///data/user/0/<pkg>/cache/test.pitplan`; an oversized file must show "That file is too big to be a Pit Planner plan."). Any Jest test that imports `@/platform/share` needs the `modules/pit-share` mock. `tools/snyk.test.mjs` lists Gradle projects; check it after adding the module. |
 
