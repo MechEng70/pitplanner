@@ -1879,7 +1879,12 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   again." / OK (built).
 
 ### T-030 Open a shared plan (11), with the conflict fix
-- **Status:** todo
+- **Status:** built, merged onto `main` and gate-complete 2026-11-15 (the Kotlin module compiles, its 16 JUnit
+  tests pass, Snyk covers the new Gradle project). Device test `shared` passes on the emulator at 115%: a
+  `.pitplan` opened with a `file://` VIEW intent shows the sheet, Use this plan fills Plan, a 300 KB file says
+  it is too big, a text file says "This file is not a Pit Planner plan." Fidelity PNG
+  `docs/fidelity/rn-11-open-shared-plan.png`. Not checked: a `content://` open from Files, Gmail or Drive
+  (T-031), the conflict after an import on a device, the phone. Open: Jason's questions below and his look.
 - **Built (2026-11-15, branch `worktree-agent-a666a162b7613bda9`; unit-tested, not built or run on a device,
   Kotlin tests not run, `npm run check` not run):**
   - Intent filters: `plugins/pitplanIntents.ts` (pure) + `plugins/withPitplanIntents.ts` (TypeScript, as the

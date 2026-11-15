@@ -2,7 +2,7 @@
 # One unattended device pass on the dev build (TASKS T-006).
 #   npm run device -- [--phone] [--no-build] [--repeat N] [--only <test>]...
 #   tests: smoke, sheet-keyboard, stable-controls, db, migration-error, db-unopenable, legacy-import, alarm,
-#   plan, plan-3button, plan-sheets, food-details, survive, cook, cook-options, cook-finished, setup, gear, history
+#   plan, plan-3button, plan-sheets, food-details, survive, cook, cook-options, cook-finished, setup, gear, history, shared
 #   DEVICE_SCALES="1.0 1.15 1.3" adds or changes the font scales (default 1.15 and 1.3).
 #   (default: all).
 #   --repeat N runs the chosen tests N times at each font scale (to catch a test that only sometimes fails). --only repeats or takes a comma list.
@@ -19,7 +19,7 @@ set -uo pipefail
 . "$(dirname "$0")/lib.sh"
 cd "$DEVICE_DIR" || exit 1
 
-ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets food-details survive cook cook-options cook-finished setup gear history)
+ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets food-details survive cook cook-options cook-finished setup gear history shared)
 TESTS=()
 NOBUILD=""
 REPEAT=1
@@ -1672,6 +1672,61 @@ test_history() {
   look "$dir/history-back.xml" && says "$dir/history-back.xml" "Your numbers" || plan_miss "Gear after Back"
   db_done "$dir"
   if [ $ok = 1 ]; then result "PASS  history $s"; else result "FAIL  history $s"; fi
+}
+
+# T-030: open a shared plan (mockup 11). Emulator only. A .pitplan is written into the dev build's own cache
+# (run-as) and opened with a file:// VIEW intent while the app runs (a cold start would open the dev launcher).
+# The Saturday plan opens the Shared plan sheet on Plan with its menu; Use this plan puts the three foods on
+# the plan. A file over the 256 KB cap says it is too big; a file that is not a plan says so. The files are removed at the end. Not covered here: a content:// open from Files, Gmail or Drive (T-031).
+open_pitplan() {
+  A shell am start -W -a android.intent.action.VIEW -t application/json \
+    -d "file:///data/user/0/$PKG/cache/$1" "$PKG" >/dev/null
+  sleep 3
+}
+test_shared() {
+  local s="$1" dir="$2" ok=1 want
+  if ! is_emulator; then result "SKIP  shared $s: emulator only"; return; fi
+  launch "dev/plan?seed=empty" || { result "FAIL  shared $s: app did not open"; return; }
+  db_app "mkdir -p cache && cat >cache/test.pitplan" <<'JSON'
+{"app":"pit-planner","version":1,"serveAt":"2026-11-14T22:00:00.000Z","pitTempF":225,"items":[
+{"id":"b","foodId":"brisket","methodId":"smoked","quantity":12,"options":{"wrap":"paper"},"restMin":60},
+{"id":"w","foodId":"wings","methodId":"smokeCrisp","quantity":2},
+{"id":"c","foodId":"breasts","methodId":"griddle","quantity":4,"options":{"thickness":"pounded"}}]}
+JSON
+  head -c 300000 /dev/zero | tr '\0' 'a' | db_app "cat >cache/big.pitplan"
+  echo "not a plan" | db_app "cat >cache/bad.pitplan"
+
+  open_pitplan test.pitplan
+  if look "$dir/shared.xml" && says "$dir/shared.xml" "Open shared plan"; then
+    for want in "Someone shared a Saturday plan." "Brisket, 12 lb" "Use this plan"; do
+      says "$dir/shared.xml" "$want" || plan_miss "$want (Open shared plan)"
+    done
+    shot "$dir/shared.png"
+    tap "Use this plan" 1 | tee -a "$REPORT"
+    sleep 2
+    if look "$dir/shared-used.xml" && on_tab "$dir/shared-used.xml" "Plan" && ! says "$dir/shared-used.xml" "Open shared plan"; then
+      for want in "brisket" "wings" "breasts" "Start cook"; do
+        grep -qiF "$want" "$dir/shared-used.xml.txt" || plan_miss "$want (Plan after Use this plan)"
+      done
+      log "    Use this plan: the sheet closed and Plan holds the shared menu"
+      shot "$dir/shared-used.png"
+    else plan_miss "Plan with the sheet closed after Use this plan"; fi
+  else plan_miss "the Open shared plan sheet after the file was opened"; fi
+
+  open_pitplan big.pitplan
+  if look "$dir/shared-big.xml" && says "$dir/shared-big.xml" "That file is too big to be a Pit Planner plan."; then
+    log "    a 300 KB file: too big, said so"
+    shot "$dir/shared-big.png"
+    tap "OK" 1 | tee -a "$REPORT"
+  else plan_miss "That file is too big to be a Pit Planner plan. (300 KB file)"; fi
+  open_pitplan bad.pitplan
+  if look "$dir/shared-bad.xml" && says "$dir/shared-bad.xml" "This file is not a Pit Planner plan."; then
+    log "    a file that is not a plan: said so"
+    tap "OK" 1 | tee -a "$REPORT"
+  else plan_miss "This file is not a Pit Planner plan. (a text file)"; fi
+
+  db_app "rm -f cache/test.pitplan cache/big.pitplan cache/bad.pitplan"
+  if [ $ok = 1 ]; then result "PASS  shared $s"; else result "FAIL  shared $s"; fi
 }
 
 read -r -a SCALES <<<"${DEVICE_SCALES:-1.15 1.3}"
