@@ -1093,8 +1093,12 @@ test_cook() {
     if dump >"$dir/cook-live-end.xml"; then
       grep -qE 'share the smoker at.225F' "$dir/cook-live-end.xml" || plan_miss "the shared smoker note under the chart"
       # What is under the first screenful: the rest of the lanes, the heading and the coming steps.
-      for want in "Wings" "Breasts" "After that" "Wings on the smoker on a wire rack"; do
+      for want in "After that" "Wings on the smoker on a wire rack"; do
         has_text "$dir/cook-live-end.xml" "$want" || plan_miss "$want (mockup cook, scrolled to the end)"
+      done
+      # The lanes may be on either screenful, depending on the font size.
+      for want in "Wings" "Breasts"; do
+        has_text "$dir/cook-live.xml" "$want" || has_text "$dir/cook-live-end.xml" "$want" || plan_miss "the $want lane"
       done
       has_label "$dir/cook-live-end.xml" "Full timeline" || has_text "$dir/cook-live-end.xml" "Full timeline" || plan_miss "Full timeline"
       shot "$dir/cook-live-end.png"
