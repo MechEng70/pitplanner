@@ -4,7 +4,7 @@ import type { ActiveCook } from '@/lib/cook';
 import { fakeAlarms, fakeResume } from '@/platform/fakes';
 import { AT_1023, MIN, cookAt, cookGear, cookMenu } from '@/test/cook';
 import { storeWrapper, testRepos } from '@/test/store';
-import { ALERTS_OFF, CookScreen } from './CookScreen';
+import { ALARMS_NOT_SET, ALERTS_OFF, CookScreen } from './CookScreen';
 
 beforeEach(() => jest.useFakeTimers());
 afterEach(() => jest.useRealTimers());
@@ -52,9 +52,9 @@ describe('live cook (mockup 12)', () => {
     expect(screen.getByText('Smoker 225F, serve 5:00 PM')).toBeOnTheScreen();
     expect(screen.getByText('On plan')).toBeOnTheScreen();
     expect(screen.getByText('Check at 11:35 AM')).toBeOnTheScreen();
-    expect(screen.getByRole('heading', { name: 'Check the brisket' })).toBeOnTheScreen();
+    // One sentence, the step and how long until it (Jason, 2026-11-15).
+    expect(screen.getByRole('heading', { name: 'Check the brisket in 1 hr 12 min' })).toBeOnTheScreen();
     expect(screen.getByText('Wrap once the bark is set, about 165-170F. Not ready? Tap Adjust.')).toBeOnTheScreen();
-    expect(screen.getByLabelText('in 1 hr 12 min')).toBeOnTheScreen();
     expect(button('Done')).toBeEnabled();
     expect(button('Adjust')).toBeOnTheScreen();
     expect(button('Cook options')).toBeOnTheScreen();
@@ -81,8 +81,7 @@ describe('live cook (mockup 12)', () => {
     // 6:00 AM: nothing done yet, the smoker is fired at 6:20.
     await show(cookAt(AT_1023 - 263 * MIN), AT_1023 - 263 * MIN);
     expect(screen.getByText('At 6:20 AM')).toBeOnTheScreen();
-    expect(screen.getByRole('heading', { name: 'Fire the smoker to 225F' })).toBeOnTheScreen();
-    expect(screen.getByLabelText('in 20 min')).toBeOnTheScreen();
+    expect(screen.getByRole('heading', { name: 'Fire the smoker to 225F in 20 min' })).toBeOnTheScreen();
     expect(screen.queryByText(/Not ready\? Tap Adjust\./)).toBeNull();
   });
 
@@ -90,12 +89,13 @@ describe('live cook (mockup 12)', () => {
     const { clock, resume } = await show(cookAt(AT_1023));
     clock.now += 2 * MIN;
     await act(() => jest.advanceTimersByTime(30_000));
-    expect(screen.getByLabelText('in 1 hr 10 min')).toBeOnTheScreen();
+    expect(screen.getByRole('heading', { name: 'Check the brisket in 1 hr 10 min' })).toBeOnTheScreen();
     // Back from another app two hours later: read at once, not at the next tick.
     clock.now = AT_1023 + 82 * MIN;
     await act(() => resume.resume());
     expect(screen.getByText('Overdue since 11:35 AM')).toBeOnTheScreen();
-    expect(screen.getByLabelText('10 min overdue')).toBeOnTheScreen();
+    expect(screen.getByRole('heading', { name: 'Check the brisket, 10 min overdue' })).toBeOnTheScreen();
+    expect(screen.getByText('10 min overdue').props.className).toContain('text-warn');
     expect(screen.getByText('Behind')).toBeOnTheScreen();
     expect(screen.getByText('Now 11:45 AM')).toBeOnTheScreen();
   });
@@ -127,7 +127,9 @@ describe('Done', () => {
     expect(saved.done['phase:b:wrap']).toBe(clock.now);
     expect(replaced(alarms.calls) - before).toBe(1);
     expect(alarms.calls).toContain(`acknowledge ${Object.keys(saved.done).join(',')}`);
-    expect(screen.getByRole('heading', { name: 'Wings on the smoker on a wire rack' })).toBeOnTheScreen();
+    expect(
+      screen.getByRole('heading', { name: 'Wings on the smoker on a wire rack in 3 hr 42 min' }),
+    ).toBeOnTheScreen();
     expect(screen.getByText('At 3:15 PM')).toBeOnTheScreen();
   });
 
@@ -190,6 +192,31 @@ describe('alert permissions (SPEC section 6)', () => {
       'requestNotifications',
       'openSettings notifications',
     ]);
+  });
+});
+
+describe('the phone refuses the alarm set', () => {
+  test('a banner says steps will not ring; Try again clears and sets the whole list again', async () => {
+    const { alarms } = await show(cookAt(AT_1023));
+    expect(screen.queryByText(ALARMS_NOT_SET)).toBeNull();
+    alarms.failNext = new Error('refused');
+    await fireEvent.press(button('Done'));
+    await act(async () => {});
+    expect(screen.getByText(ALARMS_NOT_SET)).toBeOnTheScreen();
+    const before = alarms.sets.length;
+    await fireEvent.press(button('Try again'));
+    await act(async () => {});
+    // One whole set (replaceAll cancels everything first), not a patch.
+    expect(alarms.sets.length).toBe(before + 1);
+    expect(alarms.sets.at(-1)!.length).toBeGreaterThan(5);
+    expect(screen.queryByText(ALARMS_NOT_SET)).toBeNull();
+  });
+
+  test('a day or more away the title reads in days and hours', async () => {
+    // Thu 8:00 PM, before the Saturday cook: the smoker is fired Sat 6:20 AM.
+    const at = Date.UTC(2026, 10, 13, 1, 0);
+    await show(cookAt(at), at);
+    expect(screen.getByRole('heading', { name: 'Fire the smoker to 225F in 1 day 10 hr' })).toBeOnTheScreen();
   });
 });
 

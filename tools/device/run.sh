@@ -891,11 +891,13 @@ open_route() {
   A shell am start -W -a android.intent.action.VIEW -d "'pitplanner://$1'" "$PKG" >/dev/null
   sleep 2
 }
-# The Next up card in a dump: its overline ("CHECK AT 11:35 AM") and its countdown ("in 1 hr 12 min").
+# The Next up card in a dump: its overline ("CHECK AT 11:35 AM") and the countdown at the end of its title
+# ("Check the brisket in 1 hr 12 min"; the title's test id is next-title).
 # Numbers hold no-break spaces, so they are matched loosely and printed with plain ones.
 next_overline() { grep -oiE 'text="(check.at|at|overdue.since).[0-9][^"]*"' "$1" | head -n 1 | sed -E 's/^text="|"$//g' | tr '\302\240' '  ' | tr -s ' '; }
-next_countdown() { grep -oE 'content-desc="(in [^"]*|now|[^"]* overdue)"' "$1" | head -n 1 | sed -E 's/^content-desc="|"$//g'; }
-countdown_min() { local h m; h=$(grep -oE '[0-9]+ hr' <<<"$1" | grep -oE '[0-9]+'); m=$(grep -oE '[0-9]+ min' <<<"$1" | grep -oE '[0-9]+'); echo $((${h:-0} * 60 + ${m:-0})); }
+next_title() { grep -oE 'text="[^"]*" resource-id="next-title"' "$1" | head -n 1 | sed -E 's/^text="|" resource-id.*$//g' | tr '\302\240' '  ' | tr -s ' '; }
+next_countdown() { next_title "$1" | grep -oE '(in [0-9].*|now|[0-9][^,]* overdue)$'; }
+countdown_min() { local d h m; d=$(grep -oE '[0-9]+ day' <<<"$1" | grep -oE '[0-9]+'); h=$(grep -oE '[0-9]+ hr' <<<"$1" | grep -oE '[0-9]+'); m=$(grep -oE '[0-9]+ min' <<<"$1" | grep -oE '[0-9]+'); echo $((${d:-0} * 1440 + ${h:-0} * 60 + ${m:-0})); }
 
 test_survive() {
   local s="$1" dir="$2" ok=1 other h0 h1 r0 r1 a0 a1 a2 o0 o1 o2 c0 c1 c2
@@ -979,7 +981,7 @@ test_survive() {
   # have moved on by the minute that passed).
   if launch "dev/plan?seed=cooking" && dump >"$dir/survive-cook-before.xml"; then
     o0=$(next_overline "$dir/survive-cook-before.xml"); c0=$(next_countdown "$dir/survive-cook-before.xml")
-    has_text "$dir/survive-cook-before.xml" "Check the brisket" && [ -n "$o0" ] && [ -n "$c0" ] || plan_miss "Next up on Cook (overline \"$o0\", countdown \"$c0\")"
+    [[ "$(next_title "$dir/survive-cook-before.xml")" == "Check the brisket "* ]] && [ -n "$o0" ] && [ -n "$c0" ] || plan_miss "Next up on Cook (overline \"$o0\", countdown \"$c0\")"
     r0=$(activity_view)
     A shell settings put system font_scale "$other"
     sleep 1
@@ -988,7 +990,7 @@ test_survive() {
       r1=$(activity_view)
       [ -n "$r0" ] && [ "$r0" = "$r1" ] || plan_miss "the same activity after the font-size change on Cook"
       grep -q 'content-desc="Cook"[^>]*selected="true"' "$dir/survive-cook-font.xml" || plan_miss "Cook still open after the font-size change"
-      if has_text "$dir/survive-cook-font.xml" "Check the brisket" && [ "$o0" = "$o1" ] && [ -n "$c1" ] &&
+      if [[ "$(next_title "$dir/survive-cook-font.xml")" == "Check the brisket "* ]] && [ "$o0" = "$o1" ] && [ -n "$c1" ] &&
         [ $(($(countdown_min "$c0") - $(countdown_min "$c1"))) -le 1 ] && [ $(($(countdown_min "$c0") - $(countdown_min "$c1"))) -ge 0 ]; then
         log "    mid-cook font size $s -> $other: Next up is still \"$o1\", \"$c1\" (was \"$c0\")"
       else plan_miss "the same Next up after the font-size change (was \"$o0\", \"$c0\"; is \"$o1\", \"$c1\")"; fi
@@ -1004,7 +1006,7 @@ test_survive() {
     if reopen && sleep 1 && dump >"$dir/survive-cook-kill.xml"; then
       o2=$(next_overline "$dir/survive-cook-kill.xml"); c2=$(next_countdown "$dir/survive-cook-kill.xml")
       grep -q 'content-desc="Cook"[^>]*selected="true"' "$dir/survive-cook-kill.xml" || plan_miss "Cook open after the process was killed"
-      if has_text "$dir/survive-cook-kill.xml" "Check the brisket" && [ "$o0" = "$o2" ] && [ -n "$c2" ] &&
+      if [[ "$(next_title "$dir/survive-cook-kill.xml")" == "Check the brisket "* ]] && [ "$o0" = "$o2" ] && [ -n "$c2" ] &&
         [ $(($(countdown_min "$c0") - $(countdown_min "$c2"))) -le 2 ] && [ $(($(countdown_min "$c0") - $(countdown_min "$c2"))) -ge 0 ]; then
         log "    mid-cook process killed: the app came back on Cook with Next up \"$o2\", \"$c2\""
       else plan_miss "the same Next up after the process was killed (was \"$o0\", \"$c0\"; is \"$o2\", \"$c2\")"; fi
@@ -1053,7 +1055,7 @@ test_cook() {
   if dump >"$dir/cook-started.xml"; then
     grep -q 'content-desc="Cook"[^>]*selected="true"' "$dir/cook-started.xml" || plan_miss "the Cook tab open after Start cook"
     has_text "$dir/cook-started.xml" "Cooking" || plan_miss "Cooking"
-    has_text "$dir/cook-started.xml" "Fire the smoker to 225F" || plan_miss "Next up: Fire the smoker to 225F"
+    [[ "$(next_title "$dir/cook-started.xml")" == "Fire the smoker to 225F in "* ]] || plan_miss "Next up: Fire the smoker to 225F in ... (is \"$(next_title "$dir/cook-started.xml")\")"
     [ -n "$(next_countdown "$dir/cook-started.xml")" ] || plan_miss "the countdown"
     n=$(app_alarms | grep -c .)
     if [ "$n" -gt 0 ]; then log "    cook started: Next up \"$(next_overline "$dir/cook-started.xml")\", $(next_countdown "$dir/cook-started.xml"); the phone holds $n alarm(s) of the app"
@@ -1070,22 +1072,22 @@ test_cook() {
   tap "Cook" 1 | tee -a "$REPORT"
   tap "Done" 1 | tee -a "$REPORT"
   sleep 1
-  if dump >"$dir/cook-done.xml" && has_text "$dir/cook-done.xml" "Brisket on the smoker, unwrapped"; then
+  if dump >"$dir/cook-done.xml" && [[ "$(next_title "$dir/cook-done.xml")" == "Brisket on the smoker, unwrapped in "* ]]; then
     log "    Done: Next up moved on to \"Brisket on the smoker, unwrapped\""
   else plan_miss "the next step after Done (Brisket on the smoker, unwrapped)"; fi
 
   open_route "dev/plan?seed=cooking"
   if dump >"$dir/cook-live.xml"; then
-    for want in "Cooking" "On plan" "Check the brisket" "After that" "Brisket" "Wings" "Breasts"; do
+    for want in "Cooking" "On plan" "After that" "Brisket" "Wings" "Breasts"; do
       has_text "$dir/cook-live.xml" "$want" || plan_miss "$want (mockup cook)"
     done
     for want in "Done" "Adjust" "Cook options" "Full timeline"; do
       has_label "$dir/cook-live.xml" "$want" || has_text "$dir/cook-live.xml" "$want" || plan_miss "$want (mockup cook)"
     done
     grep -qiE 'text="check.at.[0-9][^"]*"' "$dir/cook-live.xml" || plan_miss "the overline \"Check at ...\""
-    grep -qE 'content-desc="in 1 hr 1[0-2] min"' "$dir/cook-live.xml" || plan_miss "the countdown \"in 1 hr 12 min\" (is \"$(next_countdown "$dir/cook-live.xml")\")"
+    [[ "$(next_title "$dir/cook-live.xml")" =~ ^Check\ the\ brisket\ in\ 1\ hr\ 1[0-2]\ min$ ]] || plan_miss "the title \"Check the brisket in 1 hr 12 min\" (is \"$(next_title "$dir/cook-live.xml")\")"
     grep -qE 'text="Smoker.225F, serve.[0-9:]+.[AP]M"' "$dir/cook-live.xml" || plan_miss "the header line \"Smoker 225F, serve ...\""
-    [ $ok = 1 ] && log "    mockup cook: \"$(next_overline "$dir/cook-live.xml")\", Check the brisket, $(next_countdown "$dir/cook-live.xml")"
+    [ $ok = 1 ] && log "    mockup cook: \"$(next_overline "$dir/cook-live.xml")\", \"$(next_title "$dir/cook-live.xml")\""
     shot "$dir/cook-live.png"
     scroll_bottom | tee -a "$REPORT"
     if dump >"$dir/cook-live-end.xml"; then

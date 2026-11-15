@@ -1314,22 +1314,15 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   until the keep or move sheet. After the last step (Serve) the card goes away and the cook stays until Cook
   finished exists; `pitplanner://dev/alarm?cook=end` ends it in a dev build. No pit-out banner yet (pit out
   is set from Cook options).
-- **Open with Jason (asked 2026-11-15):**
-  1. Next up layout: built as mockup 12 (title, then the countdown on its own large line). 0.2.0 had the
-     countdown inside the title ("Fire the smoker to 225F in 45 hr 50 min"). Which one stays?
-  2. `state.alarmSync === 'failed'` (the phone refused the alarm set) shows nothing yet: it needs a line of
-     copy he approves. `inexact` is covered by the red banner (exact alarms are off).
-- **Goal:** Start cook (permission check sheet, save, schedule alarms), then the Cook tab opens. The Cook tab
-  with no cook running shows "No cook running" and Go to Plan and never starts a cook; Start cook on Plan is
-  greyed out while a cook runs (Jason, 2026-11-15, T-064; SPEC "Cook tab"). Live cook: header, status chip, Next up with Done/Adjust, countdown, lane chart with now line and
-  smoker-overlap band, next three steps, red permission banner re-checked on resume.
-- **Files:** `app/(tabs)/cook.tsx`, `src/screens/cook/CookScreen.tsx`, `src/components/kit/Lanes.tsx`,
-  `src/screens/plan/StartCheckSheet.tsx`, tests, fidelity PNG 12.
-- **Depends on:** T-015, T-019, T-020, T-058.
-- **Acceptance:** Start cook schedules alarms once; the banner appears when a permission is revoked mid-cook.
-- **Tests:** RNTL: Next up wording for check steps; banner on resume (fake permissions); Start cook blocked
-  until fixed or acknowledged.
-- **Device testing (Jason):** none (Claude runs a short live cook flow).
+- **Decided by Jason (2026-11-15, built the same day):**
+  1. Next up title: one sentence with the countdown that wraps where it fits ("Fire the smoker to 225F in
+     1 day 22 hr"), not mockup 12's countdown on its own line and never broken step / temp / countdown on
+     three lines. SPEC "Cook tab".
+  2. A countdown a day or more away reads in days and whole hours, to the nearest hour ("in 1 day 22 hr",
+     "in 3 days"); under a day it is unchanged (`countdown` in `src/lib/cookView.ts`).
+  3. The phone refuses the alarm set (`state.alarmSync === 'failed'`): banner "Alarms could not be set.
+     Steps will not ring." with Try again, which sets the whole list again. `inexact` is covered by the red
+     banner (exact alarms are off).
 
 ### T-064 A cook is never lost without the user choosing it
 - **Status:** partly built. Done with T-021 (2026-11-15): Start cook greyed out while a cook runs and never

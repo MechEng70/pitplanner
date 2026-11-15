@@ -52,6 +52,7 @@ const TICK_MS = 30_000;
 /** ui.css `.step-time`: the time column of a step row, wide enough for "12:55 PM" at the body size. */
 const STEP_TIME_DP = 90;
 export const ALERTS_OFF = 'Alerts are off. Steps may not ring.';
+export const ALARMS_NOT_SET = 'Alarms could not be set. Steps will not ring.';
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** The wall clock, read again every 30 s and when the app comes back to the front. */
@@ -166,6 +167,20 @@ function LiveCook({
           {ALERTS_OFF}
         </Banner>
       ) : null}
+      {state.alarmSync === 'failed' ? (
+        // The phone refused the alarm set. Try again saves the cook again, which clears every alarm and sets
+        // the whole list from the plan (the store's one way of setting alarms).
+        <Banner
+          tone="warn"
+          action={
+            <Button kind="small" onPress={() => setCook(cook)}>
+              <Text>Try again</Text>
+            </Button>
+          }
+        >
+          {ALARMS_NOT_SET}
+        </Banner>
+      ) : null}
       {cook.notice ? (
         <Banner
           tone="warn"
@@ -185,21 +200,23 @@ function LiveCook({
             <Text variant="overline" tone={late ? 'warn' : 'accentHi'} className="uppercase">
               <Num>{overline(due, next.event.checkStep, now)}</Num>
             </Text>
-            <Text variant="nextTitle" role="heading">
+            {/* One sentence that wraps where it fits: "Fire the smoker to 225F in 1 day 22 hr" (Jason,
+                2026-11-15; mockup 12 had the countdown on a line of its own). Whole minutes, no seconds;
+                "1 hr" and "12 min" never split. The countdown keeps its warn color when overdue. */}
+            <Text variant="nextTitle" role="heading" testID="next-title">
               {text.title.replace(/\.$/, '')}
+              {late ? ', ' : ' '}
+              <Text tone={late ? 'warn' : undefined}>
+                {countdown(due, now)
+                  .split(/(\d+ (?:days?|hr|min))/)
+                  .map((part, i) => (i % 2 ? <Num key={i}>{part}</Num> : part))}
+              </Text>
             </Text>
             {detail ? (
               <Text variant="bodyM" tone="secondary" relaxed>
                 {detail}
               </Text>
             ) : null}
-            {/* Whole minutes, no seconds; it breaks only between "1 hr" and "12 min", never inside one. A day
-                or more away it reads "in 1 day 22 hr". */}
-            <Text variant="countdown" tone={late ? 'warn' : undefined} aria-label={countdown(due, now)}>
-              {countdown(due, now)
-                .split(/(\d+ (?:days?|hr|min))/)
-                .map((part, i) => (i % 2 ? <Num key={i}>{part}</Num> : part))}
-            </Text>
             <Row gap={12}>
               <Fill>
                 <Button block onPress={onDone}>
