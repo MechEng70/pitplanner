@@ -1078,21 +1078,25 @@ test_cook() {
 
   open_route "dev/plan?seed=cooking"
   if dump >"$dir/cook-live.xml"; then
-    for want in "Cooking" "On plan" "After that" "Brisket" "Wings" "Breasts"; do
+    for want in "Cooking" "On plan" "Brisket"; do
       has_text "$dir/cook-live.xml" "$want" || plan_miss "$want (mockup cook)"
     done
-    for want in "Done" "Adjust" "Cook options" "Full timeline"; do
+    for want in "Done" "Adjust" "Cook options"; do
       has_label "$dir/cook-live.xml" "$want" || has_text "$dir/cook-live.xml" "$want" || plan_miss "$want (mockup cook)"
     done
     grep -qiE 'text="check.at.[0-9][^"]*"' "$dir/cook-live.xml" || plan_miss "the overline \"Check at ...\""
-    [[ "$(next_title "$dir/cook-live.xml")" =~ ^Check\ the\ brisket\ in\ 1\ hr\ 1[0-2]\ min$ ]] || plan_miss "the title \"Check the brisket in 1 hr 12 min\" (is \"$(next_title "$dir/cook-live.xml")\")"
+    [[ "$(next_title "$dir/cook-live.xml")" =~ ^Check\ the\ brisket\ in\ 1\ hr\ 1[0-6]\ min$ ]] || plan_miss "the title \"Check the brisket in 1 hr 12 to 16 min\" (is \"$(next_title "$dir/cook-live.xml")\")"
     grep -qE 'text="Smoker.225F, serve.[0-9:]+.[AP]M"' "$dir/cook-live.xml" || plan_miss "the header line \"Smoker 225F, serve ...\""
     [ $ok = 1 ] && log "    mockup cook: \"$(next_overline "$dir/cook-live.xml")\", \"$(next_title "$dir/cook-live.xml")\""
     shot "$dir/cook-live.png"
     scroll_bottom | tee -a "$REPORT"
     if dump >"$dir/cook-live-end.xml"; then
       grep -qE 'share the smoker at.225F' "$dir/cook-live-end.xml" || plan_miss "the shared smoker note under the chart"
-      has_text "$dir/cook-live-end.xml" "Wings on the smoker on a wire rack" || plan_miss "the next step (Wings on the smoker on a wire rack)"
+      # What is under the first screenful: the rest of the lanes, the heading and the coming steps.
+      for want in "Wings" "Breasts" "After that" "Wings on the smoker on a wire rack"; do
+        has_text "$dir/cook-live-end.xml" "$want" || plan_miss "$want (mockup cook, scrolled to the end)"
+      done
+      has_label "$dir/cook-live-end.xml" "Full timeline" || has_text "$dir/cook-live-end.xml" "Full timeline" || plan_miss "Full timeline"
       shot "$dir/cook-live-end.png"
     else plan_miss "the end of the Cook screen"; fi
   else plan_miss "the Cook screen with the mockup cook"; fi

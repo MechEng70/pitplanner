@@ -10,7 +10,7 @@
 //   pitplanner://dev/plan?seed=twins    two 6 lb briskets: the labels are numbered (T-061)
 //   pitplanner://dev/plan?seed=tomorrow the mockup menu for 5:00 PM tomorrow, so Start cook has alarms to set (T-021)
 //   pitplanner://dev/plan?seed=cooking  mockup 12: the mockup menu as a running cook, 6 hr 37 min before serve
-//                                       (10:23 AM on a 5:00 PM serve), earlier steps done; opens the Cook tab.
+//                                       (10:23 AM on a 5:00 PM serve; up to 4 min more, as serve lands on a 5 minute mark), earlier steps done; opens the Cook tab.
 //                                       End it with pitplanner://dev/alarm?cook=end
 // Add &edit=<item id> (b, w, c on the mockup seed) to open food details for that item, or &add=<food id> to
 // open it for a new food (mockups 08-10: seed=empty with add=brisket, stlribs or breasts).
