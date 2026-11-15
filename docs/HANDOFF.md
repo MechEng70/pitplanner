@@ -15,19 +15,13 @@ Do these in order:
    once on the first push in December. The gate's Snyk step is unchanged and still passes ("all 25
    projects tested, none skipped"); this was read as a pause of the monitor only, not of the gate. If
    `npm run check` starts failing or skipping on the limit, stop and ask Jason: do not remove the step.
-2. **Phone: the hold is still on** (`tools/device/PHONE-BLOCKED`). Emulator only. Ask Jason whether the
-   cook is done before anything that needs the phone.
-3. **Ask Jason on Sunday 2026-11-15 (he said "remember to do that tomorrow"):**
-   - Is the cook done? When he says yes: delete `tools/device/PHONE-BLOCKED`, then pull the logs for T-060
-     with the read-only list he was shown (adb devices; logcat for the 0.2.0 release app's uid only,
-     redacted, to `tools/device/out/`; dumpsys alarm and dumpsys package for the app). List it again and
-     wait for his yes. The release build's stored cook data cannot be read over adb; it has to come out
-     through the app.
-   - The charts `docs/screenshots/pitboss_003.jpg` to `_005.jpg` and `pitboss_006.png` **are read** into
-     T-060 ("Evidence, charts 3 to 6", words only). So the `docs/screenshots/pitboss_*` charts can be
-     deleted with him (his words: "we will delete the pitboss_XXX.jpg tomorrow"). `pitboss_001.jpg` is
-     committed and already pushed (`be1a578`); removing it from git, and from the pushed history if he
-     wants, is his call. Deleting is destructive: his yes first.
+2. **Phone: the hold is lifted** (Jason, 2026-11-15: the cook is done; `tools/device/PHONE-BLOCKED` is
+   deleted). Every phone action is still listed first and waits for his yes. 0.2.0 on the phone has a cook
+   started for Saturday 2026-11-21 (18 alarms pending, 6:30 AM to 5:00 PM); Jason kept the hold off knowing
+   that. Never touch the release app or its alarms; the dev build is a separate app.
+3. **Sunday asks, done 2026-11-15:** the T-060 phone reads are in `tools/device/out/t060-2026-11-15/`
+   (git-ignored; the app's logcat was empty, notes in TASKS T-060). The charts `pitboss_002` to `_006` are
+   deleted; `pitboss_001.jpg` stays in the repo (his call: no git rm, no history rewrite).
    - Probe pairing: only Jason knows which Pit Boss probe sat with which Chef iQ probe and in which
      food; it is written up in T-060 ("The pairing is not settled by the images"). Ask him when T-060 is
      picked up, not now.
@@ -72,11 +66,9 @@ Where things stand:
 - `main` is clean. `origin/main` is at `279fc45`; commits after it are local only (Jason pushes when he
   says so).
 - Emulator and Metro are stopped. The emulator is 1080x2376, gesture navigation.
-- **The phone hold stays** (Jason, 2026-11-14: the cook was still on, the brisket holding at about 210F).
-  `tools/device/PHONE-BLOCKED` is in place. It lifts only when Jason says the cook is done. Do not read it
-  from the date. Ask him at the start of the next session.
-- Waiting on the phone (after Jason lifts the hold: delete `tools/device/PHONE-BLOCKED`, then list every
-  phone action and wait for his yes before the first one): rebuild and reinstall the dev build (date picker
+- **The phone hold is lifted** (Jason, 2026-11-15). Older notes below that say "do not touch the phone" are
+  history.
+- Waiting on the phone (list every phone action and wait for his yes before the first one): rebuild and reinstall the dev build (date picker
   and alarm module are new), the T-016 phone half (approved list in TASKS T-016), the T-017 check against
   mockups 04-05. On that check also read the phone's status bar and navigation bar heights: the emulator's
   are 43 dp and 24 dp, the phone's status bar is not known, and Plan's fit depends on it.

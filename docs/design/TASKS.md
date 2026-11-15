@@ -1641,6 +1641,16 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   Pit Boss probe 1 and probe 2 readings, and under them lines named "probe 3 food temp" and "probe 1 food
   temp"; "small brisket = probe 3" means that probe 3 food temp line in `pitboss_006.png`. Read the image
   to settle the pairing). The brisket had only reached about 170F.
+- **2026-11-15 (Jason):** the cook is done. The chart files `pitboss_002.jpg` to `_005.jpg` and
+  `pitboss_006.png` are deleted (his yes); what they showed stays below in words, so the pairing can no
+  longer be settled from an image: only Jason can say. `pitboss_001.jpg` stays in the repo (his call).
+  Phone reads for this task (read-only, his yes; files in the git-ignored
+  `tools/device/out/t060-2026-11-15/`): `dumpsys package` (0.2.0, versionCode 200, updated 2026-11-12),
+  `dumpsys alarm` (the app's entries only), and the app's own logcat lines, which came back empty: the
+  phone's log buffer held nothing from the app's uid, so there is no log of the 2026-11-14 cook. The alarm
+  dump shows 18 exact alarms of 0.2.0 pending for Saturday 2026-11-21, 6:30 AM to 5:00 PM: a cook started
+  for next Saturday. Nothing about the 2026-11-14 cook is left in it. The stored cook data can only come
+  out through the app.
 - **Evidence, charts 3 to 6** (`docs/screenshots/pitboss_003.jpg` to `_005.jpg`, `pitboss_006.png`; read
   by a session on 2026-11-14, described in words only: they are git-ignored and never go into the repo).
   Read off the images, so temps within about 5F and times within about 20 minutes.
