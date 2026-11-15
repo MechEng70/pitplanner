@@ -27,8 +27,8 @@ beforeEach(() => {
 });
 
 /** The update check as the root layout runs it (T-032), over a scripted GitHub. */
-function UpdateCheck({ http, onResume }: { http: FakeHttp; onResume: AppLinks['onResume'] }) {
-  useUpdateCheck(http.get, onResume, checkClock);
+function UpdateCheck(p: { http: FakeHttp; onResume: AppLinks['onResume']; version: string }) {
+  useUpdateCheck(p.http.get, p.onResume, p.version, checkClock);
   return null;
 }
 
@@ -41,11 +41,14 @@ async function show({
   handlers = true,
   seed,
   http,
+  version = '0.3.0',
 }: {
   gear?: Cookers;
   handlers?: boolean;
   seed?: (r: ReturnType<typeof testRepos>['repos']) => void;
   http?: FakeHttp;
+  /** The installed version, for the screen and the update check. */
+  version?: string;
 } = {}) {
   const { repos } = testRepos();
   repos.cookers.save(gear, NOW);
@@ -59,9 +62,9 @@ async function show({
   const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
   await render(
     <>
-      {http ? <UpdateCheck http={http} onResume={resume.onResume} /> : null}
+      {http ? <UpdateCheck http={http} onResume={resume.onResume} version={version} /> : null}
       <GearScreen
-        version="0.3.0"
+        version={version}
         permissions={alarms}
         alarms={alarms}
         onResume={resume.onResume}
@@ -275,20 +278,54 @@ describe('the update check (T-032)', () => {
   });
   const resumed = (resume: { resume(): void }) => act(async () => resume.resume());
 
-  test('a newer release, here a prerelease, shows the row with its download, and is saved', async () => {
-    const http = fakeHttp({ ok: true, json: [release('v0.3.1'), release('v0.4.0-beta.1'), release('v0.3.0')] });
-    const { open, repos } = await show({ http });
+  const LIST = [release('v0.3.1'), release('v0.4.0-beta.1'), release('v0.3.0'), release('v0.3.0-rc.1')];
+
+  test('a newer release shows the row with its download, and is saved', async () => {
+    const { open, repos } = await show({ http: fakeHttp({ ok: true, json: LIST }) });
+    const link = await screen.findByRole('link', { name: /Update available/ });
+    // A final install is offered the newer final, not the newer beta.
+    expect(
+      within(link).getByText('Version 0.3.1. Download it in your browser, then open it to install.'),
+    ).toBeOnTheScreen();
+    await fireEvent.press(link);
+    expect(open).toHaveBeenCalledWith('https://example.org/v0.3.1.apk');
+    expect(repos.settings.update()).toEqual({
+      checkedAt: NOW,
+      latest: 'v0.3.1',
+      url: 'https://example.org/v0.3.1.apk',
+    });
+  });
+
+  test('a final install is not told about a prerelease', async () => {
+    const http = fakeHttp({ ok: true, json: [release('v0.4.0-beta.1'), release('v0.3.1-rc.1'), release('v0.3.0')] });
+    const { repos } = await show({ http });
+    expect(http.requests).toHaveLength(1);
+    expect(repos.settings.update()).toMatchObject({ checkedAt: NOW, latest: 'v0.3.0' });
+    expect(screen.queryByText('Update available')).toBeNull();
+  });
+
+  test('a final install does not show a prerelease an earlier check saved', async () => {
+    await show({ seed: r => r.settings.setUpdate({ checkedAt: NOW, latest: 'v0.4.0-beta.1', url: null }, NOW) });
+    expect(screen.queryByText('Update available')).toBeNull();
+  });
+
+  test('a prerelease install is told about a newer prerelease', async () => {
+    const { open } = await show({ http: fakeHttp({ ok: true, json: LIST }), version: '0.3.0-beta.1' });
     const link = await screen.findByRole('link', { name: /Update available/ });
     expect(
       within(link).getByText('Version 0.4.0-beta.1. Download it in your browser, then open it to install.'),
     ).toBeOnTheScreen();
     await fireEvent.press(link);
     expect(open).toHaveBeenCalledWith('https://example.org/v0.4.0-beta.1.apk');
-    expect(repos.settings.update()).toEqual({
-      checkedAt: NOW,
-      latest: 'v0.4.0-beta.1',
-      url: 'https://example.org/v0.4.0-beta.1.apk',
-    });
+  });
+
+  test('a prerelease install is told about its final release', async () => {
+    const http = fakeHttp({ ok: true, json: [release('v0.3.0'), release('v0.3.0-rc.1'), release('v0.3.0-beta.2')] });
+    await show({ http, version: '0.3.0-beta.1' });
+    const link = await screen.findByRole('link', { name: /Update available/ });
+    expect(
+      within(link).getByText('Version 0.3.0. Download it in your browser, then open it to install.'),
+    ).toBeOnTheScreen();
   });
 
   test('the same release shows no row', async () => {
@@ -299,23 +336,21 @@ describe('the update check (T-032)', () => {
     expect(screen.queryByText('Update available')).toBeNull();
   });
 
-  test('a network error shows no row and nothing else', async () => {
+  test('a network error shows no row, saves nothing and shows nothing else', async () => {
     const http = fakeHttp(new TypeError('Network request failed'));
     const { repos } = await show({ http });
     expect(http.requests).toHaveLength(1);
-    expect(repos.settings.update()).toEqual({ checkedAt: NOW, latest: null, url: null });
+    expect(repos.settings.update()).toBeNull();
     expect(screen.queryByText('Update available')).toBeNull();
     expect(screen.getByRole('heading', { name: 'App' })).toBeOnTheScreen();
   });
 
-  test('a network error keeps the update found before', async () => {
+  test('a network error keeps the update found before, and the time it was found', async () => {
     const http = fakeHttp(new TypeError('Network request failed'));
-    const { open } = await show({
-      http,
-      seed: r =>
-        r.settings.setUpdate({ checkedAt: NOW - DAY, latest: 'v0.4.0', url: 'https://example.org/pit.apk' }, NOW),
-    });
+    const found = { checkedAt: NOW - DAY, latest: 'v0.4.0', url: 'https://example.org/pit.apk' };
+    const { open, repos } = await show({ http, seed: r => r.settings.setUpdate(found, NOW) });
     expect(http.requests).toHaveLength(1);
+    expect(repos.settings.update()).toEqual(found);
     await fireEvent.press(screen.getByRole('link', { name: /Update available/ }));
     expect(open).toHaveBeenCalledWith('https://example.org/pit.apk');
   });
@@ -356,13 +391,28 @@ describe('the update check (T-032)', () => {
     expect(screen.queryByText('Update available')).toBeNull();
   });
 
-  test('a failed check counts as the check of the day', async () => {
+  test('a failed check is tried again at each resume, once; the first answer starts the day', async () => {
     const http = fakeHttp(new TypeError('Network request failed'));
-    const { resume } = await show({ http });
-    await resumed(resume);
-    clock.now = NOW + 3_600_000;
-    await resumed(resume);
+    const { resume, repos } = await show({ http });
+    // One attempt per launch or resume: nothing retries on its own while the app stays open.
+    await act(() => jest.advanceTimersByTime(3_600_000));
     expect(http.requests).toHaveLength(1);
+    await resumed(resume);
+    expect(http.requests).toHaveLength(2);
+    http.answer = { ok: false, json: null }; // rate limited
+    await resumed(resume);
+    expect(http.requests).toHaveLength(3);
+    expect(repos.settings.update()).toBeNull();
+
+    http.answer = { ok: true, json: [release('v0.3.1')] };
+    clock.now = NOW + 60_000;
+    await resumed(resume);
+    expect(http.requests).toHaveLength(4);
+    expect(repos.settings.update()).toMatchObject({ checkedAt: NOW + 60_000, latest: 'v0.3.1' });
+    expect(await screen.findByRole('link', { name: /Update available/ })).toBeOnTheScreen();
+    clock.now = NOW + 60_000 + DAY - 1;
+    await resumed(resume);
+    expect(http.requests).toHaveLength(4);
   });
 
   test('two resumes while a check is still out make one request', async () => {

@@ -153,7 +153,7 @@ Scheduled times set by these changes round to 5 minutes (actual times, like when
 ## 10. Distribution and updates
 
 - Signing keystore created on Jason's machine, never committed (see `.gitignore`), backed up outside GitHub. Losing it means every user must uninstall to update.
-- GitHub Releases hosts each APK. The app checks the latest release tag on launch and on resume (at most daily, `src/lib/update.ts`, anonymous request to api.github.com) and shows an "Update available" row at the top of Gear's App group, linking to the release's `.apk` asset (else the release page) in the browser. Tag releases `v<version>` matching package.json. Users allow "Install unknown apps" for their browser once.
+- GitHub Releases hosts each APK. The app checks for the newest release on the installed version's path on launch and on resume (at most daily, `src/lib/update.ts`, anonymous request to api.github.com): an install of a final release is offered final releases only; an install of a prerelease (alpha, beta, rc) is offered any newer version, prerelease or final. A check that fails (offline, rate limited, unreadable answer) does not count as the day's check: it is tried again the next time the app is opened or resumed, once each time. The app shows an "Update available" row at the top of Gear's App group, linking to the release's `.apk` asset (else the release page) in the browser. Tag releases `v<version>` matching package.json. Users allow "Install unknown apps" for their browser once.
 - Version shown on the Gear screen.
 
 ## 11. Roadmap (not v1)

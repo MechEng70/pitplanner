@@ -1,5 +1,7 @@
-// In-app update check (SPEC section 10): the newest GitHub release of MechEng70/pitplanner, prereleases
-// included, at most daily. Sends nothing about the user; GitHub sees an anonymous API request.
+// In-app update check (SPEC section 10): the newest GitHub release of MechEng70/pitplanner on the installed
+// version's path, at most daily. A final install is offered final releases only; a prerelease install
+// (alpha, beta, rc) is offered any newer version (Jason, 2026-11-15). Sends nothing about the user; GitHub
+// sees an anonymous API request.
 // Pure: the request and the time are passed in (src/lib/updateWiring.ts runs it on launch and on resume).
 import type { GetJson } from '../platform/types.ts';
 
@@ -66,6 +68,15 @@ export function isNewer(latest: string, current: string): boolean {
   return a !== null && b !== null && compare(a, b) > 0;
 }
 
+/** True for a version with a prerelease part ("0.3.0-beta.1"); false for a final release or not a version. */
+export function isPrerelease(v: string): boolean {
+  return (parseVersion(v)?.pre.length ?? 0) > 0;
+}
+
+/** Whether a build on `current` is told about `candidate`: newer, and a prerelease only for a prerelease install. */
+const offered = (candidate: string, current: string) =>
+  isNewer(candidate, current) && (isPrerelease(current) || !isPrerelease(candidate));
+
 /** At most once a day; a clock set backward also allows a check. */
 export const dueForCheck = (u: UpdateInfo | null, now: number) => !u || now - u.checkedAt >= DAY || now < u.checkedAt;
 
@@ -88,10 +99,12 @@ export function fromRelease(json: ReleaseJson | null | undefined, now: number): 
 }
 
 /**
- * The highest version in a GitHub release list, prereleases included. Drafts and tags that are not versions
- * are skipped. Null when there is none (no release yet, or not a list).
+ * The highest version in a GitHub release list on the path of the installed version `current`: prereleases
+ * count only when `current` is one. Drafts and tags that are not versions are skipped. Null when there is
+ * none (no release yet, or not a list).
  */
-export function newestRelease(list: unknown): ReleaseJson | null {
+export function newestRelease(list: unknown, current: string): ReleaseJson | null {
+  const finalsOnly = !isPrerelease(current);
   if (!Array.isArray(list)) return null;
   let best: { release: ReleaseJson; version: Version } | null = null;
   for (const item of list as unknown[]) {
@@ -99,27 +112,28 @@ export function newestRelease(list: unknown): ReleaseJson | null {
     const release = item as ReleaseJson;
     if (release.draft === true || typeof release.tag_name !== 'string') continue;
     const version = parseVersion(release.tag_name);
+    if (version && finalsOnly && version.pre.length) continue;
     if (version && (!best || compare(version, best.version) > 0)) best = { release, version };
   }
   return best?.release ?? null;
 }
 
 /**
- * One anonymous request for the release list. Never throws: offline, rate limited or an answer that cannot
- * be read keeps what the last check found and counts as today's check (try again tomorrow).
+ * One anonymous request for the release list. Never throws. Null when the check failed (offline, rate
+ * limited, an answer that cannot be read): nothing is saved, so the last result stays and the check is tried
+ * again at the next launch or resume. Only an answer starts the day's wait.
  */
-export async function fetchLatest(now: number, prev: UpdateInfo | null, get: GetJson): Promise<UpdateInfo> {
-  const kept: UpdateInfo = { latest: prev?.latest ?? null, url: prev?.url ?? null, checkedAt: now };
+export async function fetchLatest(now: number, current: string, get: GetJson): Promise<UpdateInfo | null> {
   try {
     const r = await get(RELEASES_API, { Accept: 'application/vnd.github+json' });
-    if (!r.ok || !Array.isArray(r.json)) return kept;
-    const newest = newestRelease(r.json);
+    if (!r.ok || !Array.isArray(r.json)) return null;
+    const newest = newestRelease(r.json, current);
     return newest ? fromRelease(newest, now) : { checkedAt: now, latest: null, url: null };
   } catch {
-    return kept;
+    return null;
   }
 }
 
 /** Version text to show when an update is available, else null. */
 export const availableUpdate = (u: UpdateInfo | null, current: string) =>
-  u?.latest && isNewer(u.latest, current) ? u.latest.replace(/^v/i, '') : null;
+  u?.latest && offered(u.latest, current) ? u.latest.replace(/^v/i, '') : null;

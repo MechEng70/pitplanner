@@ -7,6 +7,7 @@ import {
   fetchLatest,
   fromRelease,
   isNewer,
+  isPrerelease,
   newestRelease,
   RELEASES_API,
   RELEASES_PAGE,
@@ -75,8 +76,6 @@ test('update: prereleases sort by semver, below their final release', () => {
   assert.equal(isNewer('0.4.x', '0.3.0'), false);
   assert.equal(isNewer('1.2.3.4', '0.3.0'), false);
   assert.equal(isNewer('', '0.3.0'), false);
-  assert.equal(availableUpdate({ checkedAt: 1, latest: 'v0.3.0-beta.2', url: null }, '0.3.0-beta.1'), '0.3.0-beta.2');
-  assert.equal(availableUpdate({ checkedAt: 1, latest: 'v0.3.0-beta.2', url: null }, '0.3.0'), null);
 });
 
 const release = (tag: string, extra: object = {}) => ({
@@ -88,17 +87,39 @@ const release = (tag: string, extra: object = {}) => ({
   ...extra,
 });
 
-test('update: the newest release of the list is the highest version, prereleases included', () => {
+test('update: the newest release of the list is the highest version on the installed path', () => {
   // GitHub lists by date: a 0.3.1 fix published after the 0.4.0 beta must not hide the beta.
   const list = [release('v0.3.1'), release('v0.4.0-beta.1'), release('v0.3.0'), release('v0.3.0-rc.1')];
-  assert.equal(newestRelease(list)?.tag_name, 'v0.4.0-beta.1');
-  assert.equal(newestRelease([release('v0.3.0-rc.1'), release('v0.3.0')])?.tag_name, 'v0.3.0');
+  // A prerelease install: any version counts.
+  assert.equal(newestRelease(list, '0.3.0-beta.1')?.tag_name, 'v0.4.0-beta.1');
+  assert.equal(newestRelease([release('v0.3.0-rc.1'), release('v0.3.0')], '0.3.0-beta.1')?.tag_name, 'v0.3.0');
+  // A final install: final releases only (Jason, 2026-11-15).
+  assert.equal(newestRelease(list, '0.3.0')?.tag_name, 'v0.3.1');
+  assert.equal(newestRelease([release('v0.4.0-alpha.1'), release('v0.4.0-rc.2')], '0.3.0'), null);
   // Drafts, tags that are not versions and junk entries are skipped.
   const messy = [release('v9.0.0', { draft: true }), release('nightly'), null, 'x', {}, release('v0.3.0')];
-  assert.equal(newestRelease(messy)?.tag_name, 'v0.3.0');
-  assert.equal(newestRelease([]), null);
-  assert.equal(newestRelease({ message: 'Not Found' }), null);
-  assert.equal(newestRelease(null), null);
+  assert.equal(newestRelease(messy, '0.2.0')?.tag_name, 'v0.3.0');
+  assert.equal(newestRelease(messy, '0.3.0-rc.1')?.tag_name, 'v0.3.0');
+  assert.equal(newestRelease([], '0.3.0'), null);
+  assert.equal(newestRelease({ message: 'Not Found' }, '0.3.0'), null);
+  assert.equal(newestRelease(null, '0.3.0'), null);
+});
+
+test('update: a final install is never offered a prerelease; a prerelease install is offered any newer version', () => {
+  const found = (latest: string) => ({ checkedAt: 1, latest, url: null });
+  assert.equal(isPrerelease('0.3.0'), false);
+  assert.equal(isPrerelease('v0.3.0-beta.1'), true);
+  assert.equal(isPrerelease('0.3.0+build.7'), false);
+  assert.equal(isPrerelease('beta'), false);
+  // On 0.3.0: alpha, beta and rc of a later version are not updates; the later final is.
+  for (const pre of ['v0.3.1-alpha.1', 'v0.4.0-beta.1', 'v1.0.0-rc.1'])
+    assert.equal(availableUpdate(found(pre), '0.3.0'), null, pre);
+  assert.equal(availableUpdate(found('v0.3.1'), '0.3.0'), '0.3.1');
+  // On 0.3.0-beta.1: the next beta, the rc and the final are all updates; older ones are not.
+  for (const next of ['0.3.0-beta.2', '0.3.0-rc.1', '0.3.0', '0.3.1-alpha.1'])
+    assert.equal(availableUpdate(found(`v${next}`), '0.3.0-beta.1'), next);
+  assert.equal(availableUpdate(found('v0.3.0-alpha.9'), '0.3.0-beta.1'), null);
+  assert.equal(availableUpdate(found('v0.3.0-beta.1'), '0.3.0-beta.1'), null);
 });
 
 /** A scripted GetJson that records each request. */
@@ -113,42 +134,40 @@ function http(answer: { ok: boolean; json: unknown } | Error) {
 }
 
 test('update: a newer release is found, with its APK link', async () => {
-  const h = http({ ok: true, json: [release('v0.4.0-beta.1'), release('v0.3.0')] });
-  const u = await fetchLatest(50, null, h.get);
-  assert.deepEqual(u, { checkedAt: 50, latest: 'v0.4.0-beta.1', url: 'https://example/v0.4.0-beta.1.apk' });
-  assert.equal(availableUpdate(u, '0.3.0'), '0.4.0-beta.1');
+  const h = http({ ok: true, json: [release('v0.4.0-beta.1'), release('v0.3.1'), release('v0.3.0')] });
+  // A final install gets the newer final, a beta install the newer beta.
+  const u = await fetchLatest(50, '0.3.0', h.get);
+  assert.deepEqual(u, { checkedAt: 50, latest: 'v0.3.1', url: 'https://example/v0.3.1.apk' });
+  assert.equal(availableUpdate(u, '0.3.0'), '0.3.1');
+  const b = await fetchLatest(50, '0.3.0-beta.1', h.get);
+  assert.deepEqual(b, { checkedAt: 50, latest: 'v0.4.0-beta.1', url: 'https://example/v0.4.0-beta.1.apk' });
+  assert.equal(availableUpdate(b, '0.3.0-beta.1'), '0.4.0-beta.1');
 });
 
 test('update: the same release is not an update', async () => {
-  const u = await fetchLatest(50, null, http({ ok: true, json: [release('v0.3.0'), release('v0.2.0')] }).get);
-  assert.equal(u.latest, 'v0.3.0');
-  assert.equal(u.checkedAt, 50);
+  const list = [release('v0.4.0-beta.1'), release('v0.3.0'), release('v0.2.0')];
+  const u = await fetchLatest(50, '0.3.0', http({ ok: true, json: list }).get);
+  assert.deepEqual(u, { checkedAt: 50, latest: 'v0.3.0', url: 'https://example/v0.3.0.apk' });
   assert.equal(availableUpdate(u, '0.3.0'), null);
 });
 
-test('update: a network error keeps the last result and counts as the check of the day', async () => {
+test('update: a failed check gives nothing to save, so it does not count as the check of the day', async () => {
+  // Offline, rate limited (403), or an answer that is not a release list (Jason, 2026-11-15).
+  assert.equal(await fetchLatest(50, '0.3.0', http(new TypeError('Network request failed')).get), null);
+  assert.equal(await fetchLatest(50, '0.3.0', http({ ok: false, json: null }).get), null);
+  assert.equal(await fetchLatest(50, '0.3.0', http({ ok: true, json: { message: 'x' } }).get), null);
+  // What the last good check saved is untouched, so the next launch or resume is still due or not as before.
   const prev = { checkedAt: 10, latest: 'v0.4.0', url: 'https://example/apk' };
-  const offline = http(new TypeError('Network request failed'));
-  assert.deepEqual(await fetchLatest(50, prev, offline.get), { ...prev, checkedAt: 50 });
-  assert.deepEqual(await fetchLatest(50, null, offline.get), { checkedAt: 50, latest: null, url: null });
-  assert.equal(dueForCheck(await fetchLatest(50, prev, offline.get), 50 + DAY - 1), false);
-  // Rate limited (403), or an answer that is not a release list: the same.
-  assert.deepEqual(await fetchLatest(50, prev, http({ ok: false, json: null }).get), { ...prev, checkedAt: 50 });
-  assert.deepEqual(await fetchLatest(50, prev, http({ ok: true, json: { message: 'x' } }).get), {
-    ...prev,
-    checkedAt: 50,
-  });
-  // No release at all (an empty list) is an answer: nothing to offer.
-  assert.deepEqual(await fetchLatest(50, prev, http({ ok: true, json: [] }).get), {
-    checkedAt: 50,
-    latest: null,
-    url: null,
-  });
+  assert.equal(dueForCheck(prev, 10 + DAY), true);
+  // No release at all (an empty list) is an answer: nothing to offer, and the day's wait starts.
+  const none = await fetchLatest(50, '0.3.0', http({ ok: true, json: [] }).get);
+  assert.deepEqual(none, { checkedAt: 50, latest: null, url: null });
+  assert.equal(dueForCheck(none, 50 + DAY - 1), false);
 });
 
 test('update: one anonymous request to the release list, with nothing about the user', async () => {
   const h = http({ ok: true, json: [] });
-  await fetchLatest(50, null, h.get);
+  await fetchLatest(50, '0.3.0', h.get);
   assert.deepEqual(h.requests, [{ url: RELEASES_API, headers: { Accept: 'application/vnd.github+json' } }]);
   assert.equal(RELEASES_API, 'https://api.github.com/repos/MechEng70/pitplanner/releases?per_page=30');
 });

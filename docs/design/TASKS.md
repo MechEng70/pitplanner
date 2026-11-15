@@ -1869,10 +1869,18 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     The request is passed in (`GetJson` in `src/platform/types.ts`, `src/platform/http.ts`: one GET, an Accept
     header, no credentials, 15 s timeout).
   - `src/lib/updateWiring.ts` (`useUpdateCheck`), mounted in `app/_layout.tsx`: at launch and on resume, only
-    when the saved `checkedAt` is a day old or more. A failed check keeps the last result and counts as the
-    day's check, as in 0.2.0.
-  - A build on a final release is offered a newer prerelease too (the goal says prereleases included). SPEC
-    section 10 still says "latest release tag"; open question for Jason whether to reword it.
+    when the saved `checkedAt` is a day old or more. Overlapping calls make one request.
+  - Release path (Jason, 2026-11-15): it comes from the installed version, with no control for it. A final
+    install is offered final releases only, never an alpha, beta or rc. A prerelease install is offered any
+    newer version, prerelease or final (0.3.0-beta.1 is told about 0.3.0-beta.2, 0.3.0-rc.1 and 0.3.0).
+    `newestRelease(list, current)` picks on that path and `availableUpdate` applies the same rule to a saved
+    result.
+  - Failed check (Jason, 2026-11-15): offline, rate limited or an unreadable answer does not count as the
+    day's check. `fetchLatest` returns null, nothing is saved (the last result and its time stay), and the
+    next launch or resume tries again: one attempt each, no retry on a timer. Only an answer starts the 24
+    hour wait. This differs from 0.2.0, where a failure waited a day.
+  - SPEC section 10 reworded to match both.
+  - Still open: the check also runs in the dev build.
 
 ### T-033 Release docs: notes, install guide, releasing checklist
 - **Status:** todo

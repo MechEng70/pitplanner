@@ -52,7 +52,7 @@ function AlarmWiring() {
 
 /** Looks for a newer release at launch and on resume, at most daily; Gear shows it (T-032). */
 function UpdateCheck() {
-  useUpdateCheck(getJson, onResume);
+  useUpdateCheck(getJson, onResume, Constants.expoConfig?.version ?? '');
   return null;
 }
 
