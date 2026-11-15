@@ -1316,6 +1316,20 @@ Android back closes the top sheet first; copy per CLAUDE.md.
      back what it returned. One failed read followed by a save leaves only the new record. This is the
      only path found that could remove older cooks. The 0.3.0 history is rows in SQLite (insert one row,
      never rewrite the list), so this path does not exist there.
+- **Result from the phone (2026-11-15, Jason's yes to the five listed actions; files in the git-ignored
+  `tools/device/out/t064-2026-11-15/`):** the cook was saved. `history.json` (written 2026-11-14 5:18 PM)
+  holds one record: served 5:17 PM, 18 min late, 250F, five foods (chicken breasts 12 planned / 0 actual,
+  wings 95 / 116, 11.5 lb brisket 530 / 532, tri-tip 85 / 178, 3 lb brisket 140 / 245 minutes). Nothing was
+  deleted, and no older record exists. The normal 0.2.0 APK is back on the phone (versionCode 200, not
+  debuggable).
+  - Why he could not find it: in 0.2.0 the history is under Gear, Cook rates, below the rate cards
+    ("Cooks"). On Plan, "Cook a past plan again" has no action in 0.2.0 (a TODO in
+    `legacy/src/screens/plan/PlanScreen.tsx`): it lights up once a cook is saved and does nothing when
+    tapped. 0.3.0 wires it to history (T-028); check the way to history is plain there.
+  - What the record shows for learning: the 11.5 lb brisket reads 532 minutes, "on plan", because Done was
+    tapped by mistake at 3:30 PM while it stayed on (T-063); the chicken breasts logged 0 minutes on heat.
+    Both go into the rates as real cooks. For T-023 and T-063: a wrong Done should not teach a rate.
+  - Paths 3, 4 and 5 above are still real ways to lose a cook, though none of them happened here.
 - **Goal (0.3.0):** a running cook cannot be replaced or dropped without the user saying so; a saved cook
   is only removed by Remove.
 - **Decided (Jason, 2026-11-15):**
