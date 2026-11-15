@@ -90,8 +90,18 @@ export function HistoryScreen({ onBack, onCookAgain, onBackPress, now = Date.now
   );
 
   const smoker = state.gear.smoker;
-  const rows = rateRows(rules, state.history, smoker?.id ?? 'none', state.rates, state.totalHours, state.rateLocks);
   const records = [...state.records].sort((a, b) => b.date - a.date);
+  // A card only for a food in a saved cook or with a saved rate or total hours (Jason, 2026-11-15), so the
+  // cooks are not a screenful of published rates down.
+  const cooked = new Set(records.flatMap(r => r.items.map(i => i.log.foodId)));
+  const rows = rateRows(
+    rules,
+    state.history,
+    smoker?.id ?? 'none',
+    state.rates,
+    state.totalHours,
+    state.rateLocks,
+  ).filter(r => cooked.has(r.foodId) || r.saved != null || r.totalHours != null);
   const open = records.find(r => r.id === openId);
   const edit = records.find(r => r.id === editId);
 
@@ -120,9 +130,11 @@ export function HistoryScreen({ onBack, onCookAgain, onBackPress, now = Date.now
       {rows.map(r => (
         <RateCard key={r.foodId} row={r} smoker={smoker?.name} units={units} onPress={() => setRateRow(r)} />
       ))}
-      <Text variant="bodyM" tone="tertiary">
-        {tx(`Rates are hours per ${units.weight} at 225F.`, units)} Tap a food to set your own rate or total hours.
-      </Text>
+      {rows.length > 0 ? (
+        <Text variant="bodyM" tone="tertiary">
+          {tx(`Rates are hours per ${units.weight} at 225F.`, units)} Tap a food to set your own rate or total hours.
+        </Text>
+      ) : null}
 
       <Text variant="section" tone="secondary" role="heading">
         Cooks
@@ -157,6 +169,7 @@ export function HistoryScreen({ onBack, onCookAgain, onBackPress, now = Date.now
         <CookSheet
           record={open}
           units={units}
+          asks={state.draft.items.length > 0}
           onClose={() => setOpenId(null)}
           onCookAgain={() => cookAgain(open)}
           onEdit={() => setEditId(open.id)}
@@ -393,6 +406,7 @@ function verdictOf(it: CookRecord['items'][number]): { text: string; tone: 'ok' 
 function CookSheet({
   record,
   units,
+  asks,
   onClose,
   onCookAgain,
   onEdit,
@@ -400,6 +414,7 @@ function CookSheet({
 }: {
   record: CookRecord;
   units: Units;
+  asks: boolean;
   onClose: () => void;
   onCookAgain: () => void;
   onEdit: () => void;
@@ -410,7 +425,7 @@ function CookSheet({
     <Sheet
       title={longFmt.format(record.date)}
       onClose={onClose}
-      footer={<CookActions onCookAgain={onCookAgain} onEdit={onEdit} onRemove={onRemove} />}
+      footer={<CookActions asks={asks} onCookAgain={onCookAgain} onEdit={onEdit} onRemove={onRemove} />}
     >
       <Text variant="bodyM" tone="secondary">
         Pit at <Num>{fmtTemp(record.pitTempF, units, true)}</Num>.
@@ -461,26 +476,36 @@ function CookSheet({
 }
 
 function CookActions({
+  asks,
   onCookAgain,
   onEdit,
   onRemove,
 }: {
+  /** The plan has food on it: Cook again replaces it, so the first tap only says so. */
+  asks: boolean;
   onCookAgain: () => void;
   onEdit: () => void;
   onRemove: () => void;
 }) {
   const { close } = useSheet();
   const [confirm, setConfirm] = useState(false);
+  const [asked, setAsked] = useState(false);
   return (
     <View className="min-w-0 flex-1 gap-1">
       <View className="flex-row items-center gap-2">
         <Button kind="text" onPress={() => close(onEdit)}>
           <Text>Edit</Text>
         </Button>
-        <Button className="min-w-0 flex-1" onPress={() => close(onCookAgain)}>
+        <Button className="min-w-0 flex-1" onPress={() => (asks && !asked ? setAsked(true) : close(onCookAgain))}>
           <Text>Cook again</Text>
         </Button>
       </View>
+      {/* Under the buttons, so the one just tapped does not move. */}
+      {asked ? (
+        <Text variant="label" tone="secondary">
+          This replaces the plan you have now. Tap Cook again to go on.
+        </Text>
+      ) : null}
       {/* Two taps: the first only asks. */}
       <Button kind="text" block tone="danger" onPress={() => (confirm ? close(onRemove) : setConfirm(true))}>
         <Text>{confirm ? 'Tap again to remove from history' : 'Remove from history'}</Text>

@@ -170,8 +170,8 @@ describe('the screen (mockup 20)', () => {
     expect(brisket.getByLabelText(`hr/lb ${rate.text} learned`)).toBeOnTheScreen();
     expect(brisket.getByLabelText('Cooks 2 logged')).toBeOnTheScreen();
     expect(brisket.getByLabelText('Total None not set')).toBeOnTheScreen();
-    // A food nobody has cooked yet shows the published rate.
-    expect(within(card('Pork butt')).getByLabelText(/^hr\/lb \d\.\d\d published$/)).toBeOnTheScreen();
+    // A food never cooked and with no saved rate has no card (Jason, 2026-11-15).
+    expect(screen.queryByRole('button', { name: 'Pork butt' })).toBeNull();
 
     expect(screen.getByRole('heading', { name: 'Cooks' })).toBeOnTheScreen();
     const sat = within(card('Sat, Nov 14'));
@@ -186,10 +186,18 @@ describe('the screen (mockup 20)', () => {
     expect(screen.getByText(/^Tap a cook to see planned vs actual times/)).toBeOnTheScreen();
   });
 
-  test('no cooks yet: the rates are the published ones and the list says so', async () => {
+  test('a food with a saved rate has a card before it has ever been cooked', async () => {
+    await show({ records: [], seed: r => r.rates.setRate('butt', 1.5, NOW) });
+    expect(within(card('Pork butt')).getByLabelText('hr/lb 1.50 yours')).toBeOnTheScreen();
+    expect(within(card('Pork butt')).getByLabelText('Cooks 0 logged')).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Brisket' })).toBeNull();
+    expect(screen.getByText(/^Rates are hours per lb at 225F\./)).toBeOnTheScreen();
+  });
+
+  test('no cooks and no saved rates: no rate cards, no line about them, and the list says so', async () => {
     await show({ records: [] });
-    expect(within(card('Brisket')).getByLabelText('hr/lb 1.25 published')).toBeOnTheScreen();
-    expect(within(card('Brisket')).getByLabelText('Cooks 0 logged')).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Brisket' })).toBeNull();
+    expect(screen.queryByText(/^Rates are hours per/)).toBeNull();
     expect(screen.getByText(/^No cooks saved yet\./)).toBeOnTheScreen();
     expect(screen.queryByText(/^Tap a cook/)).toBeNull();
   });
@@ -249,7 +257,8 @@ describe('a rate card opens the saved rate and total hours', () => {
   });
 
   test('Set total hours starts from the rate at the usual size; Clear total hours removes it', async () => {
-    const { repos } = await show({ records: [] });
+    // A saved rate (the published 1.25) so the card shows with no cooks.
+    const { repos } = await show({ records: [], seed: r => r.rates.setRate('brisket', 1.25, NOW) });
     await act(() => fireEvent.press(card('Brisket')));
     let sheet = within(dialog('Brisket'));
     await act(() => press('Set total hours', sheet));
@@ -297,6 +306,32 @@ describe('a cook opens its sheet', () => {
     ]);
     expect(new Set(draft.items.map(i => i.id)).size).toBe(3);
     expect(stored(db)).toEqual(before);
+  });
+
+  test('Cook again asks first when the plan has food on it: the first tap only says so', async () => {
+    const { repos, onCookAgain } = await show({
+      seed: r =>
+        r.settings.setDraft(
+          {
+            mode: 'readyBy',
+            at: NOW,
+            pitTempF: 275,
+            items: [{ id: 'x', foodId: 'stlribs', methodId: '221', quantity: 2 }],
+          },
+          NOW,
+        ),
+    });
+    const sheet = await openCook();
+    expect(sheet.queryByText(/replaces the plan you have now/)).toBeNull();
+    await act(() => press('Cook again', sheet));
+    await settle();
+    expect(onCookAgain).not.toHaveBeenCalled();
+    expect(repos.settings.readDraft().value!.items.map(i => i.foodId)).toEqual(['stlribs']);
+    expect(sheet.getByText('This replaces the plan you have now. Tap Cook again to go on.')).toBeOnTheScreen();
+    await act(() => press('Cook again', sheet));
+    await settle();
+    expect(onCookAgain).toHaveBeenCalledTimes(1);
+    expect(repos.settings.readDraft().value!.items.map(i => i.foodId)).toEqual(['brisket', 'wings', 'breasts']);
   });
 
   test('Cook again keeps a serve time that is still ahead', async () => {

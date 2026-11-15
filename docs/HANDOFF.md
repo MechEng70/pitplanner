@@ -67,6 +67,11 @@ address isn't filled in, type it."). `docs/design/TECH-DESIGN.md` still calls pi
 Two agent worktrees and branches are left over (`worktree-agent-acd0…`, `worktree-agent-add2…`; commits on
 `main`): delete with his yes.
 
+**Update, 4:55 PM:** T-028's two changes are built and gate-complete (rate cards only for foods cooked or
+with a saved rate; Cook again asks first). `src/lib/maker.ts` removed and branches `t025`, `t026` deleted
+(Jason's yes). T-067 is a dev-only route, nothing left to settle. Carried item 5 below is now only: T-022's
+15 min control, and deleting `t030`, `t032`, `t033` and the remaining `worktree-agent-*` branches.
+
 **State of step 5a (device tests for Setup, Cook finished, Gear, History):**
 
 - Four device tests are written in `tools/device/run.sh`: `setup`, `cook-finished`, `gear`, `history`. Each

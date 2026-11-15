@@ -1693,6 +1693,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     (trimmed, case-blind). `BATTERY_HELP_LINKS` is empty: the test uses stand-in links to show a Samsung gets
     one and a Pixel (Google) none.
   - Tests: `AlertsStep.test.tsx` (7), `src/lib/maker.test.ts` (5).
+  - 2026-11-15: `src/lib/maker.ts` and its test are removed (Jason: the battery note is a plain line, no link).
 - **Left:**
   - The battery help row: SPEC failure mode 10 says "troubleshooting link per maker" but no document, mockup
     or legacy screen has its wording, its place on the screen or the links. Needs from Jason: the makers, the
@@ -1858,6 +1859,12 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   Plan goes to Plan. **To build:** a rate card shows only for a food that has been cooked or has a saved rate
   or total hours, not for every by-weight food; Cook again asks first when the plan is not empty ("Replace
   the plan you have now?"). Still open: (3) the Edit cook wording, to be judged from a screenshot.
+- **Built from those answers (2026-11-15, gate-complete):** a rate card shows only for a food that is in a
+  saved cook or has a saved rate or total hours; with no cards the "Rates are hours per lb" line is hidden
+  too (it says "Tap a food"). Cook again with food on the plan: the first tap shows "This replaces the plan
+  you have now. Tap Cook again to go on." under the buttons, the second tap does it; an empty plan is
+  replaced at once. SPEC "Cook history" updated. Not on a device yet; the `history` device test still fits
+  (its seed has a saved brisket rate).
 - **Goal:** rate cards (rate used, source, cooks logged, total hours; edit; "Keep my rate exactly"); cook list;
   cook sheet with Cook again, Remove and Edit (failure mode 14: correct actual minutes, quantity, pit temp, notes,
   or exclude from rates).
@@ -2047,6 +2054,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   every step, alarm, notification action and the Cook finished screen can be seen in one sitting before the
   real Saturday cook (T-037).
 - **Not this:** a change to how real cooks are timed. Dev builds only; nothing of it in a release build.
+- **Jason (2026-11-15):** "can be just a dev activity": a dev-only route like the other seeds, no user-facing
+  control. So: started by a dev link (`pitplanner://dev/...`), the Saturday fixture as the menu, and the
+  screen shows the squeezed real times (the cook really runs over the next minutes). Nothing left to settle.
 - **To settle with Jason:** how it is started (a dev link like the other seeds, or a row on the hidden debug
   screen); whether the screen shows the scaled clock (5:00 PM) or real time; which menu (the Saturday
   fixture, or the plan on screen).
