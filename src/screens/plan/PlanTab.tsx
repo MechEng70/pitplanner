@@ -1,6 +1,6 @@
 // The Plan tab with what opens from it: the smoker temp menu, Add food and the Conflicts sheet (T-018) and
-// food details (T-019), and Start cook with its alert check (T-021). Past plans (T-028) and share (T-029)
-// join with their tasks.
+// food details (T-019), Start cook with its alert check (T-021) and the share icon (T-029). Past plans
+// (T-028) join with their task.
 import { useCallback, useMemo, useRef, useState } from 'react';
 import type { HostInstance } from 'react-native';
 import { buildPlan } from '../../../engine/plan';
@@ -11,7 +11,14 @@ import { newItemId } from '@/lib/itemId';
 import { method, newItem, rules } from '@/lib/rules';
 import { planInput, useStore } from '@/lib/store';
 import { restorableFood } from '@/lib/uiState';
-import { allGranted, type AppLinks, type PermissionService, type PickDateTime } from '@/platform/types';
+import { PLAN_FILE_NAME, pitPlanText, toPitPlan } from '@/platform/pitPlanFile';
+import {
+  allGranted,
+  type AppLinks,
+  type PermissionService,
+  type PickDateTime,
+  type ShareService,
+} from '@/platform/types';
 import { FoodEdit } from './FoodEdit';
 import { FoodPick } from './FoodPick';
 import { IssuesSheet } from './IssuesSheet';
@@ -45,12 +52,22 @@ export interface PlanTabProps {
   onResume: AppLinks['onResume'];
   /** A cook has started: the Cook tab opens. */
   onCookStarted: () => void;
+  /** Hands the .pitplan file to the share sheet (T-029). Without it the share icon does nothing. */
+  sharePlanFile?: ShareService['sharePlanFile'];
   now?: () => number;
   /** Open food details at once: for the item with this id, or for a new food of this kind (dev seed links). */
   open?: { edit?: string; add?: string };
 }
 
-export function PlanTab({ pickDateTime, permissions, onResume, onCookStarted, now = Date.now, open }: PlanTabProps) {
+export function PlanTab({
+  pickDateTime,
+  permissions,
+  onResume,
+  onCookStarted,
+  sharePlanFile,
+  now = Date.now,
+  open,
+}: PlanTabProps) {
   const { state, setDraft, setCook, ui } = useStore();
   const { draft, gear, units } = state;
   const fresh = (foodId: string): ItemInput =>
@@ -143,6 +160,18 @@ export function PlanTab({ pickDateTime, permissions, onResume, onCookStarted, no
     setLayer({ kind: 'check', input, plan });
   };
 
+  // Share (SPEC section 3): the menu, serve time and smoker temp as a .pitplan file. A share that fails shows
+  // nothing, as in 0.2.0.
+  const share = (plan: Plan) => {
+    if (!sharePlanFile) return;
+    const text = pitPlanText(toPitPlan(plan.serveAt, input.pitTempF, input.items));
+    try {
+      sharePlanFile(PLAN_FILE_NAME, text).catch(() => {});
+    } catch {
+      // Nothing to show.
+    }
+  };
+
   return (
     <>
       <PlanScreen
@@ -153,6 +182,7 @@ export function PlanTab({ pickDateTime, permissions, onResume, onCookStarted, no
         onEditItem={editFood}
         onOpenIssues={() => setLayer({ kind: 'issues' })}
         onStartCook={plan => void startCook(plan)}
+        onShare={share}
       />
       {layer?.kind === 'check' ? (
         <StartCheckSheet

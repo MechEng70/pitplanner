@@ -5,8 +5,10 @@ import { SHEET_OUT_MS } from '@/components/kit/sheet';
 import type { Draft } from '@/lib/draft';
 import { saturday } from '@/lib/fixtures/saturday';
 import { defaultGriddle, defaultOven } from '@/lib/gear';
-import { defaultOptions, method } from '@/lib/rules';
-import { fakeAlarms, fakeResume } from '@/platform/fakes';
+import { defaultOptions, method, rules } from '@/lib/rules';
+import { parsePitPlan } from '@/lib/sharedPlan';
+import { fakeAlarms, fakeResume, fakeShare, type FakeShare } from '@/platform/fakes';
+import { toPitPlan } from '@/platform/pitPlanFile';
 import { NOW, storeWrapper, testRepos } from '@/test/store';
 import { PlanTab } from './PlanTab';
 
@@ -42,13 +44,13 @@ const tabProps = () => ({
 });
 const settle = () => act(() => jest.advanceTimersByTime(SHEET_OUT_MS));
 
-async function show(items: ItemInput[]) {
+async function show(items: ItemInput[], share?: FakeShare) {
   const r = testRepos();
   r.repos.cookers.save(gear, NOW);
   r.repos.rates.setRate('brisket', 0.75, NOW);
   const draft: Draft = { mode: 'readyBy', at: saturday.at, pitTempF: 225, items };
   r.repos.settings.setDraft(draft, NOW);
-  await render(<PlanTab {...tabProps()} />, { wrapper: storeWrapper(r.repos) });
+  await render(<PlanTab {...tabProps()} sharePlanFile={share?.sharePlanFile} />, { wrapper: storeWrapper(r.repos) });
   return r.repos;
 }
 const button = (name: string | RegExp) => screen.getByRole('button', { name });
@@ -259,5 +261,72 @@ describe('after the app was killed', () => {
     await again(repos);
     expect(screen.queryByRole('heading', { name: 'Brisket' })).toBeNull();
     expect(button('Chicken wings, edit')).toBeOnTheScreen();
+  });
+});
+
+describe('Share plan (T-029)', () => {
+  // This cook's own timing, set in food details: it stays on the sender's phone.
+  const tuned: ItemInput = { ...brisket, timingModel: 'totalHours', totalHours: 9, totalHoursAtF: 225, hrPerLb: 0.7 };
+  const menu = [tuned, wings('w1', 'smokeCrisp')];
+
+  test('the share icon hands over cook.pitplan, built by toPitPlan from the plan', async () => {
+    const share = fakeShare();
+    await show(menu, share);
+    await fireEvent.press(button('Share plan'));
+    expect(share.shared).toHaveLength(1);
+    const { name, text } = share.shared[0]!;
+    expect(name).toBe('cook.pitplan');
+    expect(text).toBe(JSON.stringify(toPitPlan(saturday.at, 225, menu), null, 2));
+    // The receiving side reads it back whole.
+    const opened = parsePitPlan(rules, text, i => `n${i}`);
+    expect(opened).toMatchObject({ serveAt: saturday.at, pitTempF: 225, dropped: 0 });
+    expect('items' in opened && opened.items.map(i => i.foodId)).toEqual(['brisket', 'wings']);
+  });
+
+  test("the sender's rates and total hours are not in the file, the saved rate included", async () => {
+    const share = fakeShare();
+    await show(menu, share);
+    await fireEvent.press(button('Share plan'));
+    const text = share.shared[0]!.text;
+    for (const key of ['hrPerLb', 'totalHours', 'totalHoursAtF', 'timingModel', 'rateOverrides', 'history', 'cookers'])
+      expect(text).not.toContain(key);
+    const file = JSON.parse(text) as { items: ItemInput[] };
+    expect(Object.keys(file).sort()).toEqual(['app', 'items', 'pitTempF', 'serveAt', 'version']);
+    expect(file.items[0]).toEqual(brisket);
+  });
+
+  test('each tap shares once', async () => {
+    const share = fakeShare();
+    await show([brisket], share);
+    await fireEvent.press(button('Share plan'));
+    expect(share.shared).toHaveLength(1);
+    await fireEvent.press(button('Share plan'));
+    expect(share.shared).toHaveLength(2);
+  });
+
+  test('a share that fails does not throw and changes nothing on the screen', async () => {
+    const share = fakeShare();
+    share.failNext = new Error('no share sheet');
+    const repos = await show([brisket], share);
+    const before = screen.toJSON();
+    await fireEvent.press(button('Share plan'));
+    await act(async () => {});
+    expect(share.shared).toHaveLength(1);
+    expect(share.failNext).toBeNull();
+    expect(screen.toJSON()).toEqual(before);
+    expect(saved(repos).items).toEqual([brisket]);
+    // The next tap shares again.
+    await fireEvent.press(button('Share plan'));
+    expect(share.shared).toHaveLength(2);
+  });
+
+  test('a share service that throws at once does not throw either', async () => {
+    const share = fakeShare();
+    share.sharePlanFile = jest.fn(() => {
+      throw new Error('no module');
+    });
+    await show([brisket], share);
+    await fireEvent.press(button('Share plan'));
+    expect(share.sharePlanFile).toHaveBeenCalledTimes(1);
   });
 });

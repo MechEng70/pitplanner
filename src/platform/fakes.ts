@@ -8,6 +8,7 @@ import type {
   AppLinks,
   NotificationAction,
   PermissionService,
+  ShareService,
   StoredNag,
 } from './types';
 
@@ -108,4 +109,37 @@ export function fakeResume(): { onResume: AppLinks['onResume']; resume(): void; 
     resume: () => fns.forEach(fn => fn()),
     listeners: () => fns.size,
   };
+}
+
+type OpenedPlan = Parameters<Parameters<ShareService['onPlanOpened']>[0]>[0];
+
+export interface FakeShare extends ShareService {
+  /** Every file handed to the share sheet, in order. */
+  shared: { name: string; text: string }[];
+  /** Set to make the next `sharePlanFile` reject (the call is still recorded). */
+  failNext: Error | null;
+  /** Deliver an opened file as the platform would (T-030). */
+  open(file: OpenedPlan): void;
+}
+
+export function fakeShare(): FakeShare {
+  const fns = new Set<(file: OpenedPlan) => void>();
+  const f: FakeShare = {
+    shared: [],
+    failNext: null,
+    async sharePlanFile(name, text) {
+      f.shared.push({ name, text });
+      if (f.failNext) {
+        const e = f.failNext;
+        f.failNext = null;
+        throw e;
+      }
+    },
+    onPlanOpened: fn => {
+      fns.add(fn);
+      return () => void fns.delete(fn);
+    },
+    open: file => fns.forEach(fn => fn(file)),
+  };
+  return f;
 }

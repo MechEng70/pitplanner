@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { pickDateTime } from '@/platform/dateTime';
 import { permissionService } from '@/platform/permissions';
 import { onResume } from '@/platform/resume';
+import { sharePlanFile } from '@/platform/share';
 import { PlanTab } from '@/screens/plan/PlanTab';
 
 export default function PlanRoute() {
@@ -17,6 +18,7 @@ export default function PlanRoute() {
       permissions={permissionService}
       onResume={onResume}
       onCookStarted={() => router.navigate('/cook')}
+      sharePlanFile={sharePlanFile}
       open={open}
     />
   );

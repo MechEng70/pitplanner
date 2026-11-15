@@ -1579,10 +1579,22 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ## Phase 9: Share
 
 ### T-029 Share plan (export)
-- **Status:** todo
+- **Status:** built and unit-tested on branch `t029`; not run on a device, and `npm run check` (Android tests,
+  Semgrep, Snyk) not run on it yet.
+- **Built:** `toPitPlan` was not in the Expo app (only in `legacy/src/lib/share.ts`), so it is ported as
+  `src/platform/pitPlanFile.ts` (pure: `toPitPlan`, `pitPlanText`, `PLAN_FILE_NAME`). It keeps only `id`,
+  `foodId`, `methodId`, `quantity`, `options` and `restMin` of each item, so the rate, total hours and timing
+  model are dropped, as in 0.2.0. `src/platform/share.ts` exports `sharePlanFile` (cache file through
+  `shareFile.ts`, then the share sheet: `application/json`, dialog title "Share plan"). `PlanTab` takes it as
+  the `sharePlanFile` prop from `app/(tabs)/plan.tsx` and shares `cook.pitplan` (the 0.2.0 name), JSON
+  indented by two. A share that fails shows nothing, as in 0.2.0. `fakeShare()` is in `src/platform/fakes.ts`.
+- **Left:** the device check of the acceptance line (Gmail and Drive in the share sheet, the attachment
+  arrives as `cook.pitplan`). `onPlanOpened` is T-030: `share.ts` exports no whole `ShareService` until then.
+  Open question: move `pitPlanFile.ts` to `src/lib` (it is app logic, placed in `src/platform` only to stay
+  inside this task's files).
 - **Goal:** the share icon on Plan writes a `.pitplan` file (sender's rates and total hours dropped) and opens
   the Android share sheet.
-- **Files:** `src/platform/share.ts`, tests (`src/lib/sharedPlan.ts` API unchanged).
+- **Files:** `src/platform/share.ts`, `src/platform/pitPlanFile.ts`, tests (`src/lib/sharedPlan.ts` API unchanged).
 - **Depends on:** T-017.
 - **Acceptance:** Gmail and Drive appear in the share sheet; the file matches `toPitPlan`.
 - **Tests:** Jest with the share fake; `engine/share.test.ts` unchanged.
