@@ -1330,6 +1330,12 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     tapped by mistake at 3:30 PM while it stayed on (T-063); the chicken breasts logged 0 minutes on heat.
     Both go into the rates as real cooks. For T-023 and T-063: a wrong Done should not teach a rate.
   - Paths 3, 4 and 5 above are still real ways to lose a cook, though none of them happened here.
+  - Also in the copied prefs: a cook for Sat 2026-11-21 5:00 PM is running in 0.2.0, started Sun
+    2026-11-15 10:49 AM, after Jason had ended the one before. Likely cause, not proven: in 0.2.0 tapping
+    the Cook tab with food on the plan and no cook running starts a cook (SPEC "Cook tab", T-021 goal), so
+    looking at the Cook tab started it again. That is why "there is no way to remove a planned cook".
+    Asked Jason on 2026-11-15 whether 0.3.0 keeps that rule; it gates the Start cook half of T-021. The two
+    installs of this task may have cleared that cook's alarms on the phone; not checked (needs a phone read).
 - **Goal (0.3.0):** a running cook cannot be replaced or dropped without the user saying so; a saved cook
   is only removed by Remove.
 - **Decided (Jason, 2026-11-15):**
