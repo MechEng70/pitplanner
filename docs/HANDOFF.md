@@ -5,10 +5,10 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
 
 ## Restart, nineteenth session (written Sunday 2026-11-15, end of the eighteenth; read this first)
 
-Everything is committed on `main`. Jason pushed `main` himself during the session (through `d0c3b49`); the
-commits after that are local until he pushes again. The gate passed on this `main`. Emulator and Metro are
-stopped. No agents, no worktrees. The sections below are history; the working rules and traps of the
-sixteenth session's "Restart" (items 2 to 4, 6 to 8) still hold.
+Everything is committed on `main` and pushed (Jason pushed once himself, then allowed the push at the end of
+the session). The gate passed on this `main`. Emulator and Metro are stopped. No agents, no worktrees, no
+branches besides `main`. The sections below are history; the working rules and traps of the sixteenth
+session's "Restart" (items 2 to 4, 6 to 8) still hold.
 
 **Done in the eighteenth session (all on `main`, each through the gate):**
 - **T-067** fast test cook: `src/lib/fastCook.ts`, dev link `pitplanner://dev/plan?seed=fast` (`&x=<n>` for
@@ -26,9 +26,7 @@ five runs this session; stop and tell Jason the moment that step fails or skips;
 before 2026-12-01).
 
 **Jason's rule (2026-11-15):** "You should be deleting things you don't need anymore." After an agent's work
-is merged and gated, remove its worktree and branch. The six older branches (`t030`, `t032`, `t033`,
-`worktree-agent-a666...`, `-a8dd...`, `-af59...`) were asked about again at the end of the session: see the
-last message for his answer.
+is merged and gated, remove its worktree and branch. All leftover branches were deleted with his yes.
 
 **Next, in this order:**
 1. A device test for whole turkey (Food details, the issue below 225F, 100/115/130%) and screenshots for him.
