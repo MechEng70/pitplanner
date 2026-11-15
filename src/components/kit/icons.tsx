@@ -198,18 +198,6 @@ export const Thermo = (p: IconProps) => (
     <Path d="M12 11v6" />
   </Icon>
 );
-/** Whole turkey on a platter, drumstick up (T-059). Not on any avatar yet: food cards show the cooker icon. */
-export const TurkeyIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <Path d="M4 17c0-4.4 3.6-8 8-8 2 0 3.8.7 5.2 1.9" />
-    <Path d="M4 17h16c0-1.8-.6-3.5-1.6-4.8" />
-    <Path d="M15.5 13.5l3.2-5" />
-    <Circle cx="19.5" cy="6.5" r="1.8" />
-    <Path d="M8 17c0-1.9 1.3-3.5 3-3.9" />
-    <Path d="M2 20.5h20" />
-  </Icon>
-);
-
 export type CookerKind = 'smoker' | 'griddle' | 'oven';
 
 /** Avatar glyph: ember flame for a smoker, blue griddle, plain oven (mockups 01, 05, 17). */

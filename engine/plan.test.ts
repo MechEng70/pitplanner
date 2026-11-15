@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { buildPlan, tempFactor } from './plan.ts';
+import { buildPlan, rateHintFor, tempFactor } from './plan.ts';
 import { shiftRemaining, markStepDone, pitOutage } from './live.ts';
 import { showTemp } from './units.ts';
 import type { Plan, PlanInput, SmokerProfile } from './types.ts';
@@ -341,6 +341,19 @@ test('turkey: 12 lb at 225F is 6 hr on heat, a 30 min rest, fire 20 min ahead an
   assert.equal(pull.checkStep, true);
   assert.match(pull.label, /165F in the innermost thigh, the innermost wing and the thickest part of the breast/);
   assert.deepEqual(p.warnings, []);
+});
+
+test("turkey: no prep step (how to prep is the cook's own business; Jason, 2026-11-15)", () => {
+  assert.deepEqual(
+    turkeyPlan().events.filter(e => e.kind === 'prep'),
+    [],
+  );
+});
+
+test("rate hint: turkey's own usual range starts at 0.33 hr/lb, other foods keep the shared one", () => {
+  assert.deepEqual(rateHintFor(rules, 'turkey'), [0.33, rules.learning.rateHint[1]]);
+  assert.deepEqual(rateHintFor(rules, 'brisket'), rules.learning.rateHint);
+  assert.deepEqual(rateHintFor(rules, 'no-such-food'), rules.learning.rateHint);
 });
 
 test('turkey: the size-adjusted model gives the same 6 hr at its 12 lb reference weight', () => {

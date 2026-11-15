@@ -10,6 +10,7 @@
 //   height and every control keeps its place when a value changes (T-017 PR-3).
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
+import { rateHintFor } from '../../../engine/plan';
 import { resolveMethod, type RuleFood } from '../../../engine/rules';
 import { settableTemps } from '../../../engine/temps';
 import type { CookLog, SmokerProfile } from '../../../engine/types';
@@ -285,7 +286,7 @@ function RateSheet({
 }) {
   const learnAfter = rules.learning.savedRateLearnsAfter;
   const limits = rules.learning.rateLimits;
-  const usual = rules.learning.rateHint;
+  const usual = rateHintFor(rules, row.foodId);
   const [rate, setRate] = useState<number | null>(row.saved);
   const [locked, setLocked] = useState(row.locked);
   const [hours, setHours] = useState<number | null>(row.totalHours);

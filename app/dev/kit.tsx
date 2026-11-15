@@ -41,7 +41,6 @@ import {
   Tile,
   Tiles,
   Timer,
-  TurkeyIcon,
   useSheet,
   Warn,
 } from '@/components/kit';
@@ -225,9 +224,6 @@ function Gallery() {
             </IconAvatar>
             <IconAvatar tone="gold">
               <Cup />
-            </IconAvatar>
-            <IconAvatar tone="warn">
-              <TurkeyIcon />
             </IconAvatar>
           </Row>
           <Tiles>

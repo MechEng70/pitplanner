@@ -56,6 +56,11 @@ function optionValue(method: ResolvedMethod, input: ItemInput, key: string): str
   return input.options?.[key] ?? opt.default;
 }
 
+/** The range outside which a rate gets the soft "Unusual rate" note: the food's own, or the shared one. */
+export function rateHintFor(rules: Rules, foodId: string): [number, number] {
+  return rules.foods.find(f => f.id === foodId)?.rateHint ?? rules.learning.rateHint;
+}
+
 /**
  * Rate in hr/lb at 225F (at the reference weight for the size-adjusted model). This cook's own rate wins.
  * A saved rate is used as-is until savedRateLearnsAfter logged cooks (or always, when locked); after that it

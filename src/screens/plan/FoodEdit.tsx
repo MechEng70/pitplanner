@@ -8,7 +8,7 @@
 // - The values the user saves for later (rate, total hours, the hint flag) go through the store.
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { View, type HostInstance, type LayoutChangeEvent } from 'react-native';
-import { buildPlan, onHeatSpan } from '../../../engine/plan';
+import { buildPlan, onHeatSpan, rateHintFor } from '../../../engine/plan';
 import type { CookerKind, ItemInput, PlanInput, TimingModel } from '../../../engine/types';
 import { kgToLb, lbToKg } from '../../../engine/units';
 import {
@@ -440,7 +440,7 @@ function Timing({
   const model: TimingModel | 'standard' =
     it.timingModel === 'totalHours' ? 'totalHours' : byWeight ? (it.timingModel ?? 'perPound') : 'standard';
   const limits = rules.learning.rateLimits;
-  const usual = rules.learning.rateHint;
+  const usual = rateHintFor(rules, it.foodId);
   const where = cookerName(base.cookers, method(it.foodId, it.methodId).cooker);
 
   const pick = (v: string) => {

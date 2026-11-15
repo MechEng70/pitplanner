@@ -1113,7 +1113,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - **Rest: 30 minutes default, 20 minutes minimum.**
   - Sources are cited as "USDA FSIS (fsis.usda.gov), read by Jason 2026-11-15" and "Jason, 2026-11-15"; no URL
     or quote is needed (this replaces the "Sources" requirement's URL, page title, date and quoted sentence).
-- **Status:** built 2026-11-15, unit-tested on a worktree branch; gate and device test not run
+- **Status:** built 2026-11-15, on `main` and gate-complete; device test not run
 - **Built (2026-11-15):**
   - `data/foods.json`: food `turkey` ("Whole turkey", group "Turkey"), one method `smoked`, `perWeight`
     0.50 hr/lb at 225F, `rangeAt225` [0.33, 0.5], one smoke phase, pull check at 165F in the innermost thigh,
@@ -1129,14 +1129,20 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - The shared temp model gives 30 min per lb at 225F, 25.5 at 250F, 21.7 at 275F, 18.4 at 300F, 15.7 at
     325F. Against Jason's 15 to 20 at 275F to 325F it is 1.7 min per lb slow at 275F; against FSIS 20 to 30
     at 225F to 300F it is 1.6 fast at 300F. No turkey temp model was added.
-  - **Icon: drawn, not on the avatar.** There are no per-food icons: every food card and Add food row shows
-    its cooker's icon (T-017 PR-2, mockups 05 and 07), so turkey shows the smoker flame like brisket.
-    `TurkeyIcon` is in `src/components/kit/icons.tsx` and on the dev kit screen only. Putting it on the
-    avatar is a new UI element and needs Jason's yes.
-  - **Chosen by analogy, not sourced, for Jason to confirm:** weight default 12 lb, min 8, max 24, step 0.5,
-    reference weight 12 lb; carve time 15 min; hold limit 60 min; prep 30 min ahead ("Turkey: pat dry, oil
-    and season."); grate space 12 sq in per lb; group "Turkey"; smoke step "Turkey on the smoker. Probe in
-    the thickest part of the breast."
+  - **Jason's answers on the build (2026-11-15, eighteenth session):**
+    - Icon: turkey shows the smoker flame like every other food (he weighed a drumstick, a chicken, a cow,
+      then "maybe we just show the smoker flame"). The drawn `TurkeyIcon` was taken out again.
+    - Prep: "We're not really telling them how to prep their turkey or prep their ribs ... we're just doing
+      anything that relates to the actual smoking process." Turkey has no prep step. The other foods' prep
+      steps are as they were; whether they change is an open question to him.
+    - The numbers that relate to the smoking stay as built, not sourced: weight default 12 lb, min 8, max 24,
+      step 0.5, reference weight 12 lb; carve time 15 min; hold limit 60 min; grate space 12 sq in per lb;
+      group "Turkey"; smoke step "Turkey on the smoker. Probe in the thickest part of the breast."
+    - "Unusual rate" note: turkey gets its own usual range starting at 0.33 hr/lb (`rateHint` on the food in
+      `foods.json`, `rateHintFor` in `engine/plan.ts`, used by Food details and Cook rates), so a rate for a
+      hotter smoker is not flagged. Other foods keep 0.5 to 1.6.
+- **Gate (2026-11-15):** merged onto `main` with the changes above; `npm run check` passed all six steps. No
+  device test yet (Food details with turkey, the issue below 225F, at 100/115/130%).
 - **Goal:** whole turkey on the smoker, planned and learned like every other food (Jason, 2026-11-12).
 - **Files:** `data/foods.json`, `engine/rules.ts` (schema: sources, a minimum smoker temp per method, a size
   warning), `engine/plan.ts` (issues), `engine/rules.test.ts`, `engine/plan.test.ts`, kit icon in
@@ -2169,8 +2175,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Depends on:** T-021, T-023. Before T-037.
 - **Acceptance:** the test cook runs start to Cook finished on the emulator with every alarm in order;
   then on the phone with the screen off.
+- **Jason (2026-11-15, eighteenth session):** "that dev thing is just for testing. So maybe we only run that on
+  an emulator then": no phone run. He wants to step through it and see how things happen; how is open (a
+  visible emulator window he drives, or screenshots of every step from the device test).
 - **Tests:** unit test for the scaling (pure); a device test on the emulator.
-- **Real phone:** yes, with Jason's yes to the listed actions.
+- **Real phone:** no (Jason, 2026-11-15: emulator only).
 
 ### T-037 Saturday cook on the Expo build (SPEC definition of done)
 - **Android versions (Jason, 2026-11-15):** run the `alarm` device test on emulator images for Android 14 and

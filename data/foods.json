@@ -219,7 +219,8 @@
       "id": "turkey",
       "name": "Whole turkey",
       "group": "Turkey",
-      "$comment": "T-059. Unstuffed, whole. Food-safety numbers (done temp, smoker temp floor, rate) each have a source below; engine/rules.test.ts fails without one. The shared tempModel gives 30 min per lb at 225F, 25.5 at 250F, 21.7 at 275F, 18.4 at 300F and 15.7 at 325F. No size limit: none was given (Jason, 2026-11-15).",
+      "$comment": "T-059. Unstuffed, whole. Food-safety numbers (done temp, smoker temp floor, rate) each have a source below; engine/rules.test.ts fails without one. The shared tempModel gives 30 min per lb at 225F, 25.5 at 250F, 21.7 at 275F, 18.4 at 300F and 15.7 at 325F. No size limit: none was given (Jason, 2026-11-15). No prep step: how to prep is the cook's own business (Jason, 2026-11-15). rateHint starts at the low end of the cited range, so a rate for a hotter smoker is not flagged as unusual.",
+      "rateHint": [0.33, 1.6],
       "sources": [
         { "cite": "USDA FSIS (fsis.usda.gov), read by Jason 2026-11-15", "covers": ["doneTemp", "minPitTemp", "rate"], "says": "Smoker air at 225F to 300F. 20 to 30 min per lb. Done at 165F in the innermost thigh, the innermost wing and the thickest part of the breast." },
         { "cite": "Jason, 2026-11-15", "covers": ["rate", "rest"], "says": "Closer to 30 min per lb at 225F to 250F, 15 to 20 min per lb at 275F to 325F. Rest 30 min, 20 min minimum." }
@@ -239,7 +240,6 @@
           "sliceMin": 15,
           "pull": { "label": "Check the turkey: done at 165F in the innermost thigh, the innermost wing and the thickest part of the breast.", "tempF": [165, 165], "checkStep": true },
           "holdLimitMin": 60,
-          "prep": [ { "leadMin": 30, "label": "Turkey: pat dry, oil and season." } ],
           "footprintSqInPerUnit": 12
         }
       ]
