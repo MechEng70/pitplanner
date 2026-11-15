@@ -72,6 +72,11 @@ with a saved rate; Cook again asks first). `src/lib/maker.ts` removed and branch
 (Jason's yes). T-067 is a dev-only route, nothing left to settle. Carried item 5 below is now only: T-022's
 15 min control, and deleting `t030`, `t032`, `t033` and the remaining `worktree-agent-*` branches.
 
+**Snyk limit (2026-11-15, about 4:30 PM on):** `snyk test` prints "You have reached your monthly limit of
+200 private tests for your mecheng70 org." The gate still passes (all 26 projects tested, Snyk Code 0
+issues), so nothing is skipped yet. Jason has been told; do not remove the step, and stop and ask him if it
+starts failing or skipping. Each gate run uses tests: run the gate once per merged change, not more.
+
 **State of step 5a (device tests for Setup, Cook finished, Gear, History):**
 
 - Four device tests are written in `tools/device/run.sh`: `setup`, `cook-finished`, `gear`, `history`. Each
