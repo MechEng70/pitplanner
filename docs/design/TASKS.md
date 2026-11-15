@@ -1318,8 +1318,16 @@ Android back closes the top sheet first; copy per CLAUDE.md.
      never rewrite the list), so this path does not exist there.
 - **Goal (0.3.0):** a running cook cannot be replaced or dropped without the user saying so; a saved cook
   is only removed by Remove.
-- **Open with Jason:** what Start cook does while a cook is running; whether Start over asks first. Both
-  are UI not in the mockups.
+- **Decided (Jason, 2026-11-15):**
+  - While a cook is running, Start cook on Plan is greyed out (disabled): "once you do one cook, you can't
+    start another until it's ended". Applies at T-021.
+  - Start over asks before it drops the cook. Applies at T-022; the wording of the question needs his OK.
+  - He does not know whether older cooks were in the history before 2026-11-14; he thinks a save was missed.
+  - Proof from the phone: a release-signed debuggable 0.2.0 (built from tag `v0.2.0` in a scratch worktree,
+    not from `legacy/`) installed over the release app to copy `history.json` out, then the normal APK back.
+    Phone actions listed for his yes first.
+  - New asks, not designed yet (`docs/design/BACKLOG.md`): a debug switch in the app, and a way to send
+    feedback or the app's data to the developer.
 - **Tests:** regression tests, written failing first: Start cook with a cook running does not replace it;
   ending or starting over never changes `cook_history`; a history read error never leads to a write that
   drops rows.

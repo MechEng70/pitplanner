@@ -12,6 +12,12 @@ decided until Jason triages it. New ideas that come up during the port are added
 | A name of the user's own for a food ("Dad's brisket"), replacing the default label | T-062 | Cook of 2026-11-14 | Wanted; needs a mockup. The default label ("11.5 lb brisket") is in 0.3.0 as T-061. |
 | Go back on the full timeline to set what was missed: tap a step, adjust it | none yet | Cook of 2026-11-14 | Next version (Jason, 2026-11-14). Taking back a step marked Done by mistake is not here: it is in 0.3.0 as T-063. Needs a mockup. |
 
+- **A debug switch and "send to developer"** (Jason, 2026-11-15, after his 2026-11-14 cook was missing from
+  0.2.0's history and nothing on the phone could show why): a way to turn on debugging in the app, and a
+  feedback or send-to-developer element that gets the app's data and log to the developer. Not designed.
+  Whether any of it goes into 0.3.0 is his call (0.3.0 already has Export my data on the migration error
+  screen and the hidden debug screen behind 5 taps on the Gear version, T-026). See TASKS T-064.
+
 ## Planned before, not in 0.3.0
 
 | Item | Task | State |
