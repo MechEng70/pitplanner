@@ -18,11 +18,21 @@ export function cookStatus(dueAt: number | null, drift: number, now: number): Co
   return { tone: 'ok', label: 'On plan' };
 }
 
-/** "in 1 hr 12 min", "now", "12 min overdue". Whole minutes, no seconds. Wrap only between "1 hr" and "12 min". */
+/**
+ * "in 1 hr 12 min", "now", "12 min overdue". Whole minutes, no seconds. Wrap only between "1 hr" and "12 min".
+ * A day or more away reads in days and whole hours, to the nearest hour: "in 1 day 22 hr", "in 3 days"
+ * (Jason, 2026-11-15: "40 hours and 50 minutes" is hard to read).
+ */
 export function countdown(dueAt: number, now: number): string {
   const d = dueAt - now;
   if (d >= 0) {
     const m = Math.ceil(d / MIN);
+    if (m >= 24 * 60) {
+      const hours = Math.round(m / 60),
+        days = Math.floor(hours / 24),
+        rest = hours % 24;
+      return `in ${days} ${days === 1 ? 'day' : 'days'}${rest ? ` ${rest} hr` : ''}`;
+    }
     return m < 1 ? 'now' : `in ${fmtDuration(m)}`;
   }
   return `${fmtDuration(Math.max(1, Math.floor(-d / MIN)))} overdue`;

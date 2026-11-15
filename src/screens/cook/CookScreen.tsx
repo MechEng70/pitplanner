@@ -193,10 +193,11 @@ function LiveCook({
                 {detail}
               </Text>
             ) : null}
-            {/* Whole minutes, no seconds; it breaks only between "1 hr" and "12 min", never inside one. */}
+            {/* Whole minutes, no seconds; it breaks only between "1 hr" and "12 min", never inside one. A day
+                or more away it reads "in 1 day 22 hr". */}
             <Text variant="countdown" tone={late ? 'warn' : undefined} aria-label={countdown(due, now)}>
               {countdown(due, now)
-                .split(/(\d+ (?:hr|min))/)
+                .split(/(\d+ (?:days?|hr|min))/)
                 .map((part, i) => (i % 2 ? <Num key={i}>{part}</Num> : part))}
             </Text>
             <Row gap={12}>

@@ -75,6 +75,18 @@ test('countdown: whole minutes, overdue counts up', () => {
   assert.match(overline(at(11, 35), true, at(11, 50)), /^Overdue since 11:35.AM$/);
 });
 
+// Jason, 2026-11-15: "40 hours and 50 minutes" is hard to read. A day or more away reads in days and hours.
+test('countdown: a day or more away reads in days and whole hours, no minutes', () => {
+  const HR = 3_600_000;
+  const now = at(10, 0);
+  assert.equal(countdown(now + 23 * HR + 59 * 60_000, now), 'in 23 hr 59 min');
+  assert.equal(countdown(now + 24 * HR, now), 'in 1 day');
+  assert.equal(countdown(now + 45 * HR + 50 * 60_000, now), 'in 1 day 22 hr');
+  assert.equal(countdown(now + 45 * HR + 20 * 60_000, now), 'in 1 day 21 hr');
+  assert.equal(countdown(now + 72 * HR + 10 * 60_000, now), 'in 3 days');
+  assert.equal(countdown(now + 71 * HR + 40 * 60_000, now), 'in 3 days');
+});
+
 test('lanes: phases by cooker, hot phase labelled with temp, rest dashed', () => {
   const ls = lanes(plan, units, k => k);
   const b = ls.find(l => l.id === 'b')!,
