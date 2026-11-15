@@ -31,6 +31,7 @@ export default tsConfig(
       'reference/',
       'docs/',
       'node_modules/',
+      '.claude/', // agent worktrees: copies of this repo, checked on merge (SE-004)
       'coverage/',
     ],
   },

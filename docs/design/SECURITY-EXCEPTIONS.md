@@ -126,6 +126,23 @@ justification, how it is excluded, follow-up task, review date.
 - **Approval:** Jason, 2026-11-12, with conditions: try npm overrides first (done, above); if they fail, ignore
   only these two packages on these paths, 90-day expiry, re-check triggers written down.
 
+## SE-004 Agent worktrees under `.claude/` are not read by the gate
+
+- **Status:** open, approved by Jason 2026-11-15 ("option 1": start the agents and make the gate skip
+  `.claude/`). Not a finding: a scope rule.
+- **Tools:** all of them: Prettier, ESLint, Jest's module map, Semgrep, Snyk Open Source and Snyk Code.
+- **Found (2026-11-15):** with three agent worktrees under `.claude/worktrees/`, `npm run check` failed at
+  step 1: Prettier read the worktrees, tripped on a device fixture there, and rewrote two fixture files in
+  each. The other tools would have scanned every worktree as well.
+- **Decision:** not shipped and not `main`. `.claude/` is untracked and holds only Claude Code's local files
+  and agent worktrees: full copies of this repo on other branches, in progress. Nothing under it is built
+  into the app from there.
+- **Why nothing escapes the gate:** an agent's work reaches `main` only by merge or cherry-pick, and every
+  merge runs the whole of `npm run check` on `main`, where the same files are scanned in place.
+- **How it is excluded:** `.claude/` in `.prettierignore`, the ESLint `ignores`, `modulePathIgnorePatterns`
+  in `jest.config.js`, `.semgrepignore`, `EXCLUDE` in `tools/snyk.sh` and `exclude.global` in `.snyk`.
+- **Follow-up:** never put source that ships under `.claude/`. If that ever changes, remove these lines.
+
 ---
 
 ## Below the gate (for awareness, not exceptions)

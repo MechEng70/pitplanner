@@ -4,6 +4,8 @@ export default {
   // No tests under app/: Expo Router would treat them as routes.
   testMatch: ['<rootDir>/src/**/*.test.{ts,tsx}', '<rootDir>/*.test.ts'],
   testPathIgnorePatterns: ['/node_modules/', '<rootDir>/legacy/', '<rootDir>/android/'],
+  // Agent worktrees are copies of this repo: keep them out of the module map (SE-004).
+  modulePathIgnorePatterns: ['<rootDir>/.claude/'],
   globalSetup: '<rootDir>/jest.global-setup.js',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   moduleNameMapper: { '^@/(.*)$': '<rootDir>/src/$1' },

@@ -11,6 +11,8 @@ docs/
 assets/
 public/
 node_modules/
+# Agent worktrees: copies of this repo on other branches, each checked on merge (SE-004).
+.claude/
 coverage/
 data/
 package-lock.json

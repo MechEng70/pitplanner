@@ -11,7 +11,8 @@ TOOLS="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT" || exit 1
 SNYK="${SNYK_BIN:-snyk}"
 command -v "$SNYK" >/dev/null || { echo "snyk not found (npm i -g snyk, then snyk auth)"; exit 2; }
-EXCLUDE=reference,release,legacy,docs,modules
+# .claude: agent worktrees, copies of this repo on other branches, scanned when merged (SE-004).
+EXCLUDE=reference,release,legacy,docs,modules,.claude
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT # the temp dir made above, nothing else
 

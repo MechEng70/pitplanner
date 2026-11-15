@@ -8,6 +8,8 @@ exclude:
     - docs/**
     # SE-002 (extended in T-002): the Capacitor app kept as reference until parity. Not built, not shipped.
     - legacy/**
+    # SE-004: agent worktrees, copies of this repo on other branches; scanned when merged onto main.
+    - .claude/**
     # Release artifacts: built from scanned sources.
     - release/**
 ignore:

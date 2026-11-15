@@ -1,6 +1,8 @@
 # Semgrep runs with --no-git-ignore (so new, uncommitted files are scanned); exclude generated,
 # vendored and local-only paths here instead.
 node_modules/
+# SE-004: agent worktrees (.claude/worktrees/): copies of this repo on other branches, scanned when merged.
+.claude/
 release/
 # SE-002: reference material and docs/mockup sources, not shipped code.
 reference/
