@@ -3,7 +3,7 @@
 #   npm run device -- [--phone] [--no-build] [--repeat N] [--only <test>]...
 #   tests: smoke, sheet-keyboard, stable-controls, db, migration-error, db-unopenable, legacy-import, alarm,
 #   plan, plan-3button, plan-sheets, food-details, survive, cook, cook-options, cook-finished, setup, gear, history, shared,
-#   fast-cook, followups
+#   fast-cook, followups, turkey
 #   DEVICE_SCALES="1.0 1.15 1.3" adds or changes the font scales (default 1.15 and 1.3).
 #   (default: all).
 #   --repeat N runs the chosen tests N times at each font scale (to catch a test that only sometimes fails). --only repeats or takes a comma list.
@@ -20,7 +20,7 @@ set -uo pipefail
 . "$(dirname "$0")/lib.sh"
 cd "$DEVICE_DIR" || exit 1
 
-ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets food-details survive cook cook-options cook-finished setup gear history shared fast-cook followups)
+ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets food-details survive cook cook-options cook-finished setup gear history shared fast-cook followups turkey)
 TESTS=()
 NOBUILD=""
 REPEAT=1
@@ -1898,6 +1898,86 @@ test_followups() {
   if [ $ok = 1 ]; then result "PASS  followups $s"; else result "FAIL  followups $s"; fi
 }
 
+# T-059 Whole turkey (emulator only: Jason has not asked for it on the phone). Food details for a new turkey on
+# the empty plan: its parts, the result bar for 12 lb at 225F against a 5:00 PM serve (0.5 hr/lb = 6 hr on
+# heat, 30 min rest, 15 min to slice, fire 20 min ahead), no "Unusual rate" at the default rate, and the rest
+# stepper stopping at its 20 min floor. On the plan it is one item with no conflict at 225F. With the smoker
+# set to 220F from the temp menu the Conflicts tile reads 1 and the sheet says the turkey needs 225F or
+# hotter and offers Change smoker temp; back at 225F the conflict is gone.
+BAR_TURKEY="Fire 9:55 AM, Off heat 4:15 PM, Serve 5:00 PM"
+test_turkey() {
+  local s="$1" dir="$2" ok=1 want
+  launch "dev/plan?seed=empty&add=turkey" || { result "FAIL  turkey $s: app did not open"; return; }
+  sleep 1
+  look "$dir/turkey-food.xml" || { result "FAIL  turkey $s: could not read the screen"; return; }
+  for want in "Whole turkey" "Weight" "Rest after pull"; do
+    has_text "$dir/turkey-food.xml" "$want" || plan_miss "$want"
+  done
+  for want in "More quantity" "Less quantity" "Add to plan" "$BAR_TURKEY"; do
+    has_label "$dir/turkey-food.xml" "$want" || plan_miss "$want"
+  done
+  says "$dir/turkey-food.xml" 'text="12.0 lb"' || plan_miss "12.0 lb as the weight"
+  shot "$dir/turkey-food.png"
+  # The rest: 30 min as opened; it stops at the 20 min floor however often Less is tapped.
+  on_screen "Less rest"
+  says "$dir/turkey-food.xml" "30 min" || plan_miss "a 30 min rest as opened"
+  tap "Less rest" 4 | tee -a "$REPORT"
+  if look "$dir/turkey-rest.xml"; then
+    says "$dir/turkey-rest.xml" 'text="20 min"' || plan_miss "the rest stopped at 20 min after four taps on Less"
+    says "$dir/turkey-rest.xml" 'text="15 min"' && plan_miss "the rest went under its 20 min floor"
+  else plan_miss "the screen after the rest taps"; fi
+  tap "More rest" 2 | tee -a "$REPORT"
+  # Scrolled to the end: the rate and its card, with no "Unusual rate" at the default 0.50 hr/lb.
+  scroll_bottom | tee -a "$REPORT"
+  if look "$dir/turkey-rate.xml"; then
+    has_label "$dir/turkey-rate.xml" "More hours per pound" || plan_miss "the hours per pound stepper"
+    says "$dir/turkey-rate.xml" "0.50" || plan_miss "0.50 hr/lb as the rate"
+    says "$dir/turkey-rate.xml" "Unusual rate" && plan_miss "no Unusual rate at the default rate (it shows)"
+    has_label "$dir/turkey-rate.xml" "$BAR_TURKEY" || plan_miss "the result bar as opened after the rest was put back"
+    shot "$dir/turkey-rate.png"
+  else plan_miss "food details scrolled to the end"; fi
+
+  tap "Add to plan" 1 | tee -a "$REPORT"
+  sleep 1
+  if look "$dir/turkey-plan.xml"; then
+    says "$dir/turkey-plan.xml" 'text="1 item"' || plan_miss "1 item on the plan"
+    says "$dir/turkey-plan.xml" "hole turkey" || plan_miss "the turkey's card on the plan"
+    has_label "$dir/turkey-plan.xml" "Conflicts 1" && plan_miss "no conflict at 225F (the tile reads 1)"
+    shot "$dir/turkey-plan.png"
+  else plan_miss "Plan after Add to plan"; fi
+
+  # Below the turkey's 225F floor: the plan keeps 220F and reports it.
+  on_screen "Smoker temp" UP
+  tap "Smoker temp" 1 | tee -a "$REPORT"
+  if look "$dir/turkey-temp.xml"; then
+    for want in 220F 225F; do grep -qE "text=\"$want\"" "$dir/turkey-temp.xml" || plan_miss "the $want row"; done
+    shot "$dir/turkey-temp.png"
+    tap "220F" 1 | tee -a "$REPORT"
+  else plan_miss "the temp menu"; fi
+  scroll_bottom | tee -a "$REPORT"
+  if look "$dir/turkey-low.xml" && has_label "$dir/turkey-low.xml" "Conflicts 1"; then
+    shot "$dir/turkey-low.png"
+    tap "Conflicts 1" 1 | tee -a "$REPORT"
+    if look "$dir/turkey-issue.xml"; then
+      has_text "$dir/turkey-issue.xml" "Conflicts" || plan_miss "the Conflicts sheet"
+      says "$dir/turkey-issue.xml" "needs the smoker at 225F or hotter. It is set to 220F." || plan_miss "the issue's message"
+      has_label "$dir/turkey-issue.xml" "Change smoker temp" || has_text "$dir/turkey-issue.xml" "Change smoker temp" ||
+        plan_miss "Change smoker temp"
+      log "    the issue reads: $(grep -oE 'text="[^"]*needs the smoker[^"]*"' "$dir/turkey-issue.xml.txt" | head -n 1)"
+      shot "$dir/turkey-issue.png"
+      tap "Change smoker temp" 1 | tee -a "$REPORT"
+      sleep 1
+      if look "$dir/turkey-fix.xml" && grep -qE 'text="225F"' "$dir/turkey-fix.xml"; then
+        tap "225F" 1 | tee -a "$REPORT"
+        scroll_bottom | tee -a "$REPORT"
+        look "$dir/turkey-fixed.xml" || plan_miss "Plan after the temp was put back"
+        has_label "$dir/turkey-fixed.xml" "Conflicts 1" && plan_miss "the conflict gone at 225F (the tile still reads 1)"
+      else plan_miss "the temp menu after Change smoker temp, with a 225F row"; fi
+    else plan_miss "the Conflicts sheet"; fi
+  else plan_miss "Conflicts 1 on the plan at 220F"; fi
+  if [ $ok = 1 ]; then result "PASS  turkey $s"; else result "FAIL  turkey $s"; fi
+}
+
 read -r -a SCALES <<<"${DEVICE_SCALES:-1.15 1.3}"
 for s in "${SCALES[@]}"; do
   A shell settings put system font_scale "$s"
@@ -1977,6 +2057,17 @@ if [[ " ${TESTS[*]} " == *" cook "* ]]; then
     [ -f "$OUT/$s/cook-none.png" ] && cook_imgs+=("No cook $pct%=$OUT/$s/cook-none.png")
   done
   [ ${#cook_imgs[@]} -eq 0 ] || { python3 -I compose.py "$OUT/cook-live.png" "${cook_imgs[@]}" && IMAGES+=("$OUT/cook-live.png"); }
+fi
+if [[ " ${TESTS[*]} " == *" turkey "* ]]; then
+  for s in "${SCALES[@]}"; do
+    pct=$(awk -v s="$s" 'BEGIN { printf "%d", s * 100 + 0.5 }')
+    [ -f "$OUT/$s/turkey-food.png" ] || continue
+    turkey_imgs=("Turkey $pct%=$OUT/$s/turkey-food.png")
+    for part in "Rate=rate" "On the plan=plan" "Temp menu=temp" "At 220F=low" "The issue=issue"; do
+      [ -f "$OUT/$s/turkey-${part#*=}.png" ] && turkey_imgs+=("${part%=*} $pct%=$OUT/$s/turkey-${part#*=}.png")
+    done
+    python3 -I compose.py "$OUT/turkey-$pct.png" "${turkey_imgs[@]}" && IMAGES+=("$OUT/turkey-$pct.png")
+  done
 fi
 log ""
 log "=== device summary ==="

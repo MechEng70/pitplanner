@@ -1113,7 +1113,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - **Rest: 30 minutes default, 20 minutes minimum.**
   - Sources are cited as "USDA FSIS (fsis.usda.gov), read by Jason 2026-11-15" and "Jason, 2026-11-15"; no URL
     or quote is needed (this replaces the "Sources" requirement's URL, page title, date and quoted sentence).
-- **Status:** built 2026-11-15, on `main` and gate-complete; device test not run
+- **Status:** built 2026-11-15, on `main` and gate-complete; device test `turkey` passes on the emulator at 115%
+  (2026-11-15, nineteenth session; pictures in `tools/device/out/turkey-115.png` for Jason)
 - **Built (2026-11-15):**
   - `data/foods.json`: food `turkey` ("Whole turkey", group "Turkey"), one method `smoked`, `perWeight`
     0.50 hr/lb at 225F, `rangeAt225` [0.33, 0.5], one smoke phase, pull check at 165F in the innermost thigh,
