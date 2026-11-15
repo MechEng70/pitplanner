@@ -1186,7 +1186,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** a plan with two briskets: read the steps and say which brisket each is for.
   Shown to him on 2026-11-15 from the emulator at 115% (dev seeds `pitplanner://dev/plan?seed=briskets`
   and `?seed=twins`, added for this; the Conflicts sheet from `?seed=clash`; the step text printed from the
-  engine, since no screen lists the steps before T-021). His verdict is not in yet.
+  engine, since no screen lists the steps before T-021). Passed (Jason, 2026-11-15): the names, the 1 and 2
+  and the Conflicts buttons are fine.
   Until the Cook screen exists (T-021) the steps show nowhere in 0.3.0, so for now: on Plan, add two
   briskets of different weights and judge the two card titles against the answers above ("11.5 lb brisket",
   "6 lb brisket") and the line under each, which should not repeat the weight; make them the same weight
@@ -1295,6 +1296,33 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Tests:** RNTL: Next up wording for check steps; banner on resume (fake permissions); Start cook blocked
   until fixed or acknowledged.
 - **Device testing (Jason):** none (Claude runs a short live cook flow).
+
+### T-064 A cook is never lost without the user choosing it
+- **Status:** todo; waits for Jason's answers (asked 2026-11-15). Belongs with T-021 to T-023.
+- **Why (Jason, 2026-11-15):** his cook of 2026-11-14 is not in 0.2.0's history, and he sees no earlier
+  cooks either. He believes he saved it. Afterwards he started a cook for 2026-11-21 and ended it with
+  Start over. The phone's copy of `history.json` cannot be read over adb (release build), so what happened
+  is not proven.
+- **Read of the 0.2.0 code (`legacy/`, 2026-11-15):**
+  1. Nothing in Start over, End cook or Discard removes a saved record. Records are removed only by Remove
+     on the Cook history screen (`removeRecord`).
+  2. A cook is written to history in one place only: End cook, then Save to history on Cook finished
+     (`FinishScreen.finish`). Until that tap nothing is saved.
+  3. Start over (`CookScreen.endCook`) drops the running cook at once: no save, no question.
+  4. Start cook on Plan with a cook already running (`app.tsx beginCook`) replaces the running cook: no
+     save, no question. Plan shows Start cook whenever the menu plans. So a finished cook that was never
+     ended through End cook is lost when the next one is started. This fits what he did.
+  5. `loadHistory` returns an empty list on any read or parse error, and `addRecord` / `removeRecord` write
+     back what it returned. One failed read followed by a save leaves only the new record. This is the
+     only path found that could remove older cooks. The 0.3.0 history is rows in SQLite (insert one row,
+     never rewrite the list), so this path does not exist there.
+- **Goal (0.3.0):** a running cook cannot be replaced or dropped without the user saying so; a saved cook
+  is only removed by Remove.
+- **Open with Jason:** what Start cook does while a cook is running; whether Start over asks first. Both
+  are UI not in the mockups.
+- **Tests:** regression tests, written failing first: Start cook with a cook running does not replace it;
+  ending or starting over never changes `cook_history`; a history read error never leads to a write that
+  drops rows.
 
 ### T-022 Cook options (13) and keep or move serve
 - **Status:** todo

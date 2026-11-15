@@ -30,6 +30,9 @@ Do these in order:
    against "11.5 lb brisket" / "6 lb brisket" with no weight in the line under them, the "1" and "2" on
    equal weights, the Conflicts buttons. Settled by him on 2026-11-14: the summary does not repeat the
    weight; the alarm's title is the label.
+4a. **T-061 passed Jason's read on 2026-11-15** (card titles, the 1 and 2, the Conflicts buttons).
+    **T-064 is new** (his 2026-11-14 cook is missing from 0.2.0's history): the code read is in TASKS T-064;
+    two questions are open with him and gate the Start cook part of T-021.
 5. **Next task: T-021 (Cook screen).** Its cards and step list use `PlannedItem.label` and the event text
    as it comes (the label is already in front). T-063 (take back a step marked Done by mistake) is in
    0.3.0 by his decision of 2026-11-14 and belongs with the Cook screen tasks; it needs a mockup or a SPEC
