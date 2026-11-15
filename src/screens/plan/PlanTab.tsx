@@ -52,6 +52,8 @@ export interface PlanTabProps {
   onResume: AppLinks['onResume'];
   /** A cook has started: the Cook tab opens. */
   onCookStarted: () => void;
+  /** Cook a past plan again (the empty Plan): opens Cook history, where Cook again is (T-028). */
+  onCookAgain?: () => void;
   /** Hands the .pitplan file to the share sheet (T-029). Without it the share icon does nothing. */
   sharePlanFile?: ShareService['sharePlanFile'];
   now?: () => number;
@@ -64,6 +66,7 @@ export function PlanTab({
   permissions,
   onResume,
   onCookStarted,
+  onCookAgain,
   sharePlanFile,
   now = Date.now,
   open,
@@ -183,6 +186,7 @@ export function PlanTab({
         onOpenIssues={() => setLayer({ kind: 'issues' })}
         onStartCook={plan => void startCook(plan)}
         onShare={share}
+        onCookAgain={onCookAgain}
       />
       {layer?.kind === 'check' ? (
         <StartCheckSheet

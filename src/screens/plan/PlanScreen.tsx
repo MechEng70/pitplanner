@@ -199,7 +199,7 @@ export function PlanScreen({
         {when}
         <PlanEmpty
           draftLost={state.draftLost}
-          hasHistory={state.history.length > 0}
+          hasHistory={state.records.length > 0}
           onAddFood={() => onAddFood?.()}
           onCookAgain={() => onCookAgain?.()}
         />

@@ -115,3 +115,15 @@ test('an overline sits above the title in capitals; the title is still the headi
   expect(screen.getByRole('heading', { name: 'Cook finished' })).toBeOnTheScreen();
   expect(screen.getByText('Served at 5:00 PM, on time.')).toBeOnTheScreen();
 });
+
+test('Screen with onBack shows a back arrow before the title', async () => {
+  const onBack = jest.fn();
+  await render(
+    <Screen title="Cook history" onBack={onBack}>
+      <Text>Cooks</Text>
+    </Screen>,
+  );
+  expect(screen.getByRole('heading', { name: 'Cook history' })).toBeOnTheScreen();
+  fireEvent.press(screen.getByRole('button', { name: 'Back' }));
+  expect(onBack).toHaveBeenCalledTimes(1);
+});

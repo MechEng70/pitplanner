@@ -142,6 +142,17 @@ export function historyRepo(db: Db) {
         insertItems(r);
       });
     },
+    /**
+     * An edit from Cook history (SPEC failure mode 14): replaces the record with this id in place and touches
+     * no other. A record that is no longer there is not put back; false then.
+     */
+    update(r: CookRecord, now: number): boolean {
+      return db.transaction(() => {
+        if (!db.get('SELECT 1 AS n FROM cook_history WHERE id = ?', [r.id])) return false;
+        this.save(r, now);
+        return true;
+      });
+    },
     remove(id: string, now: number): void {
       db.transaction(() => {
         keepCorruptOptions(id, now);

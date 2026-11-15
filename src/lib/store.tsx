@@ -96,6 +96,8 @@ export interface Store {
   setUnits: (u: Units) => void;
   setCook: (c: ActiveCook | null) => void;
   addRecord: (r: CookRecord) => void;
+  /** An edit from Cook history: replaces the saved cook with the same id; rates follow. Never adds one. */
+  updateRecord: (r: CookRecord) => void;
   removeRecord: (id: string) => void;
   setFlags: (f: Flags) => void;
   setRate: (foodId: string, hrPerLb: number | null) => void;
@@ -220,6 +222,10 @@ export function StoreProvider({ repos, clock = Date.now, alarms, children }: Pro
       },
       addRecord(r) {
         repos.history.save(r, clock());
+        reloadHistory();
+      },
+      updateRecord(r) {
+        repos.history.update(r, clock());
         reloadHistory();
       },
       removeRecord(id) {

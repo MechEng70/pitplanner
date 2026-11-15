@@ -1694,7 +1694,49 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** none.
 
 ### T-028 History and cook rates (20), with editing
-- **Status:** todo
+- **Status:** built and unit-tested on branch `t028` (2026-11-15); not run on a device, and `npm run check`
+  (Android tests, Semgrep, Snyk) not run on it yet. Fidelity PNG 20 not taken.
+- **Built:**
+  - `src/screens/gear/HistoryScreen.tsx` (a port of the 0.2.0 screen): a rate card per by-weight food
+    ("Brisket on Pit Boss 820": rate used and its source, cooks logged, saved total hours), the rate sheet
+    (saved rate, "Keep my rate exactly", Clear my rate, total hours), the cooks newest first, and the cook
+    sheet (planned vs actual per food, notes, Cook again, Edit, Remove from history with a second tap).
+  - Edit (failure mode 14): smoker temp, each food's weight or count and time on heat (an hours stepper
+    and a 5 min stepper), "Leave <food> out of rates" per by-weight food, notes. Save replaces that cook
+    only; the rates on the screen follow at once.
+  - No migration: "left out of rates" is the item's `discarded` flag (`cook_history_items.discarded`),
+    the one a food that never came off heat already has; the engine and `logs()` already skip it. An
+    edit is `historyRepo.update` (replace in place, never an insert) through the store's `updateRecord`.
+  - Way in: Gear, Cook rates and Plan, Cook a past plan again both open it inside the Gear tab (the tab
+    bar stays, as in the mockup) through the `history` param of `app/(tabs)/gear.tsx`; no new route file.
+    Back (the arrow or the phone's button) goes to Gear, or to Plan when it was opened from there. Cook
+    again sets the plan (Ready by, the cook's smoker temp, its foods) and opens Plan.
+  - Kit: `Screen` and `AppBar` `onBack` (the back arrow of mockup 20).
+- **Tests:** `HistoryScreen.test.tsx` (19: the screen, rate sheet, cook sheet, Cook again, Remove, edit,
+  left out, kg, and the T-064 regression: looking at history writes nothing, and an edit or Remove leaves
+  every other cook's rows as they were), `repos.test.ts` (update: edit, left out, missing cook),
+  `store.test.tsx` (`updateRecord`), `PlanTab.test.tsx` (Cook a past plan again), `screen.test.tsx`.
+- **Not built or not checked:** the route (`app/(tabs)/gear.tsx`: the `history` param, the phone's back
+  button) has no unit test and was not run on a device. No fidelity PNG, no device test.
+- **Found, not changed (outside this task's files):** `PlanScreen.tsx` shows Cook a past plan again when
+  `state.history.length > 0` (the learned logs). A user whose only cooks are all left out of rates (or
+  ended before any food came off) has past cooks and no button; `state.records.length > 0` is the rule
+  Jason gave.
+- **Questions for Jason:**
+  1. Rate card tiles are the 0.2.0 ones (hr/lb with its source, Cooks, Total), not mockup 20's (Rate,
+     Cooks, Timing "Per lb, 2 more cooks": size-adjusted no longer waits for cooks). Keep?
+  2. Lines kept from 0.2.0 that mockup 20 does not show: "Rates are hours per lb at 225F. Tap a food to
+     set your own rate or total hours." and "No cooks saved yet. Save a cook when it ends and your rates
+     start to learn from it." Keep?
+  3. New wording, all in the edit flow: the "Edit" button, the sheet title "Edit cook", "Smoker temp",
+     the steppers' units "hr on heat" and "min", the note "Planned 9 hr on heat.", "Leave brisket out of
+     rates" with "Rates learn from it." / "Rates do not learn from it.", "Notes", "Save". OK?
+  4. Leaving out is per food, not per cook (a wrong Done on the brisket should not throw away the wings).
+     A food left out reads "Not logged" on the cook sheet, as a food that never came off does. OK, or one
+     switch for the whole cook?
+  5. Cook again replaces whatever is on the plan without asking (as 0.2.0 did). Ask first when the plan
+     is not empty?
+  6. Back from history opened from Plan goes back to Plan. OK?
 - **Goal:** rate cards (rate used, source, cooks logged, total hours; edit; "Keep my rate exactly"); cook list;
   cook sheet with Cook again, Remove and Edit (failure mode 14: correct actual minutes, quantity, pit temp, notes,
   or exclude from rates).

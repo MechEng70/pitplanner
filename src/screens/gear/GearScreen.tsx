@@ -1,7 +1,7 @@
 // Gear tab (mockup 16; a port of legacy/src/screens/gear/GearScreen.tsx): cookers, cook rates, app settings,
 // version. The Units row and the Home Assistant row without a chevron are the 0.2.0 screen's (Jason approved
-// both). What later tasks open comes in as props the route does not pass yet: a cooker's sheet (`onCooker`,
-// T-027) and Cook rates and history (`onHistory`, T-028). Until then those rows do nothing.
+// both). A cooker's sheet (`onCooker`, T-027) comes in as a prop the route does not pass yet; until then
+// those rows do nothing. Cook rates opens Cook history (`onHistory`, T-028; HistoryScreen.tsx).
 // The "Update available" row shows what the last update check saved (`state.update`); the check is T-032.
 import { useState } from 'react';
 import type { Cookers } from '../../../engine/types';

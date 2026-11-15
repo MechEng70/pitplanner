@@ -330,3 +330,28 @@ describe('Share plan (T-029)', () => {
     expect(share.sharePlanFile).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('Cook a past plan again (T-028)', () => {
+  test('with a past cook and nothing on the plan it opens the history; the plan and the cook are untouched', async () => {
+    const r = testRepos();
+    r.repos.cookers.save(gear, NOW);
+    const log = { foodId: 'brisket', methodId: 'smoked', smokerId: 'pb820', quantity: 12, pitTempF: 225 };
+    r.repos.history.save(
+      {
+        id: 'past',
+        date: NOW - 86_400_000,
+        notes: '',
+        pitTempF: 225,
+        lateMin: 0,
+        items: [{ name: 'Brisket', plannedMin: 540, actualMin: 550, log: { ...log, minutesOnHeat: 550 } }],
+      },
+      NOW - 86_400_000,
+    );
+    const onCookAgain = jest.fn();
+    await render(<PlanTab {...tabProps()} onCookAgain={onCookAgain} />, { wrapper: storeWrapper(r.repos) });
+    await fireEvent.press(button('Cook a past plan again'));
+    expect(onCookAgain).toHaveBeenCalledTimes(1);
+    expect(r.repos.settings.draft()).toBeNull();
+    expect(r.repos.history.list().map(x => x.id)).toEqual(['past']);
+  });
+});

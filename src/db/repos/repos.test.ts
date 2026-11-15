@@ -261,6 +261,47 @@ describe('cook history', () => {
     expect(db.get('SELECT COUNT(*) AS n FROM cook_history_items')).toEqual({ n: 3 });
   });
 
+  // T-028 (SPEC failure mode 14): a saved cook can be corrected or left out of rates.
+  test('update: an edited cook replaces its own rows only; the others stay as they were', () => {
+    r.history.save(record('a'), NOW);
+    r.history.save(record('b'), NOW + 1);
+    r.history.save(record('c'), NOW + 2);
+    const others = () => ({
+      cooks: db.all("SELECT rowid AS n, * FROM cook_history WHERE id <> 'b' ORDER BY rowid"),
+      items: db.all("SELECT * FROM cook_history_items WHERE cook_id <> 'b' ORDER BY id"),
+    });
+    const before = others();
+    const edited = record('b', { notes: 'Lid was open a lot.', pitTempF: 250 });
+    edited.items[0]!.actualMin = 600;
+    edited.items[0]!.log = { ...edited.items[0]!.log, quantity: 13, pitTempF: 250, minutesOnHeat: 600 };
+    expect(r.history.update(edited, NOW + 9)).toBe(true);
+    expect(r.history.list()).toEqual([record('a'), edited, record('c')]);
+    expect(others()).toEqual(before);
+    // The day it was saved is not the day it was edited.
+    expect(db.get("SELECT created_at FROM cook_history WHERE id = 'b'")).toEqual({ created_at: NOW + 1 });
+    expect(r.history.logs().find(l => l.minutesOnHeat === 600)).toMatchObject({ foodId: 'brisket', quantity: 13 });
+  });
+
+  test('update: a food left out of rates is not in logs(); put back, it is again', () => {
+    r.history.save(record('a'), NOW);
+    r.history.save(record('b'), NOW);
+    const out = record('a');
+    out.items[0]!.log.discarded = true;
+    expect(r.history.update(out, NOW + 1)).toBe(true);
+    expect(r.history.list()[0]!.items[0]!.log.discarded).toBe(true);
+    expect(r.history.logs().map(l => l.foodId)).toEqual(['wings', 'brisket', 'wings']);
+    expect(r.history.update(record('a'), NOW + 2)).toBe(true);
+    expect(r.history.list()).toEqual([record('a'), record('b')]);
+    expect(r.history.logs()).toHaveLength(4);
+  });
+
+  test('update: a cook that is no longer there is not put back, and nothing else changes', () => {
+    r.history.save(record('a'), NOW);
+    expect(r.history.update(record('gone'), NOW + 1)).toBe(false);
+    expect(r.history.list()).toEqual([record('a')]);
+    expect(db.get('SELECT COUNT(*) AS n FROM cook_history_items')).toEqual({ n: 2 });
+  });
+
   test('remove deletes the record and its items', () => {
     r.history.save(record('a'), NOW);
     r.history.save(record('b'), NOW);

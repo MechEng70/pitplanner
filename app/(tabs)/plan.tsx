@@ -18,6 +18,7 @@ export default function PlanRoute() {
       permissions={permissionService}
       onResume={onResume}
       onCookStarted={() => router.navigate('/cook')}
+      onCookAgain={() => router.navigate({ pathname: '/gear', params: { history: 'plan' } })}
       sharePlanFile={sharePlanFile}
       open={open}
     />

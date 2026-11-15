@@ -160,6 +160,32 @@ test('a draft that cannot be loaded: flagged, default shown, kept until the plan
   expect(reopened(db).draftLost).toBe(false);
 });
 
+test('updateRecord replaces a saved cook, the learned logs follow, and it never adds one (T-028)', async () => {
+  const { db, store } = await mount();
+  await act(() => {
+    store().addRecord(record('a'));
+    store().addRecord(record('b'));
+  });
+  const edited = record('a');
+  edited.items[0]!.actualMin = 600;
+  edited.items[0]!.log.minutesOnHeat = 600;
+  await act(() => store().updateRecord(edited));
+  expect(store().state.records).toEqual([edited, record('b')]);
+  expect(store().state.history.map(l => l.minutesOnHeat)).toEqual([600, 550]);
+  expect(reopened(db)).toEqual(store().state);
+
+  // Left out of rates: still in the list, no longer learned from.
+  const out = record('a');
+  out.items[0]!.log.discarded = true;
+  await act(() => store().updateRecord(out));
+  expect(store().state.records.map(r => r.id)).toEqual(['a', 'b']);
+  expect(store().state.history).toEqual([record('b').items[0]!.log]);
+
+  await act(() => store().updateRecord(record('gone')));
+  expect(store().state.records.map(r => r.id)).toEqual(['a', 'b']);
+  expect(reopened(db)).toEqual(store().state);
+});
+
 test('gear that exists but cannot be read is not a first run', async () => {
   const r = testRepos();
   r.repos.cookers.save(gear, NOW);
