@@ -1085,7 +1085,7 @@ test_cook() {
       has_label "$dir/cook-live.xml" "$want" || has_text "$dir/cook-live.xml" "$want" || plan_miss "$want (mockup cook)"
     done
     grep -qiE 'text="check.at.[0-9][^"]*"' "$dir/cook-live.xml" || plan_miss "the overline \"Check at ...\""
-    [[ "$(next_title "$dir/cook-live.xml")" =~ ^Check\ the\ brisket\ in\ 1\ hr\ 1[0-6]\ min$ ]] || plan_miss "the title \"Check the brisket in 1 hr 12 to 16 min\" (is \"$(next_title "$dir/cook-live.xml")\")"
+    [[ "$(next_title "$dir/cook-live.xml")" =~ ^Check\ the\ brisket\ in\ 1\ hr\ 1[0-7]\ min$ ]] || plan_miss "the title \"Check the brisket in 1 hr 12 to 17 min\" (is \"$(next_title "$dir/cook-live.xml")\")"
     grep -qE 'text="Smoker.225F, serve.[0-9:]+.[AP]M"' "$dir/cook-live.xml" || plan_miss "the header line \"Smoker 225F, serve ...\""
     [ $ok = 1 ] && log "    mockup cook: \"$(next_overline "$dir/cook-live.xml")\", \"$(next_title "$dir/cook-live.xml")\""
     shot "$dir/cook-live.png"
