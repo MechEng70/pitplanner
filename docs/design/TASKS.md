@@ -1196,7 +1196,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 
 ### T-058 Survive font-size changes and process death
 - **Status:** built 2026-11-14 (emulator: `survive` passes at 115% and 130%). The mid-cook half of the
-  acceptance (on Cook: same Next up and countdown) is written into `survive` with T-021 (2026-11-15) and not run yet. Not run
+  acceptance (on Cook: same Next up and countdown) passes in `survive` at 115% on the emulator (2026-11-15, with T-021). Not run
   on the phone (hold). Gate: `npm run check` passes, all six steps (2026-11-14, Snyk back up).
 - **Built (2026-11-14):**
   - Font size. `plugins/fontScaleConfigChange.ts` (pure, tested) through `plugins/withFontScaleConfigChange.ts`
@@ -1285,10 +1285,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** none.
 
 ### T-021 Start cook and Live cook (12)
-- **Status:** built 2026-11-15, unit-tested. Gate: `npm run check` passes, all six steps (2026-11-15). Device tests `cook` and the mid-cook half of
-  `survive` are written and NOT RUN yet (the emulator run was not allowed in the session that built it):
-  run `npm run device -- --only cook,survive`, fix what it finds, then save fidelity PNG 12
-  (`docs/fidelity/rn-12-live-cook.png` from `tools/device/out/cook-live.png`). Not done until that passes.
+- **Status:** done 2026-11-15. Gate: `npm run check` passes, all six steps (2026-11-15, on `main` with T-022
+  and T-024 merged). Emulator at 115% only (Jason, 2026-11-15): `cook` and `survive` pass, including the
+  mid-cook half of T-058 (font-size change and process kill on Cook: same Next up). Not run at 130% and not
+  on the phone. Fidelity: `docs/fidelity/rn-12-live-cook.png` (live, scrolled to the end, no cook).
 - **Built (2026-11-15):**
   - `src/screens/cook/CookScreen.tsx`: no cook: "No cook running" and Go to Plan, never starts one (T-064).
     Live cook: header with the smoker temp and serve time, status chip, Next up card (overline "Check at" for

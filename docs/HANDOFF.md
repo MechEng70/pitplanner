@@ -1,4 +1,4 @@
-# Handoff (2026-11-15, sixteenth session: T-021 built and unit-tested, its device tests not run yet)
+# Handoff (2026-11-15, sixteenth session: T-021 done; T-022 and T-024 merged, not device-tested)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
@@ -30,15 +30,20 @@ Do these in order:
      README with screenshots comes after the screens (T-066).
    - Still to ask when it matters: whether "erase it" on ending a cook means the cook only (assumed; the
      menu stays on Plan as in 0.2.0) or the menu too. Probe pairing for T-060: only when T-060 is picked up.
-5. **T-021 (Start cook and Live cook, mockup 12) is built and unit-tested (sixteenth session, 2026-11-15);
-   its device tests are written and NOT RUN.** The emulator run was not allowed in that session. First thing:
-   `npm run device -- --only cook,survive` (emulator only, no phone), fix what it finds, save
-   `docs/fidelity/rn-12-live-cook.png` from `tools/device/out/cook-live.png`, compare it with
-   `docs/mockups/12-live-cook.png`, then close T-021 in TASKS. What was built, what is left to T-022 and
-   T-023 on purpose, and the two questions open with Jason (Next up layout: mockup 12 or 0.2.0's countdown
-   in the title; copy for a refused alarm set) are in TASKS T-021.
-   - Next after that: T-022 (Cook options, keep or move serve, Start over asks first). `CookScreen` takes
-     `onOptions` and `onTimeline`; the route does not pass them yet.
+5. **T-021 is done (2026-11-15):** gate passes, `cook` and `survive` pass on the emulator at 115%. Jason's
+   decisions of the day are in SPEC "Cook tab" and TASKS T-021: the Next up title is one sentence with the
+   countdown; a day or more away reads "in 1 day 22 hr"; a refused alarm set shows a banner with Try again.
+   - **Jason's working rules from 2026-11-15:** run tasks in parallel where it makes sense (agents, each in
+     its own git worktree off `main`, no emulator, no phone, no `npm run check`; the main session merges,
+     gates and runs the emulator), and run the emulator at 115% only (`DEVICE_SCALES=1.15`).
+   - **Worktree trap:** never `git add -A` in a worktree that has a `node_modules` link. A committed link
+     replaced `main`'s `node_modules` on merge (fixed with `npm ci`; `.gitignore` now ignores the link too).
+     After adding a route, Expo's route types are stale until Metro runs once: typecheck fails until then.
+   - **Merged, unit-tested, gate green, NOT run on a device:** T-022 (Cook options, keep or move serve,
+     Start over asks) and T-024 (Setup steps 1 and 2, smoker picker, Add a cooker). Each has questions for
+     Jason in its TASKS entry. Device tests for them are still to write.
+   - **In flight when this was written (agents, branches `t023`, `t026`, `t029`):** T-023 Cook finished and
+     Full timeline, T-026 Gear screen, T-029 Share plan export. Check `git branch` and TASKS for what landed.
    - T-063 (take back a Done) needs a mockup or SPEC line he approves before any UI. T-059 waits for the
      FSIS pages.
 6. **Dev seeds added on 2026-11-15:** `pitplanner://dev/plan?seed=briskets` (11.5 lb and 6 lb),
