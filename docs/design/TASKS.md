@@ -1286,8 +1286,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 
 ### T-021 Start cook and Live cook (12)
 - **Status:** todo
-- **Goal:** Start cook (permission check sheet, save, schedule alarms); the Cook tab with food and no cook does
-  the same; Live cook: header, status chip, Next up with Done/Adjust, countdown, lane chart with now line and
+- **Goal:** Start cook (permission check sheet, save, schedule alarms), then the Cook tab opens. The Cook tab
+  with no cook running shows "No cook running" and Go to Plan and never starts a cook; Start cook on Plan is
+  greyed out while a cook runs (Jason, 2026-11-15, T-064; SPEC "Cook tab"). Live cook: header, status chip, Next up with Done/Adjust, countdown, lane chart with now line and
   smoker-overlap band, next three steps, red permission banner re-checked on resume.
 - **Files:** `app/(tabs)/cook.tsx`, `src/screens/cook/CookScreen.tsx`, `src/components/kit/Lanes.tsx`,
   `src/screens/plan/StartCheckSheet.tsx`, tests, fidelity PNG 12.
@@ -1346,11 +1347,37 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - Proof from the phone: a release-signed debuggable 0.2.0 (built from tag `v0.2.0` in a scratch worktree,
     not from `legacy/`) installed over the release app to copy `history.json` out, then the normal APK back.
     Phone actions listed for his yes first.
-  - New asks, not designed yet (`docs/design/BACKLOG.md`): a debug switch in the app, and a way to send
-    feedback or the app's data to the developer.
+  - Debug switch and send to developer: in 0.3.0, since he will hand 0.3.0 to a tester (T-065).
+  - The Cook tab no longer starts a cook: "you actually have to physically hit start cook", then the app
+    jumps to the Cook tab; ending the cook there erases it and goes back to Plan (SPEC "Cook tab", T-021).
+    Taken to mean the cook is erased and the menu stays on Plan, as in 0.2.0; ask if he meant the menu too.
+  - Checked on the phone after his End cook, Discard (2026-11-15, read-only `dumpsys alarm`): 0.2.0 has no
+    alarms pending.
 - **Tests:** regression tests, written failing first: Start cook with a cook running does not replace it;
   ending or starting over never changes `cook_history`; a history read error never leads to a write that
   drops rows.
+
+### T-065 Debug switch and send to developer
+- **Status:** todo; 0.3.0 (Jason, 2026-11-15: "since I'm going to send 0.3.0 to somebody, I'm going to need
+  that debug switch and the send to developer thing"). Needs a SPEC line or mockup he approves before any
+  UI, and the email address ("I'll give you the email address later").
+- **Why:** on 2026-11-15 nothing on his phone could show what 0.2.0 had saved without installing a
+  debuggable build over it (T-064). A tester's phone cannot be reached that way at all.
+- **What exists:** the hidden debug screen (`/debug`, 5 taps on the Gear version, T-015 and T-026); Export
+  my data on the migration error screen (`src/db/export.ts`, `src/platform/shareFile.ts`).
+- **Goal (to settle with him):** a way to turn debugging on that a tester can be told about, and one action
+  that sends the app's data and its own log to the developer through the share sheet or email. No personal
+  data beyond what the app stores; nothing sent without the user tapping send; the address is not a secret
+  but comes from him.
+- **Depends on:** T-026.
+- **Tests:** unit tests for what goes into the file; RNTL for the action.
+
+### T-066 User README with screenshots
+- **Status:** todo; after the screens are built (Jason, 2026-11-15: "we're definitely going to have to
+  create a README once we get done with everything and create screenshots for everything").
+- **Goal:** how to use the app, screen by screen, with screenshots (status bar cropped), including where the
+  cook history is and how to reach the debug screen.
+- **Depends on:** the 0.3.0 screens, T-065.
 
 ### T-022 Cook options (13) and keep or move serve
 - **Status:** todo

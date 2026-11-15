@@ -59,7 +59,7 @@ Artboard names refer to the mockup canvas.
 - **Share**: share icon on Plan exports a `.pitplan` JSON file through the Android share sheet. The app registers an intent filter to open it.
 
 ### Cook tab
-- Tapping the Cook tab with food on the plan and no cook running does the same as Start cook (permission check, save, schedule alarms).
+- Only Start cook on Plan starts a cook (permission check, save, schedule alarms), and it opens the Cook tab. With no cook running the Cook tab shows "No cook running" and Go to Plan, whatever is on the plan (Jason, 2026-11-15; 0.2.0 started a cook from the tab, so a discarded cook came back on the next look). While a cook is running, Start cook on Plan is greyed out. Ending a cook (Save, Discard or Start over) goes back to Plan.
 - **Live cook** (`Cook`): header with smoker temp and serve time, status chip (On plan / Behind / Ahead), Next up card worded as a check where the step is temperature or tenderness based ("Check at 11:35 AM: wrap once the bark is set"), "in 1 hr 12 min" (no seconds), Done and Adjust buttons, a lane chart (10 AM to serve) with a now line and smoker-overlap highlight, then the next three steps.
 - **Cook options** (`Controls`): Running behind or ahead (-15/+15, Keep serve vs Move serve, with the hold impact spelled out); Quiet alerts for 30 min; Pit went out (stops the clock until "Back up to temp"); Start over; End cook (Save to history or Discard, cancels all alarms).
 - **Lock-screen alert** (`Notify`): actions Done, +15 min, Open. Unacknowledged alerts repeat every 10 min.
