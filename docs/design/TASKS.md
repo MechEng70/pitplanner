@@ -1449,6 +1449,12 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   drops rows.
 
 ### T-065 Debug switch and send to developer
+- **Tap to copy, gate and device test (2026-11-15, eighteenth session):** merged onto `main`; prebuild and a
+  dev build rebuild with `expo-clipboard` 58.0.4; `npm run check` passed all six steps; device test
+  `followups` passes on the emulator at 115%: the address is tapped and the screen says "Address copied."
+  (`docs/fidelity/rn-debug-copied.png`, for Jason to judge: the address is now on its own line as a text
+  button; "Address copied." stays until the screen closes, his choice 4A). The clipboard's contents are not
+  read by the test. Not checked on a phone.
 - **Jason's answers to the build's questions (2026-11-15, 4:15 PM):** (1) Fill in his address: a few lines
   of Kotlin in one of our own modules so the email app opens with the address as the recipient (no new
   dependency; needs a dev build rebuild and a device test). **To build.** SPEC section 6 already says so.
