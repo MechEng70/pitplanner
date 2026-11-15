@@ -8,7 +8,7 @@ import { food, method, rules } from '@/lib/rules';
 import { colors } from '@/theme/tokens';
 
 /** Warnings a different smoker temp can clear. */
-const TEMP_CODES = new Set(['PIT_CONFLICT', 'TEMP_UNTRUSTED', 'TEMP_NOT_SETTABLE']);
+const TEMP_CODES = new Set(['PIT_CONFLICT', 'TEMP_UNTRUSTED', 'TEMP_NOT_SETTABLE', 'TEMP_BELOW_FOOD_MIN']);
 
 interface Props {
   plan: Plan;

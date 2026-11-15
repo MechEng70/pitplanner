@@ -106,6 +106,26 @@ describe('Conflicts sheet', () => {
     expect(props.onChangeTemp).toHaveBeenCalledTimes(1);
   });
 
+  test('turkey below 225F shows its issue with Change smoker temp and Edit (T-059)', async () => {
+    const turkey: ItemInput = { id: 't', foodId: 'turkey', methodId: 'smoked', quantity: 12, restMin: 30 };
+    const { plan, props } = await show({ items: [turkey], pitTempF: 220 });
+    expect(plan.warnings.map(w => w.code)).toEqual(['TEMP_BELOW_FOOD_MIN']);
+    expect(screen.getByText('Whole turkey needs the smoker at 225F or hotter. It is set to 220F.')).toBeOnTheScreen();
+    noButton(/to the griddle$/);
+    expect(button('Edit whole turkey')).toBeOnTheScreen();
+    await fireEvent.press(button('Change smoker temp'));
+    await settle();
+    expect(props.onChangeTemp).toHaveBeenCalledTimes(1);
+  });
+
+  test('the turkey issue reads in the chosen units', async () => {
+    const turkey: ItemInput = { id: 't', foodId: 'turkey', methodId: 'smoked', quantity: 12, restMin: 30 };
+    await show({ items: [turkey], pitTempF: 220 }, { temp: 'C', weight: 'kg' });
+    expect(screen.getByTestId('issue-message')).toHaveTextContent(
+      /^Whole turkey needs the smoker at \d+C or hotter\. It is set to \d+C\.$/,
+    );
+  });
+
   test('Edit closes the sheet, then opens that food', async () => {
     const { props } = await show({ items: clash });
     await fireEvent.press(button('Edit 2 lb chicken wings 1'));

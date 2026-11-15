@@ -15,7 +15,7 @@ import {
   Tiles,
 } from './surfaces';
 import { Button } from '@/components/ui/button';
-import { Bell } from './icons';
+import { Bell, TurkeyIcon } from './icons';
 import { Text } from '@/components/ui/text';
 import { colors } from '@/theme/tokens';
 
@@ -37,6 +37,16 @@ test('IconAvatar gives its icon the tone color', async () => {
     </IconAvatar>,
   );
   expect(screen.getByTestId('bell', { includeHiddenElements: true }).props.stroke).toBe(colors.ok);
+});
+
+test('TurkeyIcon is a line icon with a 2 dp stroke, in its holder color (T-059)', async () => {
+  await render(
+    <IconAvatar tone="warn">
+      <TurkeyIcon testID="turkey" />
+    </IconAvatar>,
+  );
+  const icon = screen.getByTestId('turkey', { includeHiddenElements: true });
+  expect(icon.props).toMatchObject({ fill: 'none', strokeWidth: 2, stroke: colors.warn });
 });
 
 test('Tile shows label, a tabular value and its note; with onPress it is a button', async () => {

@@ -38,7 +38,7 @@ test('history: rate rows list every by-weight food with the rate used and its so
   const rows = rateRows(rules, [brisket, log('breasts', 'griddle', 4, 20)], 'pb', {}, { stlribs: 5 });
   assert.deepEqual(
     rows.map(r => r.foodId),
-    ['brisket', 'tritip', 'stlribs', 'butt'],
+    ['brisket', 'tritip', 'stlribs', 'butt', 'turkey'],
   );
   const b = rows[0];
   assert.equal(b.source, 'learned');

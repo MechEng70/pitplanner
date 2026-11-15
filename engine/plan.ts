@@ -375,6 +375,22 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
       });
   }
 
+  // A food's own smoker temp floor (rules: minPitTempF). Reported, never corrected: the user picks the temp.
+  for (const it of items) {
+    const food = rules.foods.find(f => f.id === it.input.foodId);
+    const raw = food?.methods.find(m => m.id === it.input.methodId);
+    const min = food && raw ? mergeShared(food, raw).minPitTempF : undefined;
+    if (min == null) continue;
+    const low = it.phases.filter(p => p.cooker === 'smoker' && p.tempF < min).map(p => p.tempF);
+    if (low.length)
+      warnings.push({
+        code: 'TEMP_BELOW_FOOD_MIN',
+        level: 'warn',
+        itemIds: [it.input.id],
+        message: `${nm(it)} needs the smoker at ${min}F or hotter. It is set to ${Math.min(...low)}F.`,
+      });
+  }
+
   // Smoker temperature conflicts between items
   const sm = items
     .flatMap(it => it.phases.filter(p => p.cooker === 'smoker').map(p => ({ it, p })))

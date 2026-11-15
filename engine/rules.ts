@@ -78,6 +78,17 @@ export interface RuleMethod extends MethodShared {
   cooker: CookerKind;
   short?: string;
   note?: string;
+  minPitTempF?: number; // lowest smoker set point for this method; below it the plan reports an issue
+}
+
+/** What a source backs: the food-safety numbers (done temp, smoker temp floor, rate) and the rest time. */
+export type SourceTopic = 'doneTemp' | 'minPitTemp' | 'rate' | 'rest';
+
+/** Where a food's numbers come from. `cite` names the source and who read it when; `says` is what it gives. */
+export interface RuleSource {
+  cite: string;
+  covers: SourceTopic[];
+  says: string;
 }
 
 /** A method after merging the food's shared fields (resolveMethod). Required fields must be present by then. */
@@ -96,6 +107,7 @@ export interface RuleFood {
   group: string;
   blurb?: string;
   holdsPoorly?: boolean;
+  sources?: RuleSource[]; // required for a food with a smoker temp floor (rules.test.ts)
   quantity: {
     kind: 'weight' | 'count';
     unit: string;

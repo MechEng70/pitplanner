@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { resolveMethod, type Rules } from './rules.ts';
+import { resolveMethod, type RuleFood, type Rules } from './rules.ts';
 
 const rules = JSON.parse(readFileSync(new URL('../data/foods.json', import.meta.url), 'utf8')) as Rules;
 const KINDS = ['perWeight', 'perWeightMinutes', 'fixedScaled', 'byOption', 'byOptionScaled', 'phases'];
@@ -68,4 +68,58 @@ test('rules: shared fields fill in a method, the method wins, options merge by k
   assert.equal(m.holdLimitMin, 60);
   assert.equal(m.sliceMin, 10);
   assert.deepEqual(Object.keys(m.options).sort(), ['a', 'b']);
+});
+
+// T-059: a food-safety number never ships without its source. A food is checked when it has a `sources`
+// list or a smoker temp floor; turkey must be one of them.
+const FSIS = 'USDA FSIS (fsis.usda.gov), read by Jason 2026-11-15';
+
+/** The food-safety numbers a food carries that no source covers. */
+function unsourced(food: RuleFood): string[] {
+  const needs = new Set<string>();
+  for (const raw of food.methods) {
+    const m = resolveMethod(food, raw);
+    if (m.pull?.tempF) needs.add('doneTemp');
+    if (m.minPitTempF != null) needs.add('minPitTemp');
+    if (m.timing?.hrPerLbAt225 != null || m.timing?.minPerLbAt225 != null) needs.add('rate');
+  }
+  const covered = new Set<string>(
+    (food.sources ?? []).filter(s => s.cite?.trim() && s.says?.trim()).flatMap(s => s.covers ?? []),
+  );
+  return [...needs].filter(n => !covered.has(n)).sort();
+}
+
+test('rules: turkey cites a source for its done temp, smoker temp floor and rate', () => {
+  const checked = rules.foods.filter(f => f.sources || f.methods.some(m => resolveMethod(f, m).minPitTempF != null));
+  assert.ok(
+    checked.some(f => f.id === 'turkey'),
+    'turkey is in the rules and is checked',
+  );
+  for (const f of checked) assert.deepEqual(unsourced(f), [], `${f.id}: food-safety numbers with no source`);
+
+  const turkey = rules.foods.find(f => f.id === 'turkey')!;
+  const m = resolveMethod(turkey, turkey.methods[0]);
+  assert.deepEqual(m.pull.tempF, [165, 165]);
+  assert.equal(m.minPitTempF, 225);
+  assert.equal(m.timing.hrPerLbAt225, 0.5);
+  assert.deepEqual(m.timing.rangeAt225, [0.33, 0.5]);
+  assert.deepEqual(m.restMin, { default: 30, min: 20 });
+  const fsis = turkey.sources!.find(s => s.cite === FSIS);
+  assert.ok(fsis, 'the FSIS source is cited exactly');
+  for (const n of ['doneTemp', 'minPitTemp', 'rate'] as const) assert.ok(fsis.covers.includes(n), `FSIS covers ${n}`);
+  assert.ok(
+    turkey.sources!.some(s => s.cite === 'Jason, 2026-11-15' && s.covers.includes('rest')),
+    "Jason's numbers are cited",
+  );
+  assert.equal(turkey.methods.length, 1, 'one method: no stuffed or spatchcock choice');
+  assert.deepEqual(m.options, {}, 'no options');
+});
+
+test('rules: the sources check fails when a number loses its source', () => {
+  const turkey = rules.foods.find(f => f.id === 'turkey')!;
+  const all = ['doneTemp', 'minPitTemp', 'rate'];
+  assert.deepEqual(unsourced({ ...turkey, sources: [] }), all);
+  assert.deepEqual(unsourced({ ...turkey, sources: turkey.sources!.map(s => ({ ...s, cite: ' ' })) }), all);
+  const noFloor = turkey.sources!.map(s => ({ ...s, covers: s.covers.filter(c => c !== 'minPitTemp') }));
+  assert.deepEqual(unsourced({ ...turkey, sources: noFloor }), ['minPitTemp']);
 });

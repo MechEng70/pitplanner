@@ -1106,7 +1106,37 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   and no food-safety note is wanted ("you're being very risk averse on this, and I'm okay with this"). Done
   temperature in the step text: 165F in the thigh, the wing and the thickest part of the breast (the FSIS
   rule), since he did not pick between the two.
-- **Status:** todo
+- **Jason (2026-11-15, later the same session), two answers:**
+  - **Size warning: left out of 0.3.0.** He gave no size limit and none may be invented. Not built: no limit in
+    `foods.json`, no warning in Food details. The "Size warning" requirement and its engine test below do not
+    apply to 0.3.0.
+  - **Rest: 30 minutes default, 20 minutes minimum.**
+  - Sources are cited as "USDA FSIS (fsis.usda.gov), read by Jason 2026-11-15" and "Jason, 2026-11-15"; no URL
+    or quote is needed (this replaces the "Sources" requirement's URL, page title, date and quoted sentence).
+- **Status:** built 2026-11-15, unit-tested on a worktree branch; gate and device test not run
+- **Built (2026-11-15):**
+  - `data/foods.json`: food `turkey` ("Whole turkey", group "Turkey"), one method `smoked`, `perWeight`
+    0.50 hr/lb at 225F, `rangeAt225` [0.33, 0.5], one smoke phase, pull check at 165F in the innermost thigh,
+    the innermost wing and the thickest part of the breast, rest 30 / 20 min, `minPitTempF` 225, and a
+    `sources` list. No options: no stuffed, no spatchcock. No turkey-specific code for timing.
+  - `engine/rules.ts`: `minPitTempF` on a method, `sources` on a food (`RuleSource`: cite, covers, says).
+  - `engine/plan.ts`: warning `TEMP_BELOW_FOOD_MIN` (level warn, the item's id) when a smoker phase of a food
+    runs under its `minPitTempF`. The temp is left as chosen. `IssuesSheet` offers Change smoker temp for it;
+    the Conflicts tile counts it like any warn.
+  - Tests: `engine/plan.test.ts` (12 lb at 225F: 6 hr on heat, rest, fire time, pull at 165F; below 225F and
+    at 225F; the shared temp model against the cited rates), `engine/rules.test.ts` (sources check, fails
+    when a number loses its source), `IssuesSheet.test.tsx`, `FoodPick.test.tsx`, `surfaces.test.tsx`.
+  - The shared temp model gives 30 min per lb at 225F, 25.5 at 250F, 21.7 at 275F, 18.4 at 300F, 15.7 at
+    325F. Against Jason's 15 to 20 at 275F to 325F it is 1.7 min per lb slow at 275F; against FSIS 20 to 30
+    at 225F to 300F it is 1.6 fast at 300F. No turkey temp model was added.
+  - **Icon: drawn, not on the avatar.** There are no per-food icons: every food card and Add food row shows
+    its cooker's icon (T-017 PR-2, mockups 05 and 07), so turkey shows the smoker flame like brisket.
+    `TurkeyIcon` is in `src/components/kit/icons.tsx` and on the dev kit screen only. Putting it on the
+    avatar is a new UI element and needs Jason's yes.
+  - **Chosen by analogy, not sourced, for Jason to confirm:** weight default 12 lb, min 8, max 24, step 0.5,
+    reference weight 12 lb; carve time 15 min; hold limit 60 min; prep 30 min ahead ("Turkey: pat dry, oil
+    and season."); grate space 12 sq in per lb; group "Turkey"; smoke step "Turkey on the smoker. Probe in
+    the thickest part of the breast."
 - **Goal:** whole turkey on the smoker, planned and learned like every other food (Jason, 2026-11-12).
 - **Files:** `data/foods.json`, `engine/rules.ts` (schema: sources, a minimum smoker temp per method, a size
   warning), `engine/plan.ts` (issues), `engine/rules.test.ts`, `engine/plan.test.ts`, kit icon in

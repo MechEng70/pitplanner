@@ -22,13 +22,26 @@ describe('Add food (mockup 07)', () => {
   test('lists every food under its group, in the order of the rules file, with its blurb', async () => {
     await show();
     expect(screen.getByRole('heading', { name: 'Add food' })).toBeOnTheScreen();
-    expect(headings()).toEqual(['Beef', 'Pork', 'Chicken']);
+    expect(headings()).toEqual(['Beef', 'Pork', 'Chicken', 'Turkey']);
     expect(shownFoods()).toEqual(foods.map(f => f.name));
     for (const f of foods) {
       const row = screen.getByRole('button', { name: new RegExp(`^${f.name}`) });
       expect(within(row).getByText(foodBlurb(f))).toBeOnTheScreen();
     }
     expect(within(screen.getByRole('button', { name: /^Brisket/ })).getByText('Smoker, by weight')).toBeOnTheScreen();
+  });
+
+  test('whole turkey is listed under Turkey with the smoker avatar, and picking it reports its id (T-059)', async () => {
+    const { onPick } = await show();
+    await fireEvent.changeText(search(), 'turkey');
+    expect(shownFoods()).toEqual(['Whole turkey']);
+    expect(headings()).toEqual(['Turkey']);
+    const row = screen.getByRole('button', { name: /^Whole turkey/ });
+    expect(within(row).getByText('Smoker, by weight')).toBeOnTheScreen();
+    expect(within(row).getByTestId('cooker-icon-smoker', { includeHiddenElements: true })).toBeOnTheScreen();
+    await fireEvent.press(row);
+    await settle();
+    expect(onPick).toHaveBeenCalledWith('turkey');
   });
 
   test('search filters by food name, ignoring case and spaces around it', async () => {

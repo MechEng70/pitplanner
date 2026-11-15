@@ -214,6 +214,35 @@
         "prep": [],
         "footprintSqInPerUnit": 55
       }
+    },
+    {
+      "id": "turkey",
+      "name": "Whole turkey",
+      "group": "Turkey",
+      "$comment": "T-059. Unstuffed, whole. Food-safety numbers (done temp, smoker temp floor, rate) each have a source below; engine/rules.test.ts fails without one. The shared tempModel gives 30 min per lb at 225F, 25.5 at 250F, 21.7 at 275F, 18.4 at 300F and 15.7 at 325F. No size limit: none was given (Jason, 2026-11-15).",
+      "sources": [
+        { "cite": "USDA FSIS (fsis.usda.gov), read by Jason 2026-11-15", "covers": ["doneTemp", "minPitTemp", "rate"], "says": "Smoker air at 225F to 300F. 20 to 30 min per lb. Done at 165F in the innermost thigh, the innermost wing and the thickest part of the breast." },
+        { "cite": "Jason, 2026-11-15", "covers": ["rate", "rest"], "says": "Closer to 30 min per lb at 225F to 250F, 15 to 20 min per lb at 275F to 325F. Rest 30 min, 20 min minimum." }
+      ],
+      "quantity": { "kind": "weight", "unit": "lb", "default": 12, "min": 8, "max": 24, "step": 0.5, "referenceWeight": 12 },
+      "methods": [
+        {
+          "id": "smoked",
+          "label": "Smoked",
+          "cooker": "smoker",
+          "minPitTempF": 225,
+          "timing": { "kind": "perWeight", "hrPerLbAt225": 0.5, "rangeAt225": [0.33, 0.5] },
+          "phases": [
+            { "id": "smoke", "fraction": 1.0, "temp": "pit", "label": "Turkey on the smoker. Probe in the thickest part of the breast.", "short": "Smoke" }
+          ],
+          "restMin": { "default": 30, "min": 20 },
+          "sliceMin": 15,
+          "pull": { "label": "Check the turkey: done at 165F in the innermost thigh, the innermost wing and the thickest part of the breast.", "tempF": [165, 165], "checkStep": true },
+          "holdLimitMin": 60,
+          "prep": [ { "leadMin": 30, "label": "Turkey: pat dry, oil and season." } ],
+          "footprintSqInPerUnit": 12
+        }
+      ]
     }
   ]
 }

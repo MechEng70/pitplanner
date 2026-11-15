@@ -316,3 +316,90 @@ test('missing griddle is flagged for a griddle item', () => {
   const p = buildPlan(rules, saturday({ cookers: { smoker: pitBoss } }));
   assert.ok(p.warnings.some(w => w.code === 'NO_GRIDDLE'));
 });
+
+// ---- T-059 whole turkey ----
+const turkeyPlan = (over: Partial<PlanInput> = {}) =>
+  buildPlan(
+    rules,
+    saturday({ rateOverrides: {}, items: [{ id: 't', foodId: 'turkey', methodId: 'smoked', quantity: 12 }], ...over }),
+  );
+
+test('turkey: 12 lb at 225F is 6 hr on heat, a 30 min rest, fire 20 min ahead and a pull check at 165F', () => {
+  const p = turkeyPlan();
+  const it = p.items[0];
+  assert.equal(it.rateInfo?.hrPerLbAt225, 0.5);
+  assert.equal(it.rateInfo?.source, 'default');
+  assert.equal(it.restMin, 30);
+  assert.equal(it.restFloorMin, 20);
+  // Backward from serve: slice, rest, then rate x weight on heat (0.5 hr/lb x 12 lb = 360 min).
+  assert.equal(it.finish, SERVE - (it.sliceMin + 30) * MIN);
+  assert.equal(ev(p, 'phase', 't', 'smoke').at, it.finish - 360 * MIN);
+  assert.equal(p.fireAt, it.finish - 360 * MIN - pitBoss.preheatMin * MIN);
+  assert.equal(ev(p, 'fire').label, 'Fire the smoker to 225F.');
+  const pull = ev(p, 'pull', 't');
+  assert.equal(pull.at, it.finish);
+  assert.equal(pull.checkStep, true);
+  assert.match(pull.label, /165F in the innermost thigh, the innermost wing and the thickest part of the breast/);
+  assert.deepEqual(p.warnings, []);
+});
+
+test('turkey: the size-adjusted model gives the same 6 hr at its 12 lb reference weight', () => {
+  const p = turkeyPlan({
+    items: [{ id: 't', foodId: 'turkey', methodId: 'smoked', quantity: 12, timingModel: 'sizeAdjusted' }],
+  });
+  assert.equal(ev(p, 'phase', 't', 'smoke').at, p.items[0].finish - 360 * MIN);
+});
+
+test('turkey: a rest under 20 min is raised to the 20 min minimum', () => {
+  const p = turkeyPlan({ items: [{ id: 't', foodId: 'turkey', methodId: 'smoked', quantity: 12, restMin: 5 }] });
+  assert.equal(p.items[0].restMin, 20);
+});
+
+test('turkey: below 225F the plan reports an issue and keeps the temp; at 225F it does not', () => {
+  const low = turkeyPlan({ pitTempF: 220 });
+  const w = low.warnings.filter(x => x.code === 'TEMP_BELOW_FOOD_MIN');
+  assert.equal(w.length, 1);
+  assert.equal(w[0].level, 'warn');
+  assert.deepEqual(w[0].itemIds, ['t']);
+  assert.equal(w[0].message, 'Whole turkey needs the smoker at 225F or hotter. It is set to 220F.');
+  // Never changed silently: the plan is still built at the temp the user chose.
+  assert.equal(low.pitTempF, 220);
+  assert.equal(low.items[0].phases[0].tempF, 220);
+  assert.equal(ev(low, 'fire').label, 'Fire the smoker to 220F.');
+
+  for (const t of [225, 250, 275])
+    assert.ok(!turkeyPlan({ pitTempF: t }).warnings.some(x => x.code === 'TEMP_BELOW_FOOD_MIN'), `${t}F`);
+});
+
+test("turkey: the temp floor is the food's own; brisket at 200F has no such issue", () => {
+  const p = buildPlan(rules, saturday({ pitTempF: 200, items: [saturday().items[0]] }));
+  assert.ok(!p.warnings.some(x => x.code === 'TEMP_BELOW_FOOD_MIN'));
+});
+
+test('turkey: two turkeys below 225F get one issue each, named by label', () => {
+  const p = turkeyPlan({
+    pitTempF: 200,
+    items: [
+      { id: 't1', foodId: 'turkey', methodId: 'smoked', quantity: 12 },
+      { id: 't2', foodId: 'turkey', methodId: 'smoked', quantity: 14 },
+    ],
+  });
+  const w = p.warnings.filter(x => x.code === 'TEMP_BELOW_FOOD_MIN');
+  assert.deepEqual(
+    w.map(x => x.itemIds),
+    [['t1'], ['t2']],
+  );
+  assert.match(w[0].message, /^12 lb whole turkey needs the smoker at 225F or hotter/);
+});
+
+test('turkey: the shared temp model (0.85 per 25F) against the cited rates, in min per lb', () => {
+  const perLb = (t: number) => 0.5 * 60 * tempFactor(rules, t);
+  // FSIS: 20 to 30 min per lb with smoker air at 225F to 300F. Jason: closer to 30 at 225F to 250F.
+  assert.equal(perLb(225), 30);
+  assert.ok(Math.abs(perLb(250) - 25.5) < 0.01);
+  // Jason: 15 to 20 min per lb at 275F to 325F. The model gives 21.7 at 275F (1.7 over, the slow side),
+  // 18.4 at 300F and 15.7 at 325F. No turkey-specific temp model.
+  assert.ok(perLb(275) > 20 && perLb(275) < 22, `275F: ${perLb(275)}`);
+  assert.ok(perLb(300) > 15 && perLb(300) < 20, `300F: ${perLb(300)}`);
+  assert.ok(perLb(325) > 15 && perLb(325) < 20, `325F: ${perLb(325)}`);
+});
