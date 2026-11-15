@@ -1427,6 +1427,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Jason's answers (2026-11-15, 5:00 PM):** the subject "Pit Planner debug file" stays; the line "If the address isn't filled in, type it." stays. He asked whether the file could go to GitHub instead of his email: not built (the repo is public and the file holds a tester's cooks and notes; it would also need a token in the app). "Things we can always upgrade later."
 - **Gate, follow-up (2026-11-15):** the recipient code is on `main`; `npm run check` passed (the Kotlin compiles, 13 new JUnit tests pass). Not on a device: needs a dev build rebuild and an email app with an account to judge the To field.
 - **Gate (2026-11-15):** merged onto `main` and `npm run check` passed all six steps. No device test yet.
+- **Jason's look (2026-11-15, 5:20 PM):** `rn-debug-send.png` approved. **To build:** tapping the address copies
+  it, and the screen says so ("Tap the address to copy it."), so a tester can paste it into the email when it
+  is not filled in. Check what is installed for the clipboard before adding a dependency.
 - **Device test (2026-11-15):** in `followups` the debug screen shows Send to developer, where the file goes and
   what it holds (emulator, 115%; `docs/fidelity/rn-debug-send.png`). Send is not tapped by the test. Not
   checked anywhere: the share sheet, the To field in an email app, the file's contents from a real phone.
@@ -1883,6 +1886,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   you have now. Tap Cook again to go on." under the buttons, the second tap does it; an empty plan is
   replaced at once. SPEC "Cook history" updated. Not on a device yet; the `history` device test still fits
   (its seed has a saved brisket rate).
+- **Jason's look (2026-11-15, 5:20 PM):** `rn-20-cook-history.png` and the Edit cook wording
+  (`rn-20-edit-cook.png`, question 3) approved. No questions left on this task.
 - **Device test rerun (2026-11-15, 5:03 PM):** `history` passes at 115% with the rate-card change.
   `docs/fidelity/rn-20-cook-history.png` retaken; `rn-20-edit-cook.png` is the Edit cook sheet for Jason's
   look at its wording (question 3). Cook again asking first is covered by Jest only.
@@ -1935,6 +1940,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   it is too big, a text file says "This file is not a Pit Planner plan." Fidelity PNG
   `docs/fidelity/rn-11-open-shared-plan.png`. Not checked: a `content://` open from Files, Gmail or Drive
   (T-031), the conflict after an import on a device, the phone. Open: Jason's questions below and his look.
+- **Jason's look (2026-11-15, 5:20 PM):** `rn-11-open-shared-plan.png` approved. He does not want built
+  screens pulled back to the mockups: "I don't want to go back to the mock-up. You've got some good ideas."
 - **Built (2026-11-15, branch `worktree-agent-a666a162b7613bda9`; unit-tested, not built or run on a device,
   Kotlin tests not run, `npm run check` not run):**
   - Intent filters: `plugins/pitplanIntents.ts` (pure) + `plugins/withPitplanIntents.ts` (TypeScript, as the
@@ -2355,6 +2362,8 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Jason's answers (2026-11-15, 5:00 PM):** Back to the cook stays in the accent colour; it always gets its own line under Discard this cook (built; he confirms from the screenshot).
 - **Gate, follow-up (2026-11-15):** the undo arrow icon and Back to the cook are on `main`; `npm run check` passed. Not on a device. Two small questions for Jason: the button's colour (accent as built, or grey) and whether it gets its own line when the row wraps.
 - **Gate (2026-11-15):** merged onto `main` and `npm run check` passed all six steps. No device test yet.
+- **Jason's look (2026-11-15, 5:20 PM):** `rn-13-cook-options-undo.png` and `rn-15-cook-finished-back.png`
+  approved (Back to the cook on its own line, the colours as they are).
 - **Device test (2026-11-15):** `followups` passes on the emulator at 115%: Done on the next step, the Undo row
   is first in Cook options and names the step, Undo puts Next up back and the row is gone; Done on Serve,
   Back to the cook on its own line on Cook finished, tapping it shows Live cook on Serve. Fidelity PNGs

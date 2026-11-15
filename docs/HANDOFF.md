@@ -28,10 +28,9 @@ are in each task's TASKS entry (T-022, T-028, T-030, T-033, T-037, T-059, T-063,
 
 **Next, in this order (ask Jason which to start; he wants agents used where tasks are independent, told
 first, each in a worktree off local `main`, no emulator, no gate; `git reset --hard main` first in each):**
-1. Jason's look at the newest screenshots: `docs/fidelity/rn-11-open-shared-plan.png` (mockup 11),
-   `rn-13-cook-options-undo.png`, `rn-15-cook-finished-back.png` (he confirms Back to the cook on its own
-   line), `rn-debug-send.png`, `rn-20-cook-history.png` (fewer rate cards), `rn-20-edit-cook.png` (the Edit
-   cook wording, T-028 question 3).
+1. Done: Jason approved all six newest screenshots (11, 13 undo, 15 back, debug send, 20, Edit cook) on
+   2026-11-15, 5:20 PM. He does not want approved screens pulled back toward the mockups. One thing to build
+   from it (T-065): on the debug screen, tapping the address copies it, with a line saying so.
 2. **T-067** fast test cook: a dev-only link, the Saturday fixture, 60 times faster; nothing left to settle.
 3. **T-059** whole turkey, now in 0.3.0: needs the source links for the numbers he pasted (in the T-059
    entry) and his OK on the food-safety note (new UI).
