@@ -27,6 +27,8 @@ export interface Lane {
 const LANE_H = 46;
 const TRACK_H = 28;
 const TICK_H = 24;
+/** Hour ticks past this share of the chart would collide with the serve tick's label. */
+const LAST_TICK_ROOM = 0.72;
 /** A segment narrower than this share of the chart has no room for its label. */
 const LABEL_MIN = 0.1;
 
@@ -62,6 +64,9 @@ export function Lanes({
   const pct = (x: number) => `${Math.round(x * 10000) / 100}%` as const;
   const span = (a: number, b: number) => ({ left: pct(share(a)), width: pct(Math.max(0, share(b) - share(a))) });
   const rows = band ? lanes.map((l, i) => (band.laneIds.includes(l.id) ? i : -1)).filter(i => i >= 0) : [];
+  // The last tick (serve) ends at the right edge, so its label reaches back over the end of the row: an
+  // hour tick there would run into it ("4p6:25p" on the emulator at 115%).
+  const shown = ticks.filter((t, i) => i === ticks.length - 1 || share(t.at) <= LAST_TICK_ROOM);
   const first = rows[0] ?? 0;
   const last = rows[rows.length - 1] ?? 0;
   return (
@@ -131,7 +136,7 @@ export function Lanes({
       <View className="mt-1 flex-row" style={{ height: Math.round(TICK_H * scale) }}>
         <View className="w-[34%] shrink-0" />
         <View className="flex-1">
-          {ticks.map((t, i) => (
+          {shown.map((t, i) => (
             // The first tick starts at the chart's left edge and the last (serve) ends at its right edge;
             // the ones between are centered on their time.
             <Num

@@ -102,3 +102,17 @@ test('ticks are numbers that never wrap: the first starts at the left edge, the 
   });
   expect(StyleSheet.flatten(screen.getByText('8p').props.style)).toMatchObject({ right: 0 });
 });
+
+// Emulator, 115%, 2026-11-15: the 4 PM tick ran into the serve tick ("4p6:25p").
+test('an hour tick near the end is left out, so it cannot run into the serve tick', async () => {
+  await show({
+    ticks: [
+      { at: FROM, label: '10a' },
+      { at: FROM + 8 * HR, label: '6p' },
+      { at: TO, label: '8p' },
+    ],
+  });
+  expect(screen.getByText('10a')).toBeOnTheScreen();
+  expect(screen.queryByText('6p')).toBeNull();
+  expect(screen.getByText('8p')).toBeOnTheScreen();
+});
