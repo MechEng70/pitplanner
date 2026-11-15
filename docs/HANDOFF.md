@@ -54,6 +54,19 @@ recipient filled in by Kotlin in `modules/pit-share`; needs a dev build rebuild 
 merged). The emulator has the dev build with `pit-share`; the phone's dev build is older. Still to ask
 Jason: T-028's six, T-030's, T-033's, the carried ones, T-067's three.
 
+**Update, 4:45 PM:** both follow-ups are on `main`, each through the gate (655 Jest tests): T-063 undo
+arrow icon and Back to the cook; T-065 `sendFile` in `pit-share` (Kotlin compiled, JUnit passes). The
+emulator's dev build is now older than `main`: rebuild before the next device run. Not device-tested:
+T-063 (undo row, Back to the cook, the bottom row may wrap on a first cook), T-065 (debug screen; the To
+field needs an email app with an account), T-032. Jason answered T-030's four and T-028's (1), (2), (4), (5),
+(6) plus the rate-card question: see those TASKS entries. To build from them: rate cards only for foods
+cooked or with a saved rate; Cook again asks before replacing a plan. Still to ask: T-028 (3) with a
+screenshot of Edit cook, T-033's six, T-067's three, the carried ones, four small ones from the follow-ups
+(T-063: button colour, wrapping; T-065: email subject "Pit Planner debug file", the second line "If the
+address isn't filled in, type it."). `docs/design/TECH-DESIGN.md` still calls pit-share read-only: fix.
+Two agent worktrees and branches are left over (`worktree-agent-acd0…`, `worktree-agent-add2…`; commits on
+`main`): delete with his yes.
+
 **State of step 5a (device tests for Setup, Cook finished, Gear, History):**
 
 - Four device tests are written in `tools/device/run.sh`: `setup`, `cook-finished`, `gear`, `history`. Each

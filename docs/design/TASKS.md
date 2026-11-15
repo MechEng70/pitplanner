@@ -1411,6 +1411,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     filled in, type it."
   - Needs a device (after a rebuild): Send, pick Gmail: To holds the address, the subject is set, the JSON is
     attached and opens. Pick a non-email app (Drive): the file still arrives.
+- **Gate, follow-up (2026-11-15):** the recipient code is on `main`; `npm run check` passed (the Kotlin compiles, 13 new JUnit tests pass). Not on a device: needs a dev build rebuild and an email app with an account to judge the To field.
 - **Gate (2026-11-15):** merged onto `main` and `npm run check` passed all six steps. No device test yet.
 - **Status:** built 2026-11-15, unit-tested on a worktree branch; `npm run check` and device test not run.
   0.3.0 (Jason, 2026-11-15: "since I'm going to send 0.3.0 to somebody, I'm going to need
@@ -1852,6 +1853,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   5. Cook again replaces whatever is on the plan without asking (as 0.2.0 did). Ask first when the plan
      is not empty?
   6. Back from history opened from Plan goes back to Plan. OK?
+- **Jason's answers (2026-11-15, 4:40 PM):** (1) the 0.2.0 tiles stay (rate with its source, Cooks, Total).
+  (2) The two helper lines stay. (4) Leaving out of rates stays per food. (6) Back from history opened from
+  Plan goes to Plan. **To build:** a rate card shows only for a food that has been cooked or has a saved rate
+  or total hours, not for every by-weight food; Cook again asks first when the plan is not empty ("Replace
+  the plan you have now?"). Still open: (3) the Edit cook wording, to be judged from a screenshot.
 - **Goal:** rate cards (rate used, source, cooks logged, total hours; edit; "Keep my rate exactly"); cook list;
   cook sheet with Cook again, Remove and Edit (failure mode 14: correct actual minutes, quantity, pit temp, notes,
   or exclude from rates).
@@ -1928,6 +1934,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     mockup says "Jason shared his Saturday plan."); (3) the too-big wording "That file is too big to be a Pit
     Planner plan." (0.2.0 said "Could not read that file." for every failure); (4) the smoker field is
     read-only with no chevron (the mockup shows one).
+  - **Jason's answers (2026-11-15, 4:40 PM): all as built.** (1) The Conflicts sheet opens after Use this plan.
+    (2) "Someone shared a Saturday plan." (no sender name in the file). (3) "That file is too big to be a Pit
+    Planner plan." (4) The smoker field stays plain, no chevron.
   - **Device test:** see the T-030 report: a `file://` VIEW intent to a file in the app's own cache, and a
     `content://` open from the Files app.
 - **Goal:** `.pitplan` opens the app (VIEW/SEND intent filters by config plugin); the file is read from
@@ -2303,6 +2312,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   (4) Add a proper undo arrow icon to the kit; the row stops using Start over's icon. **Built.** (5) Cook
   finished gets a way back to the cook for a Serve marked Done by mistake ("Back to the cook"; approved as a
   new control on that screen; write the SPEC line with it). **Built.**
+- **Gate, follow-up (2026-11-15):** the undo arrow icon and Back to the cook are on `main`; `npm run check` passed. Not on a device. Two small questions for Jason: the button's colour (accent as built, or grey) and whether it gets its own line when the row wraps.
 - **Gate (2026-11-15):** merged onto `main` and `npm run check` passed all six steps. No device test yet.
 - **Status:** built 2026-11-15, unit-tested on a worktree branch; `npm run check` and device test not run.
   (0.3.0; Jason, 2026-11-14: "there needs to be somewhere to undo it in version 0.3.0. I don't want to wait
