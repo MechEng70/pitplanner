@@ -98,7 +98,7 @@ describe('Cook finished (mockup 15)', () => {
       expect(screen.getByText(line!)).toBeOnTheScreen();
     }
     expect(screen.getAllByText('On plan')).toHaveLength(3);
-    expect(screen.getByText('Your brisket rate updates')).toBeOnTheScreen();
+    expect(screen.getByText('Your brisket rate stays')).toBeOnTheScreen();
     // The fixture has a saved brisket rate: it holds until three cooks are logged.
     expect(
       screen.getByText(
@@ -112,12 +112,31 @@ describe('Cook finished (mockup 15)', () => {
     expect(screen.getByRole('link', { name: 'Buy me a bag of pellets' })).toBeOnTheScreen();
   });
 
-  test('with no saved rate the card says where the rate moves, and from how many cooks', async () => {
+  // Jason, 2026-11-15: plain words, and the user agrees or not.
+  test('with no saved rate the card says the food finished early and what the next plan uses, with the choice', async () => {
     const c = doneOnTime(cookAt(AT_1023));
     await show({ ...c, input: { ...c.input, rateOverrides: {} } }, SERVE);
     await endCook();
-    expect(screen.getByText('Your brisket rate updates')).toBeOnTheScreen();
-    expect(screen.getByText(/^\d\.\d\d to \d\.\d\d hr\/lb at 225F, from 1 cook\.$/)).toBeOnTheScreen();
+    expect(screen.getByText('Brisket finished early')).toBeOnTheScreen();
+    expect(screen.getByText(/^Next time the plan uses \d\.\d\d hr\/lb instead of \d\.\d\d\.$/)).toBeOnTheScreen();
+    expect(screen.getByRole('radio', { name: /^Use \d\.\d\d$/ })).toBeChecked();
+    expect(screen.getByRole('radio', { name: /^Keep \d\.\d\d$/ })).not.toBeChecked();
+  });
+
+  test('Keep saves the cook with that food left out of rates; Use lets the rate learn from it', async () => {
+    const c = doneOnTime(cookAt(AT_1023));
+    const { repos } = await show({ ...c, input: { ...c.input, rateOverrides: {} } }, SERVE);
+    await endCook();
+    await fireEvent.press(screen.getByRole('radio', { name: /^Keep \d\.\d\d$/ }));
+    expect(screen.getByRole('radio', { name: /^Keep \d\.\d\d$/ })).toBeChecked();
+    await fireEvent.press(button('Save to history'));
+    await act(async () => {});
+    const rec = repos.history.list().find(r => r.id !== SAVED.id)!;
+    expect(rec.items.map(i => [i.name, i.actualMin, i.log.discarded ?? false])).toEqual([
+      ['Brisket', 540, true],
+      ['Chicken wings', 100, false],
+      ['Chicken breasts', 12, false],
+    ]);
   });
 
   test('a cook ended before a food came off says so and gives that food no result', async () => {
@@ -125,7 +144,7 @@ describe('Cook finished (mockup 15)', () => {
     await endCook();
     expect(screen.getByText('Planned 9 hr. Ended before it came off.')).toBeOnTheScreen();
     expect(screen.getAllByText('Not logged')).toHaveLength(3);
-    expect(screen.queryByText(/rate updates/)).toBeNull();
+    expect(screen.queryByText(/finished (early|late|on time)|rate stays/)).toBeNull();
   });
 
   test('Save to history writes one record with the notes, ends the cook, clears the alarms once and goes to Plan', async () => {

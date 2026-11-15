@@ -23,6 +23,7 @@ export interface FinishRow {
 
 /** learned / blended: the rate plans use moves. waiting: saved rate held until enough cooks. Locked rates get no card. */
 export interface RateChange {
+  itemId: string;
   foodName: string;
   before: number;
   after: number;
@@ -106,6 +107,7 @@ export function summarize(rules: Rules, c: ActiveCook, now: number): FinishSumma
     );
     const kind = after.source === 'override' ? 'waiting' : after.source === 'blended' ? 'blended' : 'learned';
     rates.push({
+      itemId: r.itemId,
       foodName: it.name,
       before: before.rate,
       after: after.rate,
@@ -117,13 +119,28 @@ export function summarize(rules: Rules, c: ActiveCook, now: number): FinishSumma
   return { date: servedAt ?? c.original.serveAt, served, lateMin: servedAt == null ? null : late, rows, rates };
 }
 
-export function toRecord(s: FinishSummary, c: ActiveCook, notes: string, id: string): CookRecord {
+/**
+ * The record Save to history writes. Foods in `keepRate` are saved with their times but left out of rates
+ * (the user chose to keep the old rate on Cook finished).
+ */
+export function toRecord(
+  s: FinishSummary,
+  c: ActiveCook,
+  notes: string,
+  id: string,
+  keepRate: ReadonlySet<string> = new Set(),
+): CookRecord {
   return {
     id,
     date: s.date,
     notes: notes.trim(),
     pitTempF: c.plan.pitTempF,
     lateMin: s.lateMin,
-    items: s.rows.map(r => ({ name: r.name, plannedMin: r.plannedMin, actualMin: r.actualMin, log: r.log })),
+    items: s.rows.map(r => ({
+      name: r.name,
+      plannedMin: r.plannedMin,
+      actualMin: r.actualMin,
+      log: keepRate.has(r.itemId) ? { ...r.log, discarded: true } : r.log,
+    })),
   };
 }
