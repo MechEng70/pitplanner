@@ -11,7 +11,7 @@ import { newItemId } from '@/lib/itemId';
 import { method, newItem, rules } from '@/lib/rules';
 import { planInput, useStore } from '@/lib/store';
 import { restorableFood } from '@/lib/uiState';
-import { PLAN_FILE_NAME, pitPlanText, toPitPlan } from '@/platform/pitPlanFile';
+import { PLAN_FILE_NAME, pitPlanText, toPitPlan } from '@/lib/pitPlanFile';
 import {
   allGranted,
   type AppLinks,

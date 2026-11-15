@@ -8,7 +8,7 @@ import { defaultGriddle, defaultOven } from '@/lib/gear';
 import { defaultOptions, method, rules } from '@/lib/rules';
 import { parsePitPlan } from '@/lib/sharedPlan';
 import { fakeAlarms, fakeResume, fakeShare, type FakeShare } from '@/platform/fakes';
-import { toPitPlan } from '@/platform/pitPlanFile';
+import { toPitPlan } from '@/lib/pitPlanFile';
 import { NOW, storeWrapper, testRepos } from '@/test/store';
 import { PlanTab } from './PlanTab';
 

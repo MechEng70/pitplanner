@@ -1,5 +1,5 @@
 import type { ItemInput } from '../../engine/types';
-import { PLAN_FILE_NAME, pitPlanText, toPitPlan } from './pitPlanFile';
+import { PLAN_FILE_NAME, pitPlanText, toPitPlan } from '@/lib/pitPlanFile';
 import { sharePlanFile } from './share';
 import { shareTextFile } from './shareFile';
 
