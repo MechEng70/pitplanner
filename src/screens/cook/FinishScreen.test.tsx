@@ -56,6 +56,8 @@ const endCook = async () => {
   await settle();
 };
 const cancels = (calls: string[]) => calls.filter(c => c === 'cancelAll').length;
+const replaced = (calls: string[]) => calls.filter(c => c.startsWith('replaceAll')).length;
+const serveKey = (c: ActiveCook) => Object.keys(c.done).find(k => k.startsWith('serve:'));
 
 describe('the way to Cook finished', () => {
   test('End cook in Cook options opens it; the cook, its alarms and the history stay until Save or Discard', async () => {
@@ -196,6 +198,60 @@ describe('Cook finished (mockup 15)', () => {
     expect(rec.lateMin).toBeNull();
     expect(rec.items.map(i => i.log.discarded)).toEqual([true, true, true]);
     expect(repos.history.logs()).toEqual([]);
+  });
+});
+
+// T-063 (Jason, 2026-11-15): Serve marked Done by mistake lands here; "Back to the cook" takes that Done back.
+describe('Back to the cook', () => {
+  test('after Done on Serve it takes the Done back, sets the alarms again and returns to Live cook', async () => {
+    const before = doneOnTime(cookAt(AT_1023), true);
+    const { repos, alarms, onGoPlan, history } = await show(before, SERVE);
+    await fireEvent.press(button('Done'));
+    await act(async () => {});
+    expect(screen.getByRole('heading', { name: 'Cook finished' })).toBeOnTheScreen();
+    expect(alarms.sets.at(-1)!.some(a => a.keys.some(k => k.startsWith('serve:')))).toBe(false);
+    const sets = replaced(alarms.calls);
+
+    await fireEvent.press(button('Back to the cook'));
+    await act(async () => {});
+
+    expect(screen.queryByRole('heading', { name: 'Cook finished' })).toBeNull();
+    expect(screen.getByRole('heading', { name: /^Serve/ })).toBeOnTheScreen();
+    const saved = repos.activeCook.load()!;
+    expect(serveKey(saved)).toBeUndefined();
+    expect(saved.undo).toBeNull();
+    expect(saved.plan).toEqual(before.plan);
+    expect(saved.done).toEqual(before.done);
+    // One save, one alarm set, and Serve rings again (it was due: 10 min after the undo).
+    expect(replaced(alarms.calls) - sets).toBe(1);
+    expect(alarms.sets.at(-1)!.find(a => a.keys.some(k => k.startsWith('serve:')))?.at).toBe(SERVE + 10 * MIN);
+    expect(cancels(alarms.calls)).toBe(0);
+    expect(repos.history.list()).toEqual(history);
+    expect(onGoPlan).not.toHaveBeenCalled();
+  });
+
+  test('is offered after End cook too, while Serve is still the most recent Done', async () => {
+    await show(doneOnTime(cookAt(AT_1023)), SERVE);
+    await endCook();
+    expect(button('Back to the cook')).toBeEnabled();
+  });
+
+  test('is not there when the cook was ended before serve', async () => {
+    await show(cookAt(AT_1023), AT_1023);
+    await endCook();
+    expect(screen.queryByRole('button', { name: 'Back to the cook' })).toBeNull();
+  });
+
+  test('is not there when the most recent Done is another step', async () => {
+    await show(doneOnTime(cookAt(AT_1023), true), SERVE);
+    await endCook();
+    expect(screen.queryByRole('button', { name: 'Back to the cook' })).toBeNull();
+  });
+
+  test('is not there when the cook before the Done is no longer kept', async () => {
+    await show({ ...doneOnTime(cookAt(AT_1023)), undo: null }, SERVE);
+    await endCook();
+    expect(screen.queryByRole('button', { name: 'Back to the cook' })).toBeNull();
   });
 });
 

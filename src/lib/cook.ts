@@ -149,6 +149,12 @@ export function undoable(c: ActiveCook): { key: string; label: string; doneAt: n
   return step ? { key: u.key, label: step.event.label, doneAt, changed: u.changed } : null;
 }
 
+/** The Done that can be taken back is the one on Serve: Cook finished offers "Back to the cook". */
+export function serveUndoable(c: ActiveCook): boolean {
+  const u = undoable(c);
+  return u != null && keyedEvents(c.undo!.plan).some(k => k.key === u.key && k.event.kind === 'serve');
+}
+
 /**
  * Take back the most recent Done (T-063): the step is not done again and the plan, reminders and on / off
  * heat times are what they were before the tap. A step that was already due rings again in 10 min. The

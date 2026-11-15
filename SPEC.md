@@ -66,7 +66,7 @@ Artboard names refer to the mockup canvas.
 - The mockups are a starting point, not a contract (Jason, 2026-11-15): where a built screen follows 0.2.0 and he has approved it, the screen wins.
 - **Cook options** (`Controls`): Running behind or ahead (-15/+15, Keep serve vs Move serve, with the hold impact spelled out); Quiet alerts for 30 min; Pit went out (stops the clock until "Back up to temp"); Start over; End cook (Save to history or Discard, cancels all alarms). **Undo** (Jason, 2026-11-15; not in the mockup): after a step is marked Done, a row that names the step ("Undo: Brisket off the smoker") puts it back to not done. It is in Cook options, not on the Cook screen itself, and is offered for the most recent Done only, until the next step is marked done.
 - **Lock-screen alert** (`Notify`): actions Done, +15 min, Open. Unacknowledged alerts repeat every 10 min.
-- **Cook finished** (`EndCook`): planned vs actual per food, rate update, notes, Save / Discard, one-time support link.
+- **Cook finished** (`EndCook`): planned vs actual per food, rate update, notes, Save / Discard, one-time support link. **Back to the cook** (Jason, 2026-11-15; not in the mockup): when Serve was marked Done by mistake, a text button beside "Discard this cook" takes that Done back and returns to Live cook, with the alarms set again. It follows the Undo rule: shown only while Serve is the most recent Done and can still be taken back.
 
 ### Gear tab
 - **Gear** (`Pit`): Cookers list with Add a cooker; Your numbers (cook rates, history); App (Alerts status, Home Assistant "Coming later", Buy me a bag of pellets linking to https://buymeacoffee.com/PitPlanner); units setting; version.

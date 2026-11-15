@@ -2284,9 +2284,9 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Jason's answers to the build's questions (2026-11-15, 4:15 PM):** (1) Undo also takes back changes made
   to the cook after the Done, and the row says so (as built). (2) The row names the step as Next up words it,
   "Undo: Check the brisket" (as built). (3) An overdue step taken back rings again 10 min later (as built).
-  (4) Add a proper undo arrow icon to the kit; the row stops using Start over's icon. **To build.** (5) Cook
+  (4) Add a proper undo arrow icon to the kit; the row stops using Start over's icon. **Built.** (5) Cook
   finished gets a way back to the cook for a Serve marked Done by mistake ("Back to the cook"; approved as a
-  new control on that screen; write the SPEC line with it). **To build.**
+  new control on that screen; write the SPEC line with it). **Built.**
 - **Gate (2026-11-15):** merged onto `main` and `npm run check` passed all six steps. No device test yet.
 - **Status:** built 2026-11-15, unit-tested on a worktree branch; `npm run check` and device test not run.
   (0.3.0; Jason, 2026-11-14: "there needs to be somewhere to undo it in version 0.3.0. I don't want to wait
@@ -2325,8 +2325,8 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   - Rules built:
     - Done from an alert with the app closed is a Done like any other: it can be taken back the same way.
       When one alert holds two steps, only the last of them can be.
-    - Serve: Done on Serve goes to Cook finished, which has no way back. If the app is left and reopened,
-      Live cook shows again and Cook options offers "Undo: Serve".
+    - Serve: Done on Serve goes to Cook finished, where "Back to the cook" takes it back (follow-up below).
+      If the app is left and reopened, Live cook shows again and Cook options offers "Undo: Serve".
     - A Done that re-timed later steps or moved serve: all of it goes back (the whole plan from before the
       tap is restored).
     - A change made between the tap and the undo (Running behind, Not yet, +15, Back up to temp) is taken
@@ -2334,10 +2334,20 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
       Pit went out are left as they are.
     - A step that was already due when it was marked done had its alert and repeats stopped by the Done.
       Taken back, it rings again 10 min after the undo; its time on Cook does not move ("Overdue since").
-  - Not done: no kit icon for undo exists, so the row uses the Start over icon (`Restart`). The live-cook
-    state table (`engine/cookState.ts`, TECH-DESIGN section 7) does not list undo as an action; nothing
+  - Not done: the live-cook state table (`engine/cookState.ts`, TECH-DESIGN section 7) does not list undo as an action; nothing
     reads it for Cook options. No device test, no fidelity PNG.
-- **Questions for Jason:**
+- **Built (follow-up, 2026-11-15):**
+  - `src/components/kit/icons.tsx`: `UndoArrow`, drawn like the other kit icons (24 dp grid, 2 dp stroke, no
+    new dependency). The Undo row in Cook options uses it; Start over keeps `Restart`.
+  - Cook finished: "Back to the cook", a text button in the row with "Discard this cook", under Save to
+    history (which stays full width). Shown only while Serve is the most recent Done and its undo snapshot is
+    kept (`serveUndoable` in `src/lib/cook.ts`), so also after End cook in that state. `CookFlow` takes the
+    Done back with `undoStep`, saves through `setCook` (one save, one alarm set) and shows Live cook. If
+    Serve was already due it rings again 10 min later, like any overdue step taken back. SPEC section for Cook
+    finished updated.
+  - Still open: no device test, no fidelity PNG. On the first cook the bottom row holds three items
+    (Discard, Back to the cook, the support link) and wraps to two lines; to judge on the device.
+- **Questions for Jason (answered above):**
   1. You mark a step Done by mistake, then shift the cook (say Running behind 15 min), then tap Undo.
      (a) Undo also takes the shift back and the row says so (built), or (b) once you change the plan, the
      Undo row goes away.

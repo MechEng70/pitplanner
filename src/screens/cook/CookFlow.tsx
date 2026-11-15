@@ -2,7 +2,10 @@
 // Done is tapped on the Serve step (as in legacy/src/screens/cook/CookScreen.tsx, `finishing`). Save and
 // Discard both end the cook through the store's `setCook(null)`, which clears every alarm, and go to Plan.
 // Leaving the app on Cook finished keeps the cook: it comes back as Live cook, and End cook leads here again.
+// "Back to the cook" on Cook finished (T-063) takes back a Done on Serve and saves through `setCook`, so the
+// alarms are set again, then shows Live cook.
 import { useState } from 'react';
+import { undoStep } from '@/lib/cook';
 import { useStore } from '@/lib/store';
 import { CookScreen, type CookScreenProps } from './CookScreen';
 import { FinishScreen } from './FinishScreen';
@@ -20,6 +23,10 @@ export function CookFlow(props: Omit<CookScreenProps, 'onEnd'>) {
           setFinishing(false);
           setCook(null);
           props.onGoPlan();
+        }}
+        onBack={() => {
+          setFinishing(false);
+          setCook(undoStep(cook, (props.now ?? Date.now)()));
         }}
       />
     );

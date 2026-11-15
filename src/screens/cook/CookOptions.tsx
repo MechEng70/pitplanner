@@ -21,6 +21,7 @@ import {
   StopSquare,
   Text,
   Timer,
+  UndoArrow,
   useSheet,
 } from '@/components/kit';
 import {
@@ -156,7 +157,7 @@ export function CookOptions({
       <Stack>
         {undo ? (
           <Action
-            icon={<Restart />}
+            icon={<UndoArrow testID="icon-undo" />}
             title={`Undo: ${stepText(tx(undo.label, units)).title}`}
             subtitle={
               <Nums

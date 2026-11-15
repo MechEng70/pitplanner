@@ -2,7 +2,8 @@
 // what the cook does to each food's rate, notes, Save to history or Discard, and the support link the first
 // time this screen is ever reached. Save writes one history record; Discard writes nothing. Neither touches
 // a record that is already saved (T-064: only Remove on Cook history removes one). `onClose` runs after
-// either; the caller ends the cook and goes to Plan.
+// either; the caller ends the cook and goes to Plan. "Back to the cook" (T-063; not in the mockup, approved by
+// Jason, 2026-11-15) shows only while a Done on Serve can still be taken back; `onBack` does it.
 import { useState } from 'react';
 import {
   Chips,
@@ -21,7 +22,7 @@ import {
   Text,
   TextArea,
 } from '@/components/kit';
-import type { ActiveCook } from '@/lib/cook';
+import { serveUndoable, type ActiveCook } from '@/lib/cook';
 import { summarize, toRecord, type RateChange } from '@/lib/finish';
 import { fmtDuration, fmtRate, type Units } from '@/lib/format';
 import { rules } from '@/lib/rules';
@@ -34,10 +35,13 @@ export function FinishScreen({
   cook,
   now = Date.now,
   onClose,
+  onBack,
 }: {
   cook: ActiveCook;
   now?: () => number;
   onClose: () => void;
+  /** Serve was marked Done by mistake: the caller takes that Done back and shows Live cook again. */
+  onBack: () => void;
 }) {
   const { state, addRecord, setFlags } = useStore();
   // Read once: the summary does not move while the notes are typed.
@@ -81,6 +85,11 @@ export function FinishScreen({
               <Button kind="text" tone="danger" disabled={busy} onPress={() => finish(false)}>
                 <Text>Discard this cook</Text>
               </Button>
+              {serveUndoable(cook) ? (
+                <Button kind="text" disabled={busy} onPress={onBack}>
+                  <Text>Back to the cook</Text>
+                </Button>
+              ) : null}
               {support ? (
                 <LinkButton href={SUPPORT_URL}>
                   <Text>Buy me a bag of pellets</Text>

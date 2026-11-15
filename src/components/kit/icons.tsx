@@ -162,6 +162,13 @@ export const Restart = (p: IconProps) => (
     <Path d="M3 3v5h5" />
   </Icon>
 );
+/** Take back the last action: an arrow that turns back to the left. */
+export const UndoArrow = (p: IconProps) => (
+  <Icon {...p}>
+    <Path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+    <Path d="M9 14L4 9l5-5" />
+  </Icon>
+);
 export const StopSquare = (p: IconProps) => (
   <Icon {...p}>
     <Rect x="5" y="5" width="14" height="14" rx="2" />

@@ -434,6 +434,10 @@ describe('Undo the most recent Done', () => {
     const row = sheet.getByRole('button', { name: undoRow });
     expect(within(row).getByText('Undo: Check the brisket')).toBeOnTheScreen();
     expect(within(row).getByText('Done at 11:33 AM. Puts the step and its alerts back.')).toBeOnTheScreen();
+    // Its own icon, not Start over's.
+    const hidden = { includeHiddenElements: true };
+    expect(within(row).getByTestId('icon-undo', hidden)).toBeOnTheScreen();
+    expect(within(sheet.getByRole('button', { name: /^Start over/ })).queryByTestId('icon-undo', hidden)).toBeNull();
     const before = replaced(alarms.calls);
     await fireEvent.press(row);
     await settle();

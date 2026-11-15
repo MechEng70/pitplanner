@@ -10,6 +10,7 @@ import {
   newCook,
   normalize,
   pending,
+  serveUndoable,
   shift,
   steps,
   syncAlarms,
@@ -118,6 +119,22 @@ describe('undo the most recent Done', () => {
     expect(Object.keys(back.done)).toEqual([first.key]);
     expect(undoable(back)).toBeNull();
     expect(undoStep(back, first.event.at)).toBe(back);
+  });
+
+  test('serveUndoable: only while Serve is the most recent Done and the cook before it is kept', () => {
+    let cur = fresh;
+    for (const k of steps(fresh).filter(s => s.event.kind !== 'serve'))
+      cur = doneStep(cur, k.key, k.event.at, true).cook;
+    const serve = pending(cur)[0];
+    expect(serve.event.kind).toBe('serve');
+    expect(serveUndoable(fresh)).toBe(false);
+    expect(serveUndoable(cur)).toBe(false);
+    const served = doneStep(cur, serve.key, serve.event.at).cook;
+    expect(serveUndoable(served)).toBe(true);
+    expect(serveUndoable({ ...served, undo: null })).toBe(false);
+    const back = undoStep(served, serve.event.at);
+    expect(serveUndoable(back)).toBe(false);
+    expect(pending(back)[0].key).toBe(serve.key);
   });
 
   test('a change made after the tap is flagged and taken back with the Done', () => {
