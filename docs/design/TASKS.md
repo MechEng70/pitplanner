@@ -1567,7 +1567,34 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** none (dev build fresh install).
 
 ### T-025 Alerts step, test alert, battery help
-- **Status:** todo
+- **Status:** built 2026-11-15 on branch `t025`, unit-tested (Jest). NOT run on a device or emulator, and
+  `npm run check` was NOT run (the session that built it was not allowed to): prettier, ESLint, typecheck,
+  Jest, engine and gate tests pass; Android tests, Semgrep and Snyk are still to run. The battery help link is
+  NOT on the screen (no approved wording or links, see Left). Not done until the gate passes, the link is
+  settled and the real-phone checks are run.
+- **Built (2026-11-15):**
+  - `src/screens/setup/AlertsStep.tsx` (mockup 03; a port of the legacy AlertsStep): title, intro, the
+    permission rows (`AlertChecks`, read again on resume through `useAlarmStatus`), the test alert, Back and
+    Finish setup. Finish works with permissions off. `app/setup.tsx` passes it to `Setup` as `alertsStep` with
+    `permissionService`, `alarmService` and `onResume`.
+  - `TestAlertButton` in `src/screens/shared/AlertChecks.tsx`: "Send a test alert in 10 sec" calls
+    `alarms.testAlarm(10)` (the real alarm path) and then shows "Test alert set for <time>. Lock the phone to
+    check it rings." under the button, last on the page, so nothing above it moves. A refused test alert
+    shows nothing (the legacy has no wording for it).
+  - `src/lib/maker.ts` (pure): `batteryHelpLink(manufacturer, links)` gives the maker's help link or null
+    (trimmed, case-blind). `BATTERY_HELP_LINKS` is empty: the test uses stand-in links to show a Samsung gets
+    one and a Pixel (Google) none.
+  - Tests: `AlertsStep.test.tsx` (7), `src/lib/maker.test.ts` (5).
+- **Left:**
+  - The battery help row: SPEC failure mode 10 says "troubleshooting link per maker" but no document, mockup
+    or legacy screen has its wording, its place on the screen or the links. Needs from Jason: the makers, the
+    URL for each, the row's copy and where it sits. Then: fill `BATTERY_HELP_LINKS`, add a manufacturer reader
+    in `src/platform` (React Native `Platform.constants.Manufacturer`), pass it from `app/setup.tsx` and open
+    the link with `AppLinks.openExternal`. None of that is built.
+  - Real phone: the test alert in Doze; the OEM help link (OnePlus; a Samsung if available).
+  - Emulator: fidelity PNG against mockup 03, font scale 100/115/130%.
+  - The rows appear once the first status read answers (as in the legacy), so the test button sits a row
+    group lower a moment after the step opens; to look at on the emulator.
 - **Goal:** permission rows with live status; "Send a test alert in 10 sec" through `pit-alarms`; a one-line
   battery help link for makers with aggressive battery killers (failure mode 10).
 - **Files:** `src/screens/shared/AlertChecks.tsx`, `src/lib/maker.ts`, tests.

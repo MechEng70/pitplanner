@@ -1,9 +1,11 @@
 // Alert permissions, as rows with their live status (mockup 03's rows; a port of
 // legacy/src/screens/shared/AlertChecks.tsx). Used where a cook depends on them: the Start cook check and
-// the Cook screen's red banner (SPEC section 6, failure mode 9). Setup's alerts step joins in T-025.
+// the Cook screen's red banner (SPEC section 6, failure mode 9), and Setup's alerts step (T-025), which adds
+// the test alert.
 import { useCallback, useEffect, useState } from 'react';
-import { Button, GroupCard, StatusRow, Text } from '@/components/kit';
-import type { AlarmStatus, AppLinks, PermissionService } from '@/platform/types';
+import { Button, GroupCard, Num, StatusRow, Text } from '@/components/kit';
+import { fmtTime } from '@/lib/format';
+import type { AlarmService, AlarmStatus, AppLinks, PermissionService } from '@/platform/types';
 
 /**
  * The alert permissions as the phone reports them now: read when shown and again whenever the app comes back
@@ -72,5 +74,34 @@ export function AlertChecks({
         />
       )}
     </GroupCard>
+  );
+}
+
+/**
+ * "Send a test alert in 10 sec" through the real alarm path (`AlarmService.testAlarm`). The line saying when
+ * it rings comes in under the button, so the button stays put: keep this the last thing on its page.
+ */
+export function TestAlertButton({ alarms }: { alarms: Pick<AlarmService, 'testAlarm'> }) {
+  const [sent, setSent] = useState<number | null>(null);
+  return (
+    <>
+      <Button
+        kind="outline"
+        block
+        onPress={() =>
+          void alarms.testAlarm(10).then(
+            r => setSent(r.at),
+            () => undefined,
+          )
+        }
+      >
+        <Text>Send a test alert in 10 sec</Text>
+      </Button>
+      {sent != null ? (
+        <Text variant="label" tone="secondary" center>
+          Test alert set for <Num>{fmtTime(sent)}</Num>. Lock the phone to check it rings.
+        </Text>
+      ) : null}
+    </>
   );
 }
