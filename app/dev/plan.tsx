@@ -20,6 +20,16 @@
 //   pitplanner://dev/plan?seed=finished-blend  the same with three logged briskets and this one off an hour
 //                                       early, so the rate moves and the card offers Use or Keep
 //   pitplanner://dev/plan?seed=history  mockup 20: the mockup cookers and the Saturday cook saved in history
+//   pitplanner://dev/plan?seed=fast     the fast test cook (T-067): the mockup menu as a running cook, 60 times
+//                                       faster (a minute for an hour), its first step 20 seconds from now; about
+//                                       12 minutes to Serve. The times on screen are the real, squeezed ones.
+//                                       Opens the Cook tab. Add &x=<n> for another speed (x=5: about 2 hr 20 min,
+//                                       every step at least a minute apart, so each rings on its own). Steps that
+//                                       land in the same minute share one alert, as in any cook: at 60 times
+//                                       faster most do. Tap Done within 2 minutes of a step, or it counts as late
+//                                       and the app asks to keep or move serve. Discard the cook at the end (or
+//                                       pitplanner://dev/alarm?cook=end): saved, a 9 minute brisket would feed
+//                                       the brisket rate.
 // Add &edit=<item id> (b, w, c on the mockup seed) to open food details for that item, or &add=<food id> to
 // open it for a new food (mockups 08-10: seed=empty with add=brisket, stlribs or breasts).
 // The seeds' saved cooks have fixed ids; every seed takes away those it does not use (only those, never a real cook).
@@ -29,6 +39,7 @@ import { buildPlan } from '../../engine/plan';
 import type { ItemInput, PlanInput } from '../../engine/types';
 import { newCook, steps } from '@/lib/cook';
 import { BLEND_RECORDS, finishedCook, HISTORY_RECORD, MOCKUP_MENU } from '@/lib/fixtures/finishedCook';
+import { FAST_FACTOR, squeezeCook } from '@/lib/fastCook';
 import { saturday } from '@/lib/fixtures/saturday';
 import { defaultGriddle, defaultOven } from '@/lib/gear';
 import { logsOf, type CookRecord } from '@/lib/history';
@@ -70,9 +81,14 @@ const SEEDS: Record<string, ItemInput[]> = {
   finished: MENU,
   'finished-blend': MENU,
   history: [],
+  fast: MENU,
 };
 
 const MIN = 60_000;
+/** The fast test cook's first step lands this long after the link is opened, on a whole second. */
+const FAST_LEAD_MS = 20_000;
+/** The speed asked for with &x=, or 60. */
+const fastFactor = (x?: string) => (Number(x) >= 1 ? Number(x) : FAST_FACTOR);
 /** Mockup 12 shows 10:23 AM on a 5:00 PM serve. */
 const COOKING_BEFORE_SERVE_MIN = 397;
 
@@ -118,7 +134,7 @@ const PAST: CookRecord = {
 };
 
 export default function PlanSeed() {
-  const { seed, edit, add } = useLocalSearchParams<{ seed?: string; edit?: string; add?: string }>();
+  const { seed, edit, add, x } = useLocalSearchParams<{ seed?: string; edit?: string; add?: string; x?: string }>();
   const { state, setGear, setDraft, setRate, setRateLock, setCook, addRecord, removeRecord, setFlags, ui } = useStore();
   // As they were when the seed opened: a change to them is not a reason to run the seed again.
   const [flags] = useState(state.flags);
@@ -154,6 +170,14 @@ export default function PlanSeed() {
       router.replace('/cook');
       return;
     }
+    if (seed === 'fast') {
+      const input: PlanInput = { ...saturday, at, cookers, items };
+      const start = Math.ceil((now + FAST_LEAD_MS) / 1000) * 1000;
+      const fast = squeezeCook(input, buildPlan(rules, input), start, fastFactor(x));
+      setCook(newCook(fast.input, fast.plan, now));
+      router.replace('/cook');
+      return;
+    }
     if (seed === 'cooking') {
       // The cook as it would stand now: every step due before now was done on time.
       const input: PlanInput = { ...saturday, at, cookers, items };
@@ -172,6 +196,7 @@ export default function PlanSeed() {
     seed,
     edit,
     add,
+    x,
     setGear,
     setDraft,
     setRate,

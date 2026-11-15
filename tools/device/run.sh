@@ -2,7 +2,8 @@
 # One unattended device pass on the dev build (TASKS T-006).
 #   npm run device -- [--phone] [--no-build] [--repeat N] [--only <test>]...
 #   tests: smoke, sheet-keyboard, stable-controls, db, migration-error, db-unopenable, legacy-import, alarm,
-#   plan, plan-3button, plan-sheets, food-details, survive, cook, cook-options, cook-finished, setup, gear, history, shared, followups
+#   plan, plan-3button, plan-sheets, food-details, survive, cook, cook-options, cook-finished, setup, gear, history, shared,
+#   fast-cook, followups
 #   DEVICE_SCALES="1.0 1.15 1.3" adds or changes the font scales (default 1.15 and 1.3).
 #   (default: all).
 #   --repeat N runs the chosen tests N times at each font scale (to catch a test that only sometimes fails). --only repeats or takes a comma list.
@@ -19,7 +20,7 @@ set -uo pipefail
 . "$(dirname "$0")/lib.sh"
 cd "$DEVICE_DIR" || exit 1
 
-ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets food-details survive cook cook-options cook-finished setup gear history shared followups)
+ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets food-details survive cook cook-options cook-finished setup gear history shared fast-cook followups)
 TESTS=()
 NOBUILD=""
 REPEAT=1
@@ -1736,6 +1737,73 @@ JSON
 #    Back to the cook on its own line; tapping it shows Live cook on Serve again. The cook is ended after.
 # 3. The hidden debug screen has Send to developer with where the file goes and what it holds. Send is not
 #    tapped: the share sheet lists other apps and is never dumped or photographed.
+# T-067: the fast test cook (dev link, emulator only). The mockup menu runs as a real cook squeezed in time,
+# here 240 times faster so the whole cook fits one device run (about 3 minutes; Jason's own run is 60 times
+# faster, about 12 minutes). Followed step by step: each step that comes due is marked Done from Next up
+# until Serve, which opens Cook finished. Checked: the Cook tab opens on the first step with the phone holding
+# the cook's alarms; alerts ring while it runs, in the plan's order; no keep-or-move question comes up when
+# every Done is on time; Cook finished shows; ending the cook leaves no alarms.
+test_fast_cook() {
+  local s="$1" dir="$2" ok=1 n i title step="" last="" finished="" asked=0 dones=0 rang=() t r
+  if ! is_emulator; then result "SKIP  fast-cook $s: emulator only"; return; fi
+  rings() { # titles of the app's step alerts in the shade now
+    A shell dumpsys notification --noredact </dev/null | grep -A60 "NotificationRecord.*pkg=$PKG " |
+      grep -oE 'android\.title=String \([^)]*\)' | sed -E 's/^android\.title=String \(|\)$//g' | grep -v '^Test alert' | sort -u
+  }
+  A shell pm grant "$PKG" android.permission.POST_NOTIFICATIONS
+  launch "dev/alarm?cook=end" || { result "FAIL  fast-cook $s: app did not open"; return; }
+  open_route "dev/plan?seed=fast&x=240"
+  if look "$dir/fast-start.xml" && on_tab "$dir/fast-start.xml" "Cook" && says "$dir/fast-start.xml" "Cooking"; then
+    title=$(next_title "$dir/fast-start.xml")
+    [[ "$title" == "Fire the smoker to 225F"* ]] || plan_miss "Next up: Fire the smoker to 225F (is \"$title\")"
+    n=$(app_alarms | grep -c .)
+    if [ "$n" -gt 0 ]; then log "    fast cook started: Next up \"$title\"; the phone holds $n alarm(s) of the app"
+    else plan_miss "the fast cook's alarms on the phone"; fi
+    shot "$dir/fast-start.png"
+  else plan_miss "the Cook tab with the fast cook running"; fi
+
+  # About 3 minutes of cook; each look takes a few seconds. Stop at Cook finished or after 5 minutes.
+  t=$(date +%s)
+  for i in $(seq 150); do
+    [ $(($(date +%s) - t)) -lt 300 ] || break
+    while IFS= read -r r; do
+      [ -n "$r" ] && [[ " ${rang[*]/#/|} " != *"|$r "* ]] && { rang+=("$r"); log "    alert in the shade at +$(($(date +%s) - t)) s: $r"; }
+    done < <(rings)
+    look "$dir/fast-run.xml" || continue
+    if says "$dir/fast-run.xml" "Cook finished"; then finished=1; break; fi
+    if says "$dir/fast-run.xml" "than planned"; then
+      asked=$((asked + 1))
+      tap "Apply" 1 | tee -a "$REPORT"
+      continue
+    fi
+    title=$(next_title "$dir/fast-run.xml")
+    step=$(sed -E 's/ (in [0-9].*|now|[0-9][^,]* overdue)$//' <<<"$title")
+    if [[ "$title" =~ (now|overdue)$ ]]; then
+      [ "$step" = "$last" ] || log "    +$(($(date +%s) - t)) s due: $step"
+      last="$step"
+      tap "Done" 1 >/dev/null
+      dones=$((dones + 1))
+    else sleep 1; fi
+  done
+  if [ -n "$finished" ]; then
+    log "    Cook finished after $(($(date +%s) - t)) s, $dones Done tap(s)"
+    for want in "Save to history" "Discard this cook"; do
+      says "$dir/fast-run.xml" "$want" || plan_miss "$want (Cook finished)"
+    done
+    shot "$dir/fast-finished.png"
+  else plan_miss "Cook finished within 5 minutes (Next up is \"$title\" after $dones Done tap(s))"; fi
+  [ ${#rang[@]} -ge 2 ] || plan_miss "step alerts ringing while the fast cook ran (saw ${#rang[@]})"
+  [ "$asked" = 0 ] || plan_miss "no keep-or-move question with every Done on time (asked $asked time(s))"
+
+  # Not saved: a 2 minute brisket must not feed the brisket rate.
+  open_route "dev/alarm?cook=end"
+  n=$(app_alarms | grep -c .)
+  [ "$n" = 0 ] || plan_miss "no alarms after the fast cook was ended (the phone holds $n)"
+  A shell cmd notification cancel_all >/dev/null 2>&1 || true
+  open_route "plan"
+  if [ $ok = 1 ]; then result "PASS  fast-cook $s"; else result "FAIL  fast-cook $s"; fi
+}
+
 test_followups() {
   local s="$1" dir="$2" ok=1 want before after row
   if ! is_emulator; then result "SKIP  followups $s: emulator only"; return; fi

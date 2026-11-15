@@ -2092,8 +2092,36 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** none.
 
 ### T-067 Fast test cook: a whole cook in minutes
-- **Status:** todo (Jason, 2026-11-15: "we should run a test cook, using minutes as hours and seconds as
-  minutes to simulate"). Design not settled; ask before building.
+- **Status:** built 2026-11-15 (eighteenth session); device test `fast-cook` passes on the emulator at 115%.
+  Not run on the phone (needs Jason's yes to the listed actions). Asked for by Jason, 2026-11-15: "we should
+  run a test cook, using minutes as hours and seconds as minutes to simulate".
+- **Built:**
+  - `src/lib/fastCook.ts` (pure, 8 Jest tests): `squeezeCook(input, plan, startAt, factor = 60)` moves every
+    instant of a built plan toward `startAt` and shrinks the lengths the engine reads again on a live change
+    (rest, slice, hold, prep lead, cooker preheat). The result is an ordinary cook: the store saves it and sets
+    its alarms as for any cook. Nothing in `engine/` changed.
+  - Dev link `pitplanner://dev/plan?seed=fast` (`app/dev/plan.tsx`, dev builds only): the mockup menu
+    (brisket, wings, chicken breasts) on the mockup cookers, first step 20 seconds after the link opens, Serve
+    about 12 minutes later; opens the Cook tab. `&x=<n>` picks another speed (`x=5`: about 2 hr 20 min).
+  - Device test `fast-cook` (emulator, `x=240`, about 5 minutes with the test's own delays): Next up starts
+    on Fire the smoker with alarms on the phone, every step is marked Done as it comes due, alerts show in the
+    shade, no keep-or-move question, Serve opens Cook finished, ending the cook leaves no alarms.
+- **Found while building (tell Jason):**
+  - Steps that land in the same clock minute share one alert (`engine/alarms.ts`, one alarm per minute, as in
+    any cook). At 60 times faster the 14 steps make about 4 alerts; the last one lists 8 steps, and Done on
+    that alert marks all of them. For one alert per step the speed must be 5 or less (`x=5`).
+  - A Done more than 2 and a half real minutes after a step counts as late (the engine rounds to 5 minutes)
+    and the app asks keep or move serve, in real minutes. +15 and Not yet are also real minutes.
+  - "N min past the step" repeats are every 10 real minutes, so a fast cook sees at most one per step: no
+    flood.
+  - Three kinds of step hang on engine constants in real minutes (Oven for holding, Set the smoker, hopper
+    top-off). They ring at their squeezed times; after a change to the cook that re-times it they move to the
+    real-minute lead or drop out. Followed step by step they have rung by then.
+  - Saving a fast cook to history would feed a 9 minute brisket into the brisket rate: Discard it at the end
+    (or `pitplanner://dev/alarm?cook=end`).
+  - Not done: a full 60 times run watched on the emulator (it is longer than one tool run), and the phone
+    run with the screen off.
+- **Gate (2026-11-15):** `npm run check` passed all six steps on `main` with this task.
 - **Goal:** a real menu's cook runs on the phone 60 times faster, so an 11 hr 25 min cook takes 11 min 25 s:
   every step, alarm, notification action and the Cook finished screen can be seen in one sitting before the
   real Saturday cook (T-037).
