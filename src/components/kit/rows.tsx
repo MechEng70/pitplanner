@@ -37,13 +37,21 @@ function TitleBlock({
   );
 }
 
-/** Heading over a group of rows in a list (ui.css `.group-label`). */
-export function GroupLabel({ label }: { label: string }) {
+/**
+ * Heading over a group of rows in a list (ui.css `.group-label`). A `note` sits at the far end of its line
+ * (the smoker picker: "Hopper alerts").
+ */
+export function GroupLabel({ label, note }: { label: string; note?: string }) {
   return (
-    <View className="px-5 pb-1 pt-3.5">
+    <View className="flex-row items-baseline justify-between gap-3 px-5 pb-1 pt-3.5">
       <Text variant="label" weight="500" tone="accentHi" role="heading">
         {label}
       </Text>
+      {note ? (
+        <Text variant="caption" tone="secondary">
+          {note}
+        </Text>
+      ) : null}
     </View>
   );
 }

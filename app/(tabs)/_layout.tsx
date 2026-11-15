@@ -1,6 +1,6 @@
 // Bottom tabs: Plan, Cook, Gear, drawn by the kit BottomNav (the 0.2.0 nav: icon pill over the label).
 import type { BottomTabBarProps } from 'expo-router/tabs';
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import { useEffect } from 'react';
 import { BottomNav, ListIcon, Sliders, Timer } from '@/components/kit';
 import { useStore } from '@/lib/store';
@@ -25,6 +25,9 @@ function TabBar({ state, descriptors, navigateToTab }: BottomTabBarProps) {
 }
 
 export default function TabLayout() {
+  // A first run has no tabs yet, however the app was opened (a link, a notification): Setup first (T-024).
+  const { state } = useStore();
+  if (state.firstRun) return <Redirect href="/setup" />;
   return (
     <Tabs
       tabBar={props => <TabBar {...props} />}

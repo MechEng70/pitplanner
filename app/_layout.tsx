@@ -2,8 +2,8 @@
 // Roboto is registered natively by the expo-font config plugin (app.config.ts), so nothing loads at startup.
 // The database is opened and migrated here, before any screen (T-010): the store is built over it, or, when
 // a migration failed, the error screen is shown instead of the app. The 0.2.0 data is imported here too,
-// once, with a one-time notice saying how it went (T-012). The store gets the phone's alarms (T-015). Setup (first run) joins as a stack route
-// in T-024.
+// once, with a one-time notice saying how it went (T-012). The store gets the phone's alarms (T-015). Setup (first run) is the stack route
+// app/setup.tsx: app/index.tsx and the tabs layout send a first run there (T-024).
 import '../global.css';
 import Constants from 'expo-constants';
 import { Stack, ThemeProvider, useRouter } from 'expo-router';

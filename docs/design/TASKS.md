@@ -1476,7 +1476,43 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ## Phase 7: Setup (mockups 01-03, 17)
 
 ### T-024 Setup steps and smoker picker
-- **Status:** todo
+- **Status:** built 2026-11-15 on branch `t024`, unit-tested (Jest). NOT run on a device or emulator, and
+  `npm run check` was NOT run (the session that built it was not allowed to): prettier, ESLint, typecheck,
+  Jest, engine and gate tests pass; Android tests, Semgrep and Snyk are still to run. No fidelity PNGs yet
+  (01, 02, 17 need the emulator). Not done until the gate passes and Jason has seen the screens.
+- **Built (2026-11-15):**
+  - Kit (`src/components/kit/setup.tsx`, tests in `setup.test.tsx`): `SetupPage` (step bar, title, intro,
+    pinned actions), `SetupActions` (Back 1 : main 2), `OptionCard`, `DashedButton`, `PickRow`; `GroupLabel`
+    takes a `note` (`rows.tsx`). Chips `scroll`, the oven avatar, `CheckRow` and `InputField` were there already.
+  - `src/screens/setup/Setup.tsx`: step 1 Welcome and units, step 2 cookers (smoker card with Model, Hopper,
+    Main grate; Griddle and Oven for holding; Add another cooker). Nothing is saved until the end
+    (`finishSetup`). The step bar shows 3 steps. The alerts step is a slot: `Setup` takes `alertsStep`
+    (`({ onBack, onFinish }) => node`, a `SetupPage` with step 3 of `SETUP_STEPS`); without it Continue on step 2
+    finishes Setup. T-025 passes it from `app/setup.tsx`. The phone's back button goes one step back
+    (`onBackPress`, wired to BackHandler in the route); on step 1 it is the system's.
+  - `src/screens/setup/SmokerPicker.tsx`: search, type chips (All and each type that has a model), groups and
+    notes from `data/cookers.json`. A verified model returns its catalog specs. An unverified model, or
+    "Not listed? Enter it yourself", opens the manual form with every spec blank (name, type, lowest and
+    highest temp, temp step or dial settings, main grate, hopper); temps typed in the user's unit, stored in F,
+    hopper stored in lb.
+  - `src/screens/shared/AddCooker.tsx` (mockup 17): Smoker, Griddle, Oven; `hide` leaves kinds out; the caller
+    decides what each opens, so Gear can reuse it (T-026).
+  - Routing: `app/setup.tsx` (Setup behind `SetupGate`: shown while `state.firstRun`, else redirects to `/`);
+    `app/index.tsx` and `app/(tabs)/_layout.tsx` redirect to `/setup` on a first run. A 0.2.0 import that
+    saved cookers ends the first run, so Setup does not show after it. The `app/dev/*` routes are outside the
+    tabs and still open on a first run (the plan seeds save cookers).
+- **Differs from 0.2.0, for "nothing moves when a value changes" (Jason to confirm):**
+  - The smoker card keeps its Model, Hopper and Main grate fields when the smoker is switched off (0.2.0
+    collapsed the card, which moved the rows under it).
+  - The picker and the manual form are full-height sheets. In the form, Main grate is left and Hopper right
+    (the grate keeps its half when the type has no hopper), and Dial settings is the last field (it shows only
+    while Temp step is blank).
+- **Left:** run `npm run check` in a checkout that may; a device check of a fresh install (keyboard over the
+  hopper and grate fields on step 2, system back, font sizes 100/115/130%); fidelity PNGs 01, 02, 17; any
+  device test that opens a tab on a fresh install without a seed now lands on Setup (check `tools/device`).
+- **Questions for Jason:** see "Differs from 0.2.0" above; step 1 (Welcome and units) has no mockup and is
+  built from the 0.2.0 screen; Continue stays off until there is a smoker or a griddle (0.2.0 rule: an oven
+  alone is not enough), with no line saying why.
 - **Goal:** first run: Welcome + units, cookers (picker with search and type chips; verified models fill specs,
   unverified stay blank; manual form), Add a cooker (17).
 - **Files:** `app/setup/*`, `src/screens/setup/*`, `src/screens/shared/AddCooker.tsx`, tests, fidelity PNGs.

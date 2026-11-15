@@ -20,6 +20,7 @@ export { Num, Nums, type NumProps } from './num';
 export { ActionRow, CheckRow, GroupLabel, ListRow, StatusRow } from './rows';
 export { ResultBar, type ResultCell } from './ResultBar';
 export { AppBar, Screen } from './screen';
+export { DashedButton, OptionCard, PickRow, SetupActions, SetupPage } from './setup';
 export { InputField, SearchField } from './input';
 export { Menu, MenuRow, type Anchor } from './menu';
 export { FooterScroll, Sheet, useReveal, useSheet } from './sheet';
