@@ -2,7 +2,7 @@
 # One unattended device pass on the dev build (TASKS T-006).
 #   npm run device -- [--phone] [--no-build] [--repeat N] [--only <test>]...
 #   tests: smoke, sheet-keyboard, stable-controls, db, migration-error, db-unopenable, legacy-import, alarm,
-#   plan, plan-3button, plan-sheets, food-details, survive, cook
+#   plan, plan-3button, plan-sheets, food-details, survive, cook, cook-options
 #   DEVICE_SCALES="1.0 1.15 1.3" adds or changes the font scales (default 1.15 and 1.3).
 #   (default: all).
 #   --repeat N runs the chosen tests N times at each font scale (to catch a test that only sometimes fails). --only repeats or takes a comma list.
@@ -19,7 +19,7 @@ set -uo pipefail
 . "$(dirname "$0")/lib.sh"
 cd "$DEVICE_DIR" || exit 1
 
-ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets food-details survive cook)
+ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets food-details survive cook cook-options)
 TESTS=()
 NOBUILD=""
 REPEAT=1
@@ -1111,6 +1111,65 @@ test_cook() {
   [ "$n" = 0 ] || plan_miss "no alarms after the cook was ended (the phone holds $n)"
   open_route "plan"
   if [ $ok = 1 ]; then result "PASS  cook $s"; else result "FAIL  cook $s"; fi
+}
+
+# T-022: Cook options (mockup 13) on the mockup cook. Emulator only (it changes and ends a cook).
+# The sheet and its rows; Pit went out shows the banner and holds the steps, Back up to temp asks keep or
+# move serve and Apply clears the banner; Start over asks first, Keep cooking keeps the cook, Start over
+# drops it, goes to Plan and leaves no alarms.
+seen() { grep -qF "$2" "$1"; }
+test_cook_options() {
+  local s="$1" dir="$2" ok=1 n want
+  if ! is_emulator; then result "SKIP  cook-options $s: emulator only"; return; fi
+  launch "dev/plan?seed=cooking" || { result "FAIL  cook-options $s: app did not open"; return; }
+  tap "Cook options" 1 | tee -a "$REPORT"
+  if dump >"$dir/options.xml"; then
+    for want in "Cook options" "Pit went out" "Start over" "End cook"; do
+      seen "$dir/options.xml" "$want" || plan_miss "$want (Cook options)"
+    done
+    shot "$dir/cook-options.png"
+  else plan_miss "the Cook options sheet"; fi
+
+  tap "Pit went out" 1 | tee -a "$REPORT"
+  sleep 1
+  if dump >"$dir/options-pitout.xml" && seen "$dir/options-pitout.xml" "Pit out since"; then
+    log "    Pit went out: the banner shows on Live cook"
+    shot "$dir/cook-pitout.png"
+    tap "Back up to temp" 1 | tee -a "$REPORT"
+    sleep 1
+    if dump >"$dir/options-keepmove.xml" && seen "$dir/options-keepmove.xml" "Apply"; then
+      shot "$dir/cook-keepmove.png"
+      tap "Apply" 1 | tee -a "$REPORT"
+      sleep 1
+      if dump >"$dir/options-pitup.xml" && ! seen "$dir/options-pitup.xml" "Pit out since"; then
+        log "    Back up to temp: keep or move serve asked, Apply clears the banner"
+      else plan_miss "the pit-out banner gone after Back up to temp"; fi
+    else plan_miss "the keep or move serve sheet after Back up to temp"; fi
+  else plan_miss "the pit-out banner after Pit went out"; fi
+
+  tap "Cook options" 1 | tee -a "$REPORT"
+  tap "Start over" 1 | tee -a "$REPORT"
+  sleep 1
+  if dump >"$dir/options-startover.xml" && seen "$dir/options-startover.xml" "Start over?" && seen "$dir/options-startover.xml" "This cook won"; then
+    shot "$dir/cook-startover.png"
+    tap "Keep cooking" 1 | tee -a "$REPORT"
+    sleep 1
+    if dump >"$dir/options-kept.xml" && has_text "$dir/options-kept.xml" "Cooking"; then log "    Start over asks first; Keep cooking keeps the cook"
+    else plan_miss "the cook still running after Keep cooking"; fi
+    tap "Cook options" 1 | tee -a "$REPORT"
+    tap "Start over" 1 | tee -a "$REPORT"
+    sleep 1
+    tap "Start over" 1 | tee -a "$REPORT"
+    sleep 2
+    n=$(app_alarms | grep -c .)
+    if dump >"$dir/options-over.xml" && grep -q 'content-desc="Plan"[^>]*selected="true"' "$dir/options-over.xml" && [ "$n" = 0 ] &&
+      grep -q 'content-desc="Start cook"[^>]*enabled="true"' "$dir/options-over.xml"; then
+      log "    Start over: back on Plan, Start cook is on again, the phone holds no alarms of the app"
+    else plan_miss "Plan with Start cook on and no alarms after Start over (alarms: $n)"; fi
+  else plan_miss "the Start over question"; fi
+  open_route "dev/alarm?cook=end"
+  open_route "plan"
+  if [ $ok = 1 ]; then result "PASS  cook-options $s"; else result "FAIL  cook-options $s"; fi
 }
 
 read -r -a SCALES <<<"${DEVICE_SCALES:-1.15 1.3}"
