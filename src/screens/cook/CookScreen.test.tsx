@@ -323,16 +323,23 @@ describe('a change that makes a new warning (T-069)', () => {
     plan: markPullDone(rules, c.input, c.plan, 'b', AT_1023 + 7 * MIN),
   });
 
-  /** 4:26 PM: the brisket is still on and the wings are climbing to 400F. */
-  const AT_426 = Date.UTC(2026, 10, 14, 21, 26);
+  /** 4:20 PM: the brisket is still on and the wings are crisping at 400F until 4:25. */
+  const AT_420 = Date.UTC(2026, 10, 14, 21, 20);
+  const at = (h: number, m: number) => Date.UTC(2026, 10, 14, h + 5, m);
   /**
-   * Both kinds on one cook: the brisket an hour behind with serve kept (the smoker conflict), and the breasts
-   * on the griddle 20 min early at 4:20 PM with serve kept, so they hold 28 min, past their 20 min limit.
-   * Until T-076 this was four +15 taps on the brisket's pull alert, which moved serve and left the wings and
-   * the breasts holding 35 and 38 min; now they move with serve, so that cook has the conflict alone.
+   * Both kinds on one cook, every change with Keep serve: the brisket an hour behind (it is on at 225F until
+   * 4:40 PM), the wings on 30 min early at 2:45 PM (at 400F from 3:35, off at 4:25: the smoker conflict, and a
+   * 35 min hold, past their 30) and the breasts on the griddle 25 min early at 4:15 PM (off at 4:27, a 33 min
+   * hold, past their 20). Until T-076 this was four +15 taps on the brisket's pull alert, which moved serve
+   * and left the wings and the breasts behind; now they move with serve, so that cook has the conflict alone.
    */
-  const both = (): ActiveCook => doneStep(behind(), 'phase:c:cook', Date.UTC(2026, 10, 14, 21, 20), true).cook;
-  const BOTH = `${CONFLICT} Long hold: chicken breasts 28 min, limit 20 min.`;
+  const both = (): ActiveCook => {
+    const wingsOn = doneStep(behind(), 'phase:w:smoke', at(14, 45), true).cook;
+    return doneStep(wingsOn, 'phase:c:cook', at(16, 15), true).cook;
+  };
+  const BOTH = `${CONFLICT} Long hold: chicken wings 35 min (limit 30), chicken breasts 33 min (limit 20).`;
+  /** One long hold with the conflict: only the breasts on early, 20 min, at 4:20 PM (a 28 min hold). */
+  const breastsEarly = (): ActiveCook => doneStep(behind(), 'phase:c:cook', AT_420, true).cook;
 
   test('no banner on a cook that is as it started', async () => {
     await show(cookAt(AT_1023));
@@ -371,8 +378,20 @@ describe('a change that makes a new warning (T-069)', () => {
   });
 
   test('both at once are one banner of two sentences with one OK, the conflict first', async () => {
-    const { repos } = await show(both(), AT_426);
+    const { repos } = await show(both(), AT_420);
     expect(screen.getByRole('alert', { name: BOTH })).toBeOnTheScreen();
+    expect(screen.getAllByRole('button', { name: 'OK' })).toHaveLength(1);
+    await fireEvent.press(button('OK'));
+    await act(async () => {});
+    expect(screen.queryByRole('alert', { name: /Smoker conflict/ })).toBeNull();
+    expect(repos.activeCook.load()!.warningsSeen).toEqual(['PIT_CONFLICT:b|w', 'HOLD_TOO_LONG:w', 'HOLD_TOO_LONG:c']);
+  });
+
+  test('a conflict and one long hold: the one-food form of the hold sentence follows the conflict', async () => {
+    const { repos } = await show(breastsEarly(), AT_420);
+    expect(
+      screen.getByRole('alert', { name: `${CONFLICT} Long hold: chicken breasts 28 min, limit 20 min.` }),
+    ).toBeOnTheScreen();
     expect(screen.getAllByRole('button', { name: 'OK' })).toHaveLength(1);
     await fireEvent.press(button('OK'));
     await act(async () => {});
@@ -417,15 +436,15 @@ describe('a change that makes a new warning (T-069)', () => {
     const r = testRepos();
     r.repos.cookers.save(cookGear, AT_1023);
     r.repos.settings.setUnits({ temp: 'C', weight: 'lb' }, AT_1023);
-    r.repos.activeCook.save(both(), AT_426);
+    r.repos.activeCook.save(both(), AT_420);
     const alarms = fakeAlarms();
     await render(
-      <CookScreen permissions={alarms} onResume={fakeResume().onResume} onGoPlan={jest.fn()} now={() => AT_426} />,
-      { wrapper: storeWrapper(r.repos, () => AT_426, alarms) },
+      <CookScreen permissions={alarms} onResume={fakeResume().onResume} onGoPlan={jest.fn()} now={() => AT_420} />,
+      { wrapper: storeWrapper(r.repos, () => AT_420, alarms) },
     );
     expect(
       screen.getByRole('alert', {
-        name: /^Smoker conflict: brisket at \d+C and chicken wings at \d+C at the same time\. Long hold: chicken breasts 28 min, limit 20 min\.$/,
+        name: /^Smoker conflict: brisket at \d+C and chicken wings at \d+C at the same time\. Long hold: chicken wings 35 min \(limit 30\), chicken breasts 33 min \(limit 20\)\.$/,
       }),
     ).toBeOnTheScreen();
     expect(screen.queryByText(/225F|400F/)).toBeNull();

@@ -3218,9 +3218,11 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
     breasts 5:10 to 5:22, wings off 5:25; the notice, with one food too; T9; Done at 10:23 Move gives 3:50 PM
     with the others 70 min earlier; no question when no earlier serve is possible; Quiet blocks the breasts'
     prep), `alertActions.test.tsx` (the one alarm set after the four taps has the wings and breasts at their
-    new times), `CookScreen.test.tsx` (the two banner tests now make the long hold another way: breasts on 20
-    min early with Keep serve, "Long hold: chicken breasts 28 min, limit 20 min."). Every T case gave the
-    numbers above; none differed.
+    new times), `CookScreen.test.tsx` (the two banner tests reach conflict plus two long holds another way, all
+    with Keep serve: brisket an hour behind, wings on 30 min early at 2:45 PM, breasts on 25 min early at
+    4:15 PM, shown at 4:20: "Long hold: chicken wings 35 min (limit 30), chicken breasts 33 min (limit 20).",
+    three keys recorded; a third test keeps the one-food form, breasts alone 20 min early: "Long hold: chicken
+    breasts 28 min, limit 20 min."). Every T case gave the numbers above; none differed.
   - SPEC section 5 (the Done, Not yet and Back up to temp rows, two new paragraphs) and failure mode 2.
 - **Choices made in building that Jason has not seen:**
   - One food on the cook: the notice is "Serve moved to {time}." with no second sentence.
