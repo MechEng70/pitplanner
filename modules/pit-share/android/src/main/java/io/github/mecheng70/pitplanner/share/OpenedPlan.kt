@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.OpenableColumns
+import android.util.Log
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 
@@ -18,6 +19,24 @@ object OpenedPlan {
   const val MAX_BYTES = 256 * 1024
   const val TOO_BIG = "tooBig"
   const val UNREADABLE = "unreadable"
+
+  const val LOG_TAG = "PitShare"
+
+  /** A content:// or file:// URI anywhere in a message, cut down to its provider. */
+  private val URI_IN_TEXT = Regex("""(content|file)://([^/\s]*)\S*""")
+  private fun cut(text: String) = URI_IN_TEXT.replace(text) { "${it.groupValues[1]}://${it.groupValues[2]}/..." }
+
+  /**
+   * The log line for a read that failed: the exception's class and message and its cause's, so the next
+   * "Could not read that file." can be explained (2026-11-16: a Gmail attachment, nothing logged). Every URI
+   * is cut to scheme and provider: a mail app's URI can hold an account name and the file's name. Nothing
+   * from inside the file is ever in it.
+   */
+  fun describe(e: Throwable, uri: Uri): String {
+    val one = { t: Throwable -> "${t.javaClass.name}: ${cut(t.message ?: "")}" }
+    val cause = e.cause?.takeIf { it !== e }?.let { "; cause ${one(it)}" } ?: ""
+    return "open failed for ${cut(uri.toString())}: ${one(e)}$cause"
+  }
 
   /** Set on an intent once its file has been offered, so a recreated activity does not open it again. */
   private const val HANDLED = "io.github.mecheng70.pitplanner.share.HANDLED"
@@ -73,10 +92,16 @@ object OpenedPlan {
   /** What JS gets: `text` (and `name` when the provider gives one), or `error`. Never throws. */
   fun read(context: Context, uri: Uri, max: Int = MAX_BYTES): Map<String, String> {
     val bytes = try {
-      val input = context.contentResolver.openInputStream(uri) ?: return mapOf("error" to UNREADABLE)
+      val input = context.contentResolver.openInputStream(uri)
+      if (input == null) {
+        Log.w(LOG_TAG, "open failed for ${cut(uri.toString())}: the provider gave no stream")
+        return mapOf("error" to UNREADABLE)
+      }
       input.use { readCapped(it, max) }
     } catch (e: Exception) {
-      // No such file, no permission for the URI, a provider that failed: all the same to the user.
+      // No such file, no permission for the URI, a provider that failed: all the same to the user. The log
+      // says which.
+      Log.w(LOG_TAG, describe(e, uri))
       return mapOf("error" to UNREADABLE)
     } ?: return mapOf("error" to TOO_BIG)
     val out = mutableMapOf("text" to String(bytes, Charsets.UTF_8))

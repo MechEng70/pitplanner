@@ -35,7 +35,9 @@ class ReceiversTest : AlarmTestBase() {
     assertEquals("Body wrap", n.text())
     assertEquals(Notifications.CHANNEL, n.channelId)
     assertEquals(Notification.CATEGORY_ALARM, n.category)
-    assertEquals(listOf("Done", "+15 min", "Open"), n.actions.map { it.title.toString() })
+    // Jason's phone, 2026-11-16: at 115% font the lock screen cut the words to "Do..." and "+15...". Short
+    // labels that fit: a check mark, +15, Open.
+    assertEquals(listOf("\u2713", "+15", "Open"), n.actions.map { it.title.toString() })
     // Fired, so no longer stored to fire; repeating until Done, first in 10 minutes.
     assertEquals(emptyList<Alarm>(), store.alarms)
     assertEquals(listOf(Nag("wrap", listOf("wrap:b:p1"), "Title wrap", "Body wrap", 0, t + 10 * min)), store.nags)
@@ -95,7 +97,7 @@ class ReceiversTest : AlarmTestBase() {
   @Test
   fun doneOnTheNotificationQueuesTheActionStopsTheRepeatAndClearsIt() {
     val t = ring()
-    ActionReceiver().onReceive(context, action(notifications().single(), "Done"))
+    ActionReceiver().onReceive(context, action(notifications().single(), "\u2713"))
     val queued = store.drainActions().single()
     assertEquals("done", queued.getString("type"))
     assertEquals("wrap", queued.getString("alarmId"))
@@ -109,7 +111,7 @@ class ReceiversTest : AlarmTestBase() {
   @Test
   fun plus15OnTheNotificationQueuesTheActionAndRingsAgainIn15Minutes() {
     val t = ring()
-    ActionReceiver().onReceive(context, action(notifications().single(), "+15 min"))
+    ActionReceiver().onReceive(context, action(notifications().single(), "+15"))
     assertEquals("snooze15", store.drainActions().single().getString("type"))
     assertEquals(emptyList<Nag>(), store.nags)
     assertEquals(emptyList<Any>(), notifications())

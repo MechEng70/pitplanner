@@ -14,6 +14,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowLog
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.InputStream
@@ -137,6 +138,40 @@ class OpenedPlanTest {
   fun aFileThatCannotBeOpenedIsAnErrorNotACrash() {
     val gone = Uri.fromFile(File(context.cacheDir, "gone.pitplan"))
     assertEquals(mapOf("error" to OpenedPlan.UNREADABLE), OpenedPlan.read(context, gone))
+  }
+
+  // Regression (2026-11-16, Jason's phone): a Gmail attachment opened cold through the dev launcher said
+  // "Could not read that file." and nothing anywhere said why: the exception was swallowed.
+  @Test
+  fun aFailedReadLogsTheExceptionWithoutTheFilesPath() {
+    ShadowLog.clear()
+    val secret = Uri.parse("content://com.example.mail/someone@example.com/attachments/7")
+    // What Android does when the permission for the URI is gone: the open itself throws.
+    shadowOf(context.contentResolver).registerInputStreamSupplier(secret) {
+      throw SecurityException("Permission Denial: reading $secret requires a grant")
+    }
+    assertEquals(mapOf("error" to OpenedPlan.UNREADABLE), OpenedPlan.read(context, secret))
+    val lines = ShadowLog.getLogsForTag(OpenedPlan.LOG_TAG).map { it.msg }
+    assertEquals(1, lines.size)
+    assertTrue(lines[0], lines[0].contains("java.lang.SecurityException: Permission Denial: reading"))
+    assertTrue(lines[0], lines[0].contains("content://com.example.mail/..."))
+    assertFalse(lines[0], lines[0].contains("someone@example.com"))
+    assertFalse(lines[0], lines[0].contains("attachments"))
+  }
+
+  @Test
+  fun theLogLineNamesTheExceptionItsMessageAndItsCauseWithUrisCutToTheProvider() {
+    val e = SecurityException(
+      "Permission Denial: opening provider com.example.Mail from ProcessRecord{1:app/u0a1} (pid=1, uid=2) " +
+        "for content://com.example.mail/me@example.com/att/9 requires that you obtain access",
+      IllegalStateException("inner file:///storage/emulated/0/Download/cook.pitplan"),
+    )
+    assertEquals(
+      "open failed for content://com.example.mail/...: java.lang.SecurityException: Permission Denial: opening " +
+        "provider com.example.Mail from ProcessRecord{1:app/u0a1} (pid=1, uid=2) for content://com.example.mail/... " +
+        "requires that you obtain access; cause java.lang.IllegalStateException: inner file:///...",
+      OpenedPlan.describe(e, Uri.parse("content://com.example.mail/me@example.com/att/9")),
+    )
   }
 
   // ---- the module's one-file inbox ----

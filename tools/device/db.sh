@@ -42,7 +42,9 @@ case "${1:-}" in
     done
     A shell am force-stop "$PKG"
     # Remove only the dirs the backup holds, then unpack it over the clean dirs.
-    A shell run-as "$PKG" sh -c "cd $DATA && rm -rf ${top[*]}"
+    # One quoted word for the device's shell: adb joins its arguments with spaces, and unquoted the `&&` ended
+    # the run-as command there, so the rm ran outside the app's folder and removed nothing (2026-11-16).
+    A shell "run-as $PKG sh -c 'cd $DATA && rm -rf ${top[*]}'"
     A exec-in run-as "$PKG" tar -xf - -C "$DATA" <"$file"
     echo "restored ${top[*]} from $file"
     ;;

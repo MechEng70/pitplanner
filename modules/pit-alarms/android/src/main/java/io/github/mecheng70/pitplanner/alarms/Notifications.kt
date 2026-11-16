@@ -12,7 +12,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import java.util.Calendar
 
-/** Step alerts: alarm sound, Done / +15 min / Open, full-screen at night or for critical steps. */
+/** Step alerts: alarm sound, Done (a check mark) / +15 / Open, full-screen at night or for critical steps. */
 object Notifications {
     // Channel settings are fixed once created; bump the id to change sound or importance.
     const val CHANNEL = "steps_v1"
@@ -76,8 +76,10 @@ object Notifications {
             // (the app's Done acknowledges and cancels it).
             .setAutoCancel(false)
             .setOnlyAlertOnce(false)
-            .addAction(0, "Done", action(ActionReceiver.DONE))
-            .addAction(0, "+15 min", action(ActionReceiver.SNOOZE))
+            // Short labels (Jason, 2026-11-16): on his phone at 115% font the lock screen cut "Done" and
+            // "+15 min" to "Do..." and "+15...". Android shows these buttons as text only, so no icons.
+            .addAction(0, "\u2713", action(ActionReceiver.DONE))
+            .addAction(0, "+15", action(ActionReceiver.SNOOZE))
             .addAction(0, "Open", open)
 
         // Overnight steps and critical ones take over the screen (sideloaded app; Play restricts this).
