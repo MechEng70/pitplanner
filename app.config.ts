@@ -7,6 +7,7 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 import pkg from './package.json';
 import { appVersion, versionCode } from './plugins/version.ts';
+import { withBackupRules } from './plugins/withBackupRules.ts';
 import { withFontScaleConfigChange } from './plugins/withFontScaleConfigChange.ts';
 import { withGradleMemory } from './plugins/withGradleMemory.ts';
 import { withPitplanIntents } from './plugins/withPitplanIntents.ts';
@@ -33,12 +34,25 @@ export function variantOf(env: string | undefined): Variant {
   return env === 'production' ? 'production' : 'development';
 }
 
+/**
+ * Permissions that libraries or the Expo template declare and the app never uses (T-035, security pass
+ * finding 6). Removed from the merged manifest (tools:node="remove").
+ *  - READ/WRITE_EXTERNAL_STORAGE (API 32 and lower; Expo template and expo-file-system): the app reads and
+ *    writes only its own files and cache, and never asks for them, so they were never granted.
+ *  - SYSTEM_ALERT_WINDOW ("Display over other apps"; Expo template): nothing in the app draws over other
+ *    apps. The dev build keeps it: React Native's developer tools use it (its debug manifest declares it).
+ */
+export function blockedPermissions(variant: Variant): string[] {
+  const storage = ['android.permission.READ_EXTERNAL_STORAGE', 'android.permission.WRITE_EXTERNAL_STORAGE'];
+  return variant === 'production' ? ['android.permission.SYSTEM_ALERT_WINDOW', ...storage] : storage;
+}
+
 export default ({ config }: ConfigContext): ExpoConfig => {
   const variant = variantOf(process.env.APP_VARIANT);
   const dev = variant === 'development';
   // package.json's version, or APP_VERSION for an internal prerelease (tools/release.sh --version).
   const version = appVersion(pkg.version, process.env.APP_VERSION);
-  return withPitplanIntents(
+  const app = withPitplanIntents(
     withFontScaleConfigChange(
       withGradleMemory(
         withReleaseSigning({
@@ -61,6 +75,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
               backgroundColor: BG,
             },
             predictiveBackGestureEnabled: false,
+            // Backup stays on, limited to the user's data by explicit rules (plugins/backupRules.ts, T-035).
+            allowBackup: true,
+            blockedPermissions: blockedPermissions(variant),
           },
           plugins: [
             'expo-router',
@@ -74,4 +91,5 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ),
     ),
   );
+  return withBackupRules(app);
 };

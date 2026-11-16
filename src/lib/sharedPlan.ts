@@ -10,6 +10,20 @@ import { isSettable, settableTemps } from '../../engine/temps.ts';
 const MAX_ITEMS = 20;
 const REST_MAX = 240;
 const HOUR = 3_600_000;
+const WEEK = 7 * 24 * HOUR;
+
+/**
+ * Serve times a plan file can hold (T-035, security pass finding 4): from 2000 up to the end of 2099, UTC.
+ * Fixed bounds, so the parser needs no clock; anything outside is a damaged file.
+ */
+export const SERVE_AT_RANGE: readonly [number, number] = [Date.UTC(2000, 0, 1), Date.UTC(2100, 0, 1)];
+/**
+ * Pit temps a plan file can hold, F (T-035, finding 4): clamped like quantity and rest. Wider than any smoker
+ * the app knows (the checked ones are set from 180 to 500F), so a real plan is never changed; it only stops a
+ * nonsense value (1e9, -400) from reaching the timing model. The receiver's smoker then picks the nearest
+ * temp it can be set to (fitPitTemp).
+ */
+export const PIT_TEMP_RANGE_F: readonly [number, number] = [150, 700];
 
 export interface SharedPlan {
   serveAt: number;
@@ -64,9 +78,10 @@ export function parsePitPlan(rules: Rules, text: string, newId: (i: number) => s
   if (!f || f.app !== 'pit-planner') return { error: 'This file is not a Pit Planner plan.' };
   if (f.version !== 1) return { error: 'This plan was made by a newer Pit Planner. Update the app to open it.' };
   const serveAt = typeof f.serveAt === 'string' ? Date.parse(f.serveAt) : NaN;
-  const pitTempF = num(f.pitTempF);
-  if (!Number.isFinite(serveAt) || pitTempF == null || !Array.isArray(f.items))
-    return { error: 'This plan file is damaged.' };
+  const rawTemp = num(f.pitTempF);
+  const inRange = Number.isFinite(serveAt) && serveAt >= SERVE_AT_RANGE[0] && serveAt < SERVE_AT_RANGE[1];
+  if (!inRange || rawTemp == null || !Array.isArray(f.items)) return { error: 'This plan file is damaged.' };
+  const pitTempF = clamp(Math.round(rawTemp), PIT_TEMP_RANGE_F[0], PIT_TEMP_RANGE_F[1]);
 
   const rawItems = f.items as (RawItem | null)[];
   const items: ItemInput[] = [];
@@ -175,12 +190,27 @@ export function fitPitTemp(pitTempF: number, cookers: Cookers): number {
   return opts.reduce((a, b) => (Math.abs(b - pitTempF) < Math.abs(a - pitTempF) ? b : a));
 }
 
-/** The shared serve time if it is at least an hour out, else the next same weekday at the same local time. */
-export function suggestServe(sharedServe: number, now: number): number {
-  if (sharedServe >= now + HOUR) return sharedServe;
-  const d = new Date(sharedServe);
-  while (d.getTime() < now + HOUR) d.setDate(d.getDate() + 7);
+/** `t` moved by whole weeks of calendar days: the same weekday at the same local time. */
+function weeksLater(t: number, weeks: number): number {
+  const d = new Date(t);
+  d.setDate(d.getDate() + 7 * weeks);
   return d.getTime();
+}
+
+/**
+ * The shared serve time if it is at least an hour out, else the next same weekday at the same local time.
+ * One computation however far back the date is (T-035, finding 4: a week-at-a-time loop took millions of
+ * turns for a date in the distant past and froze the app). A week of calendar days is a week of
+ * milliseconds give or take the clock changes in between, which add up to less than a week, so the count
+ * of weeks worked out from milliseconds is off by one at most: one step forward or back corrects it.
+ */
+export function suggestServe(sharedServe: number, now: number): number {
+  const target = now + HOUR;
+  if (sharedServe >= target) return sharedServe;
+  let weeks = Math.max(1, Math.ceil((target - sharedServe) / WEEK));
+  if (weeksLater(sharedServe, weeks) < target) weeks++;
+  else if (weeks > 1 && weeksLater(sharedServe, weeks - 1) >= target) weeks--;
+  return weeksLater(sharedServe, weeks);
 }
 
 /** Why the serve date offered is not the shared one: the shared time has passed, or it is under an hour away. */

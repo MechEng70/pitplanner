@@ -353,11 +353,12 @@ Plan of record `docs/HA-INTEGRATION.md`, survey `docs/ha-entities.md`. Changes f
 | Asset | Rule |
 |---|---|
 | Release signing key `~/keys/pitplanner.jks` | The same key as 0.1.0/0.2.0 (required for the in-place upgrade). Never in the repo. `plugins/withReleaseSigning` reads a git-ignored `keystore.properties` at the repo root (moved from `android/`, which is now generated) at prebuild. The release script checks cert SHA-256 `b6c32d12...0a29`. |
-| HA refresh token | `expo-secure-store` only; never in SQLite, logs, `.pitplan`, crash text or the repo. |
-| SQLite database | App-private; no secrets. Android auto-backup stays on for it (cook history matters); T-035 checks that secure-store entries are excluded from backup. |
-| `.pitplan` import | Untrusted: 256 KB cap, validated by `src/lib/sharedPlan.ts`, numbers clamped, unknown foods dropped. |
-| Network | HTTPS only for remote HA; anonymous GitHub update check. |
-| Exported components | Main activity only (launcher, `.pitplan` VIEW/SEND, `pitplanner://`); receivers `exported=false`. The `.pitplan` filters (`plugins/pitplanIntents.ts`): VIEW of `content://`/`file://` typed JSON, octet-stream or x-pitplan; VIEW of a path ending `.pitplan`; SEND of those three types. Category DEFAULT only, no BROWSABLE. |
+| HA refresh token (0.4.0) | `expo-secure-store` only; never in SQLite, logs, `.pitplan`, crash text or the repo. Requirement (Jason, 2026-11-16): the HA token store is excluded from backups (cloud backup and device-to-device transfer). The backup rules below only include, so a store they do not name is left out; when `expo-secure-store` is added (T-045), check that its own config plugin does not replace `plugins/withBackupRules` and that the merged manifest still points at `@xml/pitplanner_backup_rules` and `@xml/pitplanner_data_extraction_rules`. |
+| SQLite database | App-private; no secrets. Android backup stays on for it (cook history matters), with explicit rules (`plugins/backupRules.ts`, T-035): only `files/SQLite/` (the database) and the 0.2.0 data (`CapacitorStorage` prefs, `files/history.json` and their `.imported` copies) are backed up. Left out: the device-protected alarm store `pit_alarms`/`pit_alarms_meta` (a copy of the running cook, set again from the database at every start; restored on a new phone it would ring old alarms as missed), caches, dev-build files. `expo-secure-store` is not in the build yet (0.3.0 stores no secret). |
+| `.pitplan` import | Untrusted: 256 KB cap, validated by `src/lib/sharedPlan.ts`, numbers clamped (quantity, rest, pit temp 150-700F), serve date 2000-2099 or the file is damaged, unknown foods dropped; the serve date offered is one computation, not a loop (T-035). Only the URI the intent carries is opened, never one inside the app's own storage or providers (`OpenedPlan.ownStorage`, T-035). |
+| Network | HTTPS only for remote HA; anonymous GitHub update check. The update check opens only Pit Planner's own GitHub release links (`releaseLink` in `src/lib/update.ts`: `https://github.com/MechEng70/pitplanner/releases/download/<tag>/<file>.apk`, `.../releases/tag/<tag>`, `.../releases/latest`); any other link from GitHub's answer, or from 0.2.0's saved update, counts as none (T-035). |
+| Exported components | Main activity only (launcher, `.pitplan` VIEW/SEND, `pitplanner://`); receivers `exported=false`. The link filter has the schemes `pitplanner` and `exp+pitplanner` (the second from expo-dev-client's config plugin, in the release too) with categories DEFAULT and BROWSABLE, so a web page can open either. In a release build every route a link reaches is gated or harmless (T-035 security pass, finding 7: left as it is). The `.pitplan` filters (`plugins/pitplanIntents.ts`): VIEW of `content://`/`file://` typed JSON, octet-stream or x-pitplan; VIEW of a path ending `.pitplan`; SEND of those three types. Category DEFAULT only, no BROWSABLE. |
+| Permissions | Release: `INTERNET` (update check), and from `modules/pit-alarms` `POST_NOTIFICATIONS`, `USE_EXACT_ALARM`, `SCHEDULE_EXACT_ALARM` (API 32 and lower), `RECEIVE_BOOT_COMPLETED`, `USE_FULL_SCREEN_INTENT`, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, `VIBRATE`; androidx's own signature permission `<app id>.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`. Blocked in `app.config.ts` (`blockedPermissions`, T-035): `READ/WRITE_EXTERNAL_STORAGE` (both variants, never used) and `SYSTEM_ALERT_WINDOW` (release only; React Native's dev tools use it in the dev build). `tools/manifest.test.mjs` checks the app manifest. |
 | Tool tokens | Snyk and GitHub tokens from the user's own CLI config only. |
 | Static checks | Semgrep + Snyk in `npm run check`; exceptions only via `SECURITY-EXCEPTIONS.md`. |
 
@@ -438,11 +439,14 @@ behaviors they cover (e.g. Food details timing) are re-tested in Jest when each 
 - **Release (local, no EAS):**
   1. All tasks for the release done; `git status` clean on `main`; `npm run check` passes.
   2. Bump `package.json` version (0.3.0 for the first Expo release).
-  3. `npm run release`: stops the test emulator (memory), `npm run check`, `APP_VARIANT=production npx expo prebuild --platform android --clean`, then
-     `cd android && ./gradlew assembleRelease` (signing from `plugins/withReleaseSigning`), then verify the cert
-     SHA-256 with `apksigner` and print versionCode/versionName -> `release/pitplanner-<version>.apk`. It
-     regenerates the development `android/` on exit. `--version x.y.z-alpha.N` builds an internal prerelease;
-     `--dry-run` prints the steps; `--verify <apk>` checks an APK.
+  3. `npm run release`: stops the test emulator (memory), `npm run check`, `APP_VARIANT=production
+     APP_VERSION=<version> npx expo prebuild --platform android --clean`, then `cd android && ./gradlew
+     assembleRelease` with the same two variables (signing from `plugins/withReleaseSigning`; expo-constants
+     writes the embedded `assets/app.config`, which `Constants.expoConfig` reads, during this build: T-035
+     finding 1), then verify the cert SHA-256 with `apksigner`, versionCode/versionName, and the embedded app
+     config's version, versionCode, app ID and variant (`tools/release-app-config.mjs`) ->
+     `release/pitplanner-<version>.apk`. It regenerates the development `android/` on exit. `--version
+     x.y.z-alpha.N` builds an internal prerelease; `--dry-run` prints the steps; `--verify <apk>` checks an APK.
   4. Upgrade test on an emulator: install `release/pitplanner-0.2.0.apk`, add data, install the new APK over
      it, check the import (by hand in T-038; a Maestro flow after that).
   5. Commit the version bump; tag `v<version>`; push `main` and the tag (Jason approves).

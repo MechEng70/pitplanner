@@ -223,6 +223,22 @@ describe('partial import', () => {
     ).toEqual(['legacy:flags', 'legacy:update']);
     expect(legacy.calls).toEqual(['prefs', 'history']);
   });
+
+  // T-035 (security pass finding 8): Gear opens the saved update link, so a link 0.2.0 saved comes over only
+  // when it is one of Pit Planner's own GitHub release links.
+  test("0.2.0's saved update link comes over only when it is a Pit Planner release link on GitHub", () => {
+    const github = 'https://github.com/MechEng70/pitplanner/releases/download/v0.2.0/pitplanner-0.2.0.apk';
+    const saved = (url: string) => JSON.stringify({ checkedAt: STARTED, latest: 'v0.2.0', url });
+    importLegacy(db, withPref('update', saved(github)).store, NOW);
+    expect(r.settings.update()).toEqual({ checkedAt: STARTED, latest: 'v0.2.0', url: github });
+
+    db = testDb();
+    expect(openMigrated(db, migrations).ok).toBe(true);
+    r = repos(db);
+    importLegacy(db, withPref('update', saved('https://evil.example/pitplanner.apk')).store, NOW);
+    expect(r.settings.update()).toEqual({ checkedAt: STARTED, latest: 'v0.2.0', url: null });
+    expect(r.quarantined()).toEqual([]);
+  });
 });
 
 describe('fresh start', () => {

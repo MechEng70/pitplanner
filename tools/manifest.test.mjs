@@ -1,0 +1,66 @@
+// The app's own AndroidManifest.xml as prebuild makes it, read through `expo config --type introspect` (all
+// config plugins applied, nothing written to android/). T-035, security pass findings 2 and 6. Library
+// manifests are merged later by Gradle: a permission blocked here is written with tools:node="remove", which
+// removes it from the merged manifest too.
+import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { test } from 'node:test';
+
+function mainManifest(variant) {
+  const env = { ...process.env, APP_VARIANT: variant };
+  delete env.APP_VERSION;
+  const r = spawnSync('npx', ['expo', 'config', '--type', 'introspect', '--json'], {
+    encoding: 'utf8',
+    env,
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  assert.equal(r.status, 0, r.stderr);
+  const m = JSON.parse(r.stdout)._internal?.modResults?.android?.manifest?.manifest;
+  assert.ok(m, 'no manifest in the introspected config');
+  return m;
+}
+const manifests = { production: mainManifest('production'), development: mainManifest('development') };
+const app = m => m.application[0].$;
+/** Permission name -> its attributes, the android.permission. prefix dropped. */
+const permissions = m =>
+  Object.fromEntries(
+    (m['uses-permission'] ?? []).map(p => [p.$['android:name'].replace('android.permission.', ''), p.$]),
+  );
+
+test('regression (finding 2): both variants keep backup on, with explicit rules', () => {
+  for (const [variant, m] of Object.entries(manifests)) {
+    assert.equal(app(m)['android:allowBackup'], 'true', variant);
+    assert.equal(app(m)['android:fullBackupContent'], '@xml/pitplanner_backup_rules', variant);
+    assert.equal(app(m)['android:dataExtractionRules'], '@xml/pitplanner_data_extraction_rules', variant);
+  }
+});
+
+test('no debug flags in the app manifest', () => {
+  for (const m of Object.values(manifests)) {
+    assert.equal(app(m)['android:debuggable'], undefined);
+    assert.equal(app(m)['android:usesCleartextTraffic'], undefined);
+    assert.equal(app(m)['android:requestLegacyExternalStorage'], undefined);
+  }
+});
+
+test('regression (finding 6): the storage permissions are removed from both variants', () => {
+  for (const [variant, m] of Object.entries(manifests)) {
+    const p = permissions(m);
+    for (const name of ['READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE'])
+      assert.equal(p[name]?.['tools:node'], 'remove', `${variant}: ${name}`);
+  }
+});
+
+test('regression (finding 6): "Display over other apps" is removed from the release; the dev build keeps it', () => {
+  // React Native's developer tools (its debug manifest asks for it too) draw over other apps in a dev build.
+  assert.equal(permissions(manifests.production).SYSTEM_ALERT_WINDOW?.['tools:node'], 'remove');
+  assert.notEqual(permissions(manifests.development).SYSTEM_ALERT_WINDOW?.['tools:node'], 'remove');
+});
+
+test('the release keeps what it uses: INTERNET (update check) and VIBRATE (alerts)', () => {
+  const p = permissions(manifests.production);
+  for (const name of ['INTERNET', 'VIBRATE']) {
+    assert.ok(p[name], name);
+    assert.equal(p[name]['tools:node'], undefined, name);
+  }
+});
