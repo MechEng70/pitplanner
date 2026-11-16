@@ -96,14 +96,19 @@ const backs = (s: RuleSource, methodId: string) => !s.methods || s.methods.inclu
 
 /**
  * The food-safety and cooking numbers a food carries that no source covers. A method is checked when a source
- * backs it or it has a smoker temp floor; each of its numbers needs a source that backs that method.
+ * backs it or it has a smoker temp floor; each of its numbers needs a source that backs that method. A method
+ * backed only by sources marked `scope: 'covers'` (Jason, 2026-11-16) is checked for the topics those sources
+ * cover and no others.
  */
 function unsourced(food: RuleFood): string[] {
   const sources = (food.sources ?? []).filter(s => s.cite?.trim() && s.says?.trim());
   const missing = new Set<string>();
   for (const raw of food.methods) {
     const m = resolveMethod(food, raw);
-    if (!(food.sources ?? []).some(s => backs(s, m.id)) && m.minPitTempF == null) continue;
+    const backing = (food.sources ?? []).filter(s => backs(s, m.id));
+    if (!backing.length && m.minPitTempF == null) continue;
+    const whole = m.minPitTempF != null || backing.some(s => s.scope !== 'covers');
+    const scoped = new Set(backing.flatMap(s => s.covers ?? []));
     const needs = new Set<SourceTopic>();
     if (m.pull?.tempF) needs.add('doneTemp');
     if (m.minPitTempF != null) needs.add('minPitTemp');
@@ -112,7 +117,7 @@ function unsourced(food: RuleFood): string[] {
     if (m.phases.some(p => p.setsPit)) needs.add('preheat');
     if (m.phases.some(p => typeof p.temp === 'number')) needs.add('highHeat');
     const covered = new Set(sources.filter(s => backs(s, m.id)).flatMap(s => s.covers ?? []));
-    for (const n of needs) if (!covered.has(n)) missing.add(n);
+    for (const n of needs) if ((whole || scoped.has(n)) && !covered.has(n)) missing.add(n);
   }
   return [...missing].sort();
 }
@@ -211,6 +216,8 @@ test('rules: the smoker sear cites Louisiana Grills, two Traeger pages and USDA 
     [TRAEGER_ZA, ['smokerSear'], ['highHeat', 'preheat']],
     [TRAEGER_AU, ['smokerSear'], ['doneTemp', 'highHeat', 'rest']],
     [USDA, ['smokerSear'], ['doneTemp']],
+    // The other two methods' pull temp is backed by the FSIS chart, scoped to that number (below).
+    [CHART, ['reverse', 'brisketStyle'], ['doneTemp']],
   ]);
   // The card's pull range, 130-145F: 145F is USDA's minimum for whole cuts of beef; 130-135F is the target.
   assert.equal(
@@ -286,4 +293,48 @@ test("rules: a smoker that tops out below a step's fallback temp cannot do the m
   assert.equal(firstDoableMethod(tritip, { smoker: smoker(500) })?.id, 'smokerSear');
   // A step with no fallback temp sets no reach: wings at 400F stay as they are on a cooler smoker.
   assert.equal(firstDoableMethod(food('wings'), { smoker: smoker(350) })?.id, 'smokeCrisp');
+});
+
+// Jason, 2026-11-16: the FSIS chart backs the safe done temp of wings, breasts and beef. It is a source for
+// that one number, so it is marked `scope: 'covers'`: the foods it backs are checked for the topics it covers
+// and for nothing else (their rates and heat steps are 0.2.0's own numbers, with no source asked for).
+const CHART =
+  'USDA FSIS, Safe Minimum Internal Temperature Chart (https://www.fsis.usda.gov/food-safety/safe-food-handling-and-preparation/food-safety-basics/safe-temperature-chart), given by Jason and confirmed by him in his browser, 2026-11-16';
+
+test('rules: wings, breasts and beef cite the FSIS chart for their safe done temp', () => {
+  const food = (id: string) => rules.foods.find(f => f.id === id)!;
+  for (const [id, says] of [
+    ['wings', 'All poultry: 165F (73.9C).'],
+    ['breasts', 'All poultry: 165F (73.9C).'],
+    ['brisket', '145F is the minimum for whole cuts of beef, with a 3 min rest.'],
+    ['tritip', '145F is the minimum for whole cuts of beef, with a 3 min rest.'],
+  ] as const) {
+    const chart = (food(id).sources ?? []).filter(s => s.cite === CHART);
+    assert.equal(chart.length, 1, `${id} cites the chart once`);
+    assert.deepEqual([chart[0].covers, chart[0].scope, chart[0].says], [['doneTemp'], 'covers', says], id);
+    assert.deepEqual(unsourced(food(id)), [], `${id} passes the check`);
+    // Every method with a pull temp is backed for it: by the chart, or (tri-tip's smoker sear) its own sources.
+    for (const raw of food(id).methods) {
+      const m = resolveMethod(food(id), raw);
+      if (!m.pull?.tempF) continue;
+      assert.ok(
+        food(id).sources!.some(s => backs(s, m.id) && s.covers.includes('doneTemp')),
+        `${id} ${m.id}: a source for the done temp`,
+      );
+    }
+  }
+});
+
+test('rules: a source scoped to what it covers asks for nothing else, and still fails without its citation', () => {
+  const wings = rules.foods.find(f => f.id === 'wings')!;
+  // Not scoped, the same source would put every number of every wings method under the check.
+  const unscoped = wings.sources!.map(({ scope: _s, ...s }) => s);
+  assert.ok(unsourced({ ...wings, sources: unscoped }).length > 0, 'unscoped: the other numbers are asked for');
+  assert.deepEqual(unsourced(wings), []);
+  assert.deepEqual(unsourced({ ...wings, sources: wings.sources!.map(s => ({ ...s, cite: ' ' })) }), ['doneTemp']);
+  assert.deepEqual(unsourced({ ...wings, sources: wings.sources!.map(s => ({ ...s, says: '' })) }), ['doneTemp']);
+  // Turkey and tri-tip's smoker sear are not scoped: every number of theirs still needs its source.
+  const turkey = rules.foods.find(f => f.id === 'turkey')!;
+  assert.ok(turkey.sources!.every(s => s.scope == null));
+  assert.ok(unsourced({ ...turkey, sources: [] }).length > 1);
 });

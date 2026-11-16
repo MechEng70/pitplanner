@@ -121,6 +121,8 @@ export interface RuleSource {
   covers: SourceTopic[];
   says: string;
   methods?: string[];
+  /** 'covers': this source puts its methods under the sources check for the topics it covers only (rules.test.ts). */
+  scope?: 'covers';
 }
 
 /** A method after merging the food's shared fields (resolveMethod). Required fields must be present by then. */

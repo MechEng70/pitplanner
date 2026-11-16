@@ -1597,7 +1597,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   gains `rings()`; `src/lib/debugReport.ts` adds the `rings` section; the debug screen reads it when the
   file is built. Tests: `RingLogTest.kt` (17), `debugReport.test.ts`, `fakes.test.ts`, `DebugScreen.test.tsx`.
 - **Choices made in the build (not decided by Jason):** the debug screen's line "Alarm rings: when each
-  alert was due and when it rang" (his wording wanted); ending or discarding a cook does not clear the log;
+  alert was due and when it rang" (approved by Jason as written, 2026-11-16); ending or discarding a cook does not clear the log;
   `clearRings` exists but nothing in the app calls it; for a repeat, planned is that repeat's own due time;
   `snooze` marks any ring of a +15 alarm, `restore` only the first ring fired by the restore path; a field
   `posted`; a repeat held back by Quiet is not logged; `idle` at the ring is weak evidence (the phone leaves
@@ -3586,6 +3586,13 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** a probe in hot water against the Chef iQ app's reading.
 
 ### T-081 Live cook: header line, wings pull wording, banner line break
+- **Sources (Jason, 2026-11-16, after the fixes):** the USDA FSIS Safe Minimum Internal Temperature Chart,
+  which he confirmed in his browser (the site refuses automated access), is cited in `data/foods.json` for
+  the done temp of wings and breasts (all poultry 165F) and of brisket and tri-tip's griddle-sear and
+  brisket-style methods (145F for whole cuts of beef, 3 min rest). The source is marked `scope: 'covers'`:
+  the sources check (`engine/rules.test.ts`) holds those foods to the topics the source covers, not to every
+  number, and still fails when the citation is blank. Wording: "apple cider vinegar" in both rib wrap
+  steps; "Turn every 5 min. Dome for the first 15."
 - **Status:** in progress. In 0.3.0, before beta.1 (Jason, 2026-11-16, from the T-069 pictures). Split by
   Jason: fixes 1 and 3 on one agent branch; fix 2 merged onto `main` and gated 2026-11-16 (engine 207, Jest
   866).
