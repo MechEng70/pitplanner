@@ -57,8 +57,23 @@ Sunday the readout table. Every phone action is listed there and still needs his
 ### 3. Waiting on Jason
 
 - T-075's three too-cool smoker cases are merged and gated (`SMOKER_TOO_COOL`, the brisket-style import
-  line). Open with Jason: a shared smoker-sear tri-tip opened on a smoker under 450F by someone WITH a
-  griddle moves to the griddle sear and the sheet says nothing: words for that, or leave it.
+  line).
+- **Parked, to build (Jason, 2026-11-16), failing test first:** a shared smoker-sear tri-tip opened on a
+  smoker under 450F by a receiver WITH a griddle moves to the griddle sear and the sheet says nothing today.
+  It must say: "Tri-tip will be seared on the griddle." The phrase goes in `data/foods.json` like the
+  others (an `importMove` on the `reverse` method, "be seared on the griddle"). Not built because it is
+  not a one-line change: `mapToCookers` (`src/lib/sharedPlan.ts`) only reports a move under a MISSING
+  cooker, and the sheet groups its lines in boxes titled "No griddle set up." / "No smoker set up."
+  (`SharedPlanSheet.tsx` about lines 65 and 132, each line ending ", or add a griddle in Gear."). Here
+  nothing is missing, so the line needs a home with no such title and no "or add" tail. Ask Jason where it
+  shows (suggestion: the same box style with the sentence alone, no heading) before building; then the
+  move type needs a case without `from`, plus tests in `engine/share.test.ts` and
+  `SharedPlanSheet.test.tsx` (the two "with a griddle ... no box" tests there pin today's silence and
+  change).
+- Push state: `origin/main` moved to `5c3576b` at 2:16 PM on 2026-11-16 by a push from this working copy.
+  The main session ran no `git push` and no agent transcript holds one, so it was Jason's own. Checked
+  then: `git log origin/main --all -- keystore.properties dashboard.html` is empty (neither file is in any
+  pushed commit; both are ignored).
 - T-081: the header is about 20 dp taller; his look after the re-shoot.
 - Mockup 16 on the live canvas artifact is not updated (only the repo's source and PNG are).
 - Still open from before: his look at the two-button alert on the phone; T-031 with two phones.
