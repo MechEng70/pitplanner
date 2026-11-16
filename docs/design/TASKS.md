@@ -2230,8 +2230,18 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   and scripts). **Still to do (main session, on the emulator):** change the device test `shared` (it opens
   a file from the app's own cache, now refused by design: open from Download through Files, keep one
   own-cache open as the regression); build `--version 0.3.0-beta.1` and check its version, update offer,
-  backup rules and permissions; a `bmgr` backup/restore check of the rules. Jason has not yet seen the
-  agent's choices or the permission list.
+  backup rules and permissions; a `bmgr` backup/restore check of the rules. **Jason accepted the agent's choices, 2026-11-16** (alarm store out of the backup, the 0.2.0 files in,
+  the 150 to 700F clamp, serve dates 2000 to 2099, the log line, storage permissions blocked in the dev
+  build too).
+- **Two checks he asked for (2026-11-16, by reading the code, not yet on a device):** (a) the 0.2.0 import
+  marker is the `legacy_import` row of the kv table, inside the database, written in the same transaction
+  as the imported data; the import reads it first and does nothing when it is there; the database, the
+  0.2.0 files and their `.imported` copies are all in the backup rules. So a restore brings the marker
+  with the data and the import neither reruns nor is skipped; a backup taken before the first start of
+  0.3.0 has the old files and no database, and the import runs once after the restore. The `bmgr` check on
+  the emulator is still owed. (b) `expo-secure-store` is not in the app yet; the rules only include, so its
+  files would be left out, and `plugins/backupRules.test.ts` fails if the XML ever names SecureStore, secure
+  or token.
 - **Goal:** the release build reviewed: exported components, backup rules (secure-store excluded),
   permissions, no debug flags, no secrets; Semgrep and Snyk clean.
 - **Files:** `plugins/*` as needed, `docs/design/SECURITY-EXCEPTIONS.md`.
@@ -2242,6 +2252,29 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** none.
 
 ### T-036 Data export
+- **Screen decided (Jason, 2026-11-16; proposal `docs/proposals/2026-11-16-data-export-ui.md`, option 1):**
+  - Two rows under Cook rates in "Your numbers" on Gear. **SPEC's Gear section and mockup 16 get the rows
+    before any code.**
+  - "Export my data", subtitle "Cookers, rates and past cooks in one file": shares the `pitplanner-data` file
+    (not the full dump); the name stays `pitplanner-data-<date>-<time>.json`. A failed share: "Couldn't
+    export" / "Your data was not shared. Try again."
+  - "Restore from a file", subtitle "Replaces the cookers, rates and cooks on this phone": the system file
+    picker only (`expo-document-picker`, a new dev build; lands in 0.3.0-beta.1). No open-with from another
+    app.
+  - Replace, after the confirm sheet: title "Replace your data?", text "This file has 2 cookers, 3 cook
+    rates and 30 cooks, from Nov 16. They replace what is on this phone. Your plan stays."; when something
+    was left out, "4 parts of the file could not be read and are left out."; buttons "Replace" and "Cancel";
+    after, "Restored 2 cookers, 3 cook rates and 30 cooks."
+  - Counts handle singular: "1 cooker", "1 cook rate", "1 cook", "1 part of the file could not be read and
+    is left out."
+  - Every refusal ends "Nothing was changed.": "End the cook first, then restore. Nothing was changed.";
+    "This is not a Pit Planner data file. Nothing was changed."; "This file is from a newer Pit Planner.
+    Update the app to restore it. Nothing was changed."; "This file is damaged. Nothing was changed."; "This
+    file is too big to restore. Nothing was changed."; "There is nothing to restore in this file. Nothing
+    was changed."
+  - A history food the app does not know is kept on restore (today the reader leaves it out: change it).
+  - No "Restore from a file" on Setup in 0.3.0: in `docs/design/BACKLOG.md`.
+  - Build order: after T-077 merges (both touch the data file and restore path), then an agent.
 - **Status:** logic built 2026-11-16 on the T-036 agent branch, unit-tested, not gated (`npm run check` not
   run). No screen part: nothing in SPEC or the mockups shows Export or Import, so the UI waits for Jason's
   answers in `docs/proposals/2026-11-16-data-export-ui.md`. (SPEC has no "history exportable" line; that is
@@ -2692,9 +2725,8 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
      to get back to the cook), or (b) add a way back from Cook finished.
 
 ### T-042 Mock the HA screens (HA-INTEGRATION 4.5)
-- **Open decision (Jason, 2026-11-16; `docs/HA-INTEGRATION.md` 8.1):** a pasted long-lived token for the
-  dedicated non-admin `pitplanner` HA user instead of the HA login. If adopted: the connect mockup shows a token field and a short how-to instead of HA's login page. Until he decides, the
-  entry stands as written.
+- **Changed (Jason, 2026-11-16):** the connect mockup shows the address, a token field and a short how-to
+  (create the token as the `pitplanner` user), not HA's login page.
 - **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** six screens in the canvas style, approved before any code.
@@ -2705,9 +2737,9 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** none.
 
 ### T-043 GitHub Pages `client_id` page
-- **Open decision (Jason, 2026-11-16; `docs/HA-INTEGRATION.md` 8.1):** a pasted long-lived token for the
-  dedicated non-admin `pitplanner` HA user instead of the HA login. If adopted: this task and D-9 drop. Until he decides, the
-  entry stands as written.
+- **Dropped (Jason, 2026-11-16):** 0.4.0 uses a pasted long-lived token (`docs/HA-INTEGRATION.md` 8.1), so
+  no `client_id` page is needed. D-9 is dropped with it. Kept below as written in case the HA login is
+  added later.
 - **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** `https://mecheng70.github.io/pitplanner/` has `<link rel="redirect_uri" href="pitplanner://auth-callback">`
@@ -2719,9 +2751,13 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** none.
 
 ### T-044 HA auth logic (pure)
-- **Open decision (Jason, 2026-11-16; `docs/HA-INTEGRATION.md` 8.1):** a pasted long-lived token for the
-  dedicated non-admin `pitplanner` HA user instead of the HA login. If adopted: this shrinks to the address, one token check, 401 as signed out, and no token in a log. Until he decides, the
-  entry stands as written.
+- **Changed (Jason, 2026-11-16; `docs/HA-INTEGRATION.md` 8.1):** a pasted long-lived token for the dedicated
+  non-admin `pitplanner` user, not the HA login. This task is now: (0) before any token code, with a token
+  created by the `pitplanner` user run every call the app needs (WebSocket auth, `get_states`, the entity
+  and device registry lists, a subscribe, REST `/api/`) and record pass or fail in `docs/ha-entities.md`;
+  (1) one auth interface in `src/lib/ha/` so OAuth can be added later; (2) normalize the address; (3) check
+  the token with one call; (4) a 401 means signed out; (5) no token reaches a logger. The authorize URL,
+  nonce, code exchange, refresh and revoke below are not built.
 - **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** address normalize, authorize URL with a state nonce, callback check, token exchange, refresh on 401,
@@ -2733,9 +2769,12 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** none.
 
 ### T-045 HA sign-in on the phone
-- **Open decision (Jason, 2026-11-16; `docs/HA-INTEGRATION.md` 8.1):** a pasted long-lived token for the
-  dedicated non-admin `pitplanner` HA user instead of the HA login. If adopted: this shrinks to the address and token fields, secure storage, the backup exclusion and Disconnect. Until he decides, the
-  entry stands as written.
+- **Changed (Jason, 2026-11-16; `docs/HA-INTEGRATION.md` 8.1):** no HA login page. This task is now: the
+  address and token fields on the connect screen (the field marked sensitive), the token in
+  `expo-secure-store`, excluded from backups (test), Disconnect deletes it (and at HA if the call check shows
+  the app can). The LAN cleartext rule and the non-admin registry-read record stay. Depends on T-042 and
+  T-044 only. The help text presents the dedicated user as an audit trail and a one-step cutoff, never as
+  restricted access (HA-INTEGRATION 4.1).
 - **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** sign in to `ha.glithero.icu` as the `pitplanner` HA user; refresh token in `expo-secure-store`.

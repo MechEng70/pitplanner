@@ -482,7 +482,7 @@ behaviors they cover (e.g. Food details timing) are re-tested in Jest when each 
 | D-6 | Port in place vs side by side | In place: the Capacitor app moves to `legacy/` in T-002; the Expo app lives at the root. 0.2.x hotfixes from a branch off tag `v0.2.0`. Friends stay on 0.2.0 until 0.3.0 reaches parity. |
 | D-7 | Generated `android/` (CNG) | Yes: no hand edits; everything through `app.config.ts`, config plugins and modules. Keeps Expo SDK upgrades tractable. |
 | D-8 | Device test tool | Maestro (YAML flows over adb, works with any RN build); Detox is heavier and needs instrumented builds. Jason installs the Maestro CLI. |
-| D-9 | GitHub Pages for the HA `client_id` | Unchanged: Jason enables Pages when HA work starts. |
+| D-9 | GitHub Pages for the HA `client_id` | Dropped (Jason, 2026-11-16): 0.4.0 uses a pasted long-lived token, so no `client_id` page (`docs/HA-INTEGRATION.md` 8.1). |
 | R-1 | NativeWind 4.2 / Reusables vs RN 0.88 and the New Architecture | Closed in T-004 (2026-11-12): NativeWind 4.2.7 (react-native-css-interop 0.2.7, Tailwind 3.4.19) and Reusables (`@rn-primitives/slot` 1.5.2) run on RN 0.88.1 with Fabric on the phone; spike at 115/130% in `docs/fidelity/t004-spike-vs-05.png`. Caveat: the Reusables CLI output needs rewriting onto the tokens (section 8). Fallback, if a later component fails: `StyleSheet` with the same tokens inside that kit component. |
 | R-2 | Import from 0.2.0 fails on a friend's phone | Partial import + fresh-start notice; originals kept as `*.imported` until 0.4.0; emulator upgrade test with the real 0.2.0 APK before release. |
 | R-3 | Alarm regressions in the port | Port the Kotlin nearly verbatim; JUnit tests first; full device alarm test (Doze, locked reboot) before 0.3.0; Saturday cook (T-037). |

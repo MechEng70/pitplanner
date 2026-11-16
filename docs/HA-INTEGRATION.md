@@ -110,13 +110,16 @@ Thresholds come from the published sensor attributes, so the blueprint needs no 
 
 ### 4.1 Recommended HA user (done once by the HA owner, in HA)
 - Settings > People > Add person, e.g. "Pit Planner", with "Allow login" on, a username such as `pitplanner` and a password. Not an administrator. Leave "Can only log in from the local network" off if the app should work away from home.
-- Why a separate user: you can see what Pit Planner did in HA's logbook, and you can disable or delete that one user to cut the app off without touching anything else.
-- Be honest in the UI help text: HA has only admin and non-admin. A non-admin user can still read and control every entity in the house. Pit Planner limits itself in code (read-only toward everything; see 3.4); the HA user does not enforce that.
+- **What the dedicated user is for (Jason, 2026-11-16): an audit trail and a one-step cutoff. It is not restricted access.**
+  - Audit: what Pit Planner did shows under that user in HA's logbook.
+  - Cutoff: disable or delete that one user (or its token) and the app is out, with nothing else touched.
+  - Not a restriction: HA has only admin and non-admin. A non-admin user can still read every entity in the house and call services. Pit Planner limits itself in code (read-only toward everything; see 3.4 and 8.4); the HA user does not enforce that. The UI help text says so in plain words and never calls the user "limited" or "read-only".
 
 ### 4.2 Sign-in (HA's standard login for third-party apps, no pasted tokens)
 
-> Open decision (Jason, 2026-11-16): section 8.1 weighs a pasted long-lived token for the dedicated
-> `pitplanner` user against this login. Until he decides, this section stands.
+> **Replaced for 0.4.0 (Jason, 2026-11-16): the app uses a pasted long-lived token, section 8.1.** This
+> section is kept as the design for the HA login (OAuth), which can be added later behind the same auth
+> interface. It is not built in 0.4.0.
 
 1. Screen: "Your Home Assistant address" with one field, e.g. `ha.glithero.icu`. The app adds `https://` and checks `/api/` responds.
 2. The app opens HA's own login page in an Android Custom Tab: `/auth/authorize?client_id=...&redirect_uri=...&state=...`. The user types the HA username and password there (and MFA if enabled). The app never sees the password.
@@ -138,7 +141,7 @@ After sign-in the app reads, over the WebSocket API:
 - Entity registry and device registry lists, to group entities by device and read each device's manufacturer and model. (Phase 0 task: confirm these registry reads work for a non-admin user on Jason's HA; if not, fall back to grouping by entity ID prefix and the `pitboss` / `chef_iq` platform names from state attributes, and let the user type the model.)
 
 It then shows, already filled in:
-- **Smoker:** each Pit Boss device found (integration `pitboss`) with its model, e.g. "Pit Boss PB820..." If one, preselected; if several, a dropdown. Its climate entity becomes the pit temp (current and set point). The model also offers to set the app's smoker profile in Gear.
+- **Smoker:** each Pit Boss device found (integration `pitboss`) with its model, e.g. "Pit Boss PB850SPW2" If one, preselected; if several, a dropdown. Its climate entity becomes the pit temp (current and set point). The model also offers to set the app's smoker profile in Gear.
 - **Smoker probes:** every probe sensor that Pit Boss device has. The number comes from what the device exposes (Jason's: 2). Each row shows its live reading or "not plugged in" when unavailable. User can rename ("Grill probe 1").
 - **Wireless probes:** each Chef iQ probe (integration `chef_iq`), using its food temperature sensor, with ambient and battery shown underneath. Live reading or "asleep" when unavailable.
 - **+ Add a temperature sensor:** a searchable dropdown of every `sensor.*` with `device_class: temperature` (or a F/C unit), filtered as you type, showing friendly name, entity ID and live value. Typing a full entity ID that isn't listed is allowed and validated against `get_states`.
@@ -196,17 +199,35 @@ disagrees with an earlier section, this one wins.
 
 | Version | What | Tasks |
 |---|---|---|
-| 0.4.0 | Home Assistant, read-only: sign in or token (8.1), discovery, a probe per food, live temps on Live cook | T-042 to T-050 |
+| 0.4.0 | Home Assistant, read-only: a pasted token (8.1), discovery, a probe per food, live temps on Live cook | T-042, T-044 to T-050 (T-043 dropped) |
 | 0.5.0 | Chef iQ probes direct over Bluetooth, no Home Assistant needed (8.2) | T-080 |
 | 0.5.0 or later | HA phases 2 to 4: publish the cook, the blueprint, suggestions, the confirmed set-temp tap | T-051 to T-055 |
 | Not planned | Pit Boss direct, by cloud, local Wi-Fi or Bluetooth (8.3) | none |
 
-### 8.1 Decision for Jason: a pasted long-lived token instead of the HA login (OAuth)
+### 8.1 Decided: a pasted long-lived token instead of the HA login (Jason, 2026-11-16)
 
-**The idea.** Jason is the only HA user. Instead of HA's login flow for third-party apps (4.2), he creates
-a long-lived access token while signed in to HA as the dedicated non-admin `pitplanner` user (4.1) and
-pastes it into Gear once. The app keeps it in secure storage (`expo-secure-store`, Android Keystore) and
-it is excluded from backups (already a 0.4.0 requirement, T-035 finding 2).
+**Decision.** 0.4.0 uses a long-lived access token that Jason creates while signed in to HA as the dedicated
+non-admin `pitplanner` user (4.1) and pastes into Gear once. The app keeps it in secure storage
+(`expo-secure-store`, Android Keystore) and it is excluded from backups (the backup rules only include;
+`plugins/backupRules.test.ts` fails if a secure-store or token file appears in them). The auth sits behind
+one small interface in `src/lib/ha/`, so the HA login (OAuth, 4.2) can be added later without touching the
+clients.
+
+**Before any token code (Jason): prove the token can do everything the app needs.** With a token created by
+the `pitplanner` user, run every call the app will make and record pass or fail for each in
+`docs/ha-entities.md`:
+1. WebSocket connect and `auth` with the token (expect `auth_ok`).
+2. `get_states`.
+3. The entity registry list (`config/entity_registry/list`).
+4. The device registry list (`config/device_registry/list`).
+5. `subscribe_events` for state changes (or `subscribe_entities`), and one event received.
+6. REST `GET /api/` with the bearer header (the check the connect screen uses).
+
+Any call that a non-admin user is refused changes the design before code is written (discovery in 4.3
+depends on the two registry lists). Also record whether the app can delete its own token at HA on
+Disconnect. The token itself is never written to the repo, a log or a doc.
+
+**Why (the comparison he decided on).**
 
 **What each needs.**
 
@@ -229,20 +250,14 @@ non-admin user in the same secure storage, and both are cut off in HA in one ste
 to build, test and keep running: no website, no deep link, no refresh logic, fewer failure modes. Its costs
 are the paste step and that it does not suit other people's HA. With one HA user that cost is small.
 
-**If adopted:**
-- T-043 (GitHub Pages `client_id`) and decision D-9 drop.
-- T-044 shrinks to: normalize the address, check the token with one call, treat 401 as signed out, prove
-  no token reaches a logger.
-- T-045 shrinks to: the address and token fields, secure storage, the backup exclusion test, Disconnect.
-  The LAN cleartext rule and the non-admin registry-read check stay.
-- T-042's connect mockup changes (a token field and a short how-to instead of HA's login page).
+**What changes in the tasks:**
+- T-043 (GitHub Pages `client_id`) and decision D-9 are dropped.
+- T-044 is now: the auth interface, normalize the address, check the token with one call, treat 401 as
+  signed out, prove no token reaches a logger; and first, the call checks above.
+- T-045 is now: the address and token fields, secure storage, the backup exclusion, Disconnect. The LAN
+  cleartext rule and the non-admin registry-read check stay.
+- T-042's connect mockup shows a token field and a short how-to instead of HA's login page.
 - T-046 onward are unchanged: the WebSocket and REST clients take a bearer token either way.
-- Keep the auth behind one small interface (`src/lib/ha/`), so the HA login can be added later if the app
-  is ever offered to other HA users.
-
-**Recommendation:** adopt the token for 0.4.0. **Jason decides**; until he does, T-043 to T-045 stay as
-written. To check before building, either way: that a non-admin HA user can create a long-lived token from
-their own profile on Jason's HA version.
 
 ### 8.2 Chef iQ direct over Bluetooth, no Home Assistant (0.5.0, T-080)
 
