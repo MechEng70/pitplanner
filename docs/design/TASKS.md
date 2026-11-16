@@ -3229,9 +3229,30 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   list, like the timeline).
 
 ### T-075 Tri-tip with no griddle: smoke, then sear on the smoker
-- **Status:** todo. Decided by Jason, 2026-11-16. Small, in 0.3.0. Build after T-069, T-074 and the T-035
-  security fixes are merged (it touches `engine/plan.ts`, `src/lib/sharedPlan.ts`,
-  `src/screens/plan/FoodEdit.tsx`).
+- **Status:** merged onto `main` 2026-11-16 and gated; waits on the device checks. Small, in 0.3.0.
+- **Jason's decisions on the built task (2026-11-16):** the warning, final: Tri-tip's sear needs a griddle.
+  Add one in Gear, or pick "Smoke, then sear on the smoker" in Food details. Method order (griddle sear,
+  smoker sear, brisket-style), rest 10 min, the step wording, the reused smoke time and the joined import
+  line: accepted. The card's pull range stays 130-145F (145F is USDA FSIS's minimum for whole cuts of beef,
+  3 min rest, cited in `foods.json`); 130-135F stays in the sear step. The climb is drawn on the tri-tip's
+  lane in the hold style (`offHeat` on the step), not as a ramp. The method is offered only when the
+  smoker's max reaches its sear temp (450F at the lowest); otherwise the chip is greyed with "Needs 450F"
+  (his wording "Needs {sear}F", shown where "Add in Gear" shows; "Needs 232C" in Celsius). Wings at 400F
+  with the same gap: BACKLOG, 0.3.x.
+- **Built:** the method `smokerSear` in `data/foods.json` with four sources (Louisiana Grills, two Traeger
+  pages, USDA FSIS; each "given by Jason, 2026-11-16"); the sources test per method; helpers in
+  `engine/rules.ts` for "every cooker a method's steps need" and "the first method the cookers can fully
+  do", used by the import (`src/lib/sharedPlan.ts`), Add food (`src/lib/rules.ts` `newItem`) and Food
+  details; `NO_GRIDDLE_PICK_METHOD` in `engine/plan.ts`; `NO_SMOKER` and `NO_GRIDDLE` once per food, and the
+  warning list's React key is code plus message (regression tests, each shown to fail on the old code).
+- **Open with Jason (new cases from the too-cool smoker rule):** a griddle-sear tri-tip opened with no
+  griddle and a smoker under 450F goes brisket-style and the box reads "Tri-tip will move to the smoker, or
+  add a griddle in Gear." (odd for a food already on the smoker); a shared smoker-sear tri-tip opened on a
+  smoker under 450F becomes brisket-style with no line saying so; a plan that already holds a smoker-sear
+  tri-tip when the smoker is changed to a cooler one plans at 450F with no warning (only the chip says so).
+- **Device checks (Jason):** Food details for tri-tip at 115% with no griddle (three method chips wrap, the
+  griddle sear greyed with "Add in Gear"); the import box with no griddle; the Cook tab lane for a
+  smoker-sear tri-tip (a dashed hold for the climb, then sear).
 - **Goal:** a tri-tip can be planned and imported on a setup with no griddle.
 - **The method (data only, `data/foods.json`):** a third tri-tip method, "Smoke, then sear on the smoker".
   Each number cites its source in `sources`, "as given by Jason, 2026-11-16":
