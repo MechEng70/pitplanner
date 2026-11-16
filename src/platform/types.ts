@@ -1,6 +1,6 @@
 // Platform service interfaces (TECH-DESIGN section 4). App logic in src/lib talks to these, never to
 // expo-* packages or native modules directly. Android implementations: pit-alarms (T-013, T-015),
-// expo-secure-store, expo-sharing, expo-linking. Test fakes record calls.
+// expo-secure-store, expo-sharing, expo-linking, expo-document-picker (T-036). Test fakes record calls.
 
 import type { AlarmSpec } from '../../engine/alarms.ts';
 
@@ -148,6 +148,19 @@ export type ReadDeviceFacts = () => DeviceFacts;
  * on still shows it in the sheet's title.
  */
 export type ShareReport = (name: string, text: string, recipient: string) => Promise<void>;
+
+/** Hand one text file to the share sheet (T-036: Gear's Export my data). Rejects when it was not shared. */
+export type ShareFile = (name: string, text: string) => Promise<void>;
+
+/**
+ * A file picked in the system file picker, read as text (T-036: Gear's Restore from a file). `canceled`: the
+ * user backed out. `tooBig`: over the cap, refused before it was read when the picker reports a size.
+ * `unreadable`: the picker or the read failed.
+ */
+export type PickedFile = { text: string } | { canceled: true } | { error: 'tooBig' | 'unreadable' };
+
+/** Open the system file picker for one file and read it, refusing a file over `maxChars`. Never rejects. */
+export type PickTextFile = (maxChars: number) => Promise<PickedFile>;
 
 /** Put plain text on the phone's clipboard (T-065: the developer's address). Rejects when it was not copied. */
 export type CopyText = (text: string) => Promise<void>;

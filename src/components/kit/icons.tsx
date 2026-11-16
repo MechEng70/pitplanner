@@ -192,6 +192,18 @@ export const Cup = (p: IconProps) => (
     <Path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H17M8 3v3M12 3v3" />
   </Icon>
 );
+/** Gear's Export my data (mockup 16, T-036). */
+export const Upload = (p: IconProps) => (
+  <Icon {...p}>
+    <Path d="M12 15V4M8 8l4-4 4 4M5 15v4h14v-4" />
+  </Icon>
+);
+/** Gear's Restore from a file (mockup 16, T-036). */
+export const Download = (p: IconProps) => (
+  <Icon {...p}>
+    <Path d="M12 4v11M8 11l4 4 4-4M5 15v4h14v-4" />
+  </Icon>
+);
 export const Thermo = (p: IconProps) => (
   <Icon {...p}>
     <Path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0z" />

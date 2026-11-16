@@ -1,12 +1,13 @@
 // Share a text file through the Android share sheet: written to the app's cache, then handed to
-// expo-sharing. Used by "Export my data" (T-010); T-029 builds plan sharing on it. "Send to developer"
-// (T-065) goes through the pit-share native module instead, which can offer a recipient.
+// expo-sharing. Used by "Export my data" (T-010, and Gear's data file in T-036); T-029 builds plan sharing on
+// it. "Send to developer" (T-065) goes through the pit-share native module instead, which can offer a
+// recipient.
 
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { pitShare } from '../../modules/pit-share';
 import { tar } from '../lib/tar.ts';
-import type { ShareReport } from './types';
+import type { ShareFile, ShareReport } from './types';
 
 function writeCacheFile(name: string, text: string): File {
   const file = new File(Paths.cache, name);
@@ -19,6 +20,9 @@ export async function shareTextFile(name: string, text: string, mimeType: string
   const file = writeCacheFile(name, text);
   await Sharing.shareAsync(file.uri, { mimeType, dialogTitle: title });
 }
+
+/** Gear's "Export my data" (T-036): the pitplanner-data file through the share sheet. */
+export const shareDataFile: ShareFile = (name, text) => shareTextFile(name, text, 'application/json', 'Export my data');
 
 /** The subject offered to the email app the tester picks. */
 export const REPORT_SUBJECT = 'Pit Planner debug file';

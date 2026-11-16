@@ -361,7 +361,12 @@ class Reader {
     return this.byFood('rateLocks', raw, v => (v === true ? { value: true } : v === false ? null : 'bad value'));
   }
 
-  private item(raw: unknown): [Verdict | 'unknown food' | 'unknown method', CookRecord['items'][number] | null] {
+  /**
+   * One food of a saved cook. A food the app does not know (from a newer app) is kept as it is, method and
+   * all (Jason, 2026-11-16): history shows it and the rates never read it. A known food with a method it does
+   * not have is left out.
+   */
+  private item(raw: unknown): [Verdict | 'unknown method', CookRecord['items'][number] | null] {
     if (!isObj(raw) || !isObj(raw.log)) return ['bad value', null];
     const l = raw.log;
     const options = l.options;
@@ -394,8 +399,7 @@ class Reader {
     );
     if (v !== 'ok') return [v, null];
     const food = this.food(l.foodId as string);
-    if (!food) return ['unknown food', null];
-    if (!food.methods.some(m => m.id === l.methodId)) return ['unknown method', null];
+    if (food && !food.methods.some(m => m.id === l.methodId)) return ['unknown method', null];
     const log: CookLog = {
       foodId: l.foodId as string,
       methodId: l.methodId as string,

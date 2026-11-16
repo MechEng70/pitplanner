@@ -3,13 +3,19 @@
 // both). A cooker's sheet (`onCooker`, T-027) comes in as a prop the route does not pass yet; until then
 // those rows do nothing. Cook rates opens Cook history (`onHistory`, T-028; HistoryScreen.tsx).
 // The "Update available" row shows what the last update check saved (`state.update`); the check is T-032.
-import { useState } from 'react';
+// Export my data and Restore from a file (T-036; Jason, 2026-11-16, mockup 16): the data file
+// (src/lib/dataFile.ts) through the share sheet, and back through the system file picker, a confirm sheet and
+// the store's restore. Refusals, a failed share and the restored counts show in a sheet with OK
+// (ImportNotice), as Plan shows "Couldn't share" and "This file is not a Pit Planner plan.".
+import { useRef, useState } from 'react';
 import type { Cookers } from '../../../engine/types';
 import { lbToKg } from '../../../engine/units';
 import {
   Avatar,
   Bell,
+  Button,
   Cup,
+  Download,
   Field,
   FootLine,
   GroupCard,
@@ -24,11 +30,15 @@ import {
   Stack,
   Text,
   Thermo,
+  Upload,
+  useSheet,
 } from '@/components/kit';
+import { buildDataFile, dataFileName, MAX_CHARS, readDataFile, type DataCheck } from '@/lib/dataFile';
 import { grantDebugPass } from '@/lib/debugPass';
-import { fmtTemp, type Units } from '@/lib/format';
+import { fmtMonthDay, fmtTemp, type Units } from '@/lib/format';
 import { hasHopper, smokerTypeInfo } from '@/lib/gear';
 import { rateRows, ratesSummary } from '@/lib/historyView';
+import { confirmText, leftOutText, refusalText, restoredText, type Refusal } from '@/lib/restoreText';
 import { rules } from '@/lib/rules';
 import { useStore } from '@/lib/store';
 import { availableUpdate, RELEASES_PAGE } from '@/lib/update';
@@ -38,16 +48,31 @@ import {
   type AlarmStatus,
   type AppLinks,
   type PermissionService,
+  type PickTextFile,
+  type ShareFile,
 } from '@/platform/types';
 import { AddCooker, type CookerKind } from '@/screens/shared/AddCooker';
 import { AlertChecks, BatteryNote, TestAlertButton, useAlarmStatus } from '@/screens/shared/AlertChecks';
+import { ImportNotice } from '@/screens/shared/ImportNotice';
 
 export const SUPPORT_URL = 'https://buymeacoffee.com/PitPlanner';
 /** Taps on the version that open the hidden test screen. */
 export const DEBUG_TAPS = 5;
 const KINDS: CookerKind[] = ['smoker', 'griddle', 'oven'];
 
-type Open = 'add' | 'alerts' | 'units' | null;
+/** A failed Export my data (Jason, 2026-11-16; as "Couldn't share" on Plan). */
+export const EXPORT_FAILED = { title: "Couldn't export", body: 'Your data was not shared. Try again.' };
+/** The title over a refusal or the restored counts: the row's own name, as Plan's "Open shared plan". */
+export const RESTORE_TITLE = 'Restore from a file';
+
+type Checked = Extract<DataCheck, { ok: true }>;
+type Open =
+  | 'add'
+  | 'alerts'
+  | 'units'
+  | { kind: 'confirm'; check: Checked }
+  | { kind: 'notice'; title: string; body: string }
+  | null;
 
 export function GearScreen({
   version,
@@ -57,6 +82,9 @@ export function GearScreen({
   onDebug,
   onCooker,
   onHistory,
+  shareDataFile,
+  pickDataFile,
+  now = Date.now,
 }: {
   /** The app's version, as the build has it. */
   version: string;
@@ -70,8 +98,14 @@ export function GearScreen({
   onCooker?: (kind: CookerKind) => void;
   /** T-028: Cook rates and history. */
   onHistory?: () => void;
+  /** T-036: hands the data file to the share sheet. Without it Export my data does nothing. */
+  shareDataFile?: ShareFile;
+  /** T-036: the system file picker. Without it Restore from a file does nothing. */
+  pickDataFile?: PickTextFile;
+  /** The export's time and the reader's "now"; tests pass a fixed one. */
+  now?: () => number;
 }) {
-  const { state, setUnits } = useStore();
+  const { state, setUnits, restoreData } = useStore();
   const { gear, units } = state;
   const [open, setOpen] = useState<Open>(null);
   const [status, refresh] = useAlarmStatus(permissions, onResume);
@@ -84,6 +118,44 @@ export function GearScreen({
     rateRows(rules, state.history, gear.smoker?.id ?? 'none', state.rates, state.totalHours, state.rateLocks),
     units,
   );
+  const notice = (title: string, body: string) => setOpen({ kind: 'notice', title, body });
+  const refuse = (why: Refusal) => notice(RESTORE_TITLE, refusalText(why));
+
+  // Export my data: the pitplanner-data file (not the error screen's full dump), named by the time it was made.
+  const exportData = () => {
+    if (!shareDataFile) return;
+    const at = now();
+    const { gear: g, units: u, rates, totalHours, rateLocks, records, flags } = state;
+    const text = buildDataFile({ gear: g, units: u, rates, totalHours, rateLocks, records, flags }, at, version);
+    const failed = () => notice(EXPORT_FAILED.title, EXPORT_FAILED.body);
+    try {
+      shareDataFile(dataFileName(at), text).catch(failed);
+    } catch {
+      failed();
+    }
+  };
+
+  // Restore from a file: refused at once while a cook runs (no picker). A cancelled picker says nothing. The
+  // file is checked in full before the confirm sheet; only Replace writes.
+  const picking = useRef(false);
+  const restoreFromFile = async () => {
+    if (!pickDataFile || picking.current) return;
+    if (state.cook) return refuse('cook running');
+    picking.current = true;
+    const picked = await pickDataFile(MAX_CHARS).catch(() => ({ error: 'unreadable' as const }));
+    picking.current = false;
+    if ('canceled' in picked) return;
+    if ('error' in picked) return refuse(picked.error === 'tooBig' ? 'too big' : 'unreadable');
+    const check = readDataFile(rules, picked.text, now());
+    if (!check.ok) return refuse(check.problem);
+    setOpen({ kind: 'confirm', check });
+  };
+  const replace = (check: Checked) => {
+    const result = restoreData(check.data);
+    if (!result.ok) return refuse(result.problem);
+    notice(RESTORE_TITLE, restoredText(result.counts));
+  };
+
   const tapVersion = () => {
     if (taps + 1 < DEBUG_TAPS) return setTaps(taps + 1);
     setTaps(0);
@@ -165,6 +237,28 @@ export function GearScreen({
             subtitle={<Values text={rateLine} />}
             onPress={() => onHistory?.()}
           />
+          <ListRow
+            leading={
+              <IconAvatar>
+                <Upload />
+              </IconAvatar>
+            }
+            title="Export my data"
+            wrap
+            subtitle="Cookers, rates and past cooks in one file"
+            onPress={exportData}
+          />
+          <ListRow
+            leading={
+              <IconAvatar>
+                <Download />
+              </IconAvatar>
+            }
+            title="Restore from a file"
+            wrap
+            subtitle="Replaces the cookers, rates and cooks on this phone"
+            onPress={() => void restoreFromFile()}
+          />
         </GroupCard>
       </Stack>
 
@@ -243,6 +337,12 @@ export function GearScreen({
         </Sheet>
       ) : null}
       {open === 'units' ? <UnitsSheet units={units} onChange={setUnits} onClose={close} /> : null}
+      {typeof open === 'object' && open?.kind === 'confirm' ? (
+        <ReplaceSheet check={open.check} onReplace={() => replace(open.check)} onClose={close} />
+      ) : null}
+      {typeof open === 'object' && open?.kind === 'notice' ? (
+        <ImportNotice title={open.title} body={open.body} onClose={close} />
+      ) : null}
     </Screen>
   );
 }
@@ -293,6 +393,41 @@ function alertsSubtitle(s: AlarmStatus | null): string {
     !s.batteryUnrestricted && 'battery limits',
   ].filter(Boolean);
   return `Needs a fix: ${off.join(', ')}`;
+}
+
+/**
+ * "Replace your data?" (Jason, 2026-11-16): what the file holds and when it was made, and a line when parts
+ * of it were left out. Laid out as Start over? in Cook options: the text, then Cancel and Replace.
+ */
+function ReplaceSheet({ check, onReplace, onClose }: { check: Checked; onReplace: () => void; onClose: () => void }) {
+  const date = check.exportedAt == null ? null : fmtMonthDay(check.exportedAt);
+  const leftOut = leftOutText(check.dropped);
+  return (
+    <Sheet title="Replace your data?" onClose={onClose} footer={<ReplaceButtons onReplace={onReplace} />}>
+      <Text variant="bodyM" tone="secondary" relaxed>
+        {confirmText(check.counts, date)}
+      </Text>
+      {leftOut ? (
+        <Text variant="bodyM" tone="secondary" relaxed>
+          {leftOut}
+        </Text>
+      ) : null}
+    </Sheet>
+  );
+}
+
+function ReplaceButtons({ onReplace }: { onReplace: () => void }) {
+  const sheet = useSheet();
+  return (
+    <>
+      <Button kind="text" block onPress={() => sheet.close()}>
+        <Text>Cancel</Text>
+      </Button>
+      <Button block onPress={() => sheet.close(onReplace)}>
+        <Text>Replace</Text>
+      </Button>
+    </>
+  );
 }
 
 function UnitsSheet({ units, onChange, onClose }: { units: Units; onChange: (u: Units) => void; onClose: () => void }) {

@@ -10,3 +10,9 @@ jest.mock('expo-font', () => ({
   isLoaded: () => true,
   loadAsync: async () => {},
 }));
+
+// File picker (T-036): not in Jest. Screens take the picker as a prop and tests pass the fake
+// (src/platform/fakes.ts `fakeFilePicker`); this answers "cancelled" for anything that reaches the module.
+jest.mock('expo-document-picker', () => ({
+  getDocumentAsync: async () => ({ canceled: true, assets: null }),
+}));
