@@ -24,7 +24,7 @@ cookers), both new UI that needs Jason's OK on wording and design before any cod
    e. Parity P1 to P3: reboot with the phone locked on the new build; an unanswered step's repeats in Doze;
       a permission taken away during a cook.
    f. T-017 check on the phone. T-031 (two phones) only if the second phone is at hand.
-2. His answers still open: parity D2, D4, D9, D10, D11; wording for T-069; design for T-070; the turkey
+2. His answers still open: parity D2, D9, D10, D11 (D4, the lane chart, is settled: keep as built); wording for T-069; design for T-070; the turkey
    picture (`tools/device/out/turkey-115.png`); "More quantity" for the turkey weight stepper.
 3. Then, without the phone: T-069, T-070 once approved.
 

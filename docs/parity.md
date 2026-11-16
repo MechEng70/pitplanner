@@ -22,7 +22,7 @@ Everything that is not OK. T-034 is done when each row is fixed or accepted by J
 | D1 | Open shared plan: "the receiver picks ... their own cookers" (section 3) | Nothing to pick: "Your smoker" is read-only and foods are mapped onto the receiver's cookers (`SharedPlanSheet.tsx:91-107`, `mapToCookers`). Same as 0.2.0. | Screenshot approved (T-030), the difference itself not written down | **Jason, 2026-11-15: add a choice.** New UI: T-070, design to be approved first |
 | D2 | Temp menu: "Show all" | The button reads "Show 180-500F", the cooker's range (`TempMenu.tsx:86-92`). Same as 0.2.0. | Screenshots approved (T-018), wording not written down | open |
 | D3 | Plan, empty: Cook a past plan again | Shown only when there is a past cook (`PlanEmpty.tsx:46-51`). | Yes: Jason 2026-11-13 (TASKS T-017, T-028) | SPEC edited 2026-11-15 |
-| D4 | Live cook: lane chart "10 AM to serve" | The chart starts at the hour of the first step, "6 AM to serve" (`cookView.ts:94-101`). Same as 0.2.0. | No | open |
+| D4 | Live cook: lane chart "10 AM to serve" | The chart starts at the hour of the first step, "6 AM to serve" (`cookView.ts:94-101`). Same as 0.2.0. | **Jason, 2026-11-15: keep as built** | accepted; SPEC edited 2026-11-15 |
 | D5 | Cook finished: Back to the cook "beside Discard this cook" | On its own line under Discard (`FinishScreen.tsx:94-101`). | Yes: Jason (TASKS T-063) | SPEC edited 2026-11-15 |
 | D6 | Live rules: Not yet calls `shiftRemaining(now, +30, keepServe, itemId)` | Calls `postponeStep` (`cook.ts:125-133`, `live.ts:165-185`): the same result for the user. Same as 0.2.0. | No | SPEC edited 2026-11-15 (Jason: yes to wording edits) |
 | D7 | "A Done 5 min or more early or late ... ask Keep serve or Move serve" | Asked for a Done on a step during the cook. A Done on a pull (food off the heat) never asks, and serve never moves, even when the food comes off after serve (`cook.ts:112-120`, `markPullDone`). The same for Done on an alert. Same as 0.2.0. | **Jason, 2026-11-15: leave as is, the rest absorbs it** | accepted; SPEC says so; test in `cook.test.ts` |
@@ -206,7 +206,7 @@ Rows that are OK, with their proof. Open rows are in section 1 by number.
 
 ## 5. Still to do in T-034
 
-- Jason's decision on the rows still "open" in 1a: D2 ("Show 180-500F"), D4 (the lane chart's start), D9 (hold
+- Jason's decision on the rows still "open" in 1a: D2 ("Show 180-500F"), D9 (hold
   limit during a cook), D10 (cooler hold), D11 (imported temp).
 - T-069 (conflict banner on Live cook) and T-070 (the receiver picks cookers): both new UI, approved first.
 - 1b rows T6 to T19: which get a test before 0.3.0.
