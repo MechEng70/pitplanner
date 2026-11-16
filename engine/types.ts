@@ -108,6 +108,8 @@ export interface PlannedItem {
   extraHoldMin: number; // added by the clear-pit rule or live adjustments
   finish: number; // off heat
   holdLimitMin: number;
+  /** The food's own sentence for a hold past its limit, if it has one. */
+  holdNote?: string;
   pullLabel: string;
   pullCheckStep: boolean;
   footprintSqIn: number;

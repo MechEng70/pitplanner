@@ -14,7 +14,7 @@ side (event -> alarm grouping): `engine/alarms.ts`. The 0.2.0 names below (`resc
   `USE_EXACT_ALARM` (Android 13+), so it is granted at install; `SCHEDULE_EXACT_ALARM` covers 12.
 - The set lives in SharedPreferences (`pit_alarms`), so the receivers work with the app dead.
 - Fired step: high-priority notification on channel `steps_v1` (alarm sound, `USAGE_ALARM`, vibration,
-  public on the lock screen), actions Done / +15 min / Open. Full-screen intent for critical steps and
+  public on the lock screen), actions Done / +15 min (a tap on the alert opens the app). Full-screen intent for critical steps and
   for anything between 10 PM and 7 AM.
 - No Done: repeats every 10 min, 6 times ("Still waiting: ..."), then one "Cook needs you" alert.
 - Done (notification or `acknowledge(keys)` from the app) stops the repeats. +15 min rings the step again
@@ -140,7 +140,7 @@ permissions on this phone (OnePlus permission monitoring): Jason switches them i
 | P1: reboot with the phone locked | **Fail on the dev build.** Booted locked 09:00:29; Android started the app at 09:00:31 for LOCKED_BOOT_COMPLETED and it crashed in `MainApplication.onCreate`: `IllegalStateException: SharedPreferences in credential encrypted storage are not available until after user (id 0) is unlocked`, from React Native's `DevSupportManagerBase`. RestoreReceiver never ran: 0 alarms while locked, the 09:09 repeat did not ring. Unlocked 09:10:01; the alarms were back between 09:11:18 and 09:11:38 (BOOT_COMPLETED, late on this OnePlus as on 2026-11-11): four steps at their times, both repeats moved to 09:21:25. T-072. |
 | P3: a permission taken away during a cook | Pass. Notifications switched off in Settings: `POST_NOTIFICATIONS: granted=false`, the Cook tab showed "Alerts are off. Steps may not ring." with Fix. Switched on: `granted=true`, the banner gone, the cook's 6 alarms still held. |
 | Done and +15 min from the lock screen, without unlocking | Pass. With the phone reading locked at every check: Done took the step's repeat off the alarm list; +15 min set the step again 15 minutes on. Picture of the expanded alert: `tools/device/out/phone/lock-alert-expanded.png`. |
-| Button labels on the lock screen at 115% font | Bug, fixed. "Done" and "+15 min" were cut to "Do..." and "+15...". Now a check mark, `+15` and `Open` (Jason's choice). Not yet seen on the phone with the new labels. |
+| Button labels on the lock screen at 115% font | Bug, fixed. With three buttons "Done" and "+15 min" were cut to "Do..." and "+15...". Now two buttons, Done and +15 min as in mockup 14; a tap on the alert opens the app (Jason, 2026-11-16). Not yet seen on the phone with two buttons. |
 
 Not run: Doze with a test alert more than an hour out (Android leaves deep idle ahead of a near alarm clock
 unless forced; Jason dropped the 65 minute round). It moves to the Saturday cook (T-037): every step alarm on

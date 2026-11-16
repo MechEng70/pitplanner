@@ -32,6 +32,8 @@ export interface RuleTiming {
   kind: TimingKind;
   hrPerLbAt225?: number; // perWeight
   rangeAt225?: [number, number]; // perWeight: published range, hr/lb
+  /** perWeight: rates measured at other smoker temps, hr/lb. The food's own curve runs through them (tempFactorFor). */
+  tempPoints?: { tempF: number; hrPerLb: number }[];
   minHours?: number; // perWeight floor
   minPerLbAt225?: number; // perWeightMinutes
   minMinutes?: number; // perWeightMinutes floor
@@ -66,6 +68,8 @@ export interface MethodShared {
   sliceMin?: number;
   pull?: RulePull;
   holdLimitMin?: number;
+  /** Added to the note for a hold past holdLimitMin ("Keep it above 140F."). */
+  holdNote?: string;
   prep?: PrepRule[];
   footprintSqInPerUnit?: number;
   timing?: RuleTiming;

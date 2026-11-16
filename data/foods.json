@@ -36,6 +36,7 @@
           "sliceMin": 20,
           "pull": { "label": "Check tenderness: pull at 200-205F when the probe slides in like butter.", "tempF": [200, 205], "checkStep": true },
           "holdLimitMin": 240,
+          "holdNote": "Keep it above 140F.",
           "prep": [ { "leadMin": 75, "label": "Prep the brisket." } ],
           "footprintSqInPerUnit": 16
         }
@@ -157,6 +158,7 @@
           "sliceMin": 15,
           "pull": { "label": "Check tenderness: pull at 200-205F when the bone wiggles free.", "tempF": [200, 205], "checkStep": true },
           "holdLimitMin": 240,
+          "holdNote": "Keep it above 140F.",
           "prep": [ { "leadMin": 60, "label": "Prep the pork butt." } ],
           "footprintSqInPerUnit": 7
         }
@@ -219,11 +221,12 @@
       "id": "turkey",
       "name": "Whole turkey",
       "group": "Turkey",
-      "$comment": "T-059. Unstuffed, whole. Food-safety numbers (done temp, smoker temp floor, rate) each have a source below; engine/rules.test.ts fails without one. The shared tempModel gives 30 min per lb at 225F, 25.5 at 250F, 21.7 at 275F, 18.4 at 300F and 15.7 at 325F. No size limit: none was given (Jason, 2026-11-15). Prep steps say when, not how (Jason, 2026-11-15); the 30 min lead is not sourced. rateHint starts at the low end of the cited range, so a rate for a hotter smoker is not flagged as unusual.",
+      "$comment": "T-059. Unstuffed, whole. Food-safety numbers (done temp, smoker temp floor, rate) each have a source below; engine/rules.test.ts fails without one. The rate has a measured point (timing.tempPoints: Jason's 18 min per lb at 275F, 2026-11-16; the shared tempModel alone gave 21.7): 30 min per lb at 225F, 23.2 at 250F, 18 at 275F, then the shared model from that point, 15.3 at 300F and 13 at 325F. No size limit: none was given (Jason, 2026-11-15). Prep steps say when, not how (Jason, 2026-11-15); the 30 min lead is not sourced. rateHint starts at the low end of the cited range, so a rate for a hotter smoker is not flagged as unusual.",
       "rateHint": [0.33, 1.6],
       "sources": [
         { "cite": "USDA FSIS (fsis.usda.gov), read by Jason 2026-11-15", "covers": ["doneTemp", "minPitTemp", "rate"], "says": "Smoker air at 225F to 300F. 20 to 30 min per lb. Done at 165F in the innermost thigh, the innermost wing and the thickest part of the breast." },
-        { "cite": "Jason, 2026-11-15", "covers": ["rate", "rest"], "says": "Closer to 30 min per lb at 225F to 250F, 15 to 20 min per lb at 275F to 325F. Rest 30 min, 20 min minimum." }
+        { "cite": "Jason, 2026-11-15", "covers": ["rate", "rest"], "says": "Closer to 30 min per lb at 225F to 250F, 15 to 20 min per lb at 275F to 325F. Rest 30 min, 20 min minimum." },
+        { "cite": "Jason, 2026-11-16, his measured value", "covers": ["rate"], "says": "18 min per lb at 275F. About 23 min per lb at 250F and about 15 at 300F through that point." }
       ],
       "quantity": { "kind": "weight", "unit": "lb", "default": 12, "min": 8, "max": 24, "step": 0.5, "referenceWeight": 12 },
       "methods": [
@@ -232,7 +235,7 @@
           "label": "Smoked",
           "cooker": "smoker",
           "minPitTempF": 225,
-          "timing": { "kind": "perWeight", "hrPerLbAt225": 0.5, "rangeAt225": [0.33, 0.5] },
+          "timing": { "kind": "perWeight", "hrPerLbAt225": 0.5, "rangeAt225": [0.33, 0.5], "tempPoints": [{ "tempF": 275, "hrPerLb": 0.3 }] },
           "phases": [
             { "id": "smoke", "fraction": 1.0, "temp": "pit", "label": "Turkey on the smoker. Probe in the thickest part of the breast.", "short": "Smoke" }
           ],

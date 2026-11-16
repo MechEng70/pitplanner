@@ -683,7 +683,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     missed step rings at once and repeats, an overdue repeat rings 5 s after boot); Done for some keys of
     an alarm; +15; exact alarms denied gives an inexact alarm and `exact = false`; Quiet moves, holds and
     releases repeats.
-  - `ReceiversTest`: a step rings with Done / +15 min / Open on `steps_v1` and starts repeating; the
+  - `ReceiversTest`: a step rings with Done / +15 min on `steps_v1` and starts repeating; the
     notification is not auto-cancel; six repeats 10 minutes apart with "N min past the step.", then "Cook
     needs you" once; test alarms do not repeat; a stale alarm does nothing; Done and +15 from the
     notification queue their action; a boot broadcast restores; the three receivers are in the manifest,
@@ -744,7 +744,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   `docs/alarm-testing.md` ("Results on the Expo dev build, OnePlus"). Pass: test alert on the lock screen,
   a step alert and one repeat in forced Doze, Done and +15 min from the lock screen without unlocking, a
   permission taken away and given back. Fail: the locked reboot (T-072). Fixed: the alert's button labels
-  were cut off at 115% font, now a check mark, `+15`, `Open`.
+  were cut off at 115% font with three buttons; now two, Done and +15 min (no Open: a tap on the alert
+  opens the app).
 - **Status:** emulator half done (`b9b5d7d`); phone half blocked until Jason says his Saturday cook
   (2026-11-14) is done. Until then nothing runs against the phone: no adb commands, no installs, no reads
   (Jason, 2026-11-13). `tools/device/PHONE-BLOCKED` makes the device tools refuse it; only Jason lifts it.
@@ -1092,6 +1093,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   the thumb and the screen does not scroll, compared with 0.2.0 on his phone, where it jumps.
 
 ### T-059 Whole turkey in `data/foods.json`
+- **Rate at 275F (Jason, 2026-11-16):** 18 min per lb, his measured value (the shared curve gave 21.7). In
+  `data/foods.json` as a measured point, `timing.tempPoints` (`engine/plan.ts` `tempFactorFor`): 30 min per
+  lb at 225F, 23.2 at 250F, 18 at 275F, then the shared curve from that point, 15.3 at 300F. He agreed to the
+  250F and 300F numbers. Logged cooks are read back with the same curve. No other food changes.
 - **Jason (2026-11-15, 5:10 PM): whole turkey goes into 0.3.0**, with a note that the cook is responsible for
   cooking food to a safe temperature (wording and where it shows need his OK: it is new UI). He pasted two
   sets of numbers, neither with a link, so nothing goes into `data/foods.json` until each has its source
@@ -1772,7 +1777,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ### T-025 Alerts step, test alert, battery help
 - **Phone (2026-11-16):** a test alert rang on the locked phone; the lock-screen alert's picture is
   `tools/device/out/phone/lock-alert-expanded.png` (git-ignored; cropped to the alert). Mockup 14 shows the
-  words Done and +15 min; the buttons now read a check mark and `+15` so they fit (Jason, 2026-11-16).
+  words Done and +15 min; the alert now has those two buttons and no Open, so they fit (Jason,
+  2026-11-16).
 - **Status:** built 2026-11-15 on branch `t025`, unit-tested (Jest). NOT run on a device or emulator, and
   `npm run check` was NOT run (the session that built it was not allowed to): prettier, ESLint, typecheck,
   Jest, engine and gate tests pass; Android tests, Semgrep and Snyk are still to run. The battery help link is
@@ -2811,6 +2817,16 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** the sheet against mockup 11 at 115%.
 
 ### T-071 Fish: salmon, sea bass, catfish
+- **Jason's answers (2026-11-16); after 0.3.0:**
+  1. Salmon (fillet portions and a whole side), catfish fillets, Chilean sea bass fillets. No whole fish yet.
+  2. Salmon: smoker and griddle. Catfish: smoker and griddle. Sea bass: griddle, smoker optional.
+  3. Timed by thickness, not weight. This needs a thickness input: propose the UI to him before building it.
+  4. Done temp 145F, cited to the USDA FSIS safe minimum internal temperature chart. Cooking times have no
+     primary source: treat them like turkey, starting estimates from the recipe sources he will keep,
+     labelled as estimates, corrected by learning. Note in the data that 160F for 30 minutes applies to
+     smoked fish meant for storage, not fish served right away, and do not present smoked fish as a keeper.
+  5. Hot smoking only. No cold smoking.
+  6. Fish is the last group in Add food, after Turkey.
 - **Status:** todo (Jason, 2026-11-15: "add a fish task for adding common types of fish like Salmon, Sea Bass,
   Catfish"). Whether it is in 0.3.0 or after is his to say.
 - **Goal:** a "Fish" group in Add food with salmon, sea bass and catfish (and which others, his list), each
@@ -2827,15 +2843,19 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** Food details for each fish at 115%, as the `turkey` device test does.
 
 ### T-072 Alarms come back before the first unlock after a reboot
-- **Status:** todo. Must-fix for 0.3.0 (Jason, 2026-11-16: "a phone that reboots overnight (OS updates do
-  this) would lose every alarm until unlock").
+- **Status:** in work. Jason, 2026-11-16, after the reproduction below: **test only, no start-up guard** ("the
+  release build passed twice; the guard adds risky code to fix a dev-only crash"). To do: the locked-reboot
+  device test on the PIN emulator with a release build, with the missing case (a step that comes due while
+  the phone is still locked rings before unlock); a required step in `docs/RELEASING.md` before every
+  release (on request otherwise); the dev-build limitation documented.
 - **Why:** parity P1, SPEC failure mode 6. On the OnePlus, 2026-11-16, the dev build crashed in
   `MainApplication.onCreate` when Android started it for LOCKED_BOOT_COMPLETED: React Native's dev support
   read SharedPreferences in credential-encrypted storage, which is locked until the first unlock. The
   alarm restore (pit-alarms `RestoreReceiver`, Direct Boot aware, device-protected storage) never ran; the
   alarms came back about 90 seconds after unlock. An alarm that comes due while the phone is still locked
   starts the app the same way.
-- **Goal (Jason):** nothing in app startup touches credential-encrypted storage before unlock. When the user
+- **Goal as first set (Jason, before the reproduction; replaced by the Status line above):** nothing in app
+  startup touches credential-encrypted storage before unlock. When the user
   is locked, skip React Native and Expo setup entirely and run only the pit-alarms restore from
   device-protected storage.
 - **Reproduction, 2026-11-16 (`docs/alarm-testing.md`, "Locked restart on an emulator with a PIN"):** it does

@@ -21,6 +21,7 @@ import {
   type ResolvedMethod,
   type RuleFood,
   type RulePhase,
+  type RuleTiming,
   type Rules,
 } from './rules.ts';
 
@@ -36,6 +37,24 @@ const REFILL_AT_FRACTION = 0.1; // top-off alert when the hopper is estimated un
 export function tempFactor(rules: Rules, tempF: number): number {
   const m = rules.tempModel;
   return Math.pow(m.basePer25F, (tempF - m.referenceF) / 25);
+}
+
+/**
+ * The cook-time multiplier against 225F for one method. A method with rates measured at other smoker temps
+ * (`timing.tempPoints`, turkey at 275F) has its own curve: through its 225F rate and each point, the same
+ * shape as the shared model in between (a constant factor per 25F), and on from the last point with the
+ * shared model. Without points, and below the reference temp, it is the shared model.
+ */
+export function tempFactorFor(rules: Rules, timing: RuleTiming, tempF: number): number {
+  const m = rules.tempModel;
+  const base = timing.hrPerLbAt225;
+  if (!timing.tempPoints?.length || base == null || tempF <= m.referenceF) return tempFactor(rules, tempF);
+  const points = [{ tempF: m.referenceF, hrPerLb: base }, ...timing.tempPoints].sort((a, b) => a.tempF - b.tempF);
+  const last = points[points.length - 1];
+  if (tempF >= last.tempF) return (last.hrPerLb / base) * Math.pow(m.basePer25F, (tempF - last.tempF) / 25);
+  const i = points.findIndex(p => p.tempF > tempF);
+  const [a, b] = [points[i - 1], points[i]];
+  return (a.hrPerLb / base) * Math.pow(b.hrPerLb / a.hrPerLb, (tempF - a.tempF) / (b.tempF - a.tempF));
 }
 
 function findFood(rules: Rules, foodId: string) {
@@ -88,7 +107,7 @@ export function rateFor(
   const { priorWeight, sizeExponent } = rules.learning;
   const wRef = refWeight(food);
   const observed = logs.map(h => {
-    const tf = tempFactor(rules, h.pitTempF);
+    const tf = tempFactorFor(rules, method.timing, h.pitTempF);
     const wrapF = method.options?.wrap
       ? method.options.wrap.choices[h.options?.wrap ?? method.options.wrap.default].timeFactor!
       : 1;
@@ -106,9 +125,9 @@ function buildItem(rules: Rules, input: ItemInput, plan: PlanInput): Omit<Planne
   const food = findFood(rules, input.foodId);
   const method = resolveMethod(food, input.methodId);
   const pit = plan.pitTempF;
-  const tf = tempFactor(rules, pit);
   const W = input.quantity;
   const timing = method.timing;
+  const tf = tempFactorFor(rules, timing, pit);
   const wrapChoice = optionValue(method, input, 'wrap');
   const wrapF = wrapChoice ? method.options.wrap.choices[wrapChoice].timeFactor! : 1;
 
@@ -206,6 +225,7 @@ function buildItem(rules: Rules, input: ItemInput, plan: PlanInput): Omit<Planne
     sliceMin: method.sliceMin ?? 0,
     extraHoldMin: 0,
     holdLimitMin: method.holdLimitMin,
+    holdNote: method.holdNote,
     pullLabel,
     pullCheckStep: !!method.pull.checkStep,
     footprintSqIn: (perUnit ?? 0) * W,
@@ -427,7 +447,7 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
         code: 'HOLD_TOO_LONG',
         level: it.holdsPoorly ? 'warn' : 'info',
         itemIds: [it.input.id],
-        message: `${nm(it)} holds ${Math.round(hold)} min, past its ${it.holdLimitMin} min limit.${it.holdsPoorly ? ' Move it to the griddle or start it later.' : ''}`,
+        message: `${nm(it)} holds ${Math.round(hold)} min, past its ${it.holdLimitMin} min limit.${it.holdsPoorly ? ' Move it to the griddle or start it later.' : ''}${it.holdNote ? ` ${it.holdNote}` : ''}`,
       });
     if (hold < it.restFloorMin - 0.5)
       warnings.push({

@@ -11,15 +11,18 @@ sections dated 2026-11-16), `docs/parity.md` P1 to P4 and D2, D9, D10, D11, and 
 
 **Done and committed (each through the gate):** the developer address is pitplanapp@gmail.com; a shared
 file that cannot be read logs its exception (tag `PitShare`, URIs cut to the provider); the alert buttons
-read a check mark, `+15`, `Open`; `db.sh restore` really removes the old folders; `AVD_LOCK=1` gives a
+are two, Done and +15 min (no Open: a tap on the alert opens the app); `db.sh restore` really removes the old folders; `AVD_LOCK=1` gives a
 second emulator, `pitplanner-lock`, with PIN 1111. `release/pitplanner-0.3.0-alpha.4.apk` is local only.
 
-**Waiting on Jason:**
-- T-072 (locked reboot, his must-fix): the crash is in dev-build code only; a release build keeps its alarms
-  on the PIN emulator. He decides what the fix and the device test should be now. Nothing is built.
-- Turkey at 275F to 18 min per lb (his measured value): how the rate should run between 225F and 275F and
-  above. D10: the exact words of the hold note ("keep it above 140F" past 4 hours). T-069 wording, T-070
-  design, T-071 fish answers, the pictures in `tools/device/out/phone/`.
+**Jason's decisions, late morning (all in TASKS):** T-072 is test only, no start-up guard: a locked-reboot
+device test on the PIN emulator with a release build, with a step due while still locked, required before
+every release in `docs/RELEASING.md`. The alert has two buttons, Done and +15 min, no Open. Turkey 18 min
+per lb at 275F as a measured point (`timing.tempPoints`). Brisket and pork butt hold notes end "Keep it
+above 140F." T-071 fish is after 0.3.0; his answers are in its entry (timed by thickness: propose the
+input's UI to him first).
+
+**Waiting on Jason:** T-069 wording, T-070 design; his look at the two-button alert on the phone and at the
+pictures in `tools/device/out/phone/`.
 
 **Rules added today:** play a sound on the computer when Jason has to act (`paplay
 /usr/share/sounds/freedesktop/stereo/complete.oga`). A dashboard agent keeps `dashboard.html`. adb cannot
@@ -27,8 +30,10 @@ grant or revoke permissions on the OnePlus: he switches them in Settings. `adb r
 emulator: restart it with `avd.sh stop` and `start`. Do not use `pkill -f` with a pattern that is in your
 own command line.
 
-**Gate facts:** as below. Snyk still prints its monthly-limit notice and scans all 26 projects; on
-2026-11-16 a throwaway project outside the repo proved it still flags an old lodash (7 high) and a planted
+**Gate facts:** as below, except Snyk: from the fourth run on 2026-11-16 its monthly-limit notice no longer
+prints and its output is boxed summaries. A full run reads "Projects tested: 26 projects", "Open: 0",
+"Ignored: 2" (the two `.snyk` entries, SE-001 and SE-003) and the gate's own line "Snyk coverage: all 26
+projects tested, none skipped". On 2026-11-16 a throwaway project outside the repo proved it still flags an old lodash (7 high) and a planted
 command injection (Snyk Code, 1 high). With Metro bundling for a device at the same time, the first gate run
 can fail step 4 on Jest 5 s timeouts; run it again with nothing else running.
 

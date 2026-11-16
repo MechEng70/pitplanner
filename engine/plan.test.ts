@@ -343,6 +343,63 @@ test('turkey: 12 lb at 225F is 6 hr on heat, a 30 min rest, fire 20 min ahead an
   assert.deepEqual(p.warnings, []);
 });
 
+// Jason, 2026-11-16: his measured turkey rate at 275F is 18 min per lb (the shared curve gave 21.7). The
+// rate runs from 30 min per lb at 225F through that point (about 23 at 250F) and on from it with the shared
+// curve (about 15 at 300F).
+const turkeyMinPerLb = (pitTempF: number) => {
+  const p = turkeyPlan({ pitTempF });
+  const smoke = p.items[0].phases.find(x => x.id === 'smoke')!;
+  return smoke.minutes / 12;
+};
+
+test('turkey: 18 min per lb at 275F, about 23 at 250F and about 15 at 300F; 30 at 225F as before', () => {
+  assert.ok(Math.abs(turkeyMinPerLb(275) - 18) < 1e-9, String(turkeyMinPerLb(275)));
+  assert.ok(Math.abs(turkeyMinPerLb(225) - 30) < 1e-9);
+  assert.ok(Math.abs(turkeyMinPerLb(250) - 60 * Math.sqrt(0.5 * 0.3)) < 1e-9); // 23.2: halfway on the curve
+  assert.ok(Math.abs(turkeyMinPerLb(300) - 18 * 0.85) < 1e-9); // 15.3: the shared curve from the 275F point
+  assert.ok(turkeyMinPerLb(250) > 23 && turkeyMinPerLb(250) < 23.5);
+  assert.ok(turkeyMinPerLb(300) > 15 && turkeyMinPerLb(300) < 15.5);
+});
+
+test("turkey's measured point changes no other food: brisket at 275F still follows the shared curve", () => {
+  const at = (pitTempF: number) =>
+    buildPlan(
+      rules,
+      saturday({ pitTempF, items: [{ id: 'b', foodId: 'brisket', methodId: 'smoked', quantity: 12 }] }),
+    ).items[0].phases.reduce((a, x) => a + (x.cooker === 'smoker' ? x.minutes : 0), 0);
+  assert.ok(Math.abs(at(275) / at(225) - tempFactor(rules, 275)) < 1e-9);
+});
+
+test('turkey: a logged cook at 275F is read back with the same curve (216 min for 12 lb keeps the rate at 0.5)', () => {
+  const log = {
+    foodId: 'turkey',
+    methodId: 'smoked',
+    smokerId: pitBoss.id,
+    pitTempF: 275,
+    quantity: 12,
+    minutesOnHeat: 216,
+  };
+  const p = turkeyPlan({ history: [log] as PlanInput['history'] });
+  assert.equal(p.items[0].rateInfo?.source, 'learned');
+  assert.ok(Math.abs(p.items[0].rateInfo!.hrPerLbAt225 - 0.5) < 1e-9, String(p.items[0].rateInfo!.hrPerLbAt225));
+});
+
+// Parity D10 (Jason, 2026-11-16): past 4 hours the hold note for brisket and pork butt says to keep it above 140F.
+test('a hold past 4 hours says "Keep it above 140F." for brisket and pork butt, and for no other food', () => {
+  const holdNote = (foodId: string, methodId: string, restMin: number) =>
+    buildPlan(rules, saturday({ items: [{ id: 'x', foodId, methodId, quantity: 8, restMin }] })).warnings.find(
+      w => w.code === 'HOLD_TOO_LONG',
+    )?.message;
+  assert.equal(
+    holdNote('brisket', 'smoked', 300),
+    'Brisket holds 300 min, past its 240 min limit. Keep it above 140F.',
+  );
+  assert.match(holdNote('butt', 'smoked', 300) ?? '', /holds 300 min, past its 240 min limit\. Keep it above 140F\.$/);
+  assert.equal(holdNote('brisket', 'smoked', 240), undefined);
+  assert.doesNotMatch(holdNote('turkey', 'smoked', 120) ?? 'none', /140F/);
+  assert.match(holdNote('turkey', 'smoked', 120) ?? '', /past its 60 min limit\.$/);
+});
+
 test('prep steps say when, not how (Jason, 2026-11-15): a plain "Prep the ..." reminder', () => {
   assert.deepEqual(
     turkeyPlan()
