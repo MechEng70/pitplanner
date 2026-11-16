@@ -58,10 +58,15 @@ export const legacyDraft = { mode: 'readyBy' as const, at: saturday.at, pitTempF
 
 /**
  * The running cook as 0.2.0 saved it, started at `startedAt` for the Saturday plan: without the fields added
- * since (`ringAgain`, `undo`, T-063), which loading fills in.
+ * since (`ringAgain`, `undo`, T-063; `warningsSeen`, T-069), which loading fills in.
  */
 export const legacyCook = (startedAt: number) => {
-  const { ringAgain: _r, undo: _u, ...cook } = newCook(saturday, buildPlan(rules, saturday), startedAt);
+  const {
+    ringAgain: _r,
+    undo: _u,
+    warningsSeen: _w,
+    ...cook
+  } = newCook(saturday, buildPlan(rules, saturday), startedAt);
   return cook;
 };
 

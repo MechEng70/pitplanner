@@ -70,6 +70,8 @@ export interface MethodShared {
   holdLimitMin?: number;
   /** Added to the note for a hold past holdLimitMin ("Keep it above 140F."). */
   holdNote?: string;
+  /** holdNote as it reads inside a food's brackets when several foods hold long ("keep above 140F"). */
+  holdNoteInline?: string;
   prep?: PrepRule[];
   footprintSqInPerUnit?: number;
   timing?: RuleTiming;

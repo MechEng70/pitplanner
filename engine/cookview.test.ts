@@ -12,10 +12,11 @@ import {
   lanes,
   laneTicks,
   laneWindow,
+  liveWarnings,
   overlapNote,
   shiftImpact,
 } from '../src/lib/cookView.ts';
-import { shiftRemaining } from './live.ts';
+import { extendCook, markPullDone, shiftRemaining } from './live.ts';
 import { summarize, toRecord } from '../src/lib/finish.ts';
 import type { ActiveCook } from '../src/lib/cook.ts';
 
@@ -179,6 +180,7 @@ test('finish: planned vs actual per food, record logs only foods that came off, 
     notice: null,
     ringAgain: {},
     undo: null,
+    warningsSeen: [],
   };
   const b = plan.items.find(i => i.input.id === 'b')!;
   const span = onHeatSpan(b);
@@ -211,4 +213,165 @@ test('finish: planned vs actual per food, record logs only foods that came off, 
 test('hold impact: a food that would come off after serve says so', () => {
   const late = shiftRemaining(rules, input, plan, at(10), 30, true, 'w');
   assert.match(holdImpact(plan, late, 'w'), /^Chicken wings: off heat \d+ min after serve\.$/);
+});
+
+/* ---------- T-069: the lane chart note and the banner for a warning made during the cook ---------- */
+
+// The brisket 30 min behind: off at 4:10 PM. The wings went on at 3:15 PM and the smoker goes to 400F at 4:05 PM.
+const behind = shiftRemaining(rules, input, plan, at(10), 30, true, 'b');
+// The brisket off at 11:30 AM instead of 3:40 PM: it holds 5 hr 10 min until it is sliced at 4:40 PM.
+const pulledEarly = markPullDone(rules, input, plan, 'b', at(11, 30));
+const CONFLICT = 'Smoker conflict: brisket at 225F and chicken wings at 400F at the same time.';
+const HOLD = 'Long hold: brisket 5 hr 10 min, limit 4 hr. Keep it above 140F.';
+const metric = { temp: 'C', weight: 'kg' } as const;
+
+test('overlap note: a stretch that is a conflict says so, with its own times and each food at its temp', () => {
+  const n = overlapNote(behind, at(10), units)!;
+  assert.equal(n.lead, '4:05 to 4:10 PM: smoker conflict, brisket at 225F and wings at 400F.');
+  assert.equal(n.rest, '');
+  assert.deepEqual(n.band, { start: at(16, 5), end: at(16, 10), laneIds: ['b', 'w'] });
+  // In Celsius the temps are the cooker's set points.
+  assert.match(
+    overlapNote(behind, at(10), metric)!.lead,
+    /^4:05 to 4:10 PM: smoker conflict, brisket at \d+C and wings at \d+C\.$/,
+  );
+  // Once the conflict is over nothing shares the smoker any more.
+  assert.equal(overlapNote(behind, at(16, 10), units), null);
+});
+
+test('overlap note: a stretch that is not a conflict reads as before', () => {
+  const n = overlapNote(shiftRemaining(rules, input, plan, at(10), 20, true, 'b'), at(10), units)!;
+  assert.equal(n.lead, '3:15 to 4:00 PM: brisket and wings share the smoker at 225F.');
+});
+
+test('live warnings: nothing for a plan that is as it started', () => {
+  assert.equal(liveWarnings(plan, plan, [], at(10), units), null);
+});
+
+test('live warnings: a smoker conflict made during the cook reads as the engine says it', () => {
+  const w = liveWarnings(behind, plan, [], at(10), units)!;
+  assert.equal(w.text, CONFLICT);
+  assert.deepEqual(w.keys, ['PIT_CONFLICT:b|w']);
+  assert.match(
+    liveWarnings(behind, plan, [], at(10), metric)!.text,
+    /^Smoker conflict: brisket at \d+C and chicken wings at \d+C at the same time\.$/,
+  );
+});
+
+test('live warnings: a hold that grew past its limit reads as Plan says it, with the hold note', () => {
+  const w = liveWarnings(pulledEarly, plan, [], at(12), units)!;
+  assert.equal(w.text, HOLD);
+  assert.deepEqual(w.keys, ['HOLD_TOO_LONG:b']);
+  assert.equal(
+    liveWarnings(pulledEarly, plan, [], at(12), metric)!.text,
+    'Long hold: brisket 5 hr 10 min, limit 4 hr. Keep it above 60C.',
+  );
+});
+
+test('live warnings: a food with no hold note stops at the limit, and never says to move it or start later', () => {
+  // Breasts on the smoker come off before the 400F crisp and hold: Plan says to move them or start later.
+  const smoked: PlanInput = {
+    ...input,
+    items: [input.items[1], { id: 'c', foodId: 'breasts', methodId: 'smoker', quantity: 4 }],
+  };
+  const started = buildPlan(rules, smoked);
+  const held = started.warnings.find(x => x.code === 'HOLD_TOO_LONG')!;
+  assert.match(held.message, /Move it to the griddle or start it later\.$/);
+  // Had the cook started without it, the banner would say only this.
+  const before = { ...started, warnings: [] };
+  const w = liveWarnings(started, before, [], started.serveAt - 3 * 60 * MIN, units)!;
+  assert.match(w.text, /^Long hold: chicken breasts (\d+ hr)?( ?\d+ min)?, limit 20 min\.$/);
+  // It was there at Start cook, so there is no banner for it.
+  assert.equal(liveWarnings(started, started, [], started.serveAt - 3 * 60 * MIN, units), null);
+});
+
+test('live warnings: both at once are one text, conflicts first', () => {
+  // One plan with both: the brisket's phases as they are 30 min behind, and the hold warning of the early pull.
+  const both = { ...behind, warnings: [...pulledEarly.warnings, ...behind.warnings] };
+  const w = liveWarnings(both, plan, [], at(10), units)!;
+  assert.match(
+    w.text,
+    /^Smoker conflict: brisket at 225F and chicken wings at 400F at the same time\. Long hold: brisket /,
+  );
+  assert.match(w.text, /, limit 4 hr\. Keep it above 140F\.$/);
+  assert.deepEqual(w.keys, ['PIT_CONFLICT:b|w', 'HOLD_TOO_LONG:b']);
+});
+
+test('live warnings: OK hides that warning for good; a different one still shows', () => {
+  assert.equal(liveWarnings(behind, plan, ['PIT_CONFLICT:b|w'], at(10), units), null);
+  assert.equal(liveWarnings(pulledEarly, plan, ['PIT_CONFLICT:b|w'], at(12), units)!.text, HOLD);
+});
+
+test('live warnings: gone when a later change removes the warning, and when the conflict is in the past', () => {
+  const back = shiftRemaining(rules, input, behind, at(10, 30), -30, true, 'b');
+  assert.equal(liveWarnings(back, plan, [], at(10, 30), units), null);
+  assert.equal(liveWarnings(behind, plan, [], at(16, 9), units)!.text, CONFLICT);
+  assert.equal(liveWarnings(behind, plan, [], at(16, 10), units), null);
+});
+
+test('live warnings: Not yet at the pull check makes the same banner text', () => {
+  const notYet = extendCook(rules, input, plan, 'b', at(15, 40), 30, true);
+  assert.equal(liveWarnings(notYet, plan, [], at(15, 40), units)!.text, CONFLICT);
+});
+
+test('live warnings: a warning the plan had at Start cook never shows, whatever its wording was then', () => {
+  // A cook started before the sentence changed: same code and foods, the old message.
+  const old = {
+    ...behind,
+    warnings: behind.warnings.map(x =>
+      x.code === 'PIT_CONFLICT'
+        ? { ...x, message: 'Brisket needs 225F while Chicken wings needs 400F at the same time.' }
+        : x,
+    ),
+  };
+  assert.equal(liveWarnings(behind, old, [], at(10), units), null);
+  // A save with no warnings list, or no list of hidden warnings, does not crash.
+  const bare = { ...plan, warnings: undefined } as unknown as typeof plan;
+  assert.equal(liveWarnings(bare, bare, [], at(10), units), null);
+  assert.equal(liveWarnings(behind, bare, undefined as unknown as string[], at(10), units)!.text, CONFLICT);
+});
+
+test('live warnings: several long holds are one sentence, each hold note inside its own food', () => {
+  // The brisket off at 11:30 AM and the wings off at 3:30 PM, serve 5:00 PM.
+  const two = markPullDone(rules, input, pulledEarly, 'w', at(15, 30));
+  assert.deepEqual(
+    two.warnings.filter(x => x.code === 'HOLD_TOO_LONG').map(x => x.message),
+    [
+      'Long hold: brisket 5 hr 10 min, limit 4 hr. Keep it above 140F.',
+      'Long hold: chicken wings 1 hr 30 min, limit 30 min.',
+    ],
+  );
+  const w = liveWarnings(two, plan, [], at(15, 30), units)!;
+  assert.equal(
+    w.text,
+    'Long hold: brisket 5 hr 10 min (limit 4 hr, keep above 140F), chicken wings 1 hr 30 min (limit 30 min).',
+  );
+  assert.equal(
+    liveWarnings(two, plan, [], at(15, 30), metric)!.text,
+    'Long hold: brisket 5 hr 10 min (limit 4 hr, keep above 60C), chicken wings 1 hr 30 min (limit 30 min).',
+  );
+  assert.deepEqual(w.keys, ['HOLD_TOO_LONG:b', 'HOLD_TOO_LONG:w']);
+  // One of them hidden with OK: the other reads as a single food again.
+  assert.equal(
+    liveWarnings(two, plan, ['HOLD_TOO_LONG:b'], at(15, 30), units)!.text,
+    'Long hold: chicken wings 1 hr 30 min, limit 30 min.',
+  );
+});
+
+test("live warnings: Jason's example, brisket 5 hr 10 min and wings 35 min, the note in the brisket's brackets", () => {
+  // The brisket off at 11:30 AM and the wings off at 4:25 PM, serve 5:00 PM.
+  const two = markPullDone(rules, input, pulledEarly, 'w', at(16, 25));
+  const w = liveWarnings(two, plan, [], at(16, 25), units)!;
+  assert.equal(
+    w.text,
+    'Long hold: brisket 5 hr 10 min (limit 4 hr, keep above 140F), chicken wings 35 min (limit 30).',
+  );
+  // A cook saved before the inline note existed: its items have none, so no note, and no crash.
+  const saved = { ...two, items: two.items.map(({ holdNoteInline: _drop, ...it }) => it) };
+  assert.equal(
+    liveWarnings(saved, plan, [], at(16, 25), units)!.text,
+    'Long hold: brisket 5 hr 10 min (limit 4 hr), chicken wings 35 min (limit 30).',
+  );
+  // Alone, the brisket still reads with the full sentence after the line.
+  assert.equal(liveWarnings(two, plan, ['HOLD_TOO_LONG:w'], at(16, 25), units)!.text, HOLD);
 });

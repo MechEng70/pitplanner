@@ -361,7 +361,11 @@ describe('Plan tab with an opened file', () => {
     await settle();
     expect(sheet('Open shared plan')).toBeNull();
     expect(sheet('Conflicts')).toBeOnTheScreen();
-    expect(screen.getByText(/needs 225F while .* needs 350F at the same time\./)).toBeOnTheScreen();
+    expect(
+      screen.getByText(
+        /^Smoker conflict: 2 lb chicken wings [12] at (225|350)F and 2 lb chicken wings [12] at (225|350)F at the same time\.$/,
+      ),
+    ).toBeOnTheScreen();
     expect(button('Change smoker temp')).toBeOnTheScreen();
     expect(screen.getAllByRole('button', { name: /^Edit / }).length).toBe(2);
     // The plan was imported; the fixes work on it.
@@ -373,7 +377,9 @@ describe('Plan tab with an opened file', () => {
     await fireEvent.press(button('Use this plan'));
     await settle();
     expect(sheet('Conflicts')).toBeOnTheScreen();
-    expect(screen.getByText(/Chicken breasts holds .* past its 20 min limit/)).toBeOnTheScreen();
+    expect(
+      screen.getByText(/^Long hold: chicken breasts .*, limit 20 min\. Move it to the griddle or start it later\.$/),
+    ).toBeOnTheScreen();
   });
 
   test('an oversized file shows an error and changes nothing', async () => {

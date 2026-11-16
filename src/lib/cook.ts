@@ -34,6 +34,11 @@ export interface ActiveCook {
    * (Running behind, Not yet, +15, Back up to temp); taking the step back takes that back too.
    */
   undo: (DoneUndo & { changed: boolean }) | null;
+  /**
+   * Warnings made during the cook that the user hid with OK on the Live cook banner (T-069), as
+   * `warningKey`s (cookView.ts). A hidden warning stays hidden; a different one shows.
+   */
+  warningsSeen: string[];
 }
 
 export function newCook(input: PlanInput, plan: Plan, now: number): ActiveCook {
@@ -51,10 +56,14 @@ export function newCook(input: PlanInput, plan: Plan, now: number): ActiveCook {
     notice: null,
     ringAgain: {},
     undo: null,
+    warningsSeen: [],
   };
 }
 
-/** Older saves (before the Cook tab) only had input + plan. */
+/**
+ * Older saves (before the Cook tab) only had input + plan. A field added since (undo, warningsSeen) is filled
+ * from a new cook's, so the running cook needs no database migration: it is one JSON column.
+ */
 export function normalize(raw: Partial<ActiveCook> | null): ActiveCook | null {
   if (!raw?.plan || !raw?.input) return null;
   return { ...newCook(raw.input, raw.plan, raw.startedAt ?? Date.now()), ...raw, original: raw.original ?? raw.plan };

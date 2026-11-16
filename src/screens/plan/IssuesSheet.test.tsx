@@ -186,7 +186,9 @@ describe('Conflicts sheet', () => {
     expect(button('Edit 0.9 kg chicken wings')).toBeOnTheScreen();
     expect(button('Edit 1.4 kg chicken wings')).toBeOnTheScreen();
     expect(
-      screen.getByText(/^(0\.9|1\.4) kg chicken wings needs \d+F while (0\.9|1\.4) kg chicken wings needs \d+F/),
+      screen.getByText(
+        /^Smoker conflict: (0\.9|1\.4) kg chicken wings at \d+F and (0\.9|1\.4) kg chicken wings at \d+F at the same time\.$/,
+      ),
     ).toBeOnTheScreen();
   });
 

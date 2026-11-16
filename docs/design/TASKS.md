@@ -2850,15 +2850,86 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
     cook writes them).
 - **Added by Jason, 2026-11-16 (parity D9):** the banner also shows a hold that has grown past the food's
   hold limit during the cook.
-- **Status:** todo (Jason, 2026-11-15: "show it on Live cook, as a banner"; wording and fixes need his OK first)
+- **Jason's review of the built banner (2026-11-16):**
+  1. The banner with a conflict: approved as built.
+  2. Hold warnings have no verb, like the conflict line, and Plan uses the same words (the engine's
+     `HOLD_TOO_LONG` message changes). One food: "Long hold: brisket 6 hr 10 min, limit 4 hr. Keep it above
+     140F." Several foods on one line: "Long hold: chicken wings 35 min (limit 30), breasts 25 min (limit
+     20)." The banner is then the conflict, then the holds. This replaces "Brisket holds 5 hr, past its 4 hr
+     limit." above. A food's hold note goes inside that food's own brackets, after the limit, not after the
+     line (Jason, 2026-11-16): "Long hold: brisket 5 hr 10 min (limit 4 hr, keep above 140F), chicken wings
+     35 min (limit 30)." Food names stay as built ("chicken breasts"). One food reads as above.
+  3. The lane chart note keeps the conflict's own stretch.
+  4. A warning hidden with OK stays hidden even if the hold keeps growing.
+  5. Two OK buttons when the alert notice and this banner both show: fine.
+  6. +15 min on the lock screen moving serve without re-timing the other foods is a separate must-fix,
+     looked at by another task first. The tests here that go through that path say so in a comment; their
+     expected strings may change.
+- **Status:** built on branch `worktree-agent-a31bfed3313b87e83` (2026-11-16), unit-tested, not gated
+  (`npm run check` not run in the worktree), not seen on a device.
+- **Built:**
+  - Engine: the conflict sentence is "Smoker conflict: <food> at <temp>F and <food> at <temp>F at the same
+    time." (`engine/plan.ts`). A food reads as its label when it has one ("2 lb chicken wings 1"), else its name
+    with a lower-case first letter; "St. Louis ribs" keeps its capitals (`inSentence`, `engine/labels.ts`).
+    `smokerConflicts(plan)` (`engine/live.ts`) gives the stretches where the foods on the smoker are more than
+    25F apart, with each food's temp. `HOLD_TOO_LONG` reads "Long hold: brisket 5 hr, limit 4 hr. Keep it
+    above 140F." (`longHold`, `engine/labels.ts`; durations by `durationText`, `engine/units.ts`, which
+    `fmtDuration` now calls). Plan keeps one warning per food; a food that holds poorly keeps "Move it to the
+    griddle or start it later." as its own sentence there.
+  - `liveWarnings` (`src/lib/cookView.ts`): the banner's text and the warnings it speaks for. A warning is
+    new when `cook.original.warnings` has none with the same code and foods (wording is not compared).
+    Conflicts first in the engine's words (one sentence per pair of foods), then every long hold in one
+    sentence by the same `longHold` (no "Move it to the griddle or start it later."), joined with a space,
+    in the user's units.
+  - Live cook: one amber banner under the notice banner with `OK`. OK adds the shown warnings to
+    `cook.warningsSeen` (new field on the running cook); they stay hidden, a different warning shows. The
+    banner goes away by itself when a later change or Undo removes the warning and when the conflict's
+    stretch is in the past. Nothing rings and nothing is re-timed.
+  - Lane chart note: when the next shared stretch has a conflict the note reads "4:05 to 4:10 PM: smoker
+    conflict, brisket at 225F and wings at 400F." and the band marks the conflict; otherwise as before.
+  - No migration: the running cook is one JSON column (`active_cook.data`) and `normalize` fills
+    `warningsSeen` for a cook saved before this. Such a cook shows nothing for warnings it started with.
+- **Decisions taken where the page left a choice (for Jason to confirm):**
+  1. The lane note's times and band are the conflict's own stretch (4:05 to 4:10 PM), not the whole shared
+     stretch (3:15 to 4:10 PM), since the two temps are only true inside it.
+  2. A hold banner hidden with OK stays hidden if that hold grows further (the page: "stays hidden for that
+     warning").
+  3. A hold banner has no end of its own: it shows until OK, until a change brings the hold back under the
+     limit, or until the cook ends.
+  4. Long hold, rules Jason's two examples did not spell out: (a) food names are the conflict sentence's
+     (label, else the name with a lower-case first letter), so "chicken breasts", not "breasts": the app has
+     no short-name data, only `shortName` in `cookView.ts`, which would also turn "chicken wings" into
+     "wings"; (b) in the several-foods line the limit drops its unit only when the hold before it is written
+     in that one unit ("35 min (limit 30)", "5 hr (limit 4)"), else it keeps it ("1 hr 5 min (limit 30
+     min)", "6 hr 10 min (limit 4 hr)"); (c) replaced by Jason (2026-11-16): in the several-foods line a
+     food's hold note goes inside its own brackets after the limit, comma separated, in its inline form
+     (`holdNoteInline` next to `holdNote` in `data/foods.json`): "brisket 5 hr 10 min (limit 4 hr, keep above
+     140F), chicken wings 35 min (limit 30)"; a food with no note reads "(limit 30)", and so does an item of
+     a cook saved before the field existed; (d) the several-foods line is only on the
+     banner, Plan's Conflicts sheet stays one row per food.
+  5. A cook running across the update keeps its stored conflict sentence until its next change re-derives it.
+- **Open:** `tools/device/run.sh:803` still expects the old sentence (left for the main session);
+  `docs/parity.md` D8, D9 and T16 are not updated.
 - **Why:** parity review D8 (`docs/parity.md`), SPEC failure mode 8. A conflict made by Running behind, Not yet,
   a Done or Back up to temp is worked out by the engine and shown nowhere during a cook. 0.2.0 was the same.
 - **Goal:** a banner on Live cook when the running cook's plan has a `PIT_CONFLICT` (and which other warnings,
   to be decided), with a way to the fixes.
-- **Files:** `src/screens/cook/CookScreen.tsx`, `src/lib/cookView.ts`, tests.
+- **Files:** `engine/plan.ts`, `engine/labels.ts`, `engine/live.ts`, `src/lib/cookView.ts`, `src/lib/cook.ts`,
+  `src/screens/cook/CookScreen.tsx`, `src/db/fixtures/legacy020.ts`; tests `engine/live.test.ts` (new),
+  `engine/cookview.test.ts`, `src/lib/cook.test.ts`, `src/screens/cook/CookScreen.test.tsx`,
+  `src/screens/plan/IssuesSheet.test.tsx`, `src/screens/plan/SharedPlanSheet.test.tsx`,
+  `src/db/legacyImport.test.ts`.
 - **Acceptance:** per the approved wording. Nothing re-times without the user's tap.
-- **Tests:** engine: a live change that makes a new conflict (parity T16); RNTL for the banner.
-- **Device testing (Jason):** the banner at 115% against the other Live cook banners.
+- **Tests:** engine: a live change that makes a new conflict (parity T16: Running behind, a late wrap, Not
+  yet, a late pull), a hold that grows past its limit, the sentence with names, labels and St. Louis ribs,
+  `smokerConflicts`; `liveWarnings` and the lane note; RNTL for the banner (shows, OK hides and saves, both
+  kinds in one banner, goes away when the conflict is past, a warning from Start cook, a cook saved before
+  the field, Celsius); +15 min from the lock screen makes the conflict and no alarm for it.
+- **Device testing (Jason):** at 115%, on Live cook: (1) the amber banner with a conflict, against the notice
+  banner ("... from the alert." with OK) and the pit-out banner: same shape, the text wraps, OK is not cut
+  off; (2) the banner with three sentences (a conflict and two holds), which is the longest it gets in the
+  tests; (3) the lane chart note "... smoker conflict, brisket at 225F and wings at 400F." and its band,
+  which can be 5 min wide; (4) Plan's Conflicts sheet with the new sentence (the `clash` seed).
 
 ### T-070 Open shared plan: the receiver picks their cookers
 - **Version (Jason, 2026-11-16):** 0.5.0. Not started before 0.3.0 ships.

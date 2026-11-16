@@ -1,7 +1,9 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { SHEET_OUT_MS } from '@/components/kit/sheet';
-import { pending, quiet, steps, type ActiveCook } from '@/lib/cook';
+import { markPullDone } from '../../../engine/live';
+import { applyActions, pending, postpone, quiet, steps, type ActiveCook } from '@/lib/cook';
 import { fmtTime } from '@/lib/format';
+import { rules } from '@/lib/rules';
 import { fakeAlarms, fakeResume } from '@/platform/fakes';
 import { AT_1023, MIN, cookAt, cookGear, cookMenu } from '@/test/cook';
 import { storeWrapper, testRepos } from '@/test/store';
@@ -307,5 +309,136 @@ describe('Done on Serve (T-023)', () => {
     expect(pending(r.repos.activeCook.load()!)).toEqual([]);
     // No keep or move question on the last step.
     expect(screen.queryByRole('radio')).toBeNull();
+  });
+});
+
+describe('a change that makes a new warning (T-069)', () => {
+  const CONFLICT = 'Smoker conflict: brisket at 225F and chicken wings at 400F at the same time.';
+  const HOLD = 'Long hold: brisket 6 hr 10 min, limit 4 hr. Keep it above 140F.';
+  /** Not yet on the wrap check, an hour: the brisket comes off at 4:40 PM, after the smoker goes to 400F. */
+  const behind = () => postpone(cookAt(AT_1023), 'phase:b:wrap', AT_1023, 60, true);
+  /** The brisket off the smoker at 10:30 AM: it holds until it is sliced at 4:40 PM. */
+  const pulled = (c: ActiveCook): ActiveCook => ({
+    ...c,
+    plan: markPullDone(rules, c.input, c.plan, 'b', AT_1023 + 7 * MIN),
+  });
+
+  /** 4:26 PM: the brisket's pull check at 3:40 PM has been put off four times. */
+  const AT_426 = Date.UTC(2026, 10, 14, 21, 26);
+  /**
+   * Both kinds on one cook: +15 min tapped four times on the brisket's pull alert with the app closed. The
+   * brisket is still on when the smoker goes to 400F, and serve moves with it, so the wings and the breasts
+   * hold past their limits. The notice about the alert is left out here: it has an OK of its own.
+   */
+  const both = (): ActiveCook => {
+    const c = cookAt(AT_1023);
+    const pull = pending(c).find(k => k.event.kind === 'pull' && k.event.itemId === 'b')!;
+    const taps = [0, 1, 2, 3].map(i => ({
+      type: 'snooze15' as const,
+      alarmId: pull.key,
+      keys: [pull.key],
+      at: pull.event.at + i * 15 * MIN,
+    }));
+    const wrapped = { ...c, done: { ...c.done, 'phase:b:wrap': pull.event.at - 60 * MIN } };
+    return { ...applyActions(wrapped, taps), notice: null };
+  };
+  // The lock-screen +15 min path (serve moves, the other foods are not re-timed) is under review: these strings may change.
+  const BOTH = `${CONFLICT} Long hold: chicken wings 35 min (limit 30), chicken breasts 38 min (limit 20).`;
+
+  test('no banner on a cook that is as it started', async () => {
+    await show(cookAt(AT_1023));
+    expect(screen.queryByText(/Smoker conflict/)).toBeNull();
+    expect(screen.queryByText(/Long hold/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'OK' })).toBeNull();
+  });
+
+  test('a smoker conflict shows as a banner with OK; OK hides it and it stays hidden', async () => {
+    const { repos, alarms, resume } = await show(behind());
+    expect(screen.getByRole('alert', { name: CONFLICT })).toBeOnTheScreen();
+    // The chart's note says the same thing, with the times.
+    expect(
+      screen.getByText(/^\d+:\d\d to \d+:\d\d PM: smoker conflict, brisket at 225F and wings at 400F\.$/),
+    ).toBeOnTheScreen();
+    expect(screen.queryByText(/share the smoker/)).toBeNull();
+    await fireEvent.press(button('OK'));
+    await act(async () => {});
+    expect(screen.queryByRole('alert', { name: CONFLICT })).toBeNull();
+    expect(repos.activeCook.load()!.warningsSeen).toEqual(['PIT_CONFLICT:b|w']);
+    // The plan is not re-timed by the banner or by OK.
+    expect(repos.activeCook.load()!.plan).toEqual(behind().plan);
+    await act(() => resume.resume());
+    expect(screen.queryByRole('alert', { name: CONFLICT })).toBeNull();
+    // Silent: the phone is only ever given the steps.
+    expect(alarms.sets.flat().some(a => /conflict/i.test(`${a.title} ${a.body}`))).toBe(false);
+  });
+
+  test('a hold that has grown past its limit shows the same way', async () => {
+    const { repos } = await show(pulled(cookAt(AT_1023)));
+    expect(screen.getByRole('alert', { name: HOLD })).toBeOnTheScreen();
+    await fireEvent.press(button('OK'));
+    await act(async () => {});
+    expect(screen.queryByText(/Long hold/)).toBeNull();
+    expect(repos.activeCook.load()!.warningsSeen).toEqual(['HOLD_TOO_LONG:b']);
+  });
+
+  test('both at once are one banner of two sentences with one OK, the conflict first', async () => {
+    const { repos } = await show(both(), AT_426);
+    expect(screen.getByRole('alert', { name: BOTH })).toBeOnTheScreen();
+    expect(screen.getAllByRole('button', { name: 'OK' })).toHaveLength(1);
+    await fireEvent.press(button('OK'));
+    await act(async () => {});
+    expect(screen.queryByRole('alert', { name: /Smoker conflict/ })).toBeNull();
+    expect(repos.activeCook.load()!.warningsSeen).toEqual(['PIT_CONFLICT:b|w', 'HOLD_TOO_LONG:w', 'HOLD_TOO_LONG:c']);
+  });
+
+  test('after OK on one warning a different one still shows', async () => {
+    await show(pulled({ ...behind(), warningsSeen: ['PIT_CONFLICT:b|w'] }));
+    expect(screen.queryByText(/Smoker conflict:/)).toBeNull();
+    expect(
+      screen.getByRole('alert', { name: /^Long hold: brisket .*, limit 4 hr\. Keep it above 140F\.$/ }),
+    ).toBeOnTheScreen();
+  });
+
+  test('the banner goes away by itself once the conflict is in the past', async () => {
+    const { clock, resume } = await show(behind());
+    expect(screen.getByRole('alert', { name: CONFLICT })).toBeOnTheScreen();
+    clock.now = Date.UTC(2026, 10, 14, 21, 41); // 4:41 PM, the brisket came off at 4:40 PM
+    await act(() => resume.resume());
+    expect(screen.queryByRole('alert', { name: CONFLICT })).toBeNull();
+  });
+
+  test('a warning the plan had at Start cook gets no banner', async () => {
+    const c = behind();
+    await show({ ...c, original: c.plan });
+    expect(screen.queryByRole('alert', { name: CONFLICT })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'OK' })).toBeNull();
+  });
+
+  test('a cook saved before this banner existed opens, shows a new warning, and OK works', async () => {
+    const { warningsSeen: _w, ...old } = behind();
+    const { repos } = await show(old as ActiveCook);
+    expect(screen.getByRole('alert', { name: CONFLICT })).toBeOnTheScreen();
+    await fireEvent.press(button('OK'));
+    await act(async () => {});
+    expect(screen.queryByRole('alert', { name: CONFLICT })).toBeNull();
+    expect(repos.activeCook.load()!.warningsSeen).toEqual(['PIT_CONFLICT:b|w']);
+  });
+
+  test('temps in the banner read in Celsius when that is the unit', async () => {
+    const r = testRepos();
+    r.repos.cookers.save(cookGear, AT_1023);
+    r.repos.settings.setUnits({ temp: 'C', weight: 'lb' }, AT_1023);
+    r.repos.activeCook.save(both(), AT_426);
+    const alarms = fakeAlarms();
+    await render(
+      <CookScreen permissions={alarms} onResume={fakeResume().onResume} onGoPlan={jest.fn()} now={() => AT_426} />,
+      { wrapper: storeWrapper(r.repos, () => AT_426, alarms) },
+    );
+    expect(
+      screen.getByRole('alert', {
+        name: /^Smoker conflict: brisket at \d+C and chicken wings at \d+C at the same time\. Long hold: chicken wings 35 min \(limit 30\), chicken breasts 38 min \(limit 20\)\.$/,
+      }),
+    ).toBeOnTheScreen();
+    expect(screen.queryByText(/225F|400F/)).toBeNull();
   });
 });

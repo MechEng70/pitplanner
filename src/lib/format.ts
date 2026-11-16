@@ -1,7 +1,15 @@
 // Display formatting. The engine works in epoch ms, F and lb; this is the only place
 // those become wall-clock strings, and units.ts is the only place they change units.
 
-import { showTemp, showWeight, lbToKg, localizeText, type TempUnit, type WeightUnit } from '../../engine/units.ts';
+import {
+  durationText,
+  showTemp,
+  showWeight,
+  lbToKg,
+  localizeText,
+  type TempUnit,
+  type WeightUnit,
+} from '../../engine/units.ts';
 
 export type Units = { temp: TempUnit; weight: WeightUnit };
 
@@ -18,13 +26,7 @@ export const fmtDay = (ms: number) => dayFmt.format(ms);
 export const fmtDayTime = (ms: number) => `${dayFmt.format(ms)} at ${fmtTime(ms)}`;
 
 /** "12 min", "9 hr", "1 hr 40 min" */
-export function fmtDuration(min: number): string {
-  const m = Math.round(min);
-  if (m < 60) return `${m} min`;
-  const h = Math.floor(m / 60),
-    r = m % 60;
-  return r ? `${h} hr ${r} min` : `${h} hr`;
-}
+export const fmtDuration = (min: number): string => durationText(min);
 
 export const fmtTemp = (f: number, u: Units, setPoint = false) => showTemp(f, u.temp, setPoint);
 export const fmtWeight = (lb: number, u: Units) => showWeight(lb, u.weight);

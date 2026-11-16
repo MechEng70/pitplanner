@@ -18,6 +18,11 @@ test('rules: every method resolves with the fields the planner needs', () => {
       assert.ok(m.pull?.label, `${where}: pull.label`);
       assert.equal(typeof m.holdLimitMin, 'number', `${where}: holdLimitMin`);
       assert.ok(m.restMin && m.restMin.min <= m.restMin.default, `${where}: restMin`);
+      // A hold note has its inline form for the several-foods line: "(limit 4 hr, keep above 140F)".
+      if (m.holdNote != null) {
+        assert.equal(typeof m.holdNoteInline, 'string', `${where}: holdNoteInline`);
+        assert.match(m.holdNoteInline ?? '', /^[a-z].*[^.]$/, `${where}: holdNoteInline lower case, no full stop`);
+      }
       if (m.timing.kind === 'perWeight') assert.equal(typeof m.timing.hrPerLbAt225, 'number', `${where}: hrPerLbAt225`);
       if (m.timing.kind === 'perWeightMinutes')
         assert.ok(m.timing.minMinutes != null && m.timing.minPerLbAt225 != null, `${where}: perWeightMinutes`);

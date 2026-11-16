@@ -110,6 +110,8 @@ export interface PlannedItem {
   holdLimitMin: number;
   /** The food's own sentence for a hold past its limit, if it has one. */
   holdNote?: string;
+  /** The same note inside the food's brackets on the several-foods line; absent in cooks saved before it. */
+  holdNoteInline?: string;
   pullLabel: string;
   pullCheckStep: boolean;
   footprintSqIn: number;

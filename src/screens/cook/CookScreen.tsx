@@ -9,6 +9,9 @@
 // time they were done. End cook and Done on the Serve step (the last one) call `onEnd`: Cook finished
 // (FinishScreen.tsx), which CookFlow.tsx shows in place of this screen.
 //
+// A change during the cook that makes a smoker conflict, or a hold that grows past the food's limit, shows as
+// one banner with OK (T-069; Jason, 2026-11-16). It only reports: nothing is re-timed and nothing rings.
+//
 // The cook is saved through the store's `setCook`, which also replaces the phone's alarm set: this screen
 // never talks to the alarm service.
 import { useEffect, useState } from 'react';
@@ -41,6 +44,7 @@ import {
   laneTicks,
   laneWindow,
   lanes,
+  liveWarnings,
   overlapNote,
   overline,
 } from '@/lib/cookView';
@@ -176,6 +180,9 @@ function LiveCook({
 
   const win = laneWindow(plan, now);
   const note = overlapNote(plan, now, units);
+  // A smoker conflict or a hold past its limit that the plan did not have at Start cook (T-069). Silent: it
+  // is only this banner, never an alert.
+  const warned = liveWarnings(plan, cook.original, cook.warningsSeen, now, units);
   const text = next ? stepText(tx(next.event.label, units)) : null;
   const late = due != null && now > due;
   const detail = [text?.body, next?.event.checkStep ? 'Not ready? Tap Adjust.' : ''].filter(Boolean).join(' ');
@@ -250,6 +257,21 @@ function LiveCook({
           }
         >
           {tx(cook.notice, units)}
+        </Banner>
+      ) : null}
+      {warned ? (
+        <Banner
+          tone="warn"
+          action={
+            <Button
+              kind="small"
+              onPress={() => setCook({ ...cook, warningsSeen: [...cook.warningsSeen, ...warned.keys] })}
+            >
+              <Text>OK</Text>
+            </Button>
+          }
+        >
+          {warned.text}
         </Banner>
       ) : null}
 

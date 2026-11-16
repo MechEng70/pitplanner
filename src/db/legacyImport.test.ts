@@ -78,7 +78,7 @@ describe('a full 0.2.0 install', () => {
     expect(r.settings.flags()).toEqual({ rateHintShown: true });
     expect(r.settings.update()).toEqual({ checkedAt: STARTED, latest: null, url: null });
     // A cook from before Undo (T-063) loads with nothing to take back.
-    expect(r.activeCook.load()).toEqual({ ...legacyCook(STARTED), ringAgain: {}, undo: null });
+    expect(r.activeCook.load()).toEqual({ ...legacyCook(STARTED), ringAgain: {}, undo: null, warningsSeen: [] });
     expect(r.history.list()).toEqual(legacyRecords);
     // The record from before lateness was kept still has none; the discarded item is not learned from.
     expect(r.history.list()[0]).not.toHaveProperty('lateMin');

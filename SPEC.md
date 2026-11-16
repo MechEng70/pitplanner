@@ -107,6 +107,8 @@ Artboard names refer to the mockup canvas.
 
 Scheduled times set by these changes round to 5 minutes (actual times, like when food came off, stay exact). After every change: re-run `derive`, cancel every scheduled alarm, schedule the new set from `plan.events`. Never patch alarms one at a time.
 
+A change that makes a smoker conflict the plan did not have at Start cook, or a hold that grows past the food's hold limit, shows as one amber banner on Live cook with an OK button (T-069; Jason, 2026-11-16): the conflict in the engine's words ("Smoker conflict: brisket at 225F and chicken wings at 400F at the same time."), then every long hold in one sentence, worded as on Plan ("Long hold: brisket 6 hr 10 min, limit 4 hr. Keep it above 140F."; several foods, each food's hold note inside its own brackets: "Long hold: brisket 5 hr 10 min (limit 4 hr, keep above 140F), chicken wings 35 min (limit 30)."); it never rings, re-times nothing, stays hidden for that warning after OK, and goes away when the warning does or the conflict is in the past.
+
 ## 6. Alarms (the part that must not fail)
 
 - Schedule each `alarm: true` event with `setAlarmClock()`. The system exits Doze before these fire. `setExactAndAllowWhileIdle()` is rate-limited to about once per 9 min per app in Doze, so it is not used for steps.
@@ -128,7 +130,7 @@ Scheduled times set by these changes round to 5 minutes (actual times, like when
 | 5 | Pit flames out or runs out of pellets | Meat stalls, cools | Pit went out stops the clock; downtime + 15 min recovery added | `pitOutage` unit test |
 | 6 | Phone reboots or app is killed overnight | All alarms lost | BOOT_COMPLETED + package-replaced reschedule from stored cook | Device test: start cook, reboot, verify next alarm |
 | 7 | Daylight saving change during an overnight cook | Alarms an hour off | Epoch-ms instants only | DST unit test (Nov 1, 2026) |
-| 8 | An adjustment creates a new pit conflict | Food at wrong temp | Every change re-runs conflict check. On Plan: the Conflicts tile and its sheet with the fixes. During a cook: a banner on Live cook (Jason, 2026-11-15; not built yet, wording to be approved) | Clear-pit and conflict unit tests |
+| 8 | An adjustment creates a new pit conflict | Food at wrong temp | Every change re-runs conflict check. On Plan: the Conflicts tile and its sheet with the fixes. During a cook: a banner on Live cook with OK, silent, for a conflict the plan did not have at Start cook (T-069; Jason, 2026-11-16; section 5) | Clear-pit and conflict unit tests |
 | 9 | Exact alarm or notification permission revoked | Silent failure | Check on start and before Start cook; red banner; block Start cook until fixed or acknowledged | Manual revoke test |
 | 10 | Phone maker battery killer (e.g. Samsung) | Late alarms | Battery exemption in setup; a plain line about battery settings, no link (Jason, 2026-11-15; section 3) | Test on a Samsung if available |
 | 11 | Two alarms at the same minute | One hidden | Combine into one notification listing both steps | Unit test on event grouping |

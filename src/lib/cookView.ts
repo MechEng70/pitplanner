@@ -1,8 +1,10 @@
 // What the Cook tab shows, derived from the plan and the clock. Pure: `now` is passed in.
 
-import type { Plan, PlannedItem } from '../../engine/types.ts';
-import { smokerOverlaps } from '../../engine/live.ts';
-import { fmtDuration, fmtTemp, fmtTime, type Units } from './format.ts';
+import type { Plan, PlannedItem, Warning } from '../../engine/types.ts';
+import { inSentence, longHold, type HeldFood } from '../../engine/labels.ts';
+import { CONFLICT_TOLERANCE_F } from '../../engine/plan.ts';
+import { smokerConflicts, smokerOverlaps } from '../../engine/live.ts';
+import { fmtDuration, fmtTemp, fmtTime, tx, type Units } from './format.ts';
 
 const MIN = 60_000,
   HR = 60 * MIN;
@@ -164,17 +166,35 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 /**
  * The next stretch where foods share the smoker, worded as in mockup 12:
  * "3:15 to 3:40 PM: brisket and wings share the smoker at 225F." + "Brisket comes off before the pit climbs to 400F."
+ *
+ * When the foods in that stretch need temps too far apart (a smoker conflict, T-069) the note is about the
+ * conflict instead, with its own times and band: "3:15 to 3:40 PM: smoker conflict, brisket at 225F and
+ * wings at 400F." (Jason, 2026-11-16).
  */
 export function overlapNote(plan: Plan, now: number, u: Units): OverlapNote | null {
   const o = smokerOverlaps(plan).find(x => x.end > now);
   if (!o) return null;
+  const span = (start: number, end: number) => {
+    const a = fmtTime(start),
+      b = fmtTime(end);
+    return `${a.slice(-2) === b.slice(-2) ? a.slice(0, -3) : a} to ${b}`;
+  };
+  const clash = smokerConflicts(plan).find(c => c.end > now && c.start < o.end && c.end > o.start);
+  if (clash) {
+    const foods = clash.foods.map(f => {
+      const it = plan.items.find(i => i.input.id === f.itemId);
+      return `${it ? shortName(it.name).toLowerCase() : 'food'} at ${fmtTemp(f.tempF, u, true)}`;
+    });
+    return {
+      band: { start: clash.start, end: clash.end, laneIds: clash.foods.map(f => f.itemId).sort() },
+      lead: `${span(clash.start, clash.end)}: smoker conflict, ${list(foods)}.`,
+      rest: '',
+    };
+  }
   const items = plan.items.filter(i => o.itemIds.includes(i.input.id));
   const names = items.map(i => shortName(i.name).toLowerCase());
   const temp = Math.min(...o.tempsF);
-  const a = fmtTime(o.start),
-    b = fmtTime(o.end);
-  const span = `${a.slice(-2) === b.slice(-2) ? a.slice(0, -3) : a} to ${b}`;
-  const lead = `${span}: ${list(names)} share the smoker at ${fmtTemp(temp, u, true)}.`;
+  const lead = `${span(o.start, o.end)}: ${list(names)} share the smoker at ${fmtTemp(temp, u, true)}.`;
   // One food comes off where the stretch ends, and another later needs the pit hotter.
   const leaving = items.find(i => Math.abs(i.finish - o.end) < MIN);
   const climbing = items
@@ -213,4 +233,83 @@ export function shiftImpact(before: Plan, after: Plan): { tone: 'ok' | 'warn'; t
     tone: short ? 'warn' : 'ok',
     text: `${name} hold ${verb} from ${fmtDuration(top.a)} to ${fmtDuration(b)}. ${short ? `Under its ${fmtDuration(floor)} minimum rest.` : 'Still OK.'}`,
   };
+}
+
+/* ---------- Warnings made during the cook (T-069) ---------- */
+
+/** One banner: every sentence in `text`, and the warnings it speaks for (what OK hides). */
+export interface LiveWarnings {
+  keys: string[];
+  text: string;
+}
+
+/** A warning is the same warning while its code and foods are the same; its wording may change. */
+export const warningKey = (w: Warning) => `${w.code}:${[...(w.itemIds ?? [])].sort().join('|')}`;
+
+/** Does the plan still have a stretch ahead where these two foods need the smoker too far apart? */
+function conflictAhead(plan: Plan, ids: string[], now: number): boolean {
+  return smokerConflicts(plan).some(c => {
+    if (c.end <= now) return false;
+    const temps = c.foods.filter(f => ids.includes(f.itemId)).map(f => f.tempF);
+    return temps.length > 1 && Math.max(...temps) - Math.min(...temps) > CONFLICT_TOLERANCE_F;
+  });
+}
+
+/**
+ * The holds past their limit as one sentence, in the engine's words (`longHold`): "Long hold: brisket 6 hr
+ * 10 min, limit 4 hr. Keep it above 140F." or, for several foods, "Long hold: brisket 5 hr 10 min (limit
+ * 4 hr, keep above 140F), chicken wings 35 min (limit 30)." One food's hold note follows the line; with
+ * several, each food's inline note goes in its own brackets (none for an item saved before it existed).
+ * Nothing about the griddle or starting later: neither can be done mid-cook.
+ */
+function holdsSentence(plan: Plan, itemIds: string[]): string {
+  const items = itemIds.flatMap(id => plan.items.filter(i => i.input.id === id));
+  const foods: HeldFood[] = items.map(it => ({
+    name: it.label ?? inSentence(it.name),
+    holdMin: holdMin(plan, it.input.id),
+    limitMin: it.holdLimitMin,
+    holdNoteInline: it.holdNoteInline,
+  }));
+  const line = longHold(foods);
+  return items.length === 1 && items[0].holdNote ? `${line} ${items[0].holdNote}` : line;
+}
+
+/**
+ * What the Live cook banner says (Jason, 2026-11-16): the smoker conflicts and the holds past their limit
+ * that the plan has now and did not have at Start cook (`original`), less the ones hidden with OK (`seen`).
+ * Conflicts first, in the engine's words (one sentence per pair of foods); then every long hold in one
+ * sentence. A conflict whose stretch is over is left out. Null when there is nothing to say.
+ */
+export function liveWarnings(
+  plan: Plan,
+  original: Plan,
+  seen: readonly string[],
+  now: number,
+  u: Units,
+): LiveWarnings | null {
+  const had = new Set((original.warnings ?? []).map(warningKey));
+  const hidden = new Set(seen ?? []);
+  const keys: string[] = [],
+    conflicts: string[] = [],
+    held: string[] = [];
+  for (const w of plan.warnings ?? []) {
+    const key = warningKey(w);
+    if (had.has(key) || hidden.has(key) || keys.includes(key)) continue;
+    const ids = w.itemIds ?? [];
+    if (w.code === 'PIT_CONFLICT' && conflictAhead(plan, ids, now)) {
+      keys.push(key);
+      conflicts.push(w.message);
+    }
+  }
+  for (const w of plan.warnings ?? []) {
+    const key = warningKey(w);
+    const id = w.itemIds?.[0];
+    if (w.code !== 'HOLD_TOO_LONG' || had.has(key) || hidden.has(key) || keys.includes(key)) continue;
+    if (id == null || !plan.items.some(i => i.input.id === id)) continue;
+    keys.push(key);
+    held.push(id);
+  }
+  if (!keys.length) return null;
+  const text = [...conflicts, ...(held.length ? [holdsSentence(plan, held)] : [])].join(' ');
+  return { keys, text: tx(text, u) };
 }
