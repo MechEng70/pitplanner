@@ -26,8 +26,9 @@ import type {
   AlarmService,
   AlarmStatus,
   CopyText,
-  NotificationAction,
   PermissionService,
+  PhoneAlarms,
+  QueuedAction,
   ReadDeviceFacts,
   ShareReport,
 } from '@/platform/types';
@@ -45,7 +46,7 @@ export function DebugScreen({
   onClose,
   now = Date.now,
 }: {
-  alarms: AlarmService;
+  alarms: PhoneAlarms;
   permissions: PermissionService;
   device: ReadDeviceFacts;
   share: ShareReport;
@@ -60,7 +61,7 @@ export function DebugScreen({
   const [copied, setCopied] = useState(false);
   const [status, setStatus] = useState<AlarmStatus | null>(null);
   const [stored, setStored] = useState<Stored | null>(null);
-  const [actions, setActions] = useState<NotificationAction[] | null>(null);
+  const [actions, setActions] = useState<QueuedAction[] | null>(null);
   const [note, setNote] = useState('');
 
   const reload = async () => {
@@ -248,7 +249,16 @@ export function DebugScreen({
         <Text variant="section" role="heading">
           Notification taps
         </Text>
-        <Button kind="outline" block onPress={async () => setActions(await alarms.drainActions())}>
+        <Button
+          kind="outline"
+          block
+          onPress={async () => {
+            // A debug tool: what it reads is cleared from the phone without being applied to the cook.
+            const read = await alarms.peekActions();
+            await alarms.ackActions(read.map(a => a.id));
+            setActions(read);
+          }}
+        >
           <Text>Read and clear</Text>
         </Button>
         {actions && actions.length === 0 ? (
@@ -257,7 +267,7 @@ export function DebugScreen({
           </Text>
         ) : null}
         {actions?.map(x => (
-          <Text key={`${x.at}-${x.type}-${x.alarmId}`} variant="label">
+          <Text key={x.id} variant="label">
             <Num>{fmtTime(x.at)}</Num> {x.type} {x.keys.join(', ')}
           </Text>
         ))}

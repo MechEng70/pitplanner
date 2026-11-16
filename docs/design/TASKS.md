@@ -3272,7 +3272,9 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Real phone:** yes, the OnePlus and a tester's Samsung.
 
 ### T-079 A lock-screen tap is never lost from the queue
-- **Status:** todo. In 0.3.0 (Jason, 2026-11-16). App bug, found by reading 2026-11-16.
+- **Status:** built 2026-11-16 on branch `worktree-agent-a9423a4e850d2999f`, unit-tested, Kotlin tests not run
+  through Gradle, not gated (`npm run check` not run). In 0.3.0 (Jason, 2026-11-16). App bug, found by reading
+  2026-11-16.
 - **Bug:** `drainActions` reads the queued taps and then writes the queue empty with no lock
   (`AlarmStore.kt` about 109-113). The receivers queue on the main thread; the module function runs on
   another. A tap queued between the read and the write is lost. Also, a tap drained and not yet saved is
@@ -3285,3 +3287,39 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   acknowledge removes only what was read. Jest: taps are acknowledged after the save; a tap read twice is
   applied once. Regression tests written failing first.
 - **Device testing (Jason):** none; device tests `alarm` and `cook` must still pass.
+- **Built:**
+  - Native (`AlarmStore.kt`): `queueAction` gives each tap a UUID `id` and returns it; `drainActions` is gone,
+    replaced by `peekActions` (reads, removes nothing) and `ackActions(ids)` (removes exactly those ids, a
+    count back). All three hold one process-wide lock (`QUEUE` in the companion, shared by every
+    `AlarmStore`), and every write inside it is a `commit()`. A tap queued by a build before ids gets one at
+    its first read, saved. Still device-protected prefs; the receivers are unchanged (direct-boot-aware).
+    `PitAlarmsModule.kt`: `peekActions` and `ackActions` replace `drainActions`.
+  - JS: `modules/pit-alarms/index.ts` (the two functions; `PitAlarmAction.id`); `src/platform/types.ts`
+    (`QueuedAction`, `AlertTapQueue`, `PhoneAlarms = AlarmService & AlertTapQueue`); `src/platform/alarms.ts`,
+    `src/test/store.tsx`, `DebugScreen.tsx` take `PhoneAlarms`. New pure `src/lib/alertTaps.ts`
+    (`appliedTaps`, `unapplied`, `noteApplied`, `APPLIED_TAPS_MAX` 50). `store.tsx` `drainAlerts`: peek;
+    apply only taps whose ids the cook has not had; `saveCook` with the ids noted in `appliedTaps`; then
+    `ackActions` of every id read. A failed save acknowledges nothing (logged "alert taps not saved"); a
+    failed acknowledge is logged ("alert taps not cleared") and the ids keep the re-read from applying twice.
+    The fake (`src/platform/fakes.ts`) peeks and acknowledges like the phone; `failAck` makes one acknowledge
+    fail; a tap put in `queued` without an id gets one at its first read.
+  - Debug screen "Read and clear": peek, then acknowledge what it read (same behaviour as before).
+  - Unchanged: the jump to the Cook tab, the notice text, test alerts, `replaceAll`, the `~snooze` alarm.
+  - `src/lib/cook.ts` not touched (T-076 owns it): `appliedTaps` is not on the `ActiveCook` type and
+    `normalize` does not fill it; `alertTaps.ts` reads it off the cook's JSON (missing reads as empty), and
+    every cook operation spreads the cook, so it rides along. `AlarmService` keeps an optional, uncallable
+    `drainActions?: unknown` only so the fakes in `src/lib/cook.test.ts` still compile: remove both after the
+    T-076 merge.
+- **Tests:** JUnit (`AlarmStoreTest`): read in order and kept until acknowledged; acknowledge removes only the
+  ids given; a tap queued between the read and the acknowledge is kept (the old drain lost it); 200 taps, 200
+  ids; taps from a build before ids get ids that stay; 4 threads queue 400 taps while another reads and
+  acknowledges: each read exactly once. Run outside Gradle (plain JUnit + Robolectric 4.16.1 from the Gradle
+  cache, SDK 35): 12 of 12 pass; with the lock taken out, the threaded test fails 3 runs of 3. `ReceiversTest`
+  (drain -> peek, an id is set) not run. Jest: `src/lib/alertTaps.test.ts` (7); `src/test/alarmSync.test.tsx`:
+  acknowledged after the save and only those; a failed save leaves the taps queued and the next read applies
+  them; a +15 read again after the app died between save and acknowledge moves the step 15 min, not 30; two
+  reads at once apply a tap once; a tap queued while the app reads stays for the next read.
+- **Choices made in the build (not decided by Jason):** ids are UUIDs made natively; the cook keeps the newest
+  50 applied ids (never fewer than one read's); taps that change nothing (Open, a step already done) are
+  acknowledged without saving the cook, as before; taps read with no cook running are acknowledged and
+  dropped, as before; the event log notes only taps not applied before (a re-read is not logged twice).

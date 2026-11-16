@@ -11,7 +11,8 @@ import type { CookLog, Cookers, PlanInput } from '../../engine/types.ts';
 import type { Repos } from '../db/repos/index.ts';
 import type { Flags } from '../db/repos/settings.ts';
 import { restoreData as restore, type RestoreResult } from '../db/restore.ts';
-import type { AlarmService } from '../platform/types.ts';
+import type { PhoneAlarms, QueuedAction } from '../platform/types.ts';
+import { noteApplied, unapplied } from './alertTaps.ts';
 import { applyActions, syncAlarms, type ActiveCook } from './cook.ts';
 import type { RestoreData } from './dataFile.ts';
 import type { ReportData } from './debugReport.ts';
@@ -111,9 +112,11 @@ export interface Store {
   setRateLock: (foodId: string, locked: boolean) => void;
   setUpdate: (u: UpdateInfo) => void;
   /**
-   * Apply the Done and +15 min taps made on notifications to the running cook (each once: the phone hands
-   * them over once). With `resync` (app start), also put the cook's alarms back when there was nothing to
-   * apply, or clear step alarms left on the phone when no cook is running. Resolves true when the cook changed.
+   * Apply the Done and +15 min taps made on notifications to the running cook, each once (T-079): read them
+   * from the phone without removing them, save the cook with them applied and their ids noted, then tell the
+   * phone to drop exactly those. With `resync` (app start), also put the cook's alarms back when there was
+   * nothing to apply, or clear step alarms left on the phone when no cook is running. Resolves true when the
+   * cook changed.
    */
   drainAlerts: (resync?: boolean) => Promise<boolean>;
   /**
@@ -139,7 +142,7 @@ interface Props {
   /** The clock for write times and the default draft; tests pass a fixed one. */
   clock?: () => number;
   /** The phone's alarms. Left out (some screen tests), cook changes are saved and nothing is scheduled. */
-  alarms?: AlarmService;
+  alarms?: PhoneAlarms;
   children: ReactNode;
 }
 
@@ -224,20 +227,41 @@ export function StoreProvider({ repos, clock = Date.now, alarms, children }: Pro
       setCook: saveCook,
       async drainAlerts(resync = false) {
         if (!alarms) return false;
-        let actions: Awaited<ReturnType<AlarmService['drainActions']>> = [];
+        let read: QueuedAction[] = [];
         try {
-          actions = await alarms.drainActions();
+          read = await alarms.peekActions();
         } catch (e) {
           // Nothing read, nothing lost: the phone keeps the taps for the next try.
           logEvent('error', `alert taps not read: ${errorText(e)}`);
         }
-        for (const a of actions) logEvent('tap', `${a.type} ${a.keys.join(',')} at ${new Date(a.at).toISOString()}`);
+        // The cook as it is now, after the wait: another read may have applied some of these meanwhile.
         const cook = latest.current.cook;
-        const next = cook && actions.length > 0 ? applyActions(cook, actions) : cook;
-        if (cook && next && next !== cook) {
-          saveCook(next);
-          return true;
+        const fresh = unapplied(cook, read);
+        for (const a of fresh) logEvent('tap', `${a.type} ${a.keys.join(',')} at ${new Date(a.at).toISOString()}`);
+        const next = cook && fresh.length > 0 ? applyActions(cook, fresh) : cook;
+        const changed = next !== cook;
+        if (next && changed) {
+          try {
+            // The ids go into the same write as the change, so a tap read again is not applied again.
+            const ids = fresh.map(a => a.id);
+            saveCook(noteApplied(next, ids));
+          } catch (e) {
+            // Not saved, so not acknowledged: the phone keeps the taps and the next read applies them.
+            logEvent('error', `alert taps not saved: ${errorText(e)}`);
+            return false;
+          }
         }
+        // Only now may the phone forget what was read: applied and saved, or nothing to apply (Open, a step
+        // already done, no cook running). A tap queued since the read is not in `read` and stays.
+        if (read.length > 0) {
+          try {
+            await alarms.ackActions(read.map(a => a.id));
+          } catch (e) {
+            // Read again next time; the ids saved with the cook keep it from being applied twice.
+            logEvent('error', `alert taps not cleared: ${errorText(e)}`);
+          }
+        }
+        if (changed) return true;
         if (resync && cook) sync();
         else if (resync) {
           // No cook, yet the phone still holds step alarms or repeats (a cook the import could not bring

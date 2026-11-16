@@ -13,12 +13,28 @@ export interface AlarmStatus {
   fullScreen: boolean;
 }
 
-/** Done or +15 tapped on a step notification, queued natively until the app drains it. */
+/** Done or +15 tapped on a step notification, queued natively until the app has applied it. */
 export interface NotificationAction {
   type: 'done' | 'snooze15' | 'open';
   alarmId: string;
   keys: string[];
   at: number;
+}
+
+/** A tap as the phone's queue hands it over (T-079): `id` is unique and the same at every read. */
+export interface QueuedAction extends NotificationAction {
+  id: string;
+}
+
+/**
+ * The Done / +15 taps waiting on the phone (T-079). Reading removes nothing; the app acknowledges the ids it
+ * read only after the cook with those taps applied is saved, so a tap is never lost. A tap queued after the
+ * read stays queued. A tap can be read twice (the app died between the save and the acknowledge), so the app
+ * remembers the ids it applied (src/lib/alertTaps.ts).
+ */
+export interface AlertTapQueue {
+  peekActions(): Promise<QueuedAction[]>;
+  ackActions(ids: string[]): Promise<void>;
 }
 
 export interface StoredNag {
@@ -46,10 +62,17 @@ export interface AlarmService {
   testAlarm(seconds: number, title?: string, body?: string): Promise<{ at: number; exact: boolean }>;
   /** What the phone holds to fire. `test` marks a test alarm, which is not part of the cook's set. */
   scheduled(): Promise<{ alarms: (AlarmSpec & { test?: boolean })[]; nags: StoredNag[] }>;
-  drainActions(): Promise<NotificationAction[]>;
+  /**
+   * Gone (T-079): the taps are read with `AlertTapQueue`. Kept as an optional, uncallable member only so the
+   * fakes in src/lib/cook.test.ts (owned by T-076 at the time) still compile; remove it with them.
+   */
+  drainActions?: unknown;
   onFired(fn: (e: AlarmEvent) => void): Unsubscribe;
   onAction(fn: (e: AlarmEvent) => void): Unsubscribe;
 }
+
+/** The phone's alarms as the app wires them: the alarm set and the queue of taps. */
+export type PhoneAlarms = AlarmService & AlertTapQueue;
 
 export interface PermissionService {
   status(): Promise<AlarmStatus>;

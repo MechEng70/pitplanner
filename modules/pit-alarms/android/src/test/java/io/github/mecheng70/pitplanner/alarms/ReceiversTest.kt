@@ -100,7 +100,8 @@ class ReceiversTest : AlarmTestBase() {
   fun doneOnTheNotificationQueuesTheActionStopsTheRepeatAndClearsIt() {
     val t = ring()
     ActionReceiver().onReceive(context, action(notifications().single(), "Done"))
-    val queued = store.drainActions().single()
+    val queued = store.peekActions().single()
+    assertTrue(queued.getString("id").isNotEmpty())
     assertEquals("done", queued.getString("type"))
     assertEquals("wrap", queued.getString("alarmId"))
     assertEquals(listOf("wrap:b:p1"), queued.getJSONArray("keys").strings())
@@ -114,7 +115,7 @@ class ReceiversTest : AlarmTestBase() {
   fun plus15OnTheNotificationQueuesTheActionAndRingsAgainIn15Minutes() {
     val t = ring()
     ActionReceiver().onReceive(context, action(notifications().single(), "+15 min"))
-    assertEquals("snooze15", store.drainActions().single().getString("type"))
+    assertEquals("snooze15", store.peekActions().single().getString("type"))
     assertEquals(emptyList<Nag>(), store.nags)
     assertEquals(emptyList<Any>(), notifications())
     assertEquals(listOf("pitplanner://alarm/wrap~snooze"), targets())

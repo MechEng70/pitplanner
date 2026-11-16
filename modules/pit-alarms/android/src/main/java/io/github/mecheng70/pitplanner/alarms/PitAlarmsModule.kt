@@ -64,8 +64,14 @@ class PitAlarmsModule : Module() {
             mapOf("alarms" to s.alarms.map { plain(it.toJson()) }, "nags" to s.nags.map { plain(it.toJson()) })
         }
 
-        /** Done / +15 taps from notifications that the app has not applied yet. */
-        AsyncFunction<List<Any?>>("drainActions") { AlarmStore(context).drainActions().map(::plain) }
+        /** Done / +15 taps from notifications that the app has not applied yet, each with its id. Nothing is removed. */
+        AsyncFunction<List<Any?>>("peekActions") { AlarmStore(context).peekActions().map(::plain) }
+
+        /** The cook with these taps applied is saved: remove exactly these ids. A tap queued since stays. */
+        AsyncFunction("ackActions") { ids: List<String> ->
+            AlarmStore(context).ackActions(ids)
+            Unit
+        }
 
         AsyncFunction<Map<String, Boolean>>("status") { status() }
 
