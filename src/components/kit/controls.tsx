@@ -224,12 +224,15 @@ function StepButton({
 
 /**
  * Minus, value, plus. The buttons sit at the ends and the value is a tabular Num centered between them, so
- * a tap never moves the button under the finger (T-017 PR-3).
+ * a tap never moves the button under the finger (T-017 PR-3). The buttons are read "Less {label}" and
+ * "More {label}" unless they are given their own names (decLabel, incLabel).
  */
 export function Stepper({
   value,
   unit,
   label,
+  decLabel,
+  incLabel,
   onDec,
   onInc,
   decDisabled,
@@ -238,6 +241,8 @@ export function Stepper({
   value: string;
   unit?: string;
   label: string;
+  decLabel?: string;
+  incLabel?: string;
   onDec: () => void;
   onInc: () => void;
   decDisabled?: boolean;
@@ -250,7 +255,7 @@ export function Stepper({
       aria-label={label}
       className="flex-row items-center justify-between gap-2 rounded-control bg-bg p-1.5"
     >
-      <StepButton label={`Less ${name}`} disabled={decDisabled} onPress={onDec}>
+      <StepButton label={decLabel ?? `Less ${name}`} disabled={decDisabled} onPress={onDec}>
         <Minus />
       </StepButton>
       <View className="min-w-0 flex-1 items-center">
@@ -263,7 +268,7 @@ export function Stepper({
           ) : null}
         </Text>
       </View>
-      <StepButton label={`More ${name}`} disabled={incDisabled} onPress={onInc}>
+      <StepButton label={incLabel ?? `More ${name}`} disabled={incDisabled} onPress={onInc}>
         <Plus />
       </StepButton>
     </View>

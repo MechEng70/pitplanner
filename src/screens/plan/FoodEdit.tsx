@@ -259,7 +259,7 @@ function Body({
       <View className="gap-4" onLayout={frame.onLayout}>
         <Field label={q.label ?? (q.kind === 'weight' ? 'Weight' : 'How many')}>
           <Stepper
-            label={q.label ?? 'Quantity'}
+            label={q.label ?? (q.kind === 'weight' ? 'Weight' : q.unit.charAt(0).toUpperCase() + q.unit.slice(1))}
             value={qtyText}
             unit={qtyUnit}
             decDisabled={it.quantity <= q.min}

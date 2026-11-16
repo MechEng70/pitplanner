@@ -101,8 +101,8 @@ describe('Running behind or ahead', () => {
     const { repos, alarms } = await show();
     const before = replaced(alarms.calls);
     const sheet = await openOptions();
-    await fireEvent.press(sheet.getByRole('button', { name: 'More shift' }));
-    await fireEvent.press(sheet.getByRole('button', { name: 'More shift' }));
+    await fireEvent.press(sheet.getByRole('button', { name: 'Later' }));
+    await fireEvent.press(sheet.getByRole('button', { name: 'Later' }));
     expect(sheet.getByText('+30')).toBeOnTheScreen();
     expect(radio(/^Keep serve at 5:00 PM use up hold time$/)).toBeChecked();
     expect(radio(/^Move serve to 5:30 PM tell the family$/)).not.toBeChecked();
@@ -126,8 +126,8 @@ describe('Running behind or ahead', () => {
     const { repos, alarms } = await show();
     const before = replaced(alarms.calls);
     const sheet = await openOptions();
-    await fireEvent.press(sheet.getByRole('button', { name: 'More shift' }));
-    await fireEvent.press(sheet.getByRole('button', { name: 'More shift' }));
+    await fireEvent.press(sheet.getByRole('button', { name: 'Later' }));
+    await fireEvent.press(sheet.getByRole('button', { name: 'Later' }));
     await fireEvent.press(radio(/^Move serve to 5:30 PM/));
     expect(radio(/^Move serve to 5:30 PM/)).toBeChecked();
     expect(sheet.getByText('Serve moves to 5:30 PM. Holds stay as planned.')).toBeOnTheScreen();
@@ -141,7 +141,7 @@ describe('Running behind or ahead', () => {
   test('-15, running ahead: keeping serve holds longer', async () => {
     const { repos } = await show();
     const sheet = await openOptions();
-    await fireEvent.press(sheet.getByRole('button', { name: 'Less shift' }));
+    await fireEvent.press(sheet.getByRole('button', { name: 'Earlier' }));
     expect(sheet.getByText('-15')).toBeOnTheScreen();
     expect(radio(/^Keep serve at 5:00 PM hold longer$/)).toBeChecked();
     expect(radio(/^Move serve to 4:45 PM tell the family$/)).toBeOnTheScreen();
@@ -155,12 +155,20 @@ describe('Running behind or ahead', () => {
   test('back at 0 there is nothing to apply; the shift stops at 3 hr either way', async () => {
     await show();
     const sheet = await openOptions();
-    await fireEvent.press(sheet.getByRole('button', { name: 'More shift' }));
-    await fireEvent.press(sheet.getByRole('button', { name: 'Less shift' }));
+    await fireEvent.press(sheet.getByRole('button', { name: 'Later' }));
+    await fireEvent.press(sheet.getByRole('button', { name: 'Earlier' }));
     expect(sheet.queryByRole('button', { name: 'Apply' })).toBeNull();
-    for (let i = 0; i < 12; i++) await fireEvent.press(sheet.getByRole('button', { name: 'More shift' }));
+    for (let i = 0; i < 12; i++) await fireEvent.press(sheet.getByRole('button', { name: 'Later' }));
     expect(sheet.getByText('+180')).toBeOnTheScreen();
-    expect(sheet.getByRole('button', { name: 'More shift' })).toBeDisabled();
+    expect(sheet.getByRole('button', { name: 'Later' })).toBeDisabled();
+  });
+
+  test('the shift buttons are named Earlier and Later (T-074; they were More shift / Less shift)', async () => {
+    await show();
+    const sheet = await openOptions();
+    expect(sheet.getByRole('button', { name: 'Earlier' })).toBeEnabled();
+    expect(sheet.getByRole('button', { name: 'Later' })).toBeEnabled();
+    expect(sheet.queryByRole('button', { name: /shift/i })).toBeNull();
   });
 });
 
@@ -490,7 +498,7 @@ describe('Undo the most recent Done', () => {
     const cookBefore = repos.activeCook.load()!;
     await tapDone();
     const shiftSheet = await openOptions();
-    await fireEvent.press(shiftSheet.getByRole('button', { name: 'More shift' }));
+    await fireEvent.press(shiftSheet.getByRole('button', { name: 'Later' }));
     await fireEvent.press(shiftSheet.getByRole('button', { name: 'Apply' }));
     await settle();
     expect(repos.activeCook.load()!.plan).not.toEqual(cookBefore.plan);

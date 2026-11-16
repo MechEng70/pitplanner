@@ -93,7 +93,57 @@ test('two alarms in the same minute become one notification listing both', () =>
   assert.equal(a[0].body, 'Pull the brisket.\nWings on.');
   assert.equal(a[0].critical, true);
   assert.deepEqual(a[0].keys, ['pull:b:', 'phase:w:smoke']);
-  assert.equal(a[1].title, 'Serve');
+  assert.equal(a[1].title, 'Time to serve');
+});
+
+// T-074 (Jason, 2026-11-16): the Serve alert read "Serve" / "Serve." Title "Time to serve", text the menu
+// with plain names, each once. The serve step's own label ("Serve.", read on Live cook) does not change.
+const item = (id: string, foodId: string, quantity: number) => {
+  const f = rules.foods.find((x: { id: string }) => x.id === foodId);
+  return { id, foodId, methodId: f.methods[0].id, quantity };
+};
+const serveAlarm = (items: PlanInput['items']) => {
+  const p = buildPlan(rules, { ...input, items });
+  const serve = p.events.find(e => e.kind === 'serve')!;
+  assert.equal(serve.label, 'Serve.');
+  return alarmsFromPlan(p, 0).find(a => a.keys.includes(eventKey(serve)))!;
+};
+
+test('the Serve alert: title Time to serve, text the menu (one food)', () => {
+  const a = serveAlarm([item('b', 'brisket', 12)]);
+  assert.equal(a.title, 'Time to serve');
+  assert.equal(a.body, 'Brisket.');
+});
+
+test('the Serve alert: two foods are joined with and', () => {
+  const a = serveAlarm([item('b', 'brisket', 12), item('w', 'wings', 2)]);
+  assert.equal(a.title, 'Time to serve');
+  assert.equal(a.body, 'Brisket and chicken wings.');
+});
+
+test('the Serve alert: three foods in menu order, commas then and', () => {
+  const a = serveAlarm([item('b', 'brisket', 12), item('w', 'wings', 2), item('c', 'breasts', 4)]);
+  assert.equal(a.title, 'Time to serve');
+  assert.equal(a.body, 'Brisket, chicken wings and chicken breasts.');
+});
+
+test('the Serve alert: two of the same food are named once, by the plain name, not the labels', () => {
+  const a = serveAlarm([item('b1', 'brisket', 11.5), item('w', 'wings', 2), item('b2', 'brisket', 6)]);
+  assert.equal(a.title, 'Time to serve');
+  assert.equal(a.body, 'Brisket and chicken wings.');
+  const b = serveAlarm([item('b1', 'brisket', 11.5), item('b2', 'brisket', 6)]);
+  assert.equal(b.body, 'Brisket.');
+});
+
+test('the Serve alert: St. Louis ribs keep their capitals inside the sentence and first', () => {
+  assert.equal(serveAlarm([item('b', 'brisket', 12), item('r', 'stlribs', 2)]).body, 'Brisket and St. Louis ribs.');
+  assert.equal(serveAlarm([item('r', 'stlribs', 2), item('t', 'turkey', 12)]).body, 'St. Louis ribs and whole turkey.');
+});
+
+test('the Serve alert with no foods on the plan keeps the step text', () => {
+  const [a] = alarmsFromPlan(planWith([ev({ at: 5 * MIN, kind: 'serve', label: 'Serve.' })]), 0);
+  assert.equal(a.title, 'Time to serve');
+  assert.equal(a.body, 'Serve.');
 });
 
 test('a single alarm uses the food name as title and the step as body', () => {

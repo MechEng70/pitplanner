@@ -3038,8 +3038,9 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 
 
 ### T-074 Alert and label wording: the Serve alert, the stepper, the shift buttons
-- **Status:** todo. Approved by Jason, 2026-11-16 (his answers to `docs/proposals/2026-11-16-open-decisions.md`,
-  items 3 and 4, "as one small task").
+- **Status:** merged onto `main` 2026-11-16 and gated; not seen on a device.
+  Approved by Jason, 2026-11-16 (his answers to `docs/proposals/2026-11-16-open-decisions.md`, items 3 and 4,
+  "as one small task").
 - **Serve alert:** today its title and text are both "Serve" ("Serve Serve."; its last repeat reads "Cook
   needs you" / "Serve: Serve."). New: title "Time to serve", text the menu with plain names, each once
   (for example "Brisket, chicken wings and chicken breasts."). The `serve` event's label on Live cook stays.
@@ -3051,6 +3052,30 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Tests:** engine test for the Serve alarm's title and text (one food, several, two of the same food);
   RNTL for the three label pairs; the device test's labels.
 - **Device testing (Jason):** the Serve alert on the lock screen at 115%.
+- **Built:** `engine/alarms.ts` (`serveMenu`; the serve kind's title is "Time to serve"; a serve step's alert
+  text is the menu), `engine/labels.ts` (`inSentence` exported, the same lower-casing as the labels);
+  `src/screens/plan/FoodEdit.tsx` (the quantity stepper's label: the food's own label, else "Weight", else
+  its unit capitalised); `src/components/kit/controls.tsx` (`Stepper` takes optional `decLabel` / `incLabel`
+  for buttons with their own names); `src/screens/cook/CookOptions.tsx` (Earlier / Later);
+  `tools/device/run.sh` (the `turkey` test checks "More weight" / "Less weight").
+- **Strings (from the tests):** one food "Brisket."; two "Brisket and chicken wings."; three "Brisket, chicken
+  wings and chicken breasts."; two briskets and wings "Brisket and chicken wings."; two briskets alone
+  "Brisket."; "Brisket and St. Louis ribs.", "St. Louis ribs and whole turkey.". The repeats are built in
+  Kotlin from these two strings (unchanged; read from `Notifications.kt` and `Receivers.kt`, not tested
+  here): "Still waiting: Time to serve" / "10 min past the step. Brisket.", last "Cook needs you" / "Time to
+  serve: Brisket.". Quantity buttons: brisket "More / Less trimmed
+  weight", ribs "More / Less racks", tri-tip, pork butt, chicken wings, whole turkey "More / Less weight",
+  chicken breasts "More / Less breasts". Cook options: "Earlier" (minus), "Later" (plus).
+- **Choices made in the build (not decided by Jason):** names in menu order, each food once by its food name
+  (not the "11.5 lb brisket" labels), the first word capitalised, no comma before "and", a full stop at the
+  end. A plan with no foods keeps the step text "Serve.". The Quiet time summary ("Quiet time is over")
+  still lists the step as "Serve." since it lists steps. When another step rings in the same minute as Serve,
+  the alert is built as any shared alert is (titles joined with " + ", one text line per step; not tested). The
+  stepper groups keep their names ("Weight", "Breasts", "Shift"); only the buttons change.
+- **Tests added:** `engine/alarms.test.ts` (six Serve alert tests; the existing title assertion now "Time to
+  serve"); `src/screens/plan/FoodEdit.test.tsx` (every food's quantity buttons, and a guard that the list
+  covers every food in `data/foods.json`); `src/components/kit/controls.test.tsx` (own button names);
+  `src/screens/cook/CookOptions.test.tsx` (Earlier / Later, the old names renamed in ten lines).
 - **Jason's review of the built task (2026-11-16), answers 7 to 9:** the Serve alert, the stepper button
   names and Earlier / Later are approved as built. The Quiet time summary keeps "Serve." (it is a step
   list, like the timeline).
