@@ -288,11 +288,13 @@ describe('trimmed with a reason', () => {
     expect(later.ok && later.data.history.map(h => h.id)).toEqual(['1794000000000', 'cook-3']);
   });
 
-  test('unknown foods and methods are reported, not crashed on', () => {
+  test('unknown foods and methods are reported, not crashed on; a cooked food the app does not know is kept', () => {
     const f = fileObj();
     f.rates.lamb = 1.2;
     f.rateLocks.lamb = true;
+    // From a newer app (Jason, 2026-11-16): a food this app does not know is kept in history, method and all.
     f.history[1].items[1].log.foodId = 'lamb';
+    f.history[1].items[1].log.methodId = 'spit';
     f.history[0].items[0].log.methodId = 'sous-vide';
     // JSON.parse makes "__proto__" an own key; it must never reach an object's prototype.
     const text = JSON.stringify(f).replace('"totalHours":{', '"totalHours":{"__proto__":2,');
@@ -303,18 +305,38 @@ describe('trimmed with a reason', () => {
     expect(r.data.rateLocks).toEqual({ brisket: true });
     expect(Object.getPrototypeOf(r.data.totalHours)).toBe(Object.prototype);
     expect(r.data.totalHours).toEqual({ turkey: 4.5 });
-    // A cook keeps the items that are left; one with none left goes.
+    // A cook keeps the items that are left; one with none left goes. The unknown food stays as it was.
     expect(r.data.history.map(h => [h.id, h.items.map(i => i.log.foodId)])).toEqual([
-      ['1794100000000', ['brisket']],
+      ['1794100000000', ['brisket', 'lamb']],
       ['cook-3', ['brisket']],
     ]);
+    expect(r.data.history[0]!.items[1]).toEqual({
+      ...records[1]!.items[1],
+      log: { ...records[1]!.items[1]!.log, foodId: 'lamb', methodId: 'spit' },
+    });
+    expect(r.counts.cooks).toBe(2);
     expect(r.dropped).toEqual([
       { part: 'rates', key: 'lamb', reason: 'unknown food' },
       { part: 'totalHours', key: '__proto__', reason: 'unknown food' },
       { part: 'rateLocks', key: 'lamb', reason: 'unknown food' },
       { part: 'history', key: '1794000000000 item 1', reason: 'unknown method' },
       { part: 'history', key: '1794000000000', reason: 'no items left' },
-      { part: 'history', key: '1794100000000 item 2', reason: 'unknown food' },
+    ]);
+  });
+
+  test('a cooked food the app does not know still has every other check', () => {
+    const f = fileObj();
+    const lamb = f.history[0].items[0];
+    lamb.log.foodId = 'lamb';
+    lamb.log.quantity = -1;
+    f.history[2].items[0].log.foodId = 'x'.repeat(65);
+    const r = okRead(f);
+    expect(r.data.history.map(h => h.id)).toEqual(['1794100000000']);
+    expect(r.dropped).toEqual([
+      { part: 'history', key: '1794000000000 item 1', reason: 'out of range' },
+      { part: 'history', key: '1794000000000', reason: 'no items left' },
+      { part: 'history', key: 'cook-3 item 1', reason: 'bad value' },
+      { part: 'history', key: 'cook-3', reason: 'no items left' },
     ]);
   });
 

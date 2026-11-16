@@ -11,7 +11,10 @@ import type {
   NotificationAction,
   PermissionService,
   PhoneAlarms,
+  PickedFile,
+  PickTextFile,
   QueuedAction,
+  ShareFile,
   ShareReport,
   ShareService,
   StoredNag,
@@ -242,6 +245,50 @@ export function fakeClipboard(): FakeClipboard {
         f.failNext = null;
         throw e;
       }
+    },
+  };
+  return f;
+}
+
+export interface FakeFileShare {
+  share: ShareFile;
+  /** Every file handed to the share sheet, in order. */
+  shared: { name: string; text: string }[];
+  /** Set to make the next share reject (the call is still recorded). */
+  failNext: Error | null;
+}
+
+export function fakeFileShare(): FakeFileShare {
+  const f: FakeFileShare = {
+    shared: [],
+    failNext: null,
+    async share(name, text) {
+      f.shared.push({ name, text });
+      if (f.failNext) {
+        const e = f.failNext;
+        f.failNext = null;
+        throw e;
+      }
+    },
+  };
+  return f;
+}
+
+export interface FakeFilePicker {
+  pick: PickTextFile;
+  /** The cap given to each pick, in order. */
+  calls: number[];
+  /** What the next pick answers; it stays until changed. Starts as cancelled. */
+  next: PickedFile;
+}
+
+export function fakeFilePicker(next: PickedFile = { canceled: true }): FakeFilePicker {
+  const f: FakeFilePicker = {
+    calls: [],
+    next,
+    async pick(maxChars) {
+      f.calls.push(maxChars);
+      return f.next;
     },
   };
   return f;

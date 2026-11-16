@@ -15,12 +15,16 @@ export type Units = { temp: TempUnit; weight: WeightUnit };
 
 const timeFmt = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' });
 const dayFmt = new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+const monthDayFmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
 
 /** "6:40 AM" */
 export const fmtTime = (ms: number) => timeFmt.format(ms).replace(/\u202f/g, ' ');
 
 /** "Sat, Nov 14" */
 export const fmtDay = (ms: number) => dayFmt.format(ms);
+
+/** "Nov 14" */
+export const fmtMonthDay = (ms: number) => monthDayFmt.format(ms);
 
 /** "Sat, Nov 14 at 5:00 PM" */
 export const fmtDayTime = (ms: number) => `${dayFmt.format(ms)} at ${fmtTime(ms)}`;

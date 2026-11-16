@@ -1,4 +1,4 @@
-import { REPORT_SUBJECT, shareFilesAsTar, shareReport, shareTextFile } from './shareFile';
+import { REPORT_SUBJECT, shareDataFile, shareFilesAsTar, shareReport, shareTextFile } from './shareFile';
 
 const mockCalls: unknown[][] = [];
 /** What the native sendFile does next: nothing (it opened the sheet), or throw this. */
@@ -55,6 +55,19 @@ test('writes the text to a cache file (replacing an old one), then opens the sha
     ['create', { overwrite: true }],
     ['write', '{"a":1}'],
     ['share', 'file:///CACHE/pitplanner-export.json', { mimeType: 'application/json', dialogTitle: 'Export my data' }],
+  ]);
+});
+
+test('Gear Export my data (T-036) shares the data file as JSON under its own name', async () => {
+  await shareDataFile('pitplanner-data-2026-11-16-0905.json', '{"format":"pitplanner-data"}');
+  expect(mockCalls).toEqual([
+    ['create', { overwrite: true }],
+    ['write', '{"format":"pitplanner-data"}'],
+    [
+      'share',
+      'file:///CACHE/pitplanner-data-2026-11-16-0905.json',
+      { mimeType: 'application/json', dialogTitle: 'Export my data' },
+    ],
   ]);
 });
 
