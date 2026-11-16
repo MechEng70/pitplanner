@@ -84,7 +84,8 @@ Rules:
    stay at the same paths with the same exports, so the engine tests do not change; only their storage and
    platform imports are swapped (e.g. `history.ts` keeps `CookRecord`, its I/O moves to `src/db`).
 4. **Platform access goes through `src/platform/`**; ESLint `no-restricted-imports` enforces it (T-003).
-5. **Native holds only what must work with the app dead:** the alarm set, nags, queued notification actions.
+5. **Native holds only what must work with the app dead:** the alarm set, nags, queued notification actions
+   (kept until the app acknowledges them, T-079).
 6. **Units:** instants epoch ms; temps F; weights lb; convert at display (`engine/units.ts`, `src/lib/format.ts`).
 
 ## 4. Platform services
@@ -100,10 +101,14 @@ export interface AlarmService {
   setQuiet(until: number | null): Promise<void>;
   testAlarm(seconds: number, title?: string, body?: string): Promise<{ at: number; exact: boolean }>;
   scheduled(): Promise<{ alarms: AlarmSpec[]; nags: StoredNag[] }>;
-  drainActions(): Promise<NotificationAction[]>;
   onFired(fn: (e: AlarmEvent) => void): Unsubscribe;
   onAction(fn: (e: AlarmEvent) => void): Unsubscribe;
 }
+export interface AlertTapQueue { // T-079: read, then acknowledge once saved
+  peekActions(): Promise<QueuedAction[]>; // NotificationAction + a unique id; removes nothing
+  ackActions(ids: string[]): Promise<void>; // removes exactly these ids
+}
+export type PhoneAlarms = AlarmService & AlertTapQueue; // what the store and the debug screen take
 export interface PermissionService {
   status(): Promise<AlarmStatus>; // notifications, exactAlarms, batteryUnrestricted, fullScreen
   requestNotifications(): Promise<AlarmStatus>;
@@ -241,7 +246,8 @@ plan.events --alarmsFromPlan(plan, now)--> AlarmSpec[] --AlarmService.replaceAll
    cancel every PendingIntent, then setAlarmClock() per alarm (the system leaves Doze for these)
 AlarmReceiver -> Notifications.show (Done / +15 min / Open; full-screen when critical or at night)
               -> nag every 10 min, up to 6, then "Cook needs you"
-ActionReceiver (Done / +15) -> AlarmStore.queueAction -> app drains on start/resume -> replan -> replaceAll
+ActionReceiver (Done / +15) -> AlarmStore.queueAction (id) -> app peeks on start/resume/tap -> applies the
+              taps not yet applied -> saves the cook with their ids -> ackActions(ids) -> replaceAll
 RestoreReceiver: LOCKED_BOOT_COMPLETED, BOOT_COMPLETED, MY_PACKAGE_REPLACED, TIME_SET, TIMEZONE_CHANGED,
                  SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED -> reschedule from AlarmStore
 ```
@@ -251,6 +257,15 @@ RestoreReceiver: LOCKED_BOOT_COMPLETED, BOOT_COMPLETED, MY_PACKAGE_REPLACED, TIM
   `SCHEDULE_EXACT_ALARM` up to API 32, `RECEIVE_BOOT_COMPLETED`, `USE_FULL_SCREEN_INTENT`,
   `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, `VIBRATE`); merged at prebuild.
 - Events to JS (`onFired`, `onAction`) through the module's event emitter.
+- The action queue (T-079). `AlarmStore` holds the Done / +15 taps in device-protected prefs, each with a
+  UUID. Receivers queue on the main thread and the module reads on its own, so `queueAction`, `peekActions`
+  and `ackActions` each run under one process-wide lock, and each write inside it is a `commit()` (on disk
+  before the lock is let go; a receiver can be killed right after `onReceive`). A tap queued by a build before
+  ids gets one at its first read, saved. The app (`drainAlerts`, `src/lib/store.tsx`) peeks, applies the taps
+  whose ids the cook has not had (`src/lib/alertTaps.ts`), saves the cook with those ids in `appliedTaps` (the
+  newest 50, in `active_cook.data`, no migration), and only then acknowledges every id it read. A failed save
+  acknowledges nothing; a tap read twice (the app died between the save and the acknowledge) is skipped by id.
+  Taps with no cook running, or that change nothing, are acknowledged and dropped, as before.
 - New in the port: `setQuiet(until)` so Quiet also defers native nags (the known gap in 0.2.0). The window's
   end is stored natively (`AlarmStore.quietUntil`); repeats due inside it move to its end, a repeat that
   fires inside it is held without counting, and `setQuiet(null)` brings held repeats back to one interval

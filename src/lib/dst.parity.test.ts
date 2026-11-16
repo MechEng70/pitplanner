@@ -30,7 +30,6 @@ function phoneAlarms() {
     setQuiet: async () => {},
     testAlarm: async () => ({ at: 0, exact: true }),
     scheduled: async () => ({ alarms: [], nags: [] }),
-    drainActions: async () => [],
     onFired: () => () => {},
     onAction: () => () => {},
   };

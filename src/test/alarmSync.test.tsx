@@ -6,7 +6,8 @@ import { buildPlan } from '../../engine/plan';
 import { legacyHistoryJson, legacyPrefs } from '@/db/fixtures/legacy020';
 import { importLegacy } from '@/db/legacyImport';
 import { useAlarmWiring } from '@/lib/alarmWiring';
-import { doneStep, newCook, pending, quiet, type ActiveCook } from '@/lib/cook';
+import { applyActions, doneStep, newCook, pending, quiet, type ActiveCook } from '@/lib/cook';
+import { EVENT_LOG_KEY, parseEventLog } from '@/lib/eventLog';
 import { saturday } from '@/lib/fixtures/saturday';
 import { rules } from '@/lib/rules';
 import { useStore } from '@/lib/store';
@@ -137,7 +138,116 @@ test('taps with no cook running are dropped without scheduling anything', async 
   const { store, alarms } = await mount();
   alarms.queued = [{ type: 'done', alarmId: 'a1', keys: ['fire::'], at: NOW }];
   await act(async () => void (await store().drainAlerts()));
-  expect(alarms.calls).toEqual(['drainActions']);
+  // Read, then cleared from the phone: there is no cook to keep them for.
+  expect(alarms.calls).toEqual(['peekActions', 'ackActions tap1']);
+  expect(alarms.queued).toEqual([]);
+});
+
+describe('T-079: a tap leaves the phone only once the cook with it is saved', () => {
+  const snooze = (c: ActiveCook, id = 'x1') => ({
+    id,
+    type: 'snooze15' as const,
+    alarmId: 'a1',
+    keys: [pending(c)[0]!.key],
+    at: NOW + 60_000,
+  });
+  /** The +15 tap applied exactly once, for comparison. */
+  const once = (c: ActiveCook) => applyActions(c, [snooze(c)]).reminders;
+
+  test('the taps read are acknowledged after the save, and only those', async () => {
+    const c = cook();
+    const { store, alarms, repos } = await mount(c);
+    const save = repos.activeCook.save;
+    repos.activeCook.save = (k, now) => {
+      alarms.calls.push('save');
+      save(k, now);
+    };
+    alarms.queued = [snooze(c)];
+    await act(async () => void (await store().drainAlerts()));
+    expect(alarms.calls.slice(0, 3)).toEqual(['peekActions', 'save', 'ackActions x1']);
+    expect(alarms.queued).toEqual([]);
+    expect(repos.activeCook.load()!.reminders).toEqual(once(c));
+  });
+
+  test('a cook that cannot be saved leaves the taps queued; the next read applies them', async () => {
+    const c = cook();
+    const { store, alarms, repos } = await mount(c);
+    const save = repos.activeCook.save;
+    repos.activeCook.save = () => {
+      throw new Error('disk full');
+    };
+    alarms.queued = [snooze(c)];
+    let changed = true;
+    await act(async () => {
+      changed = await store().drainAlerts();
+    });
+    expect(changed).toBe(false);
+    expect(alarms.calls.filter(x => x.startsWith('ackActions'))).toEqual([]);
+    expect(alarms.queued.map(a => a.id)).toEqual(['x1']);
+    expect(store().state.cook).toEqual(c);
+    expect(repos.kv.get(EVENT_LOG_KEY, parseEventLog)?.map(e => e.text)).toContain(
+      'alert taps not saved: Error: disk full',
+    );
+
+    repos.activeCook.save = save;
+    await act(async () => {
+      changed = await store().drainAlerts();
+    });
+    expect(changed).toBe(true);
+    expect(alarms.queued).toEqual([]);
+    expect(repos.activeCook.load()!.reminders).toEqual(once(c));
+  });
+
+  test('a tap read again after the app died between the save and the acknowledge is applied once', async () => {
+    const c = cook();
+    const first = await mount(c);
+    first.alarms.queued = [snooze(c)];
+    first.alarms.failAck = new Error('app killed');
+    await act(async () => void (await first.store().drainAlerts()));
+    expect(first.repos.activeCook.load()!.reminders).toEqual(once(c));
+    expect(first.alarms.queued.map(a => a.id)).toEqual(['x1']); // still on the phone
+
+    // The app starts again over the same database and finds the same tap waiting.
+    const alarms = fakeAlarms();
+    alarms.queued = first.alarms.queued;
+    const again = await renderHook(() => useStore(), { wrapper: storeWrapper(first.repos, () => NOW, alarms) });
+    let changed = true;
+    await act(async () => {
+      changed = await again.result.current.drainAlerts();
+    });
+    expect(changed).toBe(false);
+    expect(first.repos.activeCook.load()!.reminders).toEqual(once(c)); // moved 15 min, not 30
+    expect(alarms.calls).toEqual(['peekActions', 'ackActions x1']);
+    expect(alarms.queued).toEqual([]);
+  });
+
+  test('two reads at once (start and a tap while open) apply a tap once', async () => {
+    const c = cook();
+    const { store, alarms, repos } = await mount(c);
+    alarms.queued = [snooze(c)];
+    await act(async () => void (await Promise.all([store().drainAlerts(), store().drainAlerts()])));
+    expect(repos.activeCook.load()!.reminders).toEqual(once(c));
+    expect(alarms.queued).toEqual([]);
+  });
+
+  test('a tap queued while the app reads stays queued and is applied at the next read', async () => {
+    const c = cook();
+    const { store, alarms, repos } = await mount(c);
+    const late = { ...snooze(c, 'late'), type: 'done' as const, at: NOW + 120_000 };
+    const peek = alarms.peekActions;
+    alarms.peekActions = async () => {
+      const read = await peek();
+      alarms.queued = [...alarms.queued, late];
+      return read;
+    };
+    alarms.queued = [snooze(c)];
+    await act(async () => void (await store().drainAlerts()));
+    expect(alarms.queued.map(a => a.id)).toEqual(['late']);
+    alarms.peekActions = peek;
+    await act(async () => void (await store().drainAlerts()));
+    expect(alarms.queued).toEqual([]);
+    expect(repos.activeCook.load()!.done).toEqual({ [late.keys[0]!]: NOW + 120_000 });
+  });
 });
 
 describe('wiring at start, on resume and on a tap while open', () => {
@@ -185,7 +295,7 @@ describe('wiring at start, on resume and on a tap while open', () => {
 
   test('start with no cook and nothing on the phone schedules and cancels nothing', async () => {
     const { alarms } = await wired(null);
-    await waitFor(() => expect(alarms.calls).toEqual(['drainActions']));
+    await waitFor(() => expect(alarms.calls).toEqual(['peekActions']));
     await act(async () => {});
     expect(scheduling(alarms.calls)).toEqual([]);
   });
@@ -236,7 +346,7 @@ describe('wiring at start, on resume and on a tap while open', () => {
     const { alarms, resume, applied, store } = await wired(c);
     await waitFor(() => expect(alarms.sets).toHaveLength(1)); // the start
     await act(async () => resume.resume());
-    await waitFor(() => expect(alarms.calls.filter(x => x === 'drainActions')).toHaveLength(2));
+    await waitFor(() => expect(alarms.calls.filter(x => x === 'peekActions')).toHaveLength(2));
     expect(alarms.sets).toHaveLength(1);
     expect(applied).not.toHaveBeenCalled();
 

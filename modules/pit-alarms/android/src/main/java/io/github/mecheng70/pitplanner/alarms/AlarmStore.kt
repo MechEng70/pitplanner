@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.UserManager
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.UUID
 
 /** One scheduled alert. keys are the engine's step keys (stable across replans). */
 data class Alarm(
@@ -68,6 +69,12 @@ class AlarmStore(context: Context) {
 
     companion object {
         private const val NAME = "pit_alarms"
+        private const val ACTIONS = "actions"
+
+        /** One lock for the action queue across every AlarmStore in the process (each receiver makes its own). */
+        private val QUEUE = Any()
+
+        private fun newActionId(): String = UUID.randomUUID().toString()
 
         /**
          * Device-protected storage: readable right after a reboot, before the phone is first unlocked
@@ -100,15 +107,42 @@ class AlarmStore(context: Context) {
         get() = prefs.getLong("quietUntil", 0L)
         set(v) { prefs.edit().putLong("quietUntil", v).commit() }
 
-    fun queueAction(type: String, alarmId: String, keys: List<String>, at: Long) {
-        val list = read("actions") + JSONObject()
-            .put("type", type).put("alarmId", alarmId).put("keys", JSONArray(keys)).put("at", at)
-        write("actions", list)
+    /*
+     * Done / +15 taps from notifications, waiting for the app (T-079). Receivers add on the main thread; the
+     * module reads and removes on its own thread. Every read-modify-write of the queue holds QUEUE, so a tap
+     * queued while the app reads is never written over. The app reads without removing (peekActions), saves
+     * the cook with the taps applied, then removes exactly the ids it read (ackActions): a tap queued since
+     * stays, and a tap read but never saved (the app died) is read again. Each write inside the lock is a
+     * commit(), on disk before the lock is let go.
+     */
+
+    /** Queue a tap; returns its id, unique and the same at every read. */
+    fun queueAction(type: String, alarmId: String, keys: List<String>, at: Long): String = synchronized(QUEUE) {
+        val id = newActionId()
+        write(ACTIONS, actions() + JSONObject()
+            .put("id", id).put("type", type).put("alarmId", alarmId).put("keys", JSONArray(keys)).put("at", at))
+        id
     }
 
-    fun drainActions(): List<JSONObject> {
-        val list = read("actions")
-        write("actions", emptyList())
+    /** The queued taps, oldest first. Nothing is removed. */
+    fun peekActions(): List<JSONObject> = synchronized(QUEUE) { actions() }
+
+    /** Remove the taps with these ids, and only those. Returns how many were removed. */
+    fun ackActions(ids: Collection<String>): Int = synchronized(QUEUE) {
+        val drop = ids.toSet()
+        val all = actions()
+        val keep = all.filterNot { it.optString("id") in drop }
+        if (keep.size != all.size) write(ACTIONS, keep)
+        all.size - keep.size
+    }
+
+    /** The queue as stored. A tap queued by a build before ids gets one here, saved, so it reads the same twice. Hold QUEUE. */
+    private fun actions(): List<JSONObject> {
+        val list = read(ACTIONS)
+        val unnamed = list.filter { it.optString("id").isEmpty() }
+        if (unnamed.isEmpty()) return list
+        unnamed.forEach { it.put("id", newActionId()) }
+        write(ACTIONS, list)
         return list
     }
 

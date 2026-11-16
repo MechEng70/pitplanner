@@ -1,7 +1,8 @@
 // pit-alarms: step alarms through AlarmManager.setAlarmClock, notifications with Done / +15 min, repeats
 // until a step is handled, and restore after a reboot (TECH-DESIGN section 6). The 0.2.0 Capacitor plugin on
 // the Expo Modules API, plus setQuiet. App code reaches this through src/platform/alarms.ts, never directly.
-// The shapes below match AlarmService and PermissionService in src/platform/types.ts (checked there).
+// The shapes below match AlarmService, AlertTapQueue and PermissionService in src/platform/types.ts (checked
+// there).
 import { NativeModule, requireNativeModule } from 'expo';
 
 export interface PitAlarm {
@@ -23,6 +24,8 @@ export interface PitNag {
   nextAt: number;
 }
 export interface PitAlarmAction {
+  /** Unique, and the same at every read until acknowledged (T-079). */
+  id: string;
   type: 'done' | 'snooze15' | 'open';
   alarmId: string;
   keys: string[];
@@ -53,7 +56,8 @@ declare class PitAlarmsNative extends NativeModule<Events> {
   setQuiet(until: number | null): Promise<void>;
   testAlarm(seconds: number, title: string | null, body: string | null): Promise<{ at: number; exact: boolean }>;
   getScheduled(): Promise<{ alarms: (PitAlarm & { test: boolean })[]; nags: PitNag[] }>;
-  drainActions(): Promise<PitAlarmAction[]>;
+  peekActions(): Promise<PitAlarmAction[]>;
+  ackActions(ids: string[]): Promise<void>;
   status(): Promise<PitAlarmStatus>;
   requestNotifications(): Promise<PitAlarmStatus>;
   openSettings(which: PitSettingsScreen): Promise<void>;
@@ -74,8 +78,10 @@ export const pitAlarms = {
   testAlarm: (seconds: number, title?: string, body?: string) => native.testAlarm(seconds, title ?? null, body ?? null),
   /** What is stored to fire. */
   scheduled: () => native.getScheduled(),
-  /** Done / +15 min taps on notifications that the app has not applied yet; emptied by this call. */
-  drainActions: () => native.drainActions(),
+  /** Done / +15 min taps on notifications that the app has not applied yet, oldest first. Removes nothing. */
+  peekActions: () => native.peekActions(),
+  /** Remove exactly these taps, once the cook with them applied is saved. A tap queued since stays. */
+  ackActions: (ids: string[]) => native.ackActions(ids),
   onFired(fn: (e: PitAlarmEvent) => void): () => void {
     const sub = native.addListener('alarmFired', fn);
     return () => sub.remove();

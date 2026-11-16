@@ -3,7 +3,6 @@
 import type { AlarmSpec } from '../../engine/alarms.ts';
 import type {
   AlarmEvent,
-  AlarmService,
   AlarmStatus,
   AppLinks,
   CopyText,
@@ -11,20 +10,28 @@ import type {
   GetJson,
   NotificationAction,
   PermissionService,
+  PhoneAlarms,
+  QueuedAction,
   ShareReport,
   ShareService,
   StoredNag,
 } from './types';
 
-export interface FakeAlarms extends AlarmService, PermissionService {
+export interface FakeAlarms extends PhoneAlarms, PermissionService {
   /** Every call in order, e.g. `acknowledge fire::`, `setQuiet off`, `replaceAll 7`, `cancelAll`. */
   calls: string[];
   /** The set given to each `replaceAll`. */
   sets: AlarmSpec[][];
   /** What `scheduled()` answers. */
   stored: { alarms: (AlarmSpec & { test?: boolean })[]; nags: StoredNag[] };
-  /** Notification taps waiting for `drainActions` (emptied by it, like the native queue). */
-  queued: NotificationAction[];
+  /**
+   * Notification taps waiting on the phone, oldest first. `peekActions` leaves them; `ackActions` removes the
+   * ids given (T-079). A tap put here without an id gets one at its first read and keeps it, as the native
+   * queue does for a tap queued by a build before ids.
+   */
+  queued: (NotificationAction & { id?: string })[];
+  /** Set to make the next `ackActions` reject (the call is still recorded, nothing is removed). */
+  failAck: Error | null;
   granted: AlarmStatus;
   /** What `replaceAll` and `testAlarm` report. */
   exact: boolean;
@@ -38,6 +45,7 @@ export interface FakeAlarms extends AlarmService, PermissionService {
 export function fakeAlarms(): FakeAlarms {
   const fired = new Set<(e: AlarmEvent) => void>();
   const acted = new Set<(e: AlarmEvent) => void>();
+  let taps = 0;
   const listen = (set: Set<(e: AlarmEvent) => void>, fn: (e: AlarmEvent) => void) => {
     set.add(fn);
     return () => void set.delete(fn);
@@ -50,6 +58,7 @@ export function fakeAlarms(): FakeAlarms {
     granted: { notifications: true, exactAlarms: true, batteryUnrestricted: true, fullScreen: true },
     exact: true,
     failNext: null,
+    failAck: null,
     async replaceAll(alarms) {
       f.calls.push(`replaceAll ${alarms.length}`);
       if (f.failNext) {
@@ -78,11 +87,20 @@ export function fakeAlarms(): FakeAlarms {
     async scheduled() {
       return f.stored;
     },
-    async drainActions() {
-      f.calls.push('drainActions');
-      const out = f.queued;
-      f.queued = [];
-      return out;
+    async peekActions() {
+      f.calls.push('peekActions');
+      const read: QueuedAction[] = f.queued.map(a => ({ ...a, id: a.id ?? `tap${(taps += 1)}` }));
+      f.queued = read;
+      return read.map(a => ({ ...a }));
+    },
+    async ackActions(ids) {
+      f.calls.push(`ackActions ${ids.join(',')}`);
+      if (f.failAck) {
+        const e = f.failAck;
+        f.failAck = null;
+        throw e;
+      }
+      f.queued = f.queued.filter(a => a.id === undefined || !ids.includes(a.id));
     },
     onFired: fn => listen(fired, fn),
     onAction: fn => listen(acted, fn),

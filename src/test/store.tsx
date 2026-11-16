@@ -6,7 +6,7 @@ import { migrations } from '@/db/migrations';
 import { repos, type Repos } from '@/db/repos';
 import { testDb } from '@/db/testDb';
 import { StoreProvider } from '@/lib/store';
-import type { AlarmService } from '@/platform/types';
+import type { PhoneAlarms } from '@/platform/types';
 
 export const NOW = 1794500000000;
 
@@ -18,7 +18,7 @@ export function testRepos(): { db: Db; repos: Repos } {
 }
 
 /** `wrapper` for RNTL `render` and `renderHook`. */
-export function storeWrapper(r: Repos = testRepos().repos, clock: () => number = () => NOW, alarms?: AlarmService) {
+export function storeWrapper(r: Repos = testRepos().repos, clock: () => number = () => NOW, alarms?: PhoneAlarms) {
   return function Wrapper({ children }: { children: ReactNode }) {
     return (
       <StoreProvider repos={r} clock={clock} alarms={alarms}>
