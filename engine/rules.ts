@@ -97,7 +97,8 @@ export interface RuleMethod extends MethodShared {
   note?: string;
   /**
    * Open shared plan: what a shared food moved onto this method will do, after "will", when its own cooker
-   * stays and only a step moves ("be seared on the smoker"). Without it the box says "move to the smoker".
+   * stays: only a step moves ("be seared on the smoker"), or it cooks another way on it ("cook brisket-style
+   * with no sear"). Without it the box says "move to the smoker".
    */
   importMove?: string;
   minPitTempF?: number; // lowest smoker set point for this method; below it the plan reports an issue

@@ -19,6 +19,8 @@ import { inSentence, itemLabels, longHold } from './labels.ts';
 import {
   firstDoableMethod,
   resolveMethod as mergeShared,
+  smokerReachF,
+  smokerTooCool,
   type ResolvedMethod,
   type RuleFood,
   type RulePhase,
@@ -40,6 +42,13 @@ const REFILL_AT_FRACTION = 0.1; // top-off alert when the hopper is estimated un
 // that step, lower case; {method}: the other method's label, in straight double quotes.
 export const NO_GRIDDLE_PICK_METHOD =
   '{food}\'s {step} needs a griddle. Add one in Gear, or pick "{method}" in Food details.';
+
+// Jason, 2026-11-16 (T-075 follow-up). A food whose method needs the smoker hotter than the smoker set up tops
+// out at (tri-tip's smoker sear under 450F). {food}: its name or label; {step}: that step, lower case; {need}:
+// the lowest temp the step can be done at, from the data (fallbackTemp); {max}: the smoker's max. Temps in F,
+// converted for display like every engine sentence.
+export const SMOKER_TOO_COOL_PICK_METHOD =
+  "{food}'s {step} needs {need}F and this smoker tops out at {max}F. Pick another method in Food details.";
 
 export function tempFactor(rules: Rules, tempF: number): number {
   const m = rules.tempModel;
@@ -358,6 +367,26 @@ function noGriddle(rules: Rules, input: PlanInput, it: PlannedItem, name: string
   return `${name} needs a griddle. Add one in Gear or move it to the smoker.`;
 }
 
+/**
+ * The too-cool smoker line (T-075 follow-up), or null: the smoker set up tops out below the lowest temp one of
+ * the food's smoker steps can be done at (tri-tip's smoker sear, 450F). The method is never changed for the
+ * user and the plan is built at the step's fallback temp; the line names the step on the heat that needs it.
+ */
+function smokerTooCoolLine(rules: Rules, input: PlanInput, it: PlannedItem, name: string): string | null {
+  const food = rules.foods.find(f => f.id === it.input.foodId);
+  const own = food?.methods.find(m => m.id === it.input.methodId);
+  const max = input.cookers.smoker?.maxTempF;
+  if (!food || !own || max == null || !smokerTooCool(food, own, input.cookers)) return null;
+  const m = mergeShared(food, own);
+  const need = smokerReachF(food, own)!;
+  const steps = m.phases.filter(p => (p.cooker ?? m.cooker) === 'smoker' && p.fallbackTemp === need);
+  const step = steps.find(p => !p.offHeat) ?? steps[0]!;
+  return SMOKER_TOO_COOL_PICK_METHOD.replace('{food}', name)
+    .replace('{step}', step.short.toLowerCase())
+    .replace('{need}', String(need))
+    .replace('{max}', String(max));
+}
+
 /** Everything that follows from phase times: events, warnings, pellets, grate load. Re-run after any live change. */
 export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], serveAt: number): Plan {
   const pit = input.pitTempF;
@@ -419,6 +448,8 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
         message: noGriddle(rules, input, it, nm(it)),
         itemIds: [it.input.id],
       });
+    const tooCool = smokerTooCoolLine(rules, input, it, nm(it));
+    if (tooCool) warnings.push({ code: 'SMOKER_TOO_COOL', level: 'warn', message: tooCool, itemIds: [it.input.id] });
   }
 
   for (const it of items) {

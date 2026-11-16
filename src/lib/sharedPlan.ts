@@ -9,6 +9,7 @@ import {
   firstDoableMethod,
   missingCookers,
   resolveMethod,
+  smokerTooCool,
   type ResolvedMethod,
   type RuleFood,
   type Rules,
@@ -125,7 +126,10 @@ export interface CookerMove {
   from: string;
   /** The cooker the food is cooked on now (its new method's own). */
   to: string;
-  /** What the food will do instead, after "will", from the new method (T-075: "be seared on the smoker"). */
+  /**
+   * What the food will do instead, after "will", from the new method's `importMove` (T-075: "be seared on the
+   * smoker", "cook brisket-style with no sear").
+   */
   how?: string;
 }
 export interface CookerGap {
@@ -139,8 +143,11 @@ export interface CookerGap {
  * griddle sear takes the first of its methods the receiver can fully do (the smoker sear). Foods with no
  * method the receiver can do stay as they are and are listed in gaps, under the first cooker missing. A
  * method the receiver's smoker cannot get hot enough for (the smoker sear on one that tops out under 450F)
- * also takes the first method they can do; with every cooker set up there is no box line for it (no words
- * yet, T-075), but it counts as moved for the import's conflicts.
+ * also takes the first method they can do, and counts as moved for the import's conflicts. It gets a box
+ * line only when it stays on its own cooker, its new method has words for that (`importMove`: "cook
+ * brisket-style with no sear") and a method ahead of it needs only a cooker that is not set up: the line goes
+ * under that cooker ("or add a griddle in Gear"). With every cooker set up (a griddle: the smoker sear falls
+ * to the griddle sear) nothing is said (Jason, 2026-11-16: no words for it yet).
  */
 export function mapToCookers(
   rules: Rules,
@@ -161,12 +168,25 @@ export function mapToCookers(
     }
     const alt = resolveMethod(food, found);
     const swap = { ...it, methodId: alt.id, options: cleanOptions(alt, it.options), restMin: alt.restMin.default };
-    if (!missing.length) return swap;
+    const stays = alt.importMove != null && alt.cooker === m.cooker;
+    if (!missing.length) {
+      // The smoker is too cool (T-075 follow-up). The cooker that would give a method ahead of the new one.
+      const ahead = food.methods.slice(0, food.methods.indexOf(found));
+      const want = ahead.find(x => !smokerTooCool(food, x, cookers) && missingCookers(food, x, cookers).length);
+      if (stays && want)
+        moves.push({
+          foodName: food.name,
+          from: missingCookers(food, want, cookers)[0]!,
+          to: alt.cooker,
+          how: alt.importMove!,
+        });
+      return swap;
+    }
     moves.push({
       foodName: food.name,
       from: missing[0]!,
       to: alt.cooker,
-      ...(alt.importMove && alt.cooker === m.cooker ? { how: alt.importMove } : {}),
+      ...(stays ? { how: alt.importMove! } : {}),
     });
     return swap;
   });

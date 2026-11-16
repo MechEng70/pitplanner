@@ -51,7 +51,7 @@
       "name": "Tri-tip",
       "blurb": "Smoke and sear, or brisket-style",
       "group": "Beef",
-      "$comment": "T-075. smokerSear is for a setup with no griddle, second so it is the first method a smoker alone can do (Add food, Open shared plan). Its numbers are Jason's (2026-11-16, sources below; the sources back that method only). Not given, so kept from the reverse method: the smoke time model (35 min per lb at 225F, 60 min floor), the pull line, slice, hold limit, prep and space. Off the heat during the climb: the climb is a smoker step at the high temp with setsPit, as wings' ramp is, marked offHeat (no grate space, drawn as a hold). The pull line's 130-145F: 145F is USDA's minimum for whole beef, 130-135F the sear's target. A smoker that tops out below 450F (fallbackTemp) cannot do it.",
+      "$comment": "T-075. smokerSear is for a setup with no griddle, second so it is the first method a smoker alone can do (Add food, Open shared plan). Its numbers are Jason's (2026-11-16, sources below; the sources back that method only). Not given, so kept from the reverse method: the smoke time model (35 min per lb at 225F, 60 min floor), the pull line, slice, hold limit, prep and space. Off the heat during the climb: the climb is a smoker step at the high temp with setsPit, as wings' ramp is, marked offHeat (no grate space, drawn as a hold). The pull line's 130-145F: 145F is USDA's minimum for whole beef, 130-135F the sear's target. A smoker that tops out below 450F (fallbackTemp) cannot do it. brisketStyle's importMove (Jason, 2026-11-16) is the Open shared plan line for a tri-tip that falls to it on such a smoker with no griddle.",
       "sources": [
         { "cite": "Louisiana Grills, reverse-seared tri-tip (https://louisiana-grills.com/blogs/pork/reverse-seared-tri-tip), given by Jason, 2026-11-16", "methods": ["smokerSear"], "covers": ["rate"], "says": "Smoke at 225F until 5F below the target temp, about 75 min to 115F." },
         { "cite": "Traeger, smoked tri-tip (https://www.traeger.com/za/en/recipes/smoked-tri-tip), given by Jason, 2026-11-16", "methods": ["smokerSear"], "covers": ["preheat", "highHeat"], "says": "Off the heat while the smoker climbs to 500F, 450F if the smoker tops out lower. 15 min preheat." },
@@ -102,6 +102,7 @@
           "label": "Smoked brisket-style (200F)",
           "short": "brisket-style",
           "cooker": "smoker",
+          "importMove": "cook brisket-style with no sear",
           "timing": { "kind": "perWeight", "hrPerLbAt225": 1.67, "minHours": 3.5 },
           "phases": [
             { "id": "smoke", "fraction": 0.55, "temp": "pit", "label": "Tri-tip on the smoker, unwrapped.", "short": "Smoke" },
