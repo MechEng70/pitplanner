@@ -35,6 +35,17 @@ test('Gradle memory limits are applied at prebuild (plugins/withGradleMemory)', 
   expect(mods?.android?.gradleProperties).toBeDefined();
 });
 
+// T-035, finding 2. What the rules hold is tested in plugins/backupRules.test.ts, the manifest in
+// tools/manifest.test.mjs.
+test('backup stays on, with explicit rules written at prebuild (plugins/withBackupRules)', () => {
+  for (const variant of ['development', 'production']) {
+    const c = build(variant) as ReturnType<typeof build> & { mods?: { android?: Record<string, unknown> } };
+    expect(c.android?.allowBackup).toBe(true);
+    expect(c.mods?.android?.manifest).toBeDefined();
+    expect(c.mods?.android?.dangerous).toBeDefined();
+  }
+});
+
 test('development is the default variant; only "production" builds the release app ID', () => {
   expect(variantOf(undefined)).toBe('development');
   expect(variantOf('preview')).toBe('development');

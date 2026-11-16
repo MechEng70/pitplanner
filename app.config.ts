@@ -7,6 +7,7 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 import pkg from './package.json';
 import { appVersion, versionCode } from './plugins/version.ts';
+import { withBackupRules } from './plugins/withBackupRules.ts';
 import { withFontScaleConfigChange } from './plugins/withFontScaleConfigChange.ts';
 import { withGradleMemory } from './plugins/withGradleMemory.ts';
 import { withPitplanIntents } from './plugins/withPitplanIntents.ts';
@@ -38,7 +39,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   const dev = variant === 'development';
   // package.json's version, or APP_VERSION for an internal prerelease (tools/release.sh --version).
   const version = appVersion(pkg.version, process.env.APP_VERSION);
-  return withPitplanIntents(
+  const app = withPitplanIntents(
     withFontScaleConfigChange(
       withGradleMemory(
         withReleaseSigning({
@@ -61,6 +62,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
               backgroundColor: BG,
             },
             predictiveBackGestureEnabled: false,
+            // Backup stays on, limited to the user's data by explicit rules (plugins/backupRules.ts, T-035).
+            allowBackup: true,
           },
           plugins: [
             'expo-router',
@@ -74,4 +77,5 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       ),
     ),
   );
+  return withBackupRules(app);
 };

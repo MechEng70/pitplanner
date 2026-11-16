@@ -2652,6 +2652,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** sign in to `ha.glithero.icu` as the `pitplanner` HA user; refresh token in `expo-secure-store`.
+- Requirement added by Jason, 2026-11-16: the HA token store is excluded from backups.
 - **Files:** `src/screens/gear/HaConnect.tsx`, `src/lib/ha/session.ts`, `src/platform/links.ts`,
   `plugins/withNetworkSecurity.js` (LAN cleartext only when chosen), tests.
 - **Depends on:** T-042, T-043, T-044.
