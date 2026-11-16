@@ -274,7 +274,12 @@ describe('the update check (T-032)', () => {
     html_url: `https://github.com/MechEng70/pitplanner/releases/tag/${tag}`,
     prerelease: tag.includes('-'),
     draft: false,
-    assets: [{ name: `pitplanner-${tag.slice(1)}.apk`, browser_download_url: `https://example.org/${tag}.apk` }],
+    assets: [
+      {
+        name: `pitplanner-${tag.slice(1)}.apk`,
+        browser_download_url: `https://github.com/MechEng70/pitplanner/releases/download/${tag}/pitplanner-${tag.slice(1)}.apk`,
+      },
+    ],
   });
   const resumed = (resume: { resume(): void }) => act(async () => resume.resume());
 
@@ -288,11 +293,13 @@ describe('the update check (T-032)', () => {
       within(link).getByText('Version 0.3.1. Download it in your browser, then open it to install.'),
     ).toBeOnTheScreen();
     await fireEvent.press(link);
-    expect(open).toHaveBeenCalledWith('https://example.org/v0.3.1.apk');
+    expect(open).toHaveBeenCalledWith(
+      'https://github.com/MechEng70/pitplanner/releases/download/v0.3.1/pitplanner-0.3.1.apk',
+    );
     expect(repos.settings.update()).toEqual({
       checkedAt: NOW,
       latest: 'v0.3.1',
-      url: 'https://example.org/v0.3.1.apk',
+      url: 'https://github.com/MechEng70/pitplanner/releases/download/v0.3.1/pitplanner-0.3.1.apk',
     });
   });
 
@@ -316,7 +323,9 @@ describe('the update check (T-032)', () => {
       within(link).getByText('Version 0.4.0-beta.1. Download it in your browser, then open it to install.'),
     ).toBeOnTheScreen();
     await fireEvent.press(link);
-    expect(open).toHaveBeenCalledWith('https://example.org/v0.4.0-beta.1.apk');
+    expect(open).toHaveBeenCalledWith(
+      'https://github.com/MechEng70/pitplanner/releases/download/v0.4.0-beta.1/pitplanner-0.4.0-beta.1.apk',
+    );
   });
 
   test('a prerelease install is told about its final release', async () => {

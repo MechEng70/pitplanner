@@ -37,11 +37,19 @@ test('update: release json gives the APK link, else the release page', () => {
     html_url: 'https://github.com/MechEng70/pitplanner/releases/tag/v0.2.0',
     assets: [
       { name: 'notes.txt', browser_download_url: 'x' },
-      { name: 'pitplanner-0.2.0.apk', browser_download_url: 'https://example/apk' },
+      {
+        name: 'pitplanner-0.2.0.apk',
+        browser_download_url: 'https://github.com/MechEng70/pitplanner/releases/download/v0.2.0/pitplanner-0.2.0.apk',
+      },
     ],
   };
-  assert.deepEqual(fromRelease(rel, 5), { checkedAt: 5, latest: 'v0.2.0', url: 'https://example/apk' });
-  assert.equal(fromRelease({ tag_name: 'v0.2.0', html_url: 'h', assets: [] }, 5).url, 'h');
+  assert.deepEqual(fromRelease(rel, 5), {
+    checkedAt: 5,
+    latest: 'v0.2.0',
+    url: 'https://github.com/MechEng70/pitplanner/releases/download/v0.2.0/pitplanner-0.2.0.apk',
+  });
+  const page = 'https://github.com/MechEng70/pitplanner/releases/tag/v0.2.0';
+  assert.equal(fromRelease({ tag_name: 'v0.2.0', html_url: page, assets: [] }, 5).url, page);
   assert.equal(fromRelease({}, 5).url, RELEASES_PAGE);
   assert.equal(availableUpdate(fromRelease(rel, 5), '0.1.0'), '0.2.0');
   assert.equal(availableUpdate(fromRelease(rel, 5), '0.2.0'), null);
@@ -83,7 +91,12 @@ const release = (tag: string, extra: object = {}) => ({
   html_url: `https://github.com/MechEng70/pitplanner/releases/tag/${tag}`,
   prerelease: tag.includes('-'),
   draft: false,
-  assets: [{ name: `pitplanner-${tag.slice(1)}.apk`, browser_download_url: `https://example/${tag}.apk` }],
+  assets: [
+    {
+      name: `pitplanner-${tag.slice(1)}.apk`,
+      browser_download_url: `https://github.com/MechEng70/pitplanner/releases/download/${tag}/pitplanner-${tag.slice(1)}.apk`,
+    },
+  ],
   ...extra,
 });
 
@@ -137,17 +150,29 @@ test('update: a newer release is found, with its APK link', async () => {
   const h = http({ ok: true, json: [release('v0.4.0-beta.1'), release('v0.3.1'), release('v0.3.0')] });
   // A final install gets the newer final, a beta install the newer beta.
   const u = await fetchLatest(50, '0.3.0', h.get);
-  assert.deepEqual(u, { checkedAt: 50, latest: 'v0.3.1', url: 'https://example/v0.3.1.apk' });
+  assert.deepEqual(u, {
+    checkedAt: 50,
+    latest: 'v0.3.1',
+    url: 'https://github.com/MechEng70/pitplanner/releases/download/v0.3.1/pitplanner-0.3.1.apk',
+  });
   assert.equal(availableUpdate(u, '0.3.0'), '0.3.1');
   const b = await fetchLatest(50, '0.3.0-beta.1', h.get);
-  assert.deepEqual(b, { checkedAt: 50, latest: 'v0.4.0-beta.1', url: 'https://example/v0.4.0-beta.1.apk' });
+  assert.deepEqual(b, {
+    checkedAt: 50,
+    latest: 'v0.4.0-beta.1',
+    url: 'https://github.com/MechEng70/pitplanner/releases/download/v0.4.0-beta.1/pitplanner-0.4.0-beta.1.apk',
+  });
   assert.equal(availableUpdate(b, '0.3.0-beta.1'), '0.4.0-beta.1');
 });
 
 test('update: the same release is not an update', async () => {
   const list = [release('v0.4.0-beta.1'), release('v0.3.0'), release('v0.2.0')];
   const u = await fetchLatest(50, '0.3.0', http({ ok: true, json: list }).get);
-  assert.deepEqual(u, { checkedAt: 50, latest: 'v0.3.0', url: 'https://example/v0.3.0.apk' });
+  assert.deepEqual(u, {
+    checkedAt: 50,
+    latest: 'v0.3.0',
+    url: 'https://github.com/MechEng70/pitplanner/releases/download/v0.3.0/pitplanner-0.3.0.apk',
+  });
   assert.equal(availableUpdate(u, '0.3.0'), null);
 });
 
