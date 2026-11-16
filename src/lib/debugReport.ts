@@ -10,7 +10,7 @@ import type { AlarmStatus, DeviceFacts, StoredNag } from '../platform/types.ts';
 import { EVENT_LOG_KEY, parseEventLog, type LogEvent } from './eventLog.ts';
 
 /** Where the tester sends the file. Shown on the debug screen and handed to the share sheet. */
-export const DEVELOPER_EMAIL = 'jason@medtechcto.com';
+export const DEVELOPER_EMAIL = 'pitplanapp@gmail.com';
 
 type Cell = string | number | null | Uint8Array;
 type Row = Record<string, Cell>;

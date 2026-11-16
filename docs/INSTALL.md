@@ -88,4 +88,4 @@ ask if you are sure. Choose "More details", then "Install anyway".
    will not install an older version over a newer one.
 
 If it still will not install, do not uninstall the app: that erases your smokers, cook rates and history.
-Email jason@medtechcto.com with the version you have and what the phone said.
+Email pitplanapp@gmail.com with the version you have and what the phone said.

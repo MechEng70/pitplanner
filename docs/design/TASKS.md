@@ -1538,6 +1538,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   he wanted for a dedicated one was taken, he may change it later): the debug screen shows it as where to
   send the file, and it is offered as the recipient when the tester picks an email app. Keep it in one
   constant so it is one line to change.
+  **Changed 2026-11-16 (Jason):** the address is now pitplanapp@gmail.com, a new one made for the app, in
+  place of jason@medtechcto.com: `DEVELOPER_EMAIL` and the contact line in `docs/INSTALL.md`.
   The file holds what is needed to see what went wrong, nothing from other apps, nothing sent until the
   tester taps send: app version and build, Android version, phone model, font size, time zone; the alert
   permissions as the phone reports them; the alarms the app has stored and their repeats; the app's data
