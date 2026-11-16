@@ -2865,8 +2865,9 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   6. +15 min on the lock screen moving serve without re-timing the other foods is a separate must-fix,
      looked at by another task first. The tests here that go through that path say so in a comment; their
      expected strings may change.
-- **Status:** built on branch `worktree-agent-a31bfed3313b87e83` (2026-11-16), unit-tested, not gated
-  (`npm run check` not run in the worktree), not seen on a device.
+- **Status:** merged onto `main` 2026-11-16 with the hold note inside the food's entry (`holdNoteInline` in
+  `data/foods.json`); gated; not seen on a device. `tools/device/run.sh` (`plan-sheets`) and `docs/parity.md`
+  D8, D9, T16 updated at the merge.
 - **Built:**
   - Engine: the conflict sentence is "Smoker conflict: <food> at <temp>F and <food> at <temp>F at the same
     time." (`engine/plan.ts`). A food reads as its label when it has one ("2 lb chicken wings 1"), else its name
@@ -2879,7 +2880,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   - `liveWarnings` (`src/lib/cookView.ts`): the banner's text and the warnings it speaks for. A warning is
     new when `cook.original.warnings` has none with the same code and foods (wording is not compared).
     Conflicts first in the engine's words (one sentence per pair of foods), then every long hold in one
-    sentence by the same `longHold` (no "Move it to the griddle or start it later."), joined with a space,
+    sentence by the same `longHold`, each hold note inside its food's entry when several foods hold long (no "Move it to the griddle or start it later."), joined with a space,
     in the user's units.
   - Live cook: one amber banner under the notice banner with `OK`. OK adds the shown warnings to
     `cook.warningsSeen` (new field on the running cook); they stay hidden, a different warning shows. The
@@ -2908,8 +2909,6 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
      a cook saved before the field existed; (d) the several-foods line is only on the
      banner, Plan's Conflicts sheet stays one row per food.
   5. A cook running across the update keeps its stored conflict sentence until its next change re-derives it.
-- **Open:** `tools/device/run.sh:803` still expects the old sentence (left for the main session);
-  `docs/parity.md` D8, D9 and T16 are not updated.
 - **Why:** parity review D8 (`docs/parity.md`), SPEC failure mode 8. A conflict made by Running behind, Not yet,
   a Done or Back up to temp is worked out by the engine and shown nowhere during a cook. 0.2.0 was the same.
 - **Goal:** a banner on Live cook when the running cook's plan has a `PIT_CONFLICT` (and which other warnings,

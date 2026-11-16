@@ -800,7 +800,7 @@ test_plan_sheets() {
   tap "Conflicts 1" 1 | tee -a "$REPORT"
   if dump >"$dir/sheets-issues.xml"; then
     has_text "$dir/sheets-issues.xml" "Conflicts" || plan_miss "the Conflicts sheet"
-    has_text "$dir/sheets-issues.xml" "2 lb chicken wings 1 needs 225F while 2 lb chicken wings 2 needs 350F at the same time." ||
+    has_text "$dir/sheets-issues.xml" "Smoker conflict: 2 lb chicken wings 1 at 225F and 2 lb chicken wings 2 at 350F at the same time." ||
       plan_miss "the conflict's message"
     for want in "Move 2 lb chicken wings 1 to the griddle" "Move 2 lb chicken wings 2 to the griddle" \
       "Change smoker temp" "Edit 2 lb chicken wings 1" "Edit 2 lb chicken wings 2"; do
