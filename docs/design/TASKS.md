@@ -2758,3 +2758,23 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 | T-038 | iOS readiness | T-056 |
 | T-039 | AGP / SE-001 | T-057 |
 | T-040 | TypeScript 6/7 split | T-002 (D-2) |
+
+### T-069 Live cook: say when a change makes a smoker conflict
+- **Status:** todo (Jason, 2026-11-15: "show it on Live cook, as a banner"; wording and fixes need his OK first)
+- **Why:** parity review D8 (`docs/parity.md`), SPEC failure mode 8. A conflict made by Running behind, Not yet,
+  a Done or Back up to temp is worked out by the engine and shown nowhere during a cook. 0.2.0 was the same.
+- **Goal:** a banner on Live cook when the running cook's plan has a `PIT_CONFLICT` (and which other warnings,
+  to be decided), with a way to the fixes.
+- **Files:** `src/screens/cook/CookScreen.tsx`, `src/lib/cookView.ts`, tests.
+- **Acceptance:** per the approved wording. Nothing re-times without the user's tap.
+- **Tests:** engine: a live change that makes a new conflict (parity T16); RNTL for the banner.
+- **Device testing (Jason):** the banner at 115% against the other Live cook banners.
+
+### T-070 Open shared plan: the receiver picks their cookers
+- **Status:** todo (Jason, 2026-11-15: "add a choice"; new UI, the design needs his OK first)
+- **Why:** parity review D1, SPEC section 3 "the receiver picks date and their own cookers". As built (and in
+  0.2.0) foods are put on the receiver's cookers automatically and the sheet says where.
+- **Goal:** the receiver can change which of their cookers a shared food goes on before Use this plan.
+- **Files:** `src/screens/plan/SharedPlanSheet.tsx`, `src/lib/sharedPlan.ts`, tests.
+- **Tests:** RNTL for the choice; `engine/share.test.ts` for the mapping it produces.
+- **Device testing (Jason):** the sheet against mockup 11 at 115%.

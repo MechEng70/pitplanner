@@ -19,30 +19,30 @@ Everything that is not OK. T-034 is done when each row is fixed or accepted by J
 
 | # | SPEC | The build | Recorded OK? | Decision |
 |---|---|---|---|---|
-| D1 | Open shared plan: "the receiver picks ... their own cookers" (section 3) | Nothing to pick: "Your smoker" is read-only and foods are mapped onto the receiver's cookers (`SharedPlanSheet.tsx:91-107`, `mapToCookers`). Same as 0.2.0. | Screenshot approved (T-030), the difference itself not written down | open |
+| D1 | Open shared plan: "the receiver picks ... their own cookers" (section 3) | Nothing to pick: "Your smoker" is read-only and foods are mapped onto the receiver's cookers (`SharedPlanSheet.tsx:91-107`, `mapToCookers`). Same as 0.2.0. | Screenshot approved (T-030), the difference itself not written down | **Jason, 2026-11-15: add a choice.** New UI: T-070, design to be approved first |
 | D2 | Temp menu: "Show all" | The button reads "Show 180-500F", the cooker's range (`TempMenu.tsx:86-92`). Same as 0.2.0. | Screenshots approved (T-018), wording not written down | open |
-| D3 | Plan, empty: Cook a past plan again | Shown only when there is a past cook (`PlanEmpty.tsx:46-51`). | Yes: Jason 2026-11-13 (TASKS T-017, T-028). SPEC line not updated | SPEC edit only |
+| D3 | Plan, empty: Cook a past plan again | Shown only when there is a past cook (`PlanEmpty.tsx:46-51`). | Yes: Jason 2026-11-13 (TASKS T-017, T-028) | SPEC edited 2026-11-15 |
 | D4 | Live cook: lane chart "10 AM to serve" | The chart starts at the hour of the first step, "6 AM to serve" (`cookView.ts:94-101`). Same as 0.2.0. | No | open |
-| D5 | Cook finished: Back to the cook "beside Discard this cook" | On its own line under Discard (`FinishScreen.tsx:94-101`). | Yes: Jason (TASKS T-063). SPEC line not updated | SPEC edit only |
-| D6 | Live rules: Not yet calls `shiftRemaining(now, +30, keepServe, itemId)` | Calls `postponeStep` (`cook.ts:125-133`, `live.ts:165-185`): the same result for the user. Same as 0.2.0. | No | SPEC edit only (a call name) |
-| D7 | "A Done 5 min or more early or late ... ask Keep serve or Move serve" | Asked for a Done on a step during the cook. A Done on a pull (food off the heat) never asks, and serve never moves, even when the food comes off after serve (`cook.ts:112-120`, `markPullDone`). The same for Done on an alert. Same as 0.2.0. | No | open |
-| D8 | Failure mode 8: after an adjustment that makes a new pit conflict, a "banner with fixes" | On Plan the Conflicts tile and sheet do this. During a cook nothing does: a conflict made by Running behind, Not yet, a Done or Back up to temp is worked out and never shown (`src/screens/cook` reads no warnings). Same as 0.2.0. | No | open (the one place where the build does less than SPEC says the app does) |
+| D5 | Cook finished: Back to the cook "beside Discard this cook" | On its own line under Discard (`FinishScreen.tsx:94-101`). | Yes: Jason (TASKS T-063) | SPEC edited 2026-11-15 |
+| D6 | Live rules: Not yet calls `shiftRemaining(now, +30, keepServe, itemId)` | Calls `postponeStep` (`cook.ts:125-133`, `live.ts:165-185`): the same result for the user. Same as 0.2.0. | No | SPEC edited 2026-11-15 (Jason: yes to wording edits) |
+| D7 | "A Done 5 min or more early or late ... ask Keep serve or Move serve" | Asked for a Done on a step during the cook. A Done on a pull (food off the heat) never asks, and serve never moves, even when the food comes off after serve (`cook.ts:112-120`, `markPullDone`). The same for Done on an alert. Same as 0.2.0. | **Jason, 2026-11-15: leave as is, the rest absorbs it** | accepted; SPEC says so; test in `cook.test.ts` |
+| D8 | Failure mode 8: after an adjustment that makes a new pit conflict, a "banner with fixes" | On Plan the Conflicts tile and sheet do this. During a cook nothing does: a conflict made by Running behind, Not yet, a Done or Back up to temp is worked out and never shown (`src/screens/cook` reads no warnings). Same as 0.2.0. | **Jason, 2026-11-15: show it on Live cook as a banner** | T-069; wording to be approved first |
 | D9 | Failure mode 3: warn past the food's hold limit | Reported when planning (`HOLD_TOO_LONG`, an info line in Conflicts). A hold that grows during a cook is not flagged on Live cook. Same as 0.2.0. | No | open |
 | D10 | Failure mode 15: warn on cooler holds over 4 hr | Only the general hold note at 240 min for brisket and pork butt: not tied to a cooler, does not name the cooler or 140F, info level, Plan only. | No | open |
 | D11 | Failure mode 12: a warning if an imported plan has a temp the cooker cannot set | The import moves the temp to the closest one the smoker can set and says so in the sheet (`sharedPlan.ts:170-176`). Same as 0.2.0. | No | open |
-| D12 | Failure mode 6 and section 6: "reloads the active cook from storage" | The receiver puts back the alarms from the native alarm store; the app sets the whole list again from the cook when it next opens. | Yes: TECH-DESIGN sections on alarms | SPEC edit only |
-| D13 | Failure mode 10: troubleshooting link per maker | A plain line, no link. | Yes: Jason 2026-11-15 (SPEC section 3 item 3) | SPEC edit only (row 10) |
-| D14 | Failure mode 4: suggests +25F | Not built. | Yes: Jason 2026-11-15 (SPEC section 5) | SPEC edit only (row 4) |
+| D12 | Failure mode 6 and section 6: "reloads the active cook from storage" | The receiver puts back the alarms from the native alarm store; the app sets the whole list again from the cook when it next opens. | Yes: TECH-DESIGN sections on alarms | SPEC edited 2026-11-15 |
+| D13 | Failure mode 10: troubleshooting link per maker | A plain line, no link. | Yes: Jason 2026-11-15 (SPEC section 3 item 3) | SPEC edited 2026-11-15 |
+| D14 | Failure mode 4: suggests +25F | Not built. | Yes: Jason 2026-11-15 (SPEC section 5) | SPEC edited 2026-11-15 |
 
 ### 1b. Built, with no test or a thin one
 
 | # | What | Where | What is missing |
 |---|---|---|---|
-| T1 | Quiet alerts: held alarms fire as one summary at the end | `engine/alarms.ts:82-96`, `cook.ts:202-208` | The engine test passes (`engine/cook.test.ts`), but nothing asserts that `syncAlarms` puts the summary in the set sent to the phone |
-| T2 | Quiet alerts: steps stay overdue | `CookScreen.tsx:127,180`, `cookView.ts` | Only `engine/cookState.test.ts`, and the app does not use `engine/cookState.ts`. No screen test |
-| T3 | The 5 minute line for asking Keep or Move | `cook.ts:16` (`ASK_SHIFT_MIN`) | The boundary is untested; `engine/cookState.ts` holds a second copy of the number that the app does not read |
-| T4 | Not yet when the next step is a pull | `live.ts:180-181` (`extendCook`) | Engine test only; no lib or screen test taps Not yet at a pull |
-| T5 | Smoker-overlap highlight on the lane chart | `Lanes.tsx:121-131`, `CookScreen.tsx:309` | Parts are tested; nothing fails if Cook stops passing the band |
+| T1 | Quiet alerts: held alarms fire as one summary at the end | `engine/alarms.ts:82-96`, `cook.ts:202-208` | **Closed 2026-11-15:** `cook.test.ts` "Quiet alerts: a step inside the 30 min is held ..." |
+| T2 | Quiet alerts: steps stay overdue | `CookScreen.tsx:127,180`, `cookView.ts` | **Closed 2026-11-15:** `CookScreen.test.tsx` "with Quiet alerts on, a step past its time still reads overdue and Behind" |
+| T3 | The 5 minute line for asking Keep or Move | `cook.ts:16` (`ASK_SHIFT_MIN`) | **Closed 2026-11-15:** `cook.test.ts` "... from 5 min off, not at 4". The second copy of the number in `engine/cookState.ts` is still there |
+| T4 | Not yet when the next step is a pull | `live.ts:180-181` (`extendCook`) | **Closed 2026-11-15** at lib level: `cook.test.ts` "Not yet at a pull ...". No screen test taps it |
+| T5 | Smoker-overlap highlight on the lane chart | `Lanes.tsx:121-131`, `CookScreen.tsx:309` | **Closed 2026-11-15:** `CookScreen.test.tsx` "the lane chart gets the band ..." |
 | T6 | Open on the alert opens the app | `Notifications.kt:55-59,85` | Only the label and "changes nothing" are tested |
 | T7 | Cook history: a card for a food with only saved total hours | `HistoryScreen.tsx:105`, `historyView.ts:42` | Row logic test only. A food that is not by weight (ribs) with saved total hours also gets a card, which SPEC's "by-weight" does not say |
 | T8 | Food details: result bar reads "On" for a cooker not lit ahead | `FoodEdit.tsx:176` | No test |
@@ -206,7 +206,9 @@ Rows that are OK, with their proof. Open rows are in section 1 by number.
 
 ## 5. Still to do in T-034
 
-- Jason's decision on each "open" row in 1a, and on which 1b rows get a test before 0.3.0.
-- The SPEC edits marked "SPEC edit only" (D3, D5, D6, D12, D13, D14, and "banner" in row 8).
+- Jason's decision on the rows still "open" in 1a: D2 ("Show 180-500F"), D4 (the lane chart's start), D9 (hold
+  limit during a cook), D10 (cooler hold), D11 (imported temp).
+- T-069 (conflict banner on Live cook) and T-070 (the receiver picks cookers): both new UI, approved first.
+- 1b rows T6 to T19: which get a test before 0.3.0.
 - Fidelity sheets for mockups 08, 09, 10 (1c); 14 with the phone.
 - The task's "full device pass at 115% and 130%": not run in this review.

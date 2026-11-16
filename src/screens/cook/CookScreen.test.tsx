@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { SHEET_OUT_MS } from '@/components/kit/sheet';
-import { pending, steps, type ActiveCook } from '@/lib/cook';
+import { pending, quiet, steps, type ActiveCook } from '@/lib/cook';
 import { fmtTime } from '@/lib/format';
 import { fakeAlarms, fakeResume } from '@/platform/fakes';
 import { AT_1023, MIN, cookAt, cookGear, cookMenu } from '@/test/cook';
@@ -88,6 +88,20 @@ describe('live cook (mockup 12)', () => {
     expect(screen.getByText('At 6:20 AM')).toBeOnTheScreen();
     expect(screen.getByRole('heading', { name: 'Fire the smoker to 225F in 20 min' })).toBeOnTheScreen();
     expect(screen.queryByText(/Not ready\? Tap Adjust\./)).toBeNull();
+  });
+
+  // T-034 parity review: both were built with nothing at screen level to hold them.
+  test('the lane chart gets the band where foods share the smoker', async () => {
+    await show(cookAt(AT_1023));
+    expect(screen.getByTestId('lane-band', { includeHiddenElements: true })).toBeTruthy();
+  });
+
+  test('with Quiet alerts on, a step past its time still reads overdue and Behind', async () => {
+    const at = AT_1023 + 82 * MIN;
+    await show(quiet(cookAt(AT_1023), at - 5 * MIN), at);
+    expect(screen.getByText('Overdue since 11:35 AM')).toBeOnTheScreen();
+    expect(screen.getByRole('heading', { name: 'Check the brisket, 10 min overdue' })).toBeOnTheScreen();
+    expect(screen.getByText('Behind')).toBeOnTheScreen();
   });
 
   test('the countdown follows the clock without a tap, and a step past its time reads overdue and Behind', async () => {

@@ -10,6 +10,8 @@ import {
   newCook,
   normalize,
   pending,
+  postpone,
+  quiet,
   serveUndoable,
   shift,
   steps,
@@ -166,5 +168,55 @@ describe('undo the most recent Done', () => {
     expect(calls.replaced[0].find(a => a.keys.includes(first.key))?.at).toBe(now + 10 * MIN);
     // Done for real this time: no ring is left behind.
     expect(doneStep(back, first.key, now + MIN).cook.ringAgain).toEqual({});
+  });
+});
+
+// T-034 parity review: rules that were built with no test at this level.
+describe('parity (T-034)', () => {
+  const MIN = 60_000;
+  const fresh = newCook(saturday, plan, start);
+
+  test('Quiet alerts: a step inside the 30 min is held and reaches the phone as one summary at the end', async () => {
+    const { svc, calls } = fakeAlarms();
+    const now = plan.fireAt! - 10 * MIN;
+    const cook = quiet(fresh, now);
+    await syncAlarms(cook, now, svc, F);
+    const set = calls.replaced[0];
+    expect(set.some(a => a.at === plan.fireAt)).toBe(false);
+    const summary = set.find(a => a.title === 'Quiet time is over');
+    expect(summary).toMatchObject({ at: now + 30 * MIN, critical: true });
+    expect(summary?.keys).toContain(fireKey);
+    expect(summary?.body).toMatch(/Fire the smoker to 225F/);
+    // Steps after the 30 min ring as planned.
+    expect(set.filter(a => a !== summary).every(a => a.at >= now + 30 * MIN)).toBe(true);
+  });
+
+  test('Done on a step asks keep or move serve from 5 min off, not at 4', () => {
+    const k = keyedEvents(plan).find(x => x.event.kind === 'phase')!;
+    const near = doneStep(fresh, k.key, k.event.at + 4 * MIN);
+    expect(near.ask).toBeUndefined();
+    const late = doneStep(fresh, k.key, k.event.at + 5 * MIN);
+    expect(late.ask?.deltaMin).toBe(5);
+    const early = doneStep(fresh, k.key, k.event.at - 5 * MIN);
+    expect(early.ask?.deltaMin).toBe(-5);
+  });
+
+  test('Done on a pull never asks, however late: the food is off when it came off (Jason, 2026-11-15)', () => {
+    const k = keyedEvents(plan).find(x => x.event.kind === 'pull')!;
+    const at = k.event.at + 47 * MIN;
+    const r = doneStep(fresh, k.key, at);
+    expect(r.ask).toBeUndefined();
+    expect(r.cook.offAt[k.event.itemId!]).toBe(at);
+    expect(r.cook.plan.serveAt).toBe(plan.serveAt);
+  });
+
+  test('Not yet at a pull: that food comes off 30 min later, the others stay', () => {
+    const k = keyedEvents(plan).find(x => x.event.kind === 'pull')!;
+    const id = k.event.itemId!;
+    const finish = (p: typeof plan) => Object.fromEntries(p.items.map(i => [i.input.id, i.finish]));
+    const before = finish(plan);
+    const after = finish(postpone(fresh, k.key, k.event.at, 30, true).plan);
+    expect(after[id]).toBe(before[id] + 30 * MIN);
+    for (const other of Object.keys(before).filter(x => x !== id)) expect(after[other]).toBe(before[other]);
   });
 });
