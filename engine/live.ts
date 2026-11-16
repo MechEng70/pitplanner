@@ -367,11 +367,14 @@ export function postponeStep(
   return { plan, reminderAt: remind > e.at ? remind : null };
 }
 
-/** Time ranges where two or more foods are on the smoker at once (lane chart highlight, shared-pit note). */
+/**
+ * Time ranges where two or more foods are on the smoker at once (lane chart highlight, shared-pit note). A
+ * food off the heat while the smoker climbs (T-075) is not on it.
+ */
 export function smokerOverlaps(plan: Plan): { start: number; end: number; itemIds: string[]; tempsF: number[] }[] {
   const spans = plan.items.flatMap(it =>
     it.phases
-      .filter(p => p.cooker === 'smoker')
+      .filter(p => p.cooker === 'smoker' && !p.offHeat)
       .map(p => ({ id: it.input.id, start: p.start, end: p.end, tempF: p.tempF })),
   );
   const cuts = [...new Set(spans.flatMap(s => [s.start, s.end]))].sort((a, b) => a - b);

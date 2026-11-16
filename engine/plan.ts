@@ -35,11 +35,11 @@ const PIT_CLIMB_MIN = 15; // time to raise the pit before a high-heat phase
 const OVEN_LEAD_MIN = 15;
 const REFILL_AT_FRACTION = 0.1; // top-off alert when the hopper is estimated under 10%
 
-// DRAFT wording, waits on Jason (T-075). A food whose own cooker is set up but one of whose steps needs the
-// griddle that is not (tri-tip's sear), when another of its methods needs no griddle. {food}: its name or
-// label; {step}: that step, lower case; {method}: the other method's label.
+// Jason, 2026-11-16 (T-075). A food whose own cooker is set up but one of whose steps needs the griddle that
+// is not (tri-tip's sear), when another of its methods needs no griddle. {food}: its name or label; {step}:
+// that step, lower case; {method}: the other method's label, in straight double quotes.
 export const NO_GRIDDLE_PICK_METHOD =
-  "{food}'s {step} needs a griddle. Add one in Gear, or pick {method} in Food details.";
+  '{food}\'s {step} needs a griddle. Add one in Gear, or pick "{method}" in Food details.';
 
 export function tempFactor(rules: Rules, tempF: number): number {
   const m = rules.tempModel;
@@ -203,6 +203,7 @@ function buildItem(rules: Rules, input: ItemInput, plan: PlanInput): Omit<Planne
       setsPit: !!p.setsPit,
       anchorToEnd: !!p.anchorToEnd,
       checkStep: !!p.checkStep,
+      ...(p.offHeat ? { offHeat: true } : {}),
     };
   });
 
@@ -512,11 +513,12 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
       });
   }
 
-  // Grate load (estimate)
+  // Grate load (estimate). A food off the heat while the smoker climbs takes no space (T-075).
   let peak = 0;
-  for (const x of sm) {
+  const onGrate = sm.filter(x => !x.p.offHeat);
+  for (const x of onGrate) {
     const t = x.p.start;
-    const active = new Set(sm.filter(y => y.p.start <= t && t < y.p.end).map(y => y.it));
+    const active = new Set(onGrate.filter(y => y.p.start <= t && t < y.p.end).map(y => y.it));
     peak = Math.max(
       peak,
       [...active].reduce((a, it) => a + it.footprintSqIn, 0),

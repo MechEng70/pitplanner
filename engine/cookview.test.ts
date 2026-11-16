@@ -88,6 +88,26 @@ test('countdown: a day or more away reads in days and whole hours, no minutes', 
   assert.equal(countdown(now + 71 * HR + 40 * 60_000, now), 'in 3 days');
 });
 
+// T-075 (Jason, 2026-11-16): the tri-tip is off the heat while the smoker climbs to 500F, so the climb is
+// drawn like a hold (dashed, "hold"), not as a hot bar; then the sear, then the rest.
+test('lanes: the smoker sear tri-tip holds during the climb, in the hold style', () => {
+  const tri = buildPlan(rules, {
+    ...input,
+    rateOverrides: {},
+    items: [{ id: 't', foodId: 'tritip', methodId: 'smokerSear', quantity: 2.5 }],
+  });
+  const t = lanes(tri, units, k => k)[0];
+  assert.deepEqual(
+    t.segments.map(s => [s.tone, s.label, (s.end - s.start) / MIN]),
+    [
+      ['smoke', 'smoke', 90],
+      ['hold', 'hold', 15],
+      ['hot', 'sear', 10],
+      ['hold', 'rest', 10],
+    ],
+  );
+});
+
 test('lanes: phases by cooker, hot phase labelled with temp, rest dashed', () => {
   const ls = lanes(plan, units, k => k);
   const b = ls.find(l => l.id === 'b')!,

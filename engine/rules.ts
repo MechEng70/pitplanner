@@ -45,7 +45,10 @@ export interface RulePhase {
   label: string;
   short: string;
   temp: number | 'pit';
-  /** Used instead of `temp` when the smoker tops out below it (tri-tip sears at 450F on one that cannot reach 500F). */
+  /**
+   * Used instead of `temp` when the smoker tops out below it (tri-tip sears at 450F on one that cannot reach
+   * 500F). The lowest temp the step can be done at: a smoker that tops out below it cannot do the method.
+   */
   fallbackTemp?: number;
   fraction?: number; // share of the scaled total
   fixedMin?: number;
@@ -55,6 +58,12 @@ export interface RulePhase {
   anchorToEnd?: boolean;
   scaleWithPit?: boolean;
   setsPit?: boolean;
+  /**
+   * The food is off the heat during this step (T-075: tri-tip tented while the smoker climbs to sear temp).
+   * The step still sets the smoker and still clashes with other foods' temps, but the food takes no grate
+   * space, shares the smoker with nothing, and the lane chart draws it as a hold.
+   */
+  offHeat?: boolean;
 }
 
 export interface RulePull {
@@ -180,10 +189,33 @@ export function missingCookers(food: RuleFood, method: RuleMethod, cookers: Cook
   return methodCookers(food, method).filter(k => !cookers[k]);
 }
 
+/**
+ * The lowest temp a method's smoker steps can be done at, from their fallback temps (T-075: 450F for the
+ * smoker sear), or null when no step sets one.
+ */
+export function smokerReachF(food: RuleFood, method: RuleMethod): number | null {
+  const m = resolveMethod(food, method);
+  const temps = m.phases
+    .filter(p => (p.cooker ?? m.cooker) === 'smoker' && p.fallbackTemp != null)
+    .map(p => p.fallbackTemp!);
+  return temps.length ? Math.max(...temps) : null;
+}
+
+/** The smoker set up tops out below the lowest temp one of the method's steps can be done at. */
+export function smokerTooCool(food: RuleFood, method: RuleMethod, cookers: Cookers): boolean {
+  const reach = smokerReachF(food, method);
+  return reach != null && cookers.smoker != null && cookers.smoker.maxTempF < reach;
+}
+
+/** The cookers can do every step of the method: each cooker is set up and the smoker gets hot enough. */
+export function canDoMethod(food: RuleFood, method: RuleMethod, cookers: Cookers): boolean {
+  return missingCookers(food, method, cookers).length === 0 && !smokerTooCool(food, method, cookers);
+}
+
 /** The first of a food's methods the cookers can do every step of (T-075), if any. */
 export function firstDoableMethod<M extends RuleMethod>(
   food: Omit<RuleFood, 'methods'> & { methods: M[] },
   cookers: Cookers,
 ): M | undefined {
-  return food.methods.find(m => missingCookers(food, m, cookers).length === 0);
+  return food.methods.find(m => canDoMethod(food, m, cookers));
 }

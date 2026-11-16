@@ -5,6 +5,7 @@
 import { buildPlan } from '../../engine/plan.ts';
 import type { Cookers, ItemInput, PlanInput, Warning } from '../../engine/types.ts';
 import {
+  canDoMethod,
   firstDoableMethod,
   missingCookers,
   resolveMethod,
@@ -136,7 +137,10 @@ export interface CookerGap {
  * Put each food on cookers the receiver has (failure mode 13). Every cooker a method's steps need is checked,
  * not only its own (T-075): a griddle food moves to the smoker when there is no griddle, and a tri-tip with a
  * griddle sear takes the first of its methods the receiver can fully do (the smoker sear). Foods with no
- * method the receiver can do stay as they are and are listed in gaps, under the first cooker missing.
+ * method the receiver can do stay as they are and are listed in gaps, under the first cooker missing. A
+ * method the receiver's smoker cannot get hot enough for (the smoker sear on one that tops out under 450F)
+ * also takes the first method they can do; with every cooker set up there is no box line for it (no words
+ * yet, T-075), but it counts as moved for the import's conflicts.
  */
 export function mapToCookers(
   rules: Rules,
@@ -148,21 +152,23 @@ export function mapToCookers(
   const out = items.map(it => {
     const food = foodOf(rules, it.foodId)!;
     const m = methodOf(food, it.methodId)!;
+    if (canDoMethod(food, m, cookers)) return it;
     const missing = missingCookers(food, m, cookers);
-    if (!missing.length) return it;
     const found = firstDoableMethod(food, cookers);
     if (!found) {
-      gaps.push({ foodName: food.name, cooker: missing[0]! });
+      if (missing.length) gaps.push({ foodName: food.name, cooker: missing[0]! });
       return it;
     }
     const alt = resolveMethod(food, found);
+    const swap = { ...it, methodId: alt.id, options: cleanOptions(alt, it.options), restMin: alt.restMin.default };
+    if (!missing.length) return swap;
     moves.push({
       foodName: food.name,
       from: missing[0]!,
       to: alt.cooker,
       ...(alt.importMove && alt.cooker === m.cooker ? { how: alt.importMove } : {}),
     });
-    return { ...it, methodId: alt.id, options: cleanOptions(alt, it.options), restMin: alt.restMin.default };
+    return swap;
   });
   return { items: out, moves, gaps };
 }

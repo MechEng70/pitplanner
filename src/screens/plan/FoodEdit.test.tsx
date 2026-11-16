@@ -8,8 +8,9 @@ import { SHEET_OUT_MS } from '@/components/kit/sheet';
 import { saturday } from '@/lib/fixtures/saturday';
 import { defaultOptions, foods } from '@/lib/rules';
 import { defaultGriddle } from '@/lib/gear';
+import type { Units } from '@/lib/format';
 import { NOW, storeWrapper, testRepos } from '@/test/store';
-import { FoodEdit } from './FoodEdit';
+import { FoodEdit, SMOKER_NEEDS } from './FoodEdit';
 
 const units = { temp: 'F', weight: 'lb' } as const;
 const base = (over: Partial<PlanInput> = {}): PlanInput => ({ ...saturday, rateOverrides: {}, items: [], ...over });
@@ -46,7 +47,7 @@ const settle = () => act(() => jest.advanceTimersByTime(SHEET_OUT_MS));
 const frames = () => act(() => jest.advanceTimersByTime(100));
 
 /** As the Plan tab opens it: an existing item is already in the plan, a new one is not. */
-async function open(item: ItemInput, opts: { isNew?: boolean; base?: PlanInput } = {}) {
+async function open(item: ItemInput, opts: { isNew?: boolean; base?: PlanInput; units?: Units } = {}) {
   const onSave = jest.fn();
   const onRemove = jest.fn();
   const onClose = jest.fn();
@@ -57,7 +58,7 @@ async function open(item: ItemInput, opts: { isNew?: boolean; base?: PlanInput }
       initial={item}
       isNew={opts.isNew ?? false}
       base={opts.isNew ? b : { ...b, items: [...b.items, item] }}
-      units={units}
+      units={opts.units ?? units}
       onSave={onSave}
       onRemove={onRemove}
       onClose={onClose}
@@ -262,14 +263,49 @@ describe('tri-tip with and without a griddle (T-075)', () => {
     expect(screen.queryByText('Add in Gear')).toBeNull();
   });
 
-  test('a griddle sear already on the menu with no griddle says which method to pick (draft wording)', async () => {
+  test('a griddle sear already on the menu with no griddle says which method to pick', async () => {
     await open(tritip('reverse'));
-    const draft = NO_GRIDDLE_PICK_METHOD.replace('{food}', 'Tri-tip')
+    const line = NO_GRIDDLE_PICK_METHOD.replace('{food}', 'Tri-tip')
       .replace('{step}', 'sear')
       .replace('{method}', 'Smoke, then sear on the smoker');
-    expect(screen.getByText(draft)).toBeOnTheScreen();
+    expect(screen.getByText(line)).toBeOnTheScreen();
     await fireEvent.press(methods().getByRole('radio', { name: 'Smoke, then sear on the smoker' }));
-    expect(screen.queryByText(draft)).toBeNull();
+    expect(screen.queryByText(line)).toBeNull();
+  });
+
+  // Jason, 2026-11-16: the smoker sear is offered only on a smoker that reaches its sear temp, 500F or the
+  // 450F fallback. Below that its chip is off, with the temp it needs where Add in Gear shows.
+  const smoker = (maxTempF: number) => ({ smoker: { ...saturday.cookers.smoker!, maxTempF } });
+  const sear = () => methods().getByRole('radio', { name: 'Smoke, then sear on the smoker' });
+
+  test('smoker max 425F: the smoker sear is off, "Needs 450F" in the Add in Gear place', async () => {
+    await open(tritip('brisketStyle'), { base: base({ cookers: smoker(425) }) });
+    expect(sear()).toBeDisabled();
+    expect(within(sear()).getByText(SMOKER_NEEDS.replace('{temp}', '450F'))).toBeOnTheScreen();
+    expect(within(sear()).getByText('Needs 450F')).toBeOnTheScreen();
+    expect(within(sear()).queryByText('Add in Gear')).toBeNull();
+    // The griddle sear is off for the griddle, with its own note.
+    const griddle = methods().getByRole('radio', { name: 'Smoke, then griddle sear' });
+    expect(within(griddle).getByText('Add in Gear')).toBeOnTheScreen();
+    expect(methods().getByRole('radio', { name: 'Smoked brisket-style (200F)' })).toBeEnabled();
+  });
+
+  test('smoker max 425F in Celsius: the note is in C', async () => {
+    await open(tritip('brisketStyle'), { base: base({ cookers: smoker(425) }), units: { temp: 'C', weight: 'kg' } });
+    expect(within(sear()).getByText('Needs 232C')).toBeOnTheScreen();
+  });
+
+  test.each([450, 500, 550])('smoker max %iF: the smoker sear is on, with no note', async max => {
+    await open(tritip('smokerSear'), { base: base({ cookers: smoker(max) }) });
+    expect(sear()).toBeEnabled();
+    expect(within(sear()).queryByText(/^Needs/)).toBeNull();
+  });
+
+  test('no smoker: the smoker sear needs a smoker (Add in Gear), not a temp', async () => {
+    await open(tritip('smokerSear'), { base: base({ cookers: {} }) });
+    expect(sear()).toBeDisabled();
+    expect(within(sear()).getByText('Add in Gear')).toBeOnTheScreen();
+    expect(screen.queryByText(/^Needs/)).toBeNull();
   });
 });
 
@@ -285,8 +321,8 @@ describe('regression: one line per warning and no duplicate React keys', () => {
 
   test('no smoker: brisket says it needs one once', async () => {
     await open(brisket, { base: base({ cookers: {} }) });
-    expect(screen.getAllByText('Brisket needs a smoker. Add one in Gear.')).toHaveLength(1);
     expect(keyErrors()).toEqual([]);
+    expect(screen.getAllByText('Brisket needs a smoker. Add one in Gear.')).toHaveLength(1);
   });
 
   test('two smoker conflicts for one food show as two lines', async () => {

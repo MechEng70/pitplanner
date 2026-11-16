@@ -8,6 +8,8 @@ import {
   methodCookers,
   missingCookers,
   resolveMethod,
+  smokerReachF,
+  smokerTooCool,
   type RuleFood,
   type RuleSource,
   type Rules,
@@ -168,6 +170,8 @@ const GIVEN = 'given by Jason, 2026-11-16';
 const LOUISIANA = `Louisiana Grills, reverse-seared tri-tip (https://louisiana-grills.com/blogs/pork/reverse-seared-tri-tip), ${GIVEN}`;
 const TRAEGER_ZA = `Traeger, smoked tri-tip (https://www.traeger.com/za/en/recipes/smoked-tri-tip), ${GIVEN}`;
 const TRAEGER_AU = `Traeger, smoked tri-tip (https://traeger.com/au/en/recipes/smoked-tri-tip), ${GIVEN}`;
+// No URL was given for this one (Jason, 2026-11-16): none is made up.
+const USDA = `USDA FSIS, ${GIVEN}`;
 
 test('rules: tri-tip smoke then sear on the smoker: smoke as the reverse method, climb to 500F (450F), sear 8 min', () => {
   const tritip = rules.foods.find(f => f.id === 'tritip')!;
@@ -188,8 +192,8 @@ test('rules: tri-tip smoke then sear on the smoker: smoke as the reverse method,
   assert.deepEqual(m.phases[0], reverse.phases[0], "the smoke step is the reverse method's, to about 120F");
   const [, ramp, sear] = m.phases;
   assert.deepEqual(
-    [ramp.id, ramp.fixedMin, ramp.temp, ramp.fallbackTemp, ramp.setsPit, ramp.cooker],
-    ['ramp', 15, 500, 450, true, undefined],
+    [ramp.id, ramp.fixedMin, ramp.temp, ramp.fallbackTemp, ramp.setsPit, ramp.offHeat, ramp.cooker],
+    ['ramp', 15, 500, 450, true, true, undefined],
   );
   assert.deepEqual(
     [sear.id, sear.fixedMin, sear.temp, sear.fallbackTemp, sear.cooker],
@@ -199,19 +203,28 @@ test('rules: tri-tip smoke then sear on the smoker: smoke as the reverse method,
   assert.deepEqual(m.restMin, { default: 10, min: 10 });
 });
 
-test('rules: the smoker sear cites Louisiana Grills and two Traeger pages, and each one is needed', () => {
+test('rules: the smoker sear cites Louisiana Grills, two Traeger pages and USDA FSIS, and each one is needed', () => {
   const tritip = rules.foods.find(f => f.id === 'tritip')!;
   const cites = (tritip.sources ?? []).map(s => [s.cite, s.methods, [...s.covers].sort()]);
   assert.deepEqual(cites, [
     [LOUISIANA, ['smokerSear'], ['rate']],
     [TRAEGER_ZA, ['smokerSear'], ['highHeat', 'preheat']],
     [TRAEGER_AU, ['smokerSear'], ['doneTemp', 'highHeat', 'rest']],
+    [USDA, ['smokerSear'], ['doneTemp']],
   ]);
+  // The card's pull range, 130-145F: 145F is USDA's minimum for whole cuts of beef; 130-135F is the target.
+  assert.equal(
+    tritip.sources!.find(s => s.cite === USDA)!.says,
+    '145F is the minimum for whole cuts of beef, with a 3 min rest.',
+  );
+  assert.deepEqual(resolveMethod(tritip, tritip.methods[1]).pull.tempF, [130, 145]);
   assert.deepEqual(unsourced(tritip), []);
   const without = (cite: string) => unsourced({ ...tritip, sources: tritip.sources!.filter(s => s.cite !== cite) });
   assert.deepEqual(without(LOUISIANA), ['rate']);
   assert.deepEqual(without(TRAEGER_ZA), ['preheat']);
-  assert.deepEqual(without(TRAEGER_AU), ['doneTemp']);
+  assert.deepEqual(without(TRAEGER_AU), [], 'USDA still backs the done temp');
+  const noDone = tritip.sources!.filter(s => s.cite !== TRAEGER_AU && s.cite !== USDA);
+  assert.deepEqual(unsourced({ ...tritip, sources: noDone }), ['doneTemp']);
   assert.deepEqual(unsourced({ ...tritip, sources: [] }), [], 'with no sources the method is not checked, as before');
   // A source naming no method would back all three, and then the other two would need theirs too.
   const forAll = tritip.sources!.map(({ methods: _m, ...s }) => s);
@@ -250,4 +263,27 @@ test("rules: the cookers a method needs are every step's, and the first method t
   assert.equal(firstDoableMethod(tritip, { griddle }), undefined);
   assert.equal(firstDoableMethod(food('breasts'), { smoker })?.id, 'smoker');
   assert.equal(firstDoableMethod(food('wings'), { griddle })?.id, 'griddle');
+});
+
+// T-075 (Jason, 2026-11-16): the smoker sear needs a smoker that reaches its lowest sear temp, 450F (500F, or
+// 450F on one that tops out lower). Below that the method is one the cookers cannot fully do.
+test("rules: a smoker that tops out below a step's fallback temp cannot do the method", () => {
+  const food = (id: string) => rules.foods.find(f => f.id === id)!;
+  const tritip = food('tritip');
+  const [reverse, sear, brisketStyle] = tritip.methods;
+  const smoker = (maxTempF: number) => ({ id: 's', maxTempF }) as Cookers['smoker'];
+  const griddle = { id: 'g' } as Cookers['griddle'];
+  assert.equal(smokerReachF(tritip, sear), 450, 'from the data: the fallback temp');
+  assert.equal(smokerReachF(tritip, reverse), null);
+  assert.equal(smokerReachF(tritip, brisketStyle), null);
+  assert.equal(smokerTooCool(tritip, sear, { smoker: smoker(425) }), true);
+  assert.equal(smokerTooCool(tritip, sear, { smoker: smoker(449) }), true);
+  for (const max of [450, 475, 500, 550]) assert.equal(smokerTooCool(tritip, sear, { smoker: smoker(max) }), false);
+  assert.equal(smokerTooCool(tritip, sear, {}), false, 'no smoker: a missing cooker, not a cool one');
+  assert.equal(firstDoableMethod(tritip, { smoker: smoker(425) })?.id, 'brisketStyle');
+  assert.equal(firstDoableMethod(tritip, { smoker: smoker(425), griddle })?.id, 'reverse');
+  assert.equal(firstDoableMethod(tritip, { smoker: smoker(450) })?.id, 'smokerSear');
+  assert.equal(firstDoableMethod(tritip, { smoker: smoker(500) })?.id, 'smokerSear');
+  // A step with no fallback temp sets no reach: wings at 400F stay as they are on a cooler smoker.
+  assert.equal(firstDoableMethod(food('wings'), { smoker: smoker(350) })?.id, 'smokeCrisp');
 });

@@ -2,8 +2,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { buildPlan, NO_GRIDDLE_PICK_METHOD, rateHintFor, tempFactor, type Rules } from './plan.ts';
-import { shiftRemaining, markStepDone, pitOutage } from './live.ts';
+import { buildPlan, derive, NO_GRIDDLE_PICK_METHOD, rateHintFor, tempFactor, type Rules } from './plan.ts';
+import { shiftRemaining, markStepDone, pitOutage, smokerOverlaps } from './live.ts';
 import { showTemp } from './units.ts';
 import type { Plan, PlanInput, SmokerProfile } from './types.ts';
 
@@ -565,6 +565,42 @@ test('tri-tip smoker sear at 225F: smoke 35 min per lb to about 120F, 15 min cli
   assert.deepEqual(p.warnings, []);
 });
 
+// Jason, 2026-11-16: the tri-tip is off the heat while the smoker climbs. The climb still sets the smoker to
+// the sear temp and still clashes with low foods (next tests), but the tri-tip takes no grate space then and
+// does not share the smoker with anything.
+test('tri-tip smoker sear: off the heat during the climb, so no grate space and no shared smoker then', () => {
+  const p = buildPlan(rules, tritipSear());
+  assert.deepEqual(
+    p.items[0].phases.map(x => [x.id, !!x.offHeat]),
+    [
+      ['smoke', false],
+      ['ramp', true],
+      ['sear', false],
+    ],
+  );
+  // Breasts on the smoker only during the climb (clear-pit off): 88 sq in alone, not 88 + 45 for the tri-tip.
+  const breasts = { id: 'c', foodId: 'breasts', methodId: 'smoker', quantity: 4, options: { thickness: 'pounded' } };
+  const input = tritipSear({ clearPitBeforeHighHeat: false });
+  input.items = [...input.items, breasts];
+  const built = buildPlan(rules, input);
+  const c = built.items.find(i => i.input.id === 'c')!;
+  const ramp = built.items.find(i => i.input.id === 't')!.phases[1];
+  c.phases[0].start = ramp.start;
+  c.phases[0].end = ramp.end;
+  const climbOnly = derive(rules, input, built.items, built.serveAt);
+  assert.equal(climbOnly.peakFootprintSqIn, 88);
+  assert.deepEqual(smokerOverlaps(climbOnly), []);
+  // The same stretch on the smoke step is shared: both foods count.
+  c.phases[0].start = local(15, 0);
+  c.phases[0].end = local(15, 30);
+  const sharing = derive(rules, input, built.items, built.serveAt);
+  assert.equal(sharing.peakFootprintSqIn, 88 + 45);
+  assert.deepEqual(
+    smokerOverlaps(sharing).map(o => o.itemIds),
+    [['c', 't']],
+  );
+});
+
 test('tri-tip smoker sear: the 60 min smoke floor of the reverse method holds for a small one', () => {
   const p = buildPlan(rules, tritipSear({}, 1));
   assert.deepEqual(
@@ -651,17 +687,20 @@ test('regression: a missing smoker or griddle is said once per food, not once pe
   assert.equal(new Set(keys).size, keys.length);
 });
 
-test('no griddle: tri-tip names the method that needs none (draft wording); other griddle foods keep theirs', () => {
+test("no griddle: tri-tip names the method that needs none (Jason's words); other griddle foods keep theirs", () => {
   const smokerOnly = { smoker: pitBoss };
   const tri = { id: 't', foodId: 'tritip', methodId: 'reverse', quantity: 2.5 };
   const p = buildPlan(rules, saturday({ cookers: smokerOnly, items: [tri] }));
   const label = (rules as Rules).foods[1].methods.find(m => m.id === 'smokerSear')!.label;
-  const draft = NO_GRIDDLE_PICK_METHOD.replace('{food}', 'Tri-tip')
-    .replace('{step}', 'sear')
-    .replace('{method}', label);
+  const line = NO_GRIDDLE_PICK_METHOD.replace('{food}', 'Tri-tip').replace('{step}', 'sear').replace('{method}', label);
   assert.deepEqual(
     p.warnings.filter(w => w.code === 'NO_GRIDDLE').map(w => [w.message, w.itemIds, w.level]),
-    [[draft, ['t'], 'warn']],
+    [[line, ['t'], 'warn']],
+  );
+  // Jason, 2026-11-16: the final sentence, the method's name in straight double quotes.
+  assert.equal(
+    line,
+    'Tri-tip\'s sear needs a griddle. Add one in Gear, or pick "Smoke, then sear on the smoker" in Food details.',
   );
   const breasts = { id: 'c', foodId: 'breasts', methodId: 'griddle', quantity: 4 };
   const q = buildPlan(rules, saturday({ cookers: smokerOnly, items: [breasts] }));
