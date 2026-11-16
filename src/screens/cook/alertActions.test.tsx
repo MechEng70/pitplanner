@@ -83,6 +83,25 @@ describe('taps made while the app was closed, applied at start', () => {
     expect(repos.activeCook.load()!.done[WRAP]).toBe(AT_1135 + MIN);
   });
 
+  test('+15 that moves serve: the one new alarm set has the wings and the breasts at their new times (T-076)', async () => {
+    // The brisket's pull check at 3:40 PM put off four times; taps 3 and 4 move serve 15 min each.
+    const PULL = 'pull:b:';
+    const AT_340 = AT_1023 + 317 * MIN;
+    const cook = { ...cookAt(AT_1023), done: { ...cookAt(AT_1023).done, [WRAP]: AT_1135 } };
+    const taps = [0, 1, 2, 3].map(i => tap('snooze15', AT_340 + i * 15 * MIN, [PULL]));
+    const { repos, alarms } = await start(cook, AT_340 + 46 * MIN, taps);
+    expect(repos.activeCook.load()!.plan.serveAt).toBe(AT_340 + 110 * MIN); // 5:30 PM
+    expect(screen.getByText(/Serve moved to 5:30 PM\. The other foods moved with it\.$/)).toBeOnTheScreen();
+    expect(alarms.sets).toHaveLength(1);
+    const ringsAt = (key: string) => alarms.sets[0]!.find(a => a.keys.includes(key))?.at;
+    expect(ringsAt('phase:w:crisp')).toBe(AT_340 + 70 * MIN); // 4:50 PM, was 4:20
+    expect(ringsAt('griddleOn::')).toBe(AT_340 + 75 * MIN); // 4:55 PM, was 4:25
+    expect(ringsAt('phase:c:cook')).toBe(AT_340 + 90 * MIN); // 5:10 PM, was 4:40
+    expect(ringsAt('pull:c:')).toBe(AT_340 + 102 * MIN); // 5:22 PM, was 4:52
+    expect(ringsAt('pull:w:')).toBe(AT_340 + 105 * MIN); // 5:25 PM, was 4:55
+    expect(ringsAt('serve::')).toBe(AT_340 + 110 * MIN);
+  });
+
   test('Open changes nothing and shows no notice', async () => {
     const { repos, alarms } = await start(cookAt(AT_1023), AT_1135 + 5 * MIN, [tap('open', AT_1135 + MIN)]);
     expect(repos.activeCook.load()).toEqual(cookAt(AT_1023));

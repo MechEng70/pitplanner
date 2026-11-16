@@ -96,14 +96,18 @@ Artboard names refer to the mockup canvas.
 
 | Action | Engine call | Result |
 |---|---|---|
-| Done on a check step, early or late | `markStepDone` | That food's later phases move by the difference. UI then asks: shift the rest, or keep serve time (hold absorbs it). |
+| Done on a check step, early or late | `markStepDone` | That food's later phases move by the difference. UI then asks: shift the rest, or keep serve time (hold absorbs it). Late with Move serve: the other foods follow (below). Early with Move serve: serve moves earlier only as far as every other food can still be ready (below); when no other food can be ready sooner, nothing is asked and serve is kept (T-076). |
 | Running behind / ahead | `shiftRemaining(now, delta, keepServe)` | Every not-yet-finished phase moves; keepServe keeps serve time and shows the hold impact. |
-| Not yet at a check | `postponeStep(key, now, +30, keepServe)` (a step during the cook: `markStepDone`; a pull: `extendCook`) | That food only. Serve stays while every food keeps its minimum rest, else serve moves; the row says which. (No "raise the smoker 25F" suggestion: dropped, Jason, 2026-11-15.) |
-| Pit went out / Back up to temp | `pitOutage(down, up, recovery=15)` | Smoker foods lose the downtime plus recovery. |
+| Not yet at a check | `postponeStep(key, now, +30, keepServe)` (a step during the cook: `markStepDone`; a pull: `extendCook`) | That food only. Serve stays while every food keeps its minimum rest, else serve moves and the other foods follow (below); the row says which. (No "raise the smoker 25F" suggestion: dropped, Jason, 2026-11-15.) |
+| Pit went out / Back up to temp | `pitOutage(down, up, recovery=15)` | Smoker foods lose the downtime plus recovery. Move serve: the other foods (griddle, oven) follow from the time the pit is back up (T-076). |
 | Undo (the most recent Done) | `undoDone` (`engine/undo.ts`) | The cook goes back to what it was just before the tap: the step is not done, and the plan, serve time, reminders and on / off heat times are as they were, so the alarm set is too. A Done tapped on an alert counts the same. A change made after the tap (Running behind, Not yet, +15, Back up to temp) is taken back with it, and the row says so. A step that was already due rings again 10 min after the undo and still reads as overdue. |
 | Quiet alerts 30 min | UI only | Alarms inside the window are held and fire as one summary at the end; steps stay overdue. |
 | Start over | UI | Back to Plan with the same menu. |
 | End cook | UI + history | Save logs actual minutes on heat per food (feeds rates) or Discard (logs nothing). Cancels all alarms. |
+
+**Serve moves for one food: the others follow** (T-076; Jason, 2026-11-16). When serve moves later because one food is late (Done late or Not yet with Move serve, +15 min from the alert, Back up to temp with Move serve), every other food moves by the same minutes, as Running behind does: a food not on yet moves whole, a food on the heat cooks that much longer, and holds stay as planned. A food already off the heat cannot move and its hold grows. The lock screen and the app make the same change: both go through the same engine calls. With the app fully closed, a tap waits on the phone and the other foods' alerts move when the app next opens. When serve moved, the Live cook notice reads "Serve moved to 5:40 PM. The other foods moved with it." (with one food: "Serve moved to 5:40 PM.").
+
+**Done early with Move serve** (T-076; Jason, 2026-11-16, choices 1A, 2A, 3A, 4A). Serve moves earlier only as far as every other food can still come off the heat and rest to its minimum (the smaller of its minimum and its planned rest) before it. A food not on yet starts sooner by up to the same minutes and keeps its planned rest; its hold gives the rest of the way. It never starts sooner when that would put one of its future steps (or its prep, or the fire, griddle, oven or smoker temp steps worked out from it) before now or inside Quiet time, or onto the smoker at a clashing temp the Keep serve plan does not have; it stops at the last 5 min that does not. A food on or off the heat, or late for its next step, cannot start sooner and never cooks shorter: only its hold gives. With one food serve moves by the full amount. When no earlier serve is possible, Done saves Keep serve and asks nothing. From the lock screen an early Done keeps serve whenever every food keeps its minimum rest, as every lock-screen change does, so in practice it never moves serve earlier.
 
 Scheduled times set by these changes round to 5 minutes (actual times, like when food came off, stay exact). After every change: re-run `derive`, cancel every scheduled alarm, schedule the new set from `plan.events`. Never patch alarms one at a time.
 
@@ -124,7 +128,7 @@ A change that makes a smoker conflict the plan did not have at Start cook, or a 
 | # | Failure | Effect | What the app does | Test |
 |---|---|---|---|---|
 | 1 | User misses an alert (asleep, outside, phone inside) | Step late, cook drifts | Repeat every 10 min, overdue counter, Done asks shift-or-keep-serve | Alarm repeat test on device in Doze |
-| 2 | User does a step early | Plan out of sync | Done early re-plans with the same question | `markStepDone` unit test |
+| 2 | User does a step early | Plan out of sync | Done early re-plans with the same question; Move serve moves serve only as far as the other foods can be ready, and with no earlier serve possible nothing is asked (T-076) | `markStepDone` unit test |
 | 3 | Meat runs ahead (probe tender early) | Long hold | Hold grows; warn past the food's hold limit | Hold limit unit test |
 | 4 | Meat runs behind (long stall) | Late dinner | Not yet +30, shows serve impact (no "+25F" suggestion: dropped, Jason, 2026-11-15) | `shiftRemaining` unit test |
 | 5 | Pit flames out or runs out of pellets | Meat stalls, cools | Pit went out stops the clock; downtime + 15 min recovery added | `pitOutage` unit test |

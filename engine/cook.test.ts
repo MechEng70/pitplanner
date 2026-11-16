@@ -172,3 +172,207 @@ test('postponeStep on a fixed step that is still ahead: reminds from now, or not
   );
   assert.equal(postponeStep(rules, input, p, fire.key, fire.event.at - 30 * MIN, 15, true).reminderAt, null);
 });
+
+// T-076: serve moves for one food, and the other foods follow (Jason, 2026-11-16).
+const at = (p: Plan, id: string, phaseId: string) => item(p, id).phases.find(x => x.id === phaseId)!.start;
+/** Every step due before `now` done on time, except the keys in `skip`. */
+const doneBefore = (p: Plan, now: number, skip: string[] = []) =>
+  keyedEvents(p)
+    .filter(k => k.event.alarm && k.event.at < now && !skip.includes(k.key))
+    .map(k => k.key);
+const noLongHold = (p: Plan) => !p.warnings.some(w => w.code === 'HOLD_TOO_LONG');
+
+test('serve moved for one late food (Not yet at the pull): the other foods move with it and keep their holds', () => {
+  const p = plan();
+  const now = local(15, 50); // brisket pull was 3:40; the wings are on, the breasts are not
+  const q = extendCook(rules, input, p, 'b', now, 30, false);
+  assert.equal(q.serveAt, p.serveAt + 40 * MIN);
+  assert.equal(hold(q, 'b'), hold(p, 'b'));
+  for (const id of ['w', 'c']) {
+    assert.equal(item(q, id).finish, item(p, id).finish + 40 * MIN, id);
+    assert.equal(hold(q, id), hold(p, id), id);
+  }
+  // The wings were on: the phase they are in runs 40 min longer, the next ones move whole.
+  assert.equal(item(q, 'w').phases[0].start, item(p, 'w').phases[0].start);
+  assert.equal(item(q, 'w').phases[0].end, item(p, 'w').phases[0].end + 40 * MIN);
+  assert.equal(at(q, 'w', 'crisp'), at(p, 'w', 'crisp') + 40 * MIN);
+  assert.equal(at(q, 'c', 'cook'), at(p, 'c', 'cook') + 40 * MIN);
+  assert.ok(noLongHold(q));
+  // Keep serve is as before: only the brisket moves.
+  const kept = extendCook(rules, input, p, 'b', now, 30, true);
+  assert.equal(item(kept, 'w').finish, item(p, 'w').finish);
+});
+
+test('serve moved for one late food (Done 40 min late on the wrap): the other foods move with it and keep their holds', () => {
+  const p = plan();
+  const late = at(p, 'b', 'wrap') + 40 * MIN;
+  const r = markStepDone(rules, input, p, 'b', 'wrap', late, false);
+  assert.equal(r.deltaMin, 40);
+  assert.equal(r.plan.serveAt, p.serveAt + 40 * MIN);
+  for (const id of ['b', 'w', 'c']) assert.equal(hold(r.plan, id), hold(p, id), id);
+  assert.equal(at(r.plan, 'w', 'smoke'), at(p, 'w', 'smoke') + 40 * MIN);
+  assert.equal(at(r.plan, 'c', 'cook'), at(p, 'c', 'cook') + 40 * MIN);
+  assert.ok(noLongHold(r.plan));
+  // +15 on the wrap alert: the others move from the time of the tap, not from 15 min later.
+  const tap = at(p, 'b', 'wrap') + 50 * MIN;
+  const snoozed = postponeStep(rules, input, p, 'phase:b:wrap', tap, 15, false).plan;
+  assert.equal(snoozed.serveAt, p.serveAt + 65 * MIN);
+  for (const id of ['w', 'c']) assert.equal(hold(snoozed, id), hold(p, id), id);
+});
+
+test('a food already off the heat cannot follow a later serve: its hold grows', () => {
+  const p = plan();
+  const off = markPullDone(rules, input, p, 'b', local(15, 40));
+  // Not yet on the wings at 4:30 PM: they come off at 5:10, not 4:55.
+  const q = extendCook(rules, input, off, 'w', local(16, 30), 15, false);
+  assert.equal(q.serveAt, p.serveAt + 15 * MIN);
+  assert.equal(item(q, 'b').finish, local(15, 40));
+  assert.equal(hold(q, 'b'), hold(p, 'b') + 15);
+  assert.equal(hold(q, 'c'), hold(p, 'c'));
+});
+
+test('Back up to temp with Move serve: the griddle food moves with serve too', () => {
+  const p = plan();
+  const o = pitOutage(rules, input, p, local(9, 0), local(9, 20), 10, false);
+  assert.equal(o.serveAt, p.serveAt + 30 * MIN);
+  assert.equal(at(o, 'c', 'cook'), at(p, 'c', 'cook') + 30 * MIN);
+  for (const id of ['b', 'w', 'c']) assert.equal(hold(o, id), hold(p, id), id);
+  assert.equal(o.griddleOnAt, p.griddleOnAt! + 30 * MIN);
+  // Keep serve: the griddle food stays put, as before.
+  const kept = pitOutage(rules, input, p, local(9, 0), local(9, 20), 10, true);
+  assert.equal(at(kept, 'c', 'cook'), at(p, 'c', 'cook'));
+});
+
+// Done early with Move serve (T-076 rule, choices 1A, 2A, 3A, 4A). Times are Eastern on the 3F cook; 4F adds
+// St. Louis ribs 3-2-1 (on 10:05 AM, wrap 1:05, unwrap 3:05, off 4:05 PM, hold 45, minimum 10).
+const input4: PlanInput = {
+  ...input,
+  items: [...input.items, { id: 'r', foodId: 'stlribs', methodId: '321', quantity: 2 }],
+};
+const plan4 = () => buildPlan(rules, input4);
+/** Done early on `itemId`'s `phaseId` at `now`, Move serve, with the steps before `now` done. */
+function early(
+  inp: PlanInput,
+  p: Plan,
+  itemId: string,
+  phaseId: string,
+  now: number,
+  o: { skip?: string[]; notBefore?: number } = {},
+) {
+  const done = doneBefore(p, now, o.skip);
+  return markStepDone(rules, inp, p, itemId, phaseId, now, false, { now, done, notBefore: o.notBefore }).plan;
+}
+
+test('Done early, Move (T1): wrap 20 min early, every other food can start sooner, so serve moves 20 min', () => {
+  const p = plan();
+  const q = early(input, p, 'b', 'wrap', local(11, 15));
+  assert.equal(q.serveAt, local(16, 40));
+  assert.equal(item(q, 'b').finish, local(15, 20));
+  assert.equal(hold(q, 'b'), 60);
+  assert.equal(at(q, 'w', 'smoke'), local(14, 55));
+  assert.equal(at(q, 'w', 'ramp'), local(15, 45));
+  assert.equal(item(q, 'w').finish, local(16, 35));
+  assert.equal(hold(q, 'w'), 5);
+  assert.equal(q.griddleOnAt, local(16, 5));
+  assert.equal(at(q, 'c', 'cook'), local(16, 20));
+  assert.equal(item(q, 'c').finish, local(16, 32));
+  assert.equal(hold(q, 'c'), 8);
+});
+
+test('Done early, Move (T2): one food, serve moves by the full amount, as before', () => {
+  const one: PlanInput = { ...input, items: [input.items[0]] };
+  const p = buildPlan(rules, one);
+  const q = early(one, p, 'b', 'wrap', local(11, 15));
+  assert.equal(q.serveAt, local(16, 40));
+  assert.equal(item(q, 'b').finish, local(15, 20));
+  assert.equal(hold(q, 'b'), 60);
+  // Without the options (now is the time of the Done) it is the same.
+  assert.deepEqual(markStepDone(rules, one, p, 'b', 'wrap', local(11, 15), false).plan, q);
+});
+
+test('Done early, Move (T3): the brisket is already off, so serve moves only as far as its minimum rest allows', () => {
+  const p = plan();
+  const q = early(input, p, 'w', 'ramp', local(15, 50));
+  assert.equal(q.serveAt, local(16, 45));
+  assert.equal(hold(q, 'b'), 45);
+  assert.equal(item(q, 'w').finish, local(16, 40));
+  assert.equal(hold(q, 'w'), 5);
+  assert.equal(q.griddleOnAt, local(16, 10));
+  assert.equal(at(q, 'c', 'cook'), local(16, 25));
+  assert.equal(item(q, 'c').finish, local(16, 37));
+  assert.equal(hold(q, 'c'), 8);
+});
+
+test('Done early, Move (T4): wrap 3 hr early, the others follow all the way', () => {
+  const p = plan();
+  const q = early(input, p, 'b', 'wrap', local(8, 35));
+  assert.equal(q.serveAt, local(14, 0));
+  assert.equal(item(q, 'b').finish, local(12, 40));
+  assert.equal(hold(q, 'b'), 60);
+  assert.equal(at(q, 'w', 'smoke'), local(12, 15));
+  assert.equal(item(q, 'w').finish, local(13, 55));
+  assert.equal(hold(q, 'w'), 5);
+  assert.equal(at(q, 'c', 'cook'), local(13, 40));
+  assert.equal(item(q, 'c').finish, local(13, 52));
+  assert.equal(hold(q, 'c'), 8);
+});
+
+test('Done early, Move (T5): ribs 20 min early, the brisket on the heat gives from its hold', () => {
+  const p = plan4();
+  const q = early(input4, p, 'r', 'unwrap', local(14, 45));
+  assert.equal(q.serveAt, local(16, 40));
+  assert.equal(item(q, 'b').finish, item(p, 'b').finish, 'a food on the heat never cooks shorter');
+  assert.equal(hold(q, 'b'), 40);
+  assert.equal(at(q, 'w', 'smoke'), local(14, 55));
+  assert.equal(at(q, 'w', 'ramp'), local(15, 45));
+  assert.equal(at(q, 'c', 'cook'), local(16, 20));
+  assert.equal(item(q, 'c').finish, local(16, 32));
+  assert.equal(hold(q, 'r'), hold(p, 'r'));
+});
+
+test('Done early, Move (T6): 40 min early, the brisket to its minimum rest, the wings stop short of the brisket', () => {
+  const p = plan4();
+  const q = early(input4, p, 'r', 'unwrap', local(14, 25));
+  assert.equal(q.serveAt, local(16, 30));
+  assert.equal(hold(q, 'b'), 30);
+  // 25 min, not 30: the climb to 400F starts as the brisket comes off at 3:40.
+  assert.equal(at(q, 'w', 'ramp'), local(15, 40));
+  assert.equal(hold(q, 'w'), 0);
+  assert.equal(at(q, 'c', 'cook'), local(16, 10));
+  assert.equal(item(q, 'c').finish, local(16, 22));
+  assert.equal(hold(q, 'r'), 55);
+  assert.ok(!q.warnings.some(w => w.code === 'PIT_CONFLICT'));
+  assert.ok(!q.warnings.some(w => w.code === 'REST_SHORT'));
+});
+
+test('Done early, Move (T7): ribs never put on, so they cannot be ready sooner: serve is kept', () => {
+  const p = plan4();
+  const now = local(11, 15);
+  const q = early(input4, p, 'b', 'wrap', now, { skip: ['phase:r:smoke'] });
+  const keep = markStepDone(rules, input4, p, 'b', 'wrap', now, true).plan;
+  assert.equal(q.serveAt, p.serveAt);
+  assert.deepEqual(q, keep);
+});
+
+test('Done early, Move (T7b): ribs on, but on at 225F until 4:05, so the wings cannot climb sooner', () => {
+  const p = plan4();
+  const q = early(input4, p, 'b', 'wrap', local(11, 15));
+  assert.equal(q.serveAt, local(16, 55));
+  assert.equal(at(q, 'w', 'smoke'), at(p, 'w', 'smoke'));
+  assert.equal(hold(q, 'w'), 0);
+  assert.equal(at(q, 'c', 'cook'), at(p, 'c', 'cook') - 5 * MIN);
+  assert.ok(!q.warnings.some(w => w.code === 'PIT_CONFLICT'));
+});
+
+test('Done early, Move (T8): a step in Quiet time never moves into it', () => {
+  const p = plan4();
+  const q = early(input4, p, 'r', 'unwrap', local(14, 50), { notBefore: local(15, 20) });
+  assert.equal(q.serveAt, local(16, 55));
+  assert.equal(at(q, 'w', 'smoke'), local(15, 15));
+  assert.equal(hold(q, 'w'), 0);
+  assert.equal(at(q, 'c', 'cook'), at(p, 'c', 'cook') - 5 * MIN);
+  // Without Quiet time the wings go on 15 min sooner and serve moves 15.
+  const free = early(input4, p, 'r', 'unwrap', local(14, 50));
+  assert.equal(free.serveAt, local(16, 45));
+  assert.equal(at(free, 'w', 'smoke'), local(15, 0));
+});

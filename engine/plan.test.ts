@@ -142,20 +142,35 @@ test('running 30 min late with serve kept: steps move, serve stays, brisket rest
   assert.equal(moved.serveAt, SERVE + 30 * MIN);
 });
 
-test('wrapping 15 min late shifts only the brisket', () => {
+// Until T-076 this was "shifts only the brisket" with Move serve: the wings stayed and their hold grew.
+test('wrapping 15 min late, Keep serve: only the brisket moves', () => {
   const p = buildPlan(rules, saturday());
   const wrap = ev(p, 'phase', 'b', 'wrap').at;
-  const r = markStepDone(rules, saturday(), p, 'b', 'wrap', wrap + 15 * MIN, false);
+  const r = markStepDone(rules, saturday(), p, 'b', 'wrap', wrap + 15 * MIN, true);
   assert.equal(r.deltaMin, 15);
+  assert.equal(r.plan.serveAt, SERVE);
   assert.equal(ev(r.plan, 'pull', 'b').at, ev(p, 'pull', 'b').at + 15 * MIN);
   assert.equal(ev(r.plan, 'phase', 'w', 'smoke').at, ev(p, 'phase', 'w', 'smoke').at);
 });
 
-test('pit outage adds downtime plus recovery to smoker items only', () => {
+test('wrapping 15 min late, Move serve: serve and the other foods move 15 min with the brisket (T-076)', () => {
+  const p = buildPlan(rules, saturday());
+  const wrap = ev(p, 'phase', 'b', 'wrap').at;
+  const r = markStepDone(rules, saturday(), p, 'b', 'wrap', wrap + 15 * MIN, false);
+  assert.equal(r.deltaMin, 15);
+  assert.equal(r.plan.serveAt, SERVE + 15 * MIN);
+  assert.equal(ev(r.plan, 'pull', 'b').at, ev(p, 'pull', 'b').at + 15 * MIN);
+  assert.equal(ev(r.plan, 'phase', 'w', 'smoke').at, ev(p, 'phase', 'w', 'smoke').at + 15 * MIN);
+  assert.equal(ev(r.plan, 'phase', 'c', 'cook').at, ev(p, 'phase', 'c', 'cook').at + 15 * MIN);
+});
+
+// Until T-076 the griddle breasts stayed put while serve moved, so their hold grew by the outage.
+test('pit outage adds downtime plus recovery to smoker items; with serve moved the griddle food follows', () => {
   const p = buildPlan(rules, saturday());
   const o = pitOutage(rules, saturday(), p, local(9, 0), local(9, 20), 10, false);
   assert.equal(ev(o, 'pull', 'b').at, ev(p, 'pull', 'b').at + 30 * MIN);
   assert.equal(o.serveAt, SERVE + 30 * MIN);
+  assert.equal(ev(o, 'pull', 'c').at, ev(p, 'pull', 'c').at + 30 * MIN);
 });
 
 test('overnight cook across the DST change keeps exact durations', () => {

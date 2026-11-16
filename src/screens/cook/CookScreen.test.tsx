@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { SHEET_OUT_MS } from '@/components/kit/sheet';
 import { markPullDone } from '../../../engine/live';
-import { applyActions, pending, postpone, quiet, steps, type ActiveCook } from '@/lib/cook';
+import { doneStep, pending, postpone, quiet, steps, type ActiveCook } from '@/lib/cook';
 import { fmtTime } from '@/lib/format';
 import { rules } from '@/lib/rules';
 import { fakeAlarms, fakeResume } from '@/platform/fakes';
@@ -323,27 +323,16 @@ describe('a change that makes a new warning (T-069)', () => {
     plan: markPullDone(rules, c.input, c.plan, 'b', AT_1023 + 7 * MIN),
   });
 
-  /** 4:26 PM: the brisket's pull check at 3:40 PM has been put off four times. */
+  /** 4:26 PM: the brisket is still on and the wings are climbing to 400F. */
   const AT_426 = Date.UTC(2026, 10, 14, 21, 26);
   /**
-   * Both kinds on one cook: +15 min tapped four times on the brisket's pull alert with the app closed. The
-   * brisket is still on when the smoker goes to 400F, and serve moves with it, so the wings and the breasts
-   * hold past their limits. The notice about the alert is left out here: it has an OK of its own.
+   * Both kinds on one cook: the brisket an hour behind with serve kept (the smoker conflict), and the breasts
+   * on the griddle 20 min early at 4:20 PM with serve kept, so they hold 28 min, past their 20 min limit.
+   * Until T-076 this was four +15 taps on the brisket's pull alert, which moved serve and left the wings and
+   * the breasts holding 35 and 38 min; now they move with serve, so that cook has the conflict alone.
    */
-  const both = (): ActiveCook => {
-    const c = cookAt(AT_1023);
-    const pull = pending(c).find(k => k.event.kind === 'pull' && k.event.itemId === 'b')!;
-    const taps = [0, 1, 2, 3].map(i => ({
-      type: 'snooze15' as const,
-      alarmId: pull.key,
-      keys: [pull.key],
-      at: pull.event.at + i * 15 * MIN,
-    }));
-    const wrapped = { ...c, done: { ...c.done, 'phase:b:wrap': pull.event.at - 60 * MIN } };
-    return { ...applyActions(wrapped, taps), notice: null };
-  };
-  // The lock-screen +15 min path (serve moves, the other foods are not re-timed) is under review: these strings may change.
-  const BOTH = `${CONFLICT} Long hold: chicken wings 35 min (limit 30), chicken breasts 38 min (limit 20).`;
+  const both = (): ActiveCook => doneStep(behind(), 'phase:c:cook', Date.UTC(2026, 10, 14, 21, 20), true).cook;
+  const BOTH = `${CONFLICT} Long hold: chicken breasts 28 min, limit 20 min.`;
 
   test('no banner on a cook that is as it started', async () => {
     await show(cookAt(AT_1023));
@@ -388,7 +377,7 @@ describe('a change that makes a new warning (T-069)', () => {
     await fireEvent.press(button('OK'));
     await act(async () => {});
     expect(screen.queryByRole('alert', { name: /Smoker conflict/ })).toBeNull();
-    expect(repos.activeCook.load()!.warningsSeen).toEqual(['PIT_CONFLICT:b|w', 'HOLD_TOO_LONG:w', 'HOLD_TOO_LONG:c']);
+    expect(repos.activeCook.load()!.warningsSeen).toEqual(['PIT_CONFLICT:b|w', 'HOLD_TOO_LONG:c']);
   });
 
   test('after OK on one warning a different one still shows', async () => {
@@ -436,7 +425,7 @@ describe('a change that makes a new warning (T-069)', () => {
     );
     expect(
       screen.getByRole('alert', {
-        name: /^Smoker conflict: brisket at \d+C and chicken wings at \d+C at the same time\. Long hold: chicken wings 35 min \(limit 30\), chicken breasts 38 min \(limit 20\)\.$/,
+        name: /^Smoker conflict: brisket at \d+C and chicken wings at \d+C at the same time\. Long hold: chicken breasts 28 min, limit 20 min\.$/,
       }),
     ).toBeOnTheScreen();
     expect(screen.queryByText(/225F|400F/)).toBeNull();

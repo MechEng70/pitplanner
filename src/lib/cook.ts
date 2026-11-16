@@ -110,13 +110,19 @@ export function doneStep(c: ActiveCook, key: string, at: number, keepServe?: boo
     const item = c.plan.items.find(i => i.input.id === e.itemId)!;
     const first = item.phases[0]?.id === e.phaseId;
     const withOn = first ? { ...base, onAt: { ...base.onAt, [e.itemId]: at } } : base;
+    // Done early with Move serve needs what the plan does not know: which steps are done, and Quiet time.
+    const ctx = { now: at, done: Object.keys(c.done), notBefore: c.quietUntil };
     const run = (keep: boolean) => ({
       ...withOn,
-      plan: markStepDone(rules, c.input, c.plan, e.itemId!, e.phaseId!, at, keep).plan,
+      plan: markStepDone(rules, c.input, c.plan, e.itemId!, e.phaseId!, at, keep, ctx).plan,
     });
     const deltaMin = Math.round((at - e.at) / MIN);
     if (keepServe != null || Math.abs(deltaMin) < ASK_SHIFT_MIN) return { cook: run(keepServe ?? true) };
-    return { cook: withOn, ask: { deltaMin, keepServe: run(true), moveServe: run(false) } };
+    const keep = run(true),
+      move = run(false);
+    // Early, and no other food could be ready sooner: serve stays and nothing is asked (T-076, 4A).
+    if (move.plan.serveAt === keep.plan.serveAt) return { cook: keep };
+    return { cook: withOn, ask: { deltaMin, keepServe: keep, moveServe: move } };
   }
   if (e.kind === 'pull' && e.itemId) {
     return {
@@ -246,7 +252,11 @@ export function applyActions(c: ActiveCook, actions: NotificationAction[]): Acti
           ? `${title}: done at ${fmtTime(a.at)} from the alert.`
           : `${title}: moved 15 min from the alert.`,
       );
-      if (next.plan.serveAt !== cur.plan.serveAt) said.push(`Serve moves to ${fmtTime(next.plan.serveAt)}.`);
+      if (next.plan.serveAt !== cur.plan.serveAt)
+        said.push(
+          // The other foods follow serve (T-076). With one food there are none to speak of.
+          `Serve moved to ${fmtTime(next.plan.serveAt)}.${next.plan.items.length > 1 ? ' The other foods moved with it.' : ''}`,
+        );
       cur = next;
     }
   }
