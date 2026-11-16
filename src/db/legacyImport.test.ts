@@ -1,3 +1,4 @@
+import type { Units } from '../lib/format';
 import type { LegacyStore } from '../platform/types';
 import type { Db } from './db';
 import {
@@ -24,6 +25,8 @@ import { testDb } from './testDb';
 // The Saturday fixture serves Nov 14, 2026 22:00 UTC. "Now" is the morning of the cook: it is still running.
 const NOW = Date.UTC(2026, 10, 14, 12, 0);
 const STARTED = NOW - 3_600_000;
+const F: Units = { temp: 'F', weight: 'lb' };
+const C: Units = { temp: 'C', weight: 'kg' };
 
 let db: Db;
 let r: Repos;
@@ -65,6 +68,7 @@ describe('a full 0.2.0 install', () => {
       plan: true,
       runningCook: true,
       lost: [],
+      ovenRaised: false,
       noticeSeen: false,
     });
     expect(r.cookers.load()).toEqual(legacyGear);
@@ -85,7 +89,7 @@ describe('a full 0.2.0 install', () => {
     expect(r.history.logs().map(l => l.foodId)).toEqual(['brisket', 'brisket']);
     expect(r.quarantined()).toEqual([]);
     expect(legacy.calls).toEqual(['prefs', 'history']);
-    expect(importNotice(report)).toEqual({
+    expect(importNotice(report, F)).toEqual({
       title: 'Pit Planner has a new look',
       body: 'Your smokers, cook rates, plan and history came over.',
     });
@@ -108,12 +112,62 @@ describe('a full 0.2.0 install', () => {
   });
 });
 
+// T-077 (parity T18): a 0.2.0 oven hold below the 140F safety floor is raised to it, and the notice says so.
+describe('an oven hold below 140F', () => {
+  const withOven = (lowestTempF: number) =>
+    withPref('gear', JSON.stringify({ ...legacyGear, oven: { ...legacyGear.oven, lowestTempF } }));
+
+  test('130F imports as 140F, nothing is lost, and the notice adds one line', () => {
+    const legacy = withOven(130);
+    const report = importLegacy(db, legacy.store, NOW);
+    expect(report).toMatchObject({ status: 'done', cookers: 3, lost: [], ovenRaised: true });
+    expect(r.cookers.load().oven).toEqual({ ...legacyGear.oven, lowestTempF: 140 });
+    const row = db.get<{ profile: string }>("SELECT profile FROM cookers WHERE kind = 'oven'");
+    expect(JSON.parse(row!.profile).lowestTempF).toBe(140);
+    expect(r.quarantined()).toEqual([]);
+    expect(legacy.calls).toEqual(['prefs', 'history']);
+    expect(importNotice(report, F)).toEqual({
+      title: 'Pit Planner has a new look',
+      body: 'Your smokers, cook rates, plan and history came over.\nOven hold raised to 140F, the safe minimum.',
+    });
+    // The temp is shown in the user's units.
+    expect(importNotice(report, C)?.body).toBe(
+      'Your smokers, cook rates, plan and history came over.\nOven hold raised to 60C, the safe minimum.',
+    );
+    // Saved with the report, so the notice still has the line on the next start.
+    expect(importReport(db)?.ovenRaised).toBe(true);
+  });
+
+  test('the line also follows a partial notice', () => {
+    const prefs = legacyPrefs(STARTED);
+    prefs.gear = JSON.stringify({ ...legacyGear, oven: { ...legacyGear.oven, lowestTempF: 120 } });
+    prefs.draft = 'not json';
+    const report = importLegacy(db, fakeLegacy(prefs, legacyHistoryJson()).store, NOW);
+    expect(report).toMatchObject({ status: 'partial', ovenRaised: true });
+    expect(importNotice(report, F)?.body).toBe(`${NOTICE_BODY.partial}\nOven hold raised to 140F, the safe minimum.`);
+  });
+
+  test.each([140, 150])('%sF imports as it is, with no line in the notice', lowestTempF => {
+    const report = importLegacy(db, withOven(lowestTempF).store, NOW);
+    expect(report).toMatchObject({ status: 'done', ovenRaised: false });
+    expect(r.cookers.load().oven?.lowestTempF).toBe(lowestTempF);
+    expect(importNotice(report, F)?.body).toBe(NOTICE_BODY.done);
+    expect(importNotice(report, C)?.body).toBe(NOTICE_BODY.done);
+  });
+
+  test('a report saved before T-077 reads as not raised', () => {
+    const { ovenRaised: _, ...older } = importLegacy(db, full().store, NOW);
+    r.kv.set('legacy_import', older, NOW);
+    expect(importReport(db)?.ovenRaised).toBe(false);
+  });
+});
+
 describe('no 0.2.0 data', () => {
   test('a new install: nothing imported, no notice, nothing retired, and it does not look again', () => {
     const legacy = fakeLegacy({}, null);
     const report = importLegacy(db, legacy.store, NOW);
     expect(report).toMatchObject({ status: 'none', cookers: 0, lost: [] });
-    expect(importNotice(report)).toBeNull();
+    expect(importNotice(report, F)).toBeNull();
     expect(legacy.calls).toEqual([]);
     expect(r.cookers.count()).toBe(0);
     expect(importReport(db)).toEqual(report);
@@ -127,7 +181,7 @@ describe('partial import', () => {
     expect(report).toMatchObject({ status: 'partial', cookers: 0, rates: 2, cooks: 2, plan: true, lost: ['cookers'] });
     expect(r.cookers.count()).toBe(0);
     expect(r.history.list()).toHaveLength(2);
-    expect(importNotice(report)).toEqual({
+    expect(importNotice(report, F)).toEqual({
       title: 'Pit Planner has a new look',
       body: "Some of your old settings couldn't be read. Check Gear before your next cook.",
     });
@@ -153,7 +207,7 @@ describe('partial import', () => {
   ] as const)('an unreadable %s is recorded as lost and gives the partial notice', (key, value, part) => {
     const report = importLegacy(db, withPref(key, value).store, NOW);
     expect(report).toMatchObject({ status: 'partial', lost: [part] });
-    expect(importNotice(report)?.body).toBe(NOTICE_BODY.partial);
+    expect(importNotice(report, F)?.body).toBe(NOTICE_BODY.partial);
     expect(r.quarantined().map(q => q.origin)).toContain(`legacy:${key}`);
   });
 
@@ -168,7 +222,7 @@ describe('partial import', () => {
     const legacy = fakeLegacy(legacyPrefs(STARTED), JSON.stringify(records));
     const report = importLegacy(db, legacy.store, NOW);
     expect(report).toMatchObject({ status: 'partial', cooks: 2, lost: ['past cooks'] });
-    expect(importNotice(report)?.body).toBe(NOTICE_BODY.partial);
+    expect(importNotice(report, F)?.body).toBe(NOTICE_BODY.partial);
     expect(r.quarantined().map(q => q.origin)).toEqual(['legacy:history.json']);
   });
 
@@ -207,7 +261,7 @@ describe('partial import', () => {
   test('a history file that is not JSON: no cooks, partial', () => {
     const report = importLegacy(db, fakeLegacy(legacyPrefs(STARTED), '[{"id":').store, NOW);
     expect(report).toMatchObject({ status: 'partial', cooks: 0, lost: ['past cooks'] });
-    expect(importNotice(report)?.body).toBe(NOTICE_BODY.partial);
+    expect(importNotice(report, F)?.body).toBe(NOTICE_BODY.partial);
   });
 
   test('unreadable flags or update check are quarantined but not worth a notice', () => {
@@ -248,7 +302,7 @@ describe('fresh start', () => {
     const report = importLegacy(db, legacy.store, NOW);
     expect(report).toMatchObject({ status: 'fresh', cookers: 0, rates: 0, cooks: 0, plan: false, runningCook: false });
     expect(report.lost).toEqual(['cookers', 'units', 'plan', 'rates', 'running cook', 'past cooks']);
-    expect(importNotice(report)).toEqual({
+    expect(importNotice(report, F)).toEqual({
       title: 'Pit Planner has a new look',
       body: "Your old data couldn't be brought over. Set up your smoker in Gear to start.",
     });
@@ -291,11 +345,11 @@ describe('fresh start', () => {
 describe('the notice shows once', () => {
   test('closing it is remembered', () => {
     const report = importLegacy(db, withPref('draft', 'x').store, NOW);
-    expect(importNotice(report)).not.toBeNull();
+    expect(importNotice(report, F)).not.toBeNull();
     markNoticeSeen(db, NOW + 1);
     const later = importLegacy(db, full().store, NOW + 2);
     expect(later.noticeSeen).toBe(true);
-    expect(importNotice(later)).toBeNull();
+    expect(importNotice(later, F)).toBeNull();
   });
 
   test('retiring that fails does not undo the import or run it again', () => {

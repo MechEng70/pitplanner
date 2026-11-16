@@ -88,12 +88,13 @@ export default function RootLayout() {
   const [boot] = useState(() => openAppDb(__DEV__));
   // First start of 0.3.0 over 0.2.0: bring the old data across before the store loads (once; T-012).
   const [imported, setImported] = useState(() => (boot.ok ? importLegacy(boot.db, legacyStore, Date.now()) : null));
-  const notice = imported ? importNotice(imported) : null;
+  const data = useMemo(() => (boot.ok ? repos(boot.db) : null), [boot]);
+  // In the units the import brought over (T-077: the oven line shows a temp).
+  const notice = imported && data ? importNotice(imported, data.settings.units()) : null;
   const closeNotice = () => {
     if (boot.ok) markNoticeSeen(boot.db, Date.now());
     setImported(r => r && { ...r, noticeSeen: true });
   };
-  const data = useMemo(() => (boot.ok ? repos(boot.db) : null), [boot]);
   return (
     <ThemeProvider value={navTheme}>
       <StatusBar style="light" />

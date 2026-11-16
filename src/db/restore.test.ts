@@ -213,3 +213,30 @@ test('unreadable values on the phone are quarantined before the restore replaces
       .sort(),
   ).toEqual(['cook_history_items:b1:0', 'cookers:oven:oven', 'kv:flags', 'rate_overrides:butt']);
 });
+
+// T-077 (parity T18): a file written by an older build, or by hand, cannot bring a hold below 140F back.
+test('a data file with an oven hold of 130F restores as 140F', () => {
+  const a = phoneA();
+  const b = phone();
+  const s = loadState(a.r, NOW);
+  const text = buildDataFile(
+    {
+      gear: { ...s.gear, oven: { ...defaultOven(), lowestTempF: 130 } },
+      units: s.units,
+      rates: s.rates,
+      totalHours: s.totalHours,
+      rateLocks: s.rateLocks,
+      records: s.records,
+      flags: s.flags,
+    },
+    NOW,
+    '0.3.0',
+  );
+  const read = readDataFile(rules, text, NOW);
+  if (!read.ok) throw new Error(read.problem);
+  expect(restoreData(b.r, read.data, NOW + 1000, 'replace').ok).toBe(true);
+  expect(b.r.cookers.load().oven).toEqual({ ...defaultOven(), lowestTempF: 140 });
+  expect(loadState(b.r, NOW).gear.oven?.lowestTempF).toBe(140);
+  const row = b.db.get<{ profile: string }>("SELECT profile FROM cookers WHERE kind = 'oven'");
+  expect(JSON.parse(row!.profile).lowestTempF).toBe(140);
+});

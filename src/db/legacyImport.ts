@@ -6,6 +6,8 @@
 import type { Cookers } from '../../engine/types.ts';
 import { normalize } from '../lib/cook.ts';
 import { parseDraft } from '../lib/draft.ts';
+import { fmtTemp, type Units } from '../lib/format.ts';
+import { OVEN_HOLD_MIN_F, withSafeHold } from '../lib/gear.ts';
 import type { CookRecord } from '../lib/history.ts';
 import { releaseLink } from '../lib/update.ts';
 import type { LegacyStore } from '../platform/types.ts';
@@ -32,6 +34,8 @@ export interface ImportReport {
   plan: boolean;
   runningCook: boolean;
   lost: LostPart[];
+  /** The oven's hold was below the 140F floor and came over as 140F (T-077); the notice says so. */
+  ovenRaised: boolean;
   /** The user has closed the notice. */
   noticeSeen: boolean;
 }
@@ -49,6 +53,7 @@ function parseReport(raw: unknown): ImportReport | null {
     plan: raw.plan === true,
     runningCook: raw.runningCook === true,
     lost: Array.isArray(raw.lost) ? LOST.filter(p => (raw.lost as unknown[]).includes(p)) : [],
+    ovenRaised: raw.ovenRaised === true,
     noticeSeen: raw.noticeSeen === true,
   };
 }
@@ -106,6 +111,7 @@ export function importLegacy(db: Db, legacy: LegacyStore, now: number): ImportRe
     plan: false,
     runningCook: false,
     lost: [],
+    ovenRaised: false,
     noticeSeen: false,
   };
   let prefs: Record<string, string>;
@@ -148,6 +154,12 @@ export function importLegacy(db: Db, legacy: LegacyStore, now: number): ImportRe
           if (p === undefined) continue;
           if (readable(kind, p)) Object.assign(cookers, { [kind]: p });
           else bad = true;
+        }
+        // A hold below the safety floor comes over raised to it (T-077): not lost, but the notice says so.
+        if (cookers.oven) {
+          const oven = withSafeHold(cookers.oven);
+          report.ovenRaised = oven !== cookers.oven;
+          cookers.oven = oven;
         }
         if (bad) lose('cookers', 'gear', prefs.gear ?? '');
         report.cookers = Object.keys(cookers).length;
@@ -230,6 +242,7 @@ export function importLegacy(db: Db, legacy: LegacyStore, now: number): ImportRe
       plan: false,
       runningCook: false,
       lost: [...LOST],
+      ovenRaised: false,
     };
   }
 
@@ -253,8 +266,13 @@ export const NOTICE_BODY = {
   fresh: "Your old data couldn't be brought over. Set up your smoker in Gear to start.",
 } as const;
 
+/** Added on its own line when the oven's hold was raised (Jason, 2026-11-16; T-077). Temp in the user's units. */
+export const ovenRaisedLine = (units: Units) =>
+  `Oven hold raised to ${fmtTemp(OVEN_HOLD_MIN_F, units)}, the safe minimum.`;
+
 /** The one-time notice after the import: null when there was no old data or it has been closed. */
-export function importNotice(report: ImportReport): { title: string; body: string } | null {
+export function importNotice(report: ImportReport, units: Units): { title: string; body: string } | null {
   if (report.noticeSeen || report.status === 'none') return null;
-  return { title: NOTICE_TITLE, body: NOTICE_BODY[report.status] };
+  const body = NOTICE_BODY[report.status];
+  return { title: NOTICE_TITLE, body: report.ovenRaised ? `${body}\n${ovenRaisedLine(units)}` : body };
 }
