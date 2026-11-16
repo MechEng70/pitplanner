@@ -6,13 +6,13 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
 ## Restart, twenty-second session (written Monday 2026-11-16, end of the twenty-first; read this first)
 
 `main` is committed and clean, **not pushed** (about 60 commits ahead of `origin/main`). The gate passed on
-the last code change (T-068 merge: engine 208, gate self-tests 153, Jest 877, Kotlin 68 in Gradle; Snyk 26
-projects, none skipped); the commit after it is this file only. No agent is running, no worktree, no branch
-but `main`. Emulator and Metro are stopped. The phone was not touched this session. `dashboard.html` (local,
+the last code change (the FSIS sources, `268d679`: engine 210, gate self-tests 153, Jest 877, Kotlin 68 in
+Gradle; Snyk 26 projects, none skipped); a later commit that touches only this file is not gated. No agent is running. One agent branch may be left unmerged (section 3,
+T-075's three cases); otherwise no worktree and no branch but `main`. Emulator and Metro are stopped. The phone was not touched this session. `dashboard.html` (local,
 never committed) was restyled in the medtechcto.com palette: the keeper edits only its `D` data block.
 
-**Usage (Jason):** Fable at 90% on 2026-11-16: every agent on Opus; the main session stays on Fable until he
-says 95%. The session limit was at 74% late in the day.
+**Usage (Jason):** Fable at 94% on 2026-11-16 (93% in his restart prompt): every agent on Opus; at 95% the
+main session moves to Opus at the next task boundary. The session limit was at 85% at the end.
 
 ### 1. First thing next session: the emulator block (all before Friday 2026-11-20)
 
@@ -55,23 +55,25 @@ the first device run must build (no `--no-build`).
 staged cook with no food (brisket 10 lb so the first ring is 7:50 AM, wrap check 12:15 PM, reboot 12:05 PM),
 Sunday the readout table. Every phone action is listed there and still needs his yes on the day.
 
-### 3. Waiting on Jason
+### 3. Waiting on Jason, and one parked item
 
-- **Wings source (held, nothing committed):** he gave USDA FSIS "Safe Minimum Internal Temperature Chart",
-  https://www.fsis.usda.gov/food-safety/safe-food-handling-and-preparation/food-safety-basics/safe-temperature-chart
-  (all poultry 165F / 73.9C) and asked that it be opened once before committing. The site refuses automated
-  access (403 from the fetch tool, "Access Denied" in headless Chrome; the Chrome extension was not
-  connected). He confirms it in his browser, or connects the extension. Then: add it to wings, and to
-  breasts and beef where a `sources` entry is missing (brisket, ribs, pork butt, breasts and wings have
-  none). Trap: `engine/rules.test.ts` checks every number of a method once a source backs it, so a
-  `doneTemp`-only source makes the test ask for sources for that food's other numbers (rate, preheat, high
-  heat). Ask him: scope the check to the topics a source covers, or supply the other sources.
-- T-068: the debug screen's line "Alarm rings: when each alert was due and when it rang" (his wording).
-- T-075, three cases from the too-cool smoker rule (in its TASKS entry): the import wording when a tri-tip
-  falls to brisket-style, a silent method change on import, a smoker changed after planning.
+- **T-075, three cases from the too-cool smoker rule (decided by Jason, 2026-11-16; an Opus agent was
+  building them at the end of the session).** If branch `worktree-agent-aa9ca02baa3e666bd` (worktree under
+  `.claude/worktrees/`, based on `268d679`) exists and is not merged: read its last commit and its T-075
+  tests, merge it, run the gate, apply its SPEC and TASKS text (agents do not edit those), delete the
+  worktree and branch. If it has no commit, start the work again from his wording: (a) a griddle-sear
+  tri-tip opened with no griddle and a smoker under 450F: "Tri-tip will cook brisket-style with no sear, or
+  add a griddle in Gear."; (b) a shared smoker-sear tri-tip on a smoker under 450F: the same notice, never
+  silent; (c) a plan holding a smoker-sear tri-tip after the smoker changes to one under 450F: no automatic
+  method change, plan warning "Tri-tip's sear needs 450F and this smoker tops out at {max}F. Pick another
+  method in Food details." Failing tests first. Once merged, delete this item.
 - T-081: the header is about 20 dp taller; his look after the re-shoot.
 - Mockup 16 on the live canvas artifact is not updated (only the repo's source and PNG are).
 - Still open from before: his look at the two-button alert on the phone; T-031 with two phones.
+- Done since this section was first written: the FSIS chart is cited for wings, breasts, brisket and
+  tri-tip's other two methods (he confirmed the page in his browser; the sources check is scoped to the
+  topics such a source covers, `scope: 'covers'`); the debug screen's "Alarm rings" line is approved as
+  written; "apple cider vinegar" and the wings griddle sentence are in.
 
 ### 4. Done in the twenty-first session (all on `main`, each through the gate)
 
