@@ -167,6 +167,12 @@ the same emulator: **PASS**. A cook started at 11:1x with 5 alarms; after the re
 on the step channel) and its repeat was set; after the PIN the app opened on the running cook. This is the
 case the hand run above had not shown: a step that comes due before the first unlock.
 
+The test can fail (Jason asked for the proof, 2026-11-16): a throwaway release build with `RestoreReceiver`
+made to do nothing on the two boot signals, built in its own worktree beside the repo and deleted after, run
+on `pitplanner-lock` only. Result: locked, no crash, then `FAIL  the alarms while locked are not the cook's
+(want 5 FIRE alarms, have "")`, `FAIL  the step due at 12:15:00 did not ring while locked`, `FAIL  no repeat
+is set`, `== locked-reboot: FAIL`, exit 1.
+
 So the failure seen on the phone is in code that only a dev build runs. A release build restores its alarms
 before the first unlock on this emulator. Not yet shown: a release build on a real phone (T-038, and the
 tester's Samsung at T-037).

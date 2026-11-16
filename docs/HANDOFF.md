@@ -3,39 +3,175 @@
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## Twentieth session so far (written Monday 2026-11-16, late morning; read this first)
+## Restart, twenty-first session (written Monday 2026-11-16, 12:20 PM, end of the twentieth; read this first)
 
-The phone block is done and the phone is put back (dev build data as before the session, minus nothing of
-Jason's; notifications left on for the dev build, his choice). Results: `docs/alarm-testing.md` (three new
-sections dated 2026-11-16), `docs/parity.md` P1 to P4 and D2, D9, D10, D11, and each task's TASKS entry.
+`main` is committed and clean, 1 commit ahead of `origin/main` (this handoff; Jason pushed the rest during the session), **not pushed**. The last gate pass
+was on `45a8b71`; the two commits after it are docs only (`CLAUDE.md`; then this file, `docs/alarm-testing.md` and two reports in `docs/proposals/`). Emulators and Metro are
+stopped. The phone is put back (dev build as before the session; notifications left on for it). No agent is
+running. Five agent branches are built and **not merged**; their worktrees are under `.claude/worktrees/`.
+Reports for Jason in `docs/proposals/`:
+`2026-11-16-security-pass.md` and `2026-11-16-lock-screen-actions.md` (committed), and
+`2026-11-16-data-export-ui.md` (that one is on the T-036 branch).
 
-**Done and committed (each through the gate):** the developer address is pitplanapp@gmail.com; a shared
-file that cannot be read logs its exception (tag `PitShare`, URIs cut to the provider); the alert buttons
-are two, Done and +15 min (no Open: a tap on the alert opens the app); `db.sh restore` really removes the old folders; `AVD_LOCK=1` gives a
-second emulator, `pitplanner-lock`, with PIN 1111. `release/pitplanner-0.3.0-alpha.4.apk` is local only.
+Read `CLAUDE.md` first: it has a new section, "Models and agents" (parallel agents in worktrees, merge one
+at a time with the gate after each, at most 5, the usage rule). **Fable was at 83% at 12:10 PM: every new
+agent starts on Opus.** The main session stays on Fable until Jason says 95%.
 
-**Jason's decisions, late morning (all in TASKS):** T-072 is test only, no start-up guard: a locked-reboot
-device test on the PIN emulator with a release build, with a step due while still locked, required before
-every release in `docs/RELEASING.md`. The alert has two buttons, Done and +15 min, no Open. Turkey 18 min
-per lb at 275F as a measured point (`timing.tempPoints`). Brisket and pork butt hold notes end "Keep it
-above 140F." T-071 fish is after 0.3.0; his answers are in its entry (timed by thickness: propose the
-input's UI to him first).
+### 1. Branches waiting to merge, in this order
 
-**Waiting on Jason:** T-069 wording, T-070 design; his look at the two-button alert on the phone and at the
-pictures in `tools/device/out/phone/`.
+Merge one at a time (`git merge --ff-only` where it applies, else a normal merge), run `npm run check` after
+each, then `git worktree remove` and `git branch -d`. None of them has been through the gate or seen on a
+device. Each agent's own runs passed (Jest, engine, gate self-tests, ESLint, Prettier).
 
-**Rules added today:** play a sound on the computer when Jason has to act (`paplay
-/usr/share/sounds/freedesktop/stereo/complete.oga`). A dashboard agent keeps `dashboard.html`. adb cannot
-grant or revoke permissions on the OnePlus: he switches them in Settings. `adb reboot` ends the headless
-emulator: restart it with `avd.sh stop` and `start`. Do not use `pkill -f` with a pattern that is in your
-own command line.
+1. **T-069** conflict banner on Live cook: `worktree-agent-a31bfed3313b87e83` at `7d1af5e`.
+   - Before merging, one more change on the branch (an Opus agent or by hand): Jason's hold line with the
+     note inside the food's entry, "Long hold: brisket 5 hr 10 min (limit 4 hr, keep above 140F), chicken
+     wings 35 min (limit 30)." Keep "chicken breasts" (not "breasts"). The single-food wording on Plan stays
+     "Long hold: brisket 5 hr 10 min, limit 4 hr. Keep it above 140F." unless he says otherwise: ask if unsure.
+   - At merge: `tools/device/run.sh` line 803 needs the new sentence, "Smoker conflict: 2 lb chicken wings 1
+     at 225F and 2 lb chicken wings 2 at 350F at the same time." (check the `clash` seed is that menu).
+     Update `docs/parity.md` rows D8, D9, T16. It adds `warningsSeen` to the running cook (one JSON column,
+     no migration). Three of its tests pin holds of 35 and 38 min that T-076 below will change.
+2. **T-074** wording: `worktree-agent-a0661260bd07e7911` at `c24159d`. Serve alert "Time to serve" with the
+   menu; "More weight" / "Less weight", "More breasts"; Cook options "Earlier" / "Later".
+   - It and T-069 both export `inSentence` from `engine/labels.ts`: expect a small merge conflict there.
+   - Record in its TASKS entry: the Quiet time summary keeps "Serve." (Jason: a step list, like the
+     timeline). `docs/HANDOFF.md` history still says "More quantity" in one place: leave history alone.
+3. **T-034** thin tests: `worktree-agent-a4155e1de76922be5` at `057000d`. 12 of 14 rows closed, tests only,
+   in new `*.parity.test.*` files. `ParityTest.kt` (rows T6, T14, T15) has never been run: the gate's Android
+   step runs it. Also drop "by-weight" from the SPEC wording about Cook history rate cards (row T7; Jason:
+   fine as built).
+4. **T-036** data export and restore, logic only: `worktree-agent-a81dbb264adafa644` at `ef18b99`. No screen
+   is wired. Its screen proposal (`docs/proposals/2026-11-16-data-export-ui.md`) waits for Jason's answers:
+   where Export and Restore go, how a restore starts, replace or merge, the file's extension, the caps.
+5. **T-035 security fixes**: `worktree-agent-afcbb0a3e349b61c1`. at `8d5f7a3` (8 commits: findings 1 to 6, 8, 10, the TASKS entry, and the test
+   fixture links). Its agent's own runs pass with that last commit (gate self-tests 153, engine and Jest);
+   the Kotlin tests compile but have never run. Delete the `node_modules` link in its worktree with the
+   worktree. At merge, from its report (kept in the T-035 entry on the branch):
+   - Run `npm run test:android` (new `OpenedPlanTest` cases), then the gate (Semgrep and Snyk Code have not
+     seen the new Kotlin or scripts).
+   - Device test `shared` in `tools/device/run.sh` must change: its three opens of
+     `file:///data/user/0/$PKG/cache/...` are now refused by design. Push the files to `/sdcard/Download/`
+     and open them through the Files app as `locked-reboot.sh` does; keep one own-cache open as the
+     regression (expect "Could not read that file." and the log line `PitShare: open refused ...`).
+   - Build `npm run release -- --version 0.3.0-beta.1`: it must end with `cert ok` and `app config ok:
+     version 0.3.0-beta.1, versionCode 300301, io.github.mecheng70.pitplanner, variant production`. Then on
+     the emulator: Gear's version line and a Send to developer file read 0.3.0-beta.1 / 300301; `aapt2 dump
+     badging` shows the permission list without `SYSTEM_ALERT_WINDOW`, `READ_EXTERNAL_STORAGE`,
+     `WRITE_EXTERNAL_STORAGE`; the two backup attributes are in the manifest.
+   - Choices its agent made that Jason has not seen: the alarm store is EXCLUDED from backup (a restore on a
+     new phone would ring every past alarm as missed), the 0.2.0 files are included, smoker temp from a
+     file clamped to 150 to 700F, serve date outside 2000 to 2099 refused, the log line keeps the exception
+     class and a fixed reason with no message text, storage permissions blocked in the dev build too. Show
+     him the permission list (in its T-035 entry and TECH-DESIGN section 10 on the branch).
+6. Then build **T-075** (below), on Opus, in a worktree.
 
-**Gate facts:** as below, except Snyk: from the fourth run on 2026-11-16 its monthly-limit notice no longer
-prints and its output is boxed summaries. A full run reads "Projects tested: 26 projects", "Open: 0",
-"Ignored: 2" (the two `.snyk` entries, SE-001 and SE-003) and the gate's own line "Snyk coverage: all 26
-projects tested, none skipped". On 2026-11-16 a throwaway project outside the repo proved it still flags an old lodash (7 high) and a planted
-command injection (Snyk Code, 1 high). With Metro bundling for a device at the same time, the first gate run
-can fail step 4 on Jest 5 s timeouts; run it again with nothing else running.
+### 2. Jason's decisions from 2026-11-16 that are not in TASKS yet
+
+Write these into TASKS as the first step of the next session (new entries T-075, T-076, T-077; notes on
+T-069, T-074, T-034).
+
+- **Review answers 1 to 10.** T-069: (1) banner approved; (2) and (3) hold warnings without a verb, as
+  above, the same wording on Plan, the banner at most two sentences (the conflict, then the holds); (4) the
+  lane chart note keeps the conflict's own stretch; (5) a warning hidden with OK stays hidden; (6) two OK
+  buttons on screen are fine. T-074: (7) (8) (9) approved as built. T-034: (10) the ribs history card is fine
+  as built; drop "by-weight" from the SPEC wording.
+- **T-075 tri-tip with no griddle (small, 0.3.0).** A third method in `data/foods.json`, "Smoke, then sear
+  on the smoker", data only: smoke at the plan's smoker temp to about 120F as the reverse method does
+  (source: Louisiana Grills reverse-seared tri-tip, smoke at 225F until 5F below target, about 75 min to
+  115F, https://louisiana-grills.com/blogs/pork/reverse-seared-tri-tip); off the heat while the smoker
+  climbs to 500F (450F if the smoker tops out lower), 15 min preheat (source: Traeger smoked tri-tip,
+  https://www.traeger.com/za/en/recipes/smoked-tri-tip); sear 4 min per side at 500F to 130-135F, then rest
+  10 to 15 min (source: Traeger, https://traeger.com/au/en/recipes/smoked-tri-tip). Cite them as given by
+  Jason, 2026-11-16. It is the fallback at import for a receiver with no griddle; the "No griddle set up."
+  box reads "Tri-tip will be seared on the smoker, or add a griddle in Gear." The import checks every
+  cooker a method's steps need (today only the main one: `mapToCookers`, `src/lib/sharedPlan.ts`), with a
+  tri-tip no-griddle test. Add food picks the first tri-tip method the user's cookers can fully do. In Food
+  details a method whose steps need a missing cooker is greyed out with "Add in Gear", like the Cook on
+  chips. The Plan warning names the other method instead of "move it to the smoker" (his earlier wording for
+  it: "Tri-tip's sear needs a griddle. Add one in Gear, or pick Smoked brisket-style in Food details.";
+  with the new method the method to name is the smoker sear: confirm the sentence with him). The 500F climb
+  conflicts with low foods the way wings do; that is fine. **Also in T-075:** with no smoker in Gear a food
+  gets "needs a smoker" once per smoker step (twice for brisket, and a duplicate React key in
+  `FoodEdit.tsx`): fix it. It touches `engine/plan.ts`, `sharedPlan.ts`, `FoodEdit.tsx`: build it after
+  T-069, T-074 and the security fixes are merged.
+- **T-076 serve moves for one food, the others follow (must-fix, 0.3.0).** Report:
+  `docs/proposals/2026-11-16-lock-screen-actions.md`. The lock screen and the app give identical plans; the
+  fault is in the engine (`engine/live.ts`, `extendCook` and `markStepDone`: they move one food and serve
+  and leave the rest, so the other holds grow; only `shiftRemaining` moves every food). Jason: (1) approved,
+  the others follow; (2) a food already on the heat cooks that much longer, as Running behind does; (3) the
+  Live cook notice reads "Serve moved to {time}. The other foods moved with it."; (4) fix Back up to temp
+  (`pitOutage`) in the same change; (5) Done early with Move serve: PROPOSE the rule with tests before
+  building (his rule: serve no earlier than the slowest other food can still be ready from now; otherwise
+  keep serve). Closed-app limit: EVALUATE the native side shifting every later alarm by the same minutes
+  when a lock-screen tap moves serve, with the app re-planning on next open; report the cost before
+  building; wanted for 0.3.0 if small. Build after T-069 merges. Regression tests that fail first,
+  including one pinning that lock screen and app agree.
+- **T-077 oven hold below 140F.** Clamp to 140F at the 0.2.0 import and on load, and say so in the import
+  notice: "Oven hold raised to 140F, the safe minimum." Test it. (Parity row T18.)
+- **Security pass** (`docs/proposals/2026-11-16-security-pass.md`), his answers: finding 1 fix the release
+  script so `--version` reaches the Gradle build, must be done before any beta, test: a release built with
+  `--version 0.3.0-beta.1` reports that version and versionCode and its update check offers betas;
+  finding 2 keep backups on with explicit rules that include the database, add a 0.4.0 requirement that the
+  HA token store is excluded, fix the TECH-DESIGN claim; findings 3, 4, 5 approved; finding 6 remove the
+  three unused permissions if nothing depends on them and show him the list; findings 7 to 10: pin the
+  update check to the GitHub releases URL, fix the doc drift, leave the rest. Finding 1 is confirmed from
+  the APK (`release/pitplanner-0.3.0-alpha.5.apk` carries version 0.2.0, versionCode 200999, "Pit Planner
+  dev" in `assets/app.config`); not yet looked at on the emulator.
+- **Usage rule** (in `CLAUDE.md`): Fable at 80%, new agents on Opus (in force); at 95% the main session
+  moves to Opus at the next task boundary; the all-models weekly limit at 90%: finish the task, commit,
+  update HANDOFF, stop for the day.
+
+### 3. Done today (all on `main`, each through the gate)
+
+The phone block (`docs/alarm-testing.md`, three sections dated 2026-11-16). Closed: T-016, T-025, T-029,
+T-030, T-059, T-065, T-067, T-072. T-073 is merged and gated; its emulator check is still owed (below).
+New address pitplanapp@gmail.com. Alert buttons are two, Done and +15 min. Turkey: 18 min per lb at 275F
+and an info line above 16 lb. Hold note "Keep it above 140F." `tools/device/locked-reboot.sh` (required
+before every release, `docs/RELEASING.md` 5b) passes on 0.3.0-alpha.5 and was shown to fail on a throwaway
+build with the restore broken (three FAIL lines, exit 1; built in its own worktree, deleted). Versions:
+0.4.0 is Home Assistant phase 1, 0.5.0 is fish, cooker choice and the alarm log (WBS, TASKS).
+
+### 4. Running, blocked, and the next three steps
+
+Nothing is running. Blocked on Jason: the T-036 screen proposal; his look at the two-button alert on the
+phone; T-031 with two phones; the Saturday cook (T-037).
+
+Next three steps:
+1. Write section 2 into TASKS (T-075, T-076, T-077 and the notes), commit, then do the T-069 follow-up
+   (the hold note inside the food's entry) on its branch with an Opus agent.
+2. Merge the five branches in the order of section 1, the gate after each, deleting each worktree and
+   branch. Stack anything Jason has to look at into one list.
+3. Emulator, one job at a time: the T-073 check with the real Android date dialog (a plan under an hour
+   out, the note, Pick a date opens on today, pick today, the note goes and the plan keeps today; a picture
+   of the sheet with the note for mockup 11); look at security finding 1 on a release build, then build
+   `0.3.0-beta.1` with the fixed script and check its version and update check; rerun
+   `tools/device/locked-reboot.sh` on it. In parallel, Opus agents for T-075, T-076 (report parts first)
+   and T-077. Held until then: T-064 (after T-069), fidelity sheets 08 to 10, README screenshots.
+
+### 5. Rules and traps added today
+
+- Play a sound three times when Jason has to act: `for i in 1 2 3; do paplay
+  /usr/share/sounds/freedesktop/stereo/complete.oga; done`.
+- A Sonnet agent keeps `dashboard.html` (local, never committed): send it short notes; it also has a
+  "Later versions" group and a "Resolved today" group now. Start a new keeper in a new session.
+- adb cannot grant or revoke permissions on the OnePlus: Jason switches them in Settings.
+- `adb reboot` ends the headless emulator: restart with `avd.sh stop` and `start`.
+- Never `pkill -f` or `pgrep -f` with a pattern that is in your own command line (it killed my own command
+  three times): write the pattern as `'name[.]sh'` or find the process by port (`ss -ltnp`).
+- A deliberate break or any throwaway build goes in its own worktree beside the repo (with its own
+  `npm ci`), never in the main working tree; an APK signed with the release key is installed on
+  `pitplanner-lock` only and deleted right after.
+- The only place data is cleared: `tools/device/locked-reboot.sh`, Pit Planner's data on the
+  `pitplanner-lock` emulator only.
+- With Metro bundling or several agents running tests, the first gate run can fail step 4 on Jest 5 s
+  timeouts; run it again with nothing else running. Do not raise the timeout.
+- Snyk: from the fourth run on 2026-11-16 its monthly-limit notice no longer prints and its output is boxed
+  summaries. A full run reads "Projects tested: 26 projects", "Open: 0", "Ignored: 2" (the two `.snyk`
+  entries) and the gate's own line "Snyk coverage: all 26 projects tested, none skipped". A throwaway
+  project outside the repo proved it still flags an old lodash (7 high) and a planted command injection.
+- Files that are generated from the engine and must be regenerated when a planned item gains a field:
+  `UPDATE_DEVICE_FIXTURES=1 npx jest src/db/fixtures`.
 
 ## Restart, twentieth session (written Sunday 2026-11-15, end of the nineteenth; read this first)
 

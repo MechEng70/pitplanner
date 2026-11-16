@@ -34,6 +34,12 @@
 - Merge one branch at a time, run the gate after each merge, then delete the worktree and branch.
 - At most 5 agents at once. Stack UI reviews for Jason into one list.
 - If the Fable allowance passes 80%, move agents to Opus first, then the main session.
+- Usage rule (Jason gives the numbers):
+  - When he says Fable is at 80%, new agents start on Opus.
+  - When he says Fable is at 95%, the main session switches to Opus at the next task boundary (never
+    mid-task) and keeps going.
+  - When he says the all-models weekly limit is at 90%, finish the current task, commit, update HANDOFF, and
+    stop for the day.
 
 # Plan
 
