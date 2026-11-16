@@ -2869,3 +2869,35 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   unlock and a step that comes due rings on the lock screen, on the dev build and on a release build.
 - **Tests:** the device test; JUnit or Robolectric for whatever decides "locked, skip setup".
 - **Real phone:** the check again on the OnePlus after the fix; once on the tester's Samsung at T-037 (P4).
+
+### T-073 Open shared plan: say when the serve date was moved
+- **Status:** built on the agent's branch, unit-tested, not gated (`npm run check` not run), not seen on a
+  device.
+- **Why:** 0.2.0's `suggestServe` moves the date silently: a shared serve time that is less than an hour out
+  becomes the next same weekday at the same local time, and the only sign is the date on the first "Serve on"
+  chip. Found 2026-11-16 when a test plan landed a week out. The note was not in SPEC. The rule itself stays
+  exactly as it is.
+- **Jason's wording (2026-11-16):** one line under "Serve on", shown only when the date was moved.
+  - Shared time already passed: "That time has passed. Set for Mon, Nov 23."
+  - Shared time still ahead but under an hour away: "That's less than an hour away. Set for Mon, Nov 23.
+    Pick a date to keep today."
+  - Nothing when the date is kept. "Mon, Nov 23" stands for the moved date, as the first chip shows it
+    (`fmtDay`). Also: "Make sure Pick a date allows choosing today in that case."
+- **Built:** `serveMove(sharedServe, now)` in `src/lib/sharedPlan.ts`, next to `suggestServe`: `'kept'`,
+  `'passed'` or `'soon'`, pure, time passed in. `src/screens/plan/SharedPlanSheet.tsx` reads the clock once
+  for both the date offered and the reason, and shows the line through the `note` of the "Serve on" `Field`
+  (the same piece the smoker temp note uses; no new component or styling), with the date in a `Num`. SPEC
+  section 3, "Open shared plan", has the sentence.
+- **Boundaries (to agree with `suggestServe`, which keeps `sharedServe >= now + 1 hour`):** exactly one hour
+  out is kept, no note. Exactly now is "less than an hour away", not "passed" (passed is `sharedServe < now`).
+- **When the note shows:** only while the moved date is the one set. After the receiver picks their own date
+  it goes (it no longer describes what is set); tapping the offered date chip brings it back.
+- **Pick a date and today:** already worked, nothing changed. `src/platform/dateTime.ts` opens Android's
+  date dialog then its time dialog with no minimum date, and the sheet keeps what the picker returns as it
+  is: no clamp and no second run of `suggestServe`. A test proves a time today, 20 min ahead, is what `onUse`
+  receives. Two things seen and left alone (not asked for): the picker opens on the offered (moved) date, so
+  keeping today means going back a week in the date dialog; and nothing stops a picked time in the past.
+- **Tests:** `engine/share.test.ts` (`serveMove`, edges checked against `suggestServe`);
+  `src/screens/plan/SharedPlanSheet.test.tsx`, "Serve on" (passed, under an hour, kept, both edges, the note
+  going and coming back with the selection, Pick a date today).
+- **Device testing (Jason):** the sheet at 115% with a plan that is under an hour away and one that has passed.

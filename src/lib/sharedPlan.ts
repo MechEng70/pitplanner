@@ -183,6 +183,19 @@ export function suggestServe(sharedServe: number, now: number): number {
   return d.getTime();
 }
 
+/** Why the serve date offered is not the shared one: the shared time has passed, or it is under an hour away. */
+export type ServeMove = 'kept' | 'passed' | 'soon';
+
+/**
+ * What suggestServe did with the shared serve time (T-073), for the note under "Serve on". The edges follow
+ * suggestServe: exactly one hour out is 'kept' (it keeps `sharedServe >= now + HOUR`), and a time that is
+ * exactly now is 'soon', not 'passed' (it has not passed yet, and it is under an hour away).
+ */
+export function serveMove(sharedServe: number, now: number): ServeMove {
+  if (sharedServe >= now + HOUR) return 'kept';
+  return sharedServe < now ? 'passed' : 'soon';
+}
+
 const lowerFirst = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 
 /** Menu line as the sender set it: "Brisket, 12 lb, butcher paper", "Chicken breasts, 4, griddle". */

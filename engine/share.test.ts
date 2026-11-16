@@ -10,6 +10,7 @@ import {
   importPlan,
   mapToCookers,
   parsePitPlan,
+  serveMove,
   sharedLine,
   suggestServe,
   type SharedPlan,
@@ -208,6 +209,30 @@ test('share: serve stays when ahead, else the next same weekday at the same time
       (new Date(SERVE + 7 * 864e5).getTimezoneOffset() - new Date(SERVE).getTimezoneOffset()) * 60_000,
   );
   assert.equal(new Date(later).getDay(), new Date(SERVE).getDay());
+});
+
+test('share: why the serve date was moved (T-073), agreeing with suggestServe at the edges', () => {
+  const HOUR = 3_600_000;
+  // At least an hour out: kept. Exactly one hour out is kept, as suggestServe keeps it.
+  assert.equal(serveMove(SERVE, SERVE - 5 * HOUR), 'kept');
+  assert.equal(serveMove(SERVE, SERVE - HOUR), 'kept');
+  assert.equal(suggestServe(SERVE, SERVE - HOUR), SERVE);
+  // Still ahead but under an hour away: moved, 'soon'. Exactly now counts as not yet passed.
+  assert.equal(serveMove(SERVE, SERVE - HOUR + 1), 'soon');
+  assert.notEqual(suggestServe(SERVE, SERVE - HOUR + 1), SERVE);
+  assert.equal(serveMove(SERVE, SERVE - 60_000), 'soon');
+  assert.equal(serveMove(SERVE, SERVE), 'soon');
+  assert.notEqual(suggestServe(SERVE, SERVE), SERVE);
+  // Behind now: moved, 'passed'.
+  assert.equal(serveMove(SERVE, SERVE + 1), 'passed');
+  assert.equal(serveMove(SERVE, SERVE + 3 * 24 * HOUR), 'passed');
+  // 'kept' exactly when suggestServe returns the shared time.
+  for (const d of [-2 * HOUR, -HOUR, -HOUR + 1, -1, 0, 1, HOUR, 8 * 24 * HOUR])
+    assert.equal(
+      serveMove(SERVE, SERVE + d) === 'kept',
+      suggestServe(SERVE, SERVE + d) === SERVE,
+      `now = serve + ${d}`,
+    );
 });
 
 test('share: menu lines', () => {

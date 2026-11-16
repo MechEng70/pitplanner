@@ -180,6 +180,67 @@ describe('Shared plan sheet', () => {
       await settle();
       expect(onUse.mock.calls[0]![1]).toBe(SERVE);
     });
+
+    // T-073: the sheet says when it moved the date. SERVE is Sat Nov 14, 5:00 PM; a week on is Sat, Nov 21.
+    const MIN = 60_000;
+    const PASSED = 'That time has passed. Set for Sat, Nov 21.';
+    const SOON = "That's less than an hour away. Set for Sat, Nov 21. Pick a date to keep today.";
+    const moveNote = () => screen.queryByText(/Set for/);
+
+    test('a time that has passed: the note says so and names the new date', async () => {
+      await show(withGriddle, { now: SERVE + 30 * MIN });
+      expect(chip('Sat, Nov 21')).toBeChecked();
+      expect(moveNote()).toHaveTextContent(PASSED, { exact: true });
+    });
+
+    test('a time under an hour away: the note says so and that Pick a date keeps today', async () => {
+      await show(withGriddle, { now: SERVE - 30 * MIN });
+      expect(chip('Sat, Nov 21')).toBeChecked();
+      expect(moveNote()).toHaveTextContent(SOON, { exact: true });
+    });
+
+    test('a date that was kept has no note', async () => {
+      await show(withGriddle, { now: SERVE - 5 * 60 * MIN });
+      expect(chip('Sat, Nov 14')).toBeChecked();
+      expect(moveNote()).toBeNull();
+      expect(screen.queryByText(/has passed|less than an hour/)).toBeNull();
+    });
+
+    test('edge: exactly an hour out is kept, as the date offered is, so no note', async () => {
+      await show(withGriddle, { now: SERVE - 60 * MIN });
+      expect(chip('Sat, Nov 14')).toBeChecked();
+      expect(moveNote()).toBeNull();
+    });
+
+    test('edge: exactly now has not passed, so the note is the under an hour one', async () => {
+      await show(withGriddle, { now: SERVE });
+      expect(chip('Sat, Nov 21')).toBeChecked();
+      expect(moveNote()).toHaveTextContent(SOON, { exact: true });
+    });
+
+    test('the note shows only while the moved date is the one set: gone after a pick, back with the offer', async () => {
+      const today = SERVE + 15 * MIN;
+      await show(withGriddle, { now: SERVE - 30 * MIN, picked: today });
+      expect(moveNote()).toBeOnTheScreen();
+      await fireEvent.press(chip('Pick a date'));
+      expect(chip(/^Sat, Nov 14, 5:15/)).toBeChecked();
+      expect(moveNote()).toBeNull();
+      await fireEvent.press(chip('Sat, Nov 21'));
+      expect(moveNote()).toHaveTextContent(SOON, { exact: true });
+    });
+
+    test('Pick a date takes today at a time under an hour away, and Use this plan hands over that time', async () => {
+      const now = SERVE - 30 * MIN; // Sat Nov 14, 4:30 PM
+      const today = now + 20 * MIN; // 4:50 PM the same day, 20 min ahead
+      const { pickDateTime, onUse } = await show(withGriddle, { now, picked: today });
+      await fireEvent.press(chip('Pick a date'));
+      expect(pickDateTime).toHaveBeenCalledWith(SERVE + 7 * 86_400_000);
+      expect(chip(/^Sat, Nov 14, 4:50/)).toBeChecked();
+      expect(chip('Sat, Nov 21')).not.toBeChecked();
+      await fireEvent.press(button('Use this plan'));
+      await settle();
+      expect(onUse.mock.calls[0]![1]).toBe(today);
+    });
   });
 
   test('Use this plan closes the sheet, then hands over the menu on the receiver cookers', async () => {

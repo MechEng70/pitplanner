@@ -7,7 +7,7 @@ import type { CookerKind, ItemInput } from '../../../engine/types';
 import { Button, Card, Chips, Field, InfoBox, Num, SelectField, Sheet, Stack, Text, useSheet } from '@/components/kit';
 import { fmtDay, fmtTemp, fmtTime, fmtWeight, tx } from '@/lib/format';
 import { countText, food, rules } from '@/lib/rules';
-import { importPlan, sharedLine, suggestServe, type ImportedPlan, type SharedPlan } from '@/lib/sharedPlan';
+import { importPlan, serveMove, sharedLine, suggestServe, type ImportedPlan, type SharedPlan } from '@/lib/sharedPlan';
 import { useStore } from '@/lib/store';
 import type { PickDateTime } from '@/platform/types';
 
@@ -34,7 +34,11 @@ interface Props {
 export function SharedPlanSheet({ shared, pickDateTime, now, onClose, onUse }: Props) {
   const { state } = useStore();
   const { gear, units } = state;
-  const [suggested] = useState(() => suggestServe(shared.serveAt, now()));
+  // One reading of the clock for the date offered and for why it was moved, so the two cannot disagree.
+  const [{ suggested, move }] = useState(() => {
+    const at = now();
+    return { suggested: suggestServe(shared.serveAt, at), move: serveMove(shared.serveAt, at) };
+  });
   const [serveAt, setServeAt] = useState(suggested);
   const plan = useMemo(() => importPlan(rules, shared, gear), [shared, gear]);
   const picked = serveAt !== suggested;
@@ -72,7 +76,20 @@ export function SharedPlanSheet({ shared, pickDateTime, now, onClose, onUse }: P
         </Stack>
       </Card>
 
-      <Field label="Serve on">
+      <Field
+        label="Serve on"
+        note={
+          // T-073: say when the date offered is not the sender's. Shown only while that moved date is the one
+          // set: once the receiver picks their own date the note no longer describes what is set, and it
+          // comes back if they go back to the offered date. Nothing when the sender's date was kept.
+          move !== 'kept' && !picked ? (
+            <Text>
+              {move === 'passed' ? 'That time has passed.' : "That's less than an hour away."} Set for{' '}
+              <Num>{fmtDay(suggested)}</Num>.{move === 'soon' ? ' Pick a date to keep today.' : ''}
+            </Text>
+          ) : undefined
+        }
+      >
         <Chips
           label="Serve on"
           value={picked ? 'pick' : 'suggested'}
