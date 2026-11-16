@@ -1,0 +1,164 @@
+// engine/live.ts: a change during the cook that makes a warning the plan did not have (T-069, parity T16),
+// and the smoker conflict sentence (Jason, 2026-11-16).
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { buildPlan } from './plan.ts';
+import { extendCook, markPullDone, markStepDone, shiftRemaining, smokerConflicts } from './live.ts';
+import type { ItemInput, Plan, PlanInput, SmokerProfile } from './types.ts';
+
+const rules = JSON.parse(readFileSync(new URL('../data/foods.json', import.meta.url), 'utf8'));
+// Saturday Nov 14, 2026, 5:00 PM Eastern (UTC-5) = 22:00 UTC
+const SERVE = Date.UTC(2026, 10, 14, 22, 0);
+const local = (h: number, m = 0) => Date.UTC(2026, 10, 14, h + 5, m);
+
+const pitBoss: SmokerProfile = {
+  id: 'pb820',
+  name: 'Pit Boss 820',
+  type: 'pellet',
+  tempStepF: 5,
+  minTempF: 180,
+  maxTempF: 500,
+  hopperLb: 21,
+  mainGrateSqIn: 593,
+  upperRackSqIn: 256,
+  pelletLbPerHrLow: 1.5,
+  pelletLbPerHrHigh: 3,
+  preheatMin: 20,
+};
+const brisket: ItemInput = {
+  id: 'b',
+  foodId: 'brisket',
+  methodId: 'smoked',
+  quantity: 12,
+  options: { wrap: 'paper' },
+  restMin: 60,
+};
+const wings: ItemInput = { id: 'w', foodId: 'wings', methodId: 'smokeCrisp', quantity: 2 };
+const menu = (items: ItemInput[], over: Partial<PlanInput> = {}): PlanInput => ({
+  mode: 'readyBy',
+  at: SERVE,
+  pitTempF: 225,
+  rateOverrides: { brisket: 0.75 },
+  cookers: {
+    smoker: pitBoss,
+    griddle: { id: 'bs', name: 'Blackstone', sizeIn: 36, burners: 4, hasDome: true, preheatMin: 15 },
+    oven: { id: 'oven', lowestTempF: 170, holdIn: 'oven' },
+  },
+  items,
+  ...over,
+});
+// Brisket on 6:40 AM, wrap 11:35 AM, off 3:40 PM. Wings on 3:15 PM at 225F, the smoker goes to 400F at 4:05 PM.
+const input = menu([brisket, wings]);
+const plan = buildPlan(rules, input);
+const conflicts = (p: Plan) => p.warnings.filter(w => w.code === 'PIT_CONFLICT');
+const BRISKET_WINGS = 'Smoker conflict: brisket at 225F and chicken wings at 400F at the same time.';
+
+test('the plan as built has no smoker conflict and no long hold', () => {
+  assert.deepEqual(plan.warnings, []);
+  assert.deepEqual(smokerConflicts(plan), []);
+});
+
+test('T16: Running behind on the brisket makes a new smoker conflict with the wings', () => {
+  const late = shiftRemaining(rules, input, plan, local(10), 30, true, 'b');
+  const c = conflicts(late);
+  assert.equal(c.length, 1);
+  assert.equal(c[0].level, 'warn');
+  assert.deepEqual([...c[0].itemIds!].sort(), ['b', 'w']);
+  assert.equal(c[0].message, BRISKET_WINGS);
+});
+
+test('T16: a wrap done 30 min late, Not yet at the pull check and a late pull each make the same conflict', () => {
+  const wrapLate = markStepDone(rules, input, plan, 'b', 'wrap', local(12, 5), true).plan;
+  const notYet = extendCook(rules, input, plan, 'b', local(15, 40), 30, true);
+  const pullLate = markPullDone(rules, input, plan, 'b', local(16, 15));
+  for (const p of [wrapLate, notYet, pullLate])
+    assert.deepEqual(
+      conflicts(p).map(w => w.message),
+      [BRISKET_WINGS],
+    );
+});
+
+test('T16: a change that keeps the brisket off before the smoker climbs makes no conflict', () => {
+  // 20 min late: off at 4:00 PM, the smoker goes to 400F at 4:05 PM.
+  assert.deepEqual(conflicts(shiftRemaining(rules, input, plan, local(10), 20, true, 'b')), []);
+});
+
+test('a brisket pulled early has a hold that grows past its 4 hr limit', () => {
+  // Off at 11:30 AM, sliced at 4:40 PM: 310 min.
+  const early = markPullDone(rules, input, plan, 'b', local(11, 30));
+  const w = early.warnings.filter(x => x.code === 'HOLD_TOO_LONG');
+  assert.deepEqual(
+    w.map(x => x.itemIds),
+    [['b']],
+  );
+  // The engine's own sentence stays in minutes (Plan's Conflicts sheet).
+  assert.equal(w[0].message, 'Brisket holds 310 min, past its 240 min limit. Keep it above 140F.');
+});
+
+test('conflict sentence: no verb to agree, food names in lower case, the earlier phase first', () => {
+  const p = buildPlan(
+    rules,
+    menu([{ id: 'c', foodId: 'breasts', methodId: 'smoker', quantity: 4, options: { thickness: 'pounded' } }, wings], {
+      clearPitBeforeHighHeat: false,
+    }),
+  );
+  assert.deepEqual(
+    conflicts(p).map(w => w.message),
+    ['Smoker conflict: chicken breasts at 225F and chicken wings at 400F at the same time.'],
+  );
+});
+
+test('conflict sentence: two of the same food read by their labels', () => {
+  const p = buildPlan(
+    rules,
+    menu([
+      { id: 'w1', foodId: 'wings', methodId: 'smokeCrisp', quantity: 2 },
+      { id: 'w2', foodId: 'wings', methodId: 'hot', quantity: 2 },
+    ]),
+  );
+  assert.deepEqual(
+    conflicts(p).map(w => w.message),
+    ['Smoker conflict: 2 lb chicken wings 1 at 225F and 2 lb chicken wings 2 at 350F at the same time.'],
+  );
+});
+
+test('conflict sentence: St. Louis ribs keep their capitals', () => {
+  const p = buildPlan(
+    rules,
+    menu(
+      [
+        { id: 'r', foodId: 'stlribs', methodId: '321', quantity: 2 },
+        { id: 'w', foodId: 'wings', methodId: 'hot', quantity: 2 },
+      ],
+      { clearPitBeforeHighHeat: false },
+    ),
+  );
+  const c = conflicts(p);
+  assert.equal(c.length, 1);
+  assert.match(
+    c[0].message,
+    /^Smoker conflict: (St\. Louis ribs at 225F and chicken wings at 350F|chicken wings at 350F and St\. Louis ribs at 225F) at the same time\.$/,
+  );
+});
+
+test('smokerConflicts: the stretch where the temps are more than 25F apart, with each food and its temp', () => {
+  // Brisket 30 min behind: off at 4:10 PM, the smoker goes to 400F for the wings at 4:05 PM.
+  const late = shiftRemaining(rules, input, plan, local(10), 30, true, 'b');
+  assert.deepEqual(smokerConflicts(late), [
+    {
+      start: local(16, 5),
+      end: local(16, 10),
+      foods: [
+        { itemId: 'b', tempF: 225 },
+        { itemId: 'w', tempF: 400 },
+      ],
+    },
+  ]);
+  // An hour behind: one stretch, 4:05 to 4:40 PM, though the wings go from ramp to crisp in it.
+  const later = shiftRemaining(rules, input, plan, local(10), 60, true, 'b');
+  assert.deepEqual(
+    smokerConflicts(later).map(c => [c.start, c.end]),
+    [[local(16, 5), local(16, 40)]],
+  );
+});

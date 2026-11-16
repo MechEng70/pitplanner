@@ -15,7 +15,7 @@ import type {
   TimingModel,
 } from './types.ts';
 import { isSettable } from './temps.ts';
-import { itemLabels } from './labels.ts';
+import { inSentence, itemLabels } from './labels.ts';
 import {
   resolveMethod as mergeShared,
   type ResolvedMethod,
@@ -29,7 +29,7 @@ export type { Rules } from './rules.ts';
 
 const MIN = 60_000;
 const HIGH_HEAT_DELTA_F = 50; // a smoker phase this far above the pit set point is "high heat"
-const CONFLICT_TOLERANCE_F = 25; // two smoker phases further apart than this cannot share the pit
+export const CONFLICT_TOLERANCE_F = 25; // two smoker phases further apart than this cannot share the pit
 const PIT_CLIMB_MIN = 15; // time to raise the pit before a high-heat phase
 const OVEN_LEAD_MIN = 15;
 const REFILL_AT_FRACTION = 0.1; // top-off alert when the hopper is estimated under 10%
@@ -357,6 +357,8 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
     });
   };
   const nm = (it: PlannedItem) => it.label ?? it.name;
+  /** The food mid-sentence: "brisket", "11.5 lb brisket", "St. Louis ribs". */
+  const inS = (it: PlannedItem) => it.label ?? inSentence(it.name);
 
   const [lo, hi] = rules.tempModel.trustedRangeF;
   if (pit < lo || pit > hi)
@@ -448,7 +450,8 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
           code: 'PIT_CONFLICT',
           level: 'warn',
           itemIds: [a.it.input.id, b.it.input.id],
-          message: `${nm(a.it)} needs ${a.p.tempF}F while ${nm(b.it)} needs ${b.p.tempF}F at the same time.`,
+          // No verb to agree with "wings" or "brisket" (Jason, 2026-11-16). Labels are already in sentence case.
+          message: `Smoker conflict: ${inS(a.it)} at ${a.p.tempF}F and ${inS(b.it)} at ${b.p.tempF}F at the same time.`,
         });
       }
     }

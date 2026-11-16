@@ -2,7 +2,7 @@
 // reschedules all alarms in one step from plan.events (never patch alarms piecemeal).
 
 import type { Plan, PlanInput } from './types.ts';
-import { derive, type Rules } from './plan.ts';
+import { CONFLICT_TOLERANCE_F, derive, type Rules } from './plan.ts';
 import { keyedEvents } from './alarms.ts';
 
 const MIN = 60_000;
@@ -204,6 +204,43 @@ export function smokerOverlaps(plan: Plan): { start: number; end: number; itemId
       prev.end = b;
       prev.tempsF = [...new Set([...prev.tempsF, ...on.map(s => s.tempF)])];
     } else out.push({ start: a, end: b, itemIds: ids, tempsF: [...new Set(on.map(s => s.tempF))] });
+  }
+  return out;
+}
+
+export interface SmokerConflict {
+  start: number;
+  end: number;
+  /** Every food on the smoker in the stretch, in menu order, with the temp it needs there. */
+  foods: { itemId: string; tempF: number }[];
+}
+
+/**
+ * Time ranges where the foods on the smoker need temps too far apart to share it (the PIT_CONFLICT rule of
+ * plan.ts), soonest first. A range runs on while a food only changes phase at a temp that still conflicts,
+ * and then lists the temp it needs first.
+ */
+export function smokerConflicts(plan: Plan): SmokerConflict[] {
+  const spans = plan.items.flatMap(it =>
+    it.phases
+      .filter(p => p.cooker === 'smoker')
+      .map(p => ({ id: it.input.id, start: p.start, end: p.end, tempF: p.tempF })),
+  );
+  const cuts = [...new Set(spans.flatMap(s => [s.start, s.end]))].sort((a, b) => a - b);
+  const out: SmokerConflict[] = [];
+  for (let i = 0; i < cuts.length - 1; i++) {
+    const a = cuts[i],
+      b = cuts[i + 1];
+    const foods: SmokerConflict['foods'] = [];
+    for (const s of spans)
+      if (s.start <= a && s.end >= b && !foods.some(f => f.itemId === s.id))
+        foods.push({ itemId: s.id, tempF: s.tempF });
+    const temps = foods.map(f => f.tempF);
+    if (foods.length < 2 || Math.max(...temps) - Math.min(...temps) <= CONFLICT_TOLERANCE_F) continue;
+    const prev = out[out.length - 1];
+    const ids = (c: SmokerConflict['foods']) => c.map(f => f.itemId).join();
+    if (prev && prev.end === a && ids(prev.foods) === ids(foods)) prev.end = b;
+    else out.push({ start: a, end: b, foods });
   }
   return out;
 }

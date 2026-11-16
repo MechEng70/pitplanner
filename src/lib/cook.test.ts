@@ -4,6 +4,8 @@ import { buildPlan } from '../../engine/plan.ts';
 import { saturday } from './fixtures/saturday.ts';
 import type { AlarmService } from '../platform/types.ts';
 import { rules } from './rules.ts';
+import { liveWarnings } from './cookView.ts';
+import { AT_1023, cookAt } from '../test/cook.ts';
 import {
   applyActions,
   doneStep,
@@ -218,5 +220,64 @@ describe('parity (T-034)', () => {
     const after = finish(postpone(fresh, k.key, k.event.at, 30, true).plan);
     expect(after[id]).toBe(before[id] + 30 * MIN);
     for (const other of Object.keys(before).filter(x => x !== id)) expect(after[other]).toBe(before[other]);
+  });
+});
+
+describe('warnings made during the cook (T-069)', () => {
+  const MIN = 60_000;
+  const F_UNITS = { temp: 'F', weight: 'lb' } as const;
+  // Mockup 12's cook: brisket off at 3:40 PM, wings on at 3:15 PM, the smoker goes to 400F for them later.
+  const fresh = cookAt(AT_1023);
+  const wrap = 'phase:b:wrap';
+  const CONFLICT = 'Smoker conflict: brisket at 225F and chicken wings at 400F at the same time.';
+
+  test('a new cook has hidden no warning, and a cook saved before T-069 loads the same way', () => {
+    expect(fresh.warningsSeen).toEqual([]);
+    const { warningsSeen: _w, ...old } = fresh;
+    const loaded = normalize(JSON.parse(JSON.stringify(old)))!;
+    expect(loaded.warningsSeen).toEqual([]);
+    expect(liveWarnings(loaded.plan, loaded.original, loaded.warningsSeen, AT_1023, F_UNITS)).toBeNull();
+  });
+
+  test('a cook saved before T-069 keeps quiet about a conflict it started with', () => {
+    // The conflict was on the plan at Start cook (and on Plan's Conflicts tile), with the old sentence.
+    const late = postpone(fresh, wrap, AT_1023, 60, true);
+    const started = {
+      ...late.plan,
+      warnings: late.plan.warnings.map(w => ({ ...w, message: w.message.replace('Smoker conflict', 'Old words') })),
+    };
+    const { warningsSeen: _w, ...old } = { ...late, original: started, plan: started };
+    const loaded = normalize(JSON.parse(JSON.stringify(old)))!;
+    expect(loaded.plan.warnings.some(w => w.code === 'PIT_CONFLICT')).toBe(true);
+    expect(liveWarnings(loaded.plan, loaded.original, loaded.warningsSeen, AT_1023, F_UNITS)).toBeNull();
+  });
+
+  test('+15 min tapped on the lock screen can make a conflict: it is on the plan, and nothing rings for it', async () => {
+    // The brisket's pull check at 3:40 PM, put off four times from the alert with the app closed.
+    const pull = pending(fresh).find(k => k.event.kind === 'pull' && k.event.itemId === 'b')!;
+    const at = pull.event.at;
+    const actions = [0, 1, 2, 3].map(i => ({
+      type: 'snooze15' as const,
+      alarmId: pull.key,
+      keys: [pull.key],
+      at: at + i * 15 * MIN,
+    }));
+    const before = { ...fresh, done: { ...fresh.done, [wrap]: at - 60 * MIN } };
+    const after = applyActions(before, actions);
+    expect(after.plan.warnings.filter(w => w.code === 'PIT_CONFLICT').map(w => w.message)).toEqual([CONFLICT]);
+    // Serve moved with the brisket, so the wings and the breasts now hold past their limits too: one text,
+    // the conflict first. The breasts' "Move it to the griddle or start it later." is not said mid-cook.
+    expect(liveWarnings(after.plan, after.original, after.warningsSeen, at + 46 * MIN, F_UNITS)?.text).toBe(
+      `${CONFLICT} Chicken wings holds 35 min, past its 30 min limit. Chicken breasts holds 38 min, past its 20 min limit.`,
+    );
+    // Silent for 0.3.0: the notice says what the alert did and no more, and the alarm set has only steps.
+    expect(after.notice).not.toMatch(/conflict/i);
+    const { svc, calls } = fakeAlarms();
+    await syncAlarms(after, at + 46 * MIN, svc, F_UNITS);
+    const stepKeys = new Set(steps(after).map(k => k.key));
+    for (const a of calls.replaced[0]) {
+      expect(`${a.title} ${a.body}`).not.toMatch(/conflict/i);
+      expect(a.keys.every(k => stepKeys.has(k))).toBe(true);
+    }
   });
 });
