@@ -63,9 +63,9 @@ not moving). Answer each alert within a couple of minutes. Never open the dev bu
 | 3:25 PM + moves | Oven to 170F for holding | **Done** on the lock screen | | | |
 | 3:40 PM + moves | Check tenderness (brisket pull) | **Done** on the lock screen | | | |
 | 4:05 PM + moves | Turn the smoker up to 400F | Unlock, **Done** in the app. Then swipe the app away from recent apps (app closed). Lock | | | |
-| 4:20 PM + moves | Wings crisp at 400F | **+15 min** on the lock screen. Do not open the app. See "The +15 tap" below | | | |
-| 4:25 PM + moves | Fire the griddle | **Done** on the lock screen. Still do not open the app | | | |
-| 15 min after the +15 tap | Wings crisp, again | Note the time. Now open the app. Read the notice and the new serve time: ________. **Done** on the wings crisp step | | | |
+| 4:20 PM + moves | Wings crisp at 400F | **+15 min** on the lock screen. Keep the app closed until Fire the griddle rings. See "The +15 tap" below | | | |
+| 4:25 PM + moves | Fire the griddle | It must ring at the time it had before the +15 tap. Note the time. **Done** on the lock screen. Then open the app: read the notice and the new serve time: ________. Lock | | | |
+| 15 min after the +15 tap | Wings crisp, again | Note the time. **Done** on the lock screen | | | |
 | as the app shows | Chicken breasts on the griddle | **Done** on the lock screen | | | |
 | as the app shows | Slice or plate the brisket | **Done** on the lock screen | | | |
 | as the app shows | Pull chicken breasts | **Done** on the lock screen | | | |
@@ -80,7 +80,7 @@ not moving). Answer each alert within a couple of minutes. Never open the dev bu
 1. The alert goes away, and the wings crisp step rings again 15 minutes after the tap (within a minute).
 2. No other alarm moves while the app stays closed. Fire the griddle still rings at the time it had before
    the tap.
-3. When the app is next opened, it applies the tap: Live cook shows one notice, the wings step is 15
+3. When the app is opened (after Fire the griddle rings), it applies the tap: Live cook shows one notice, the wings step is 15
    minutes later, and because the wings' hold cannot absorb 15 minutes, serve moves and the other foods move
    with it ("Serve moved to {time}. The other foods moved with it."). The alarms are set again once, at the
    new times.
@@ -90,7 +90,10 @@ not moving). Answer each alert within a couple of minutes. Never open the dev bu
 A fail is any of: no second ring for the wings step; another alarm moving before the app is opened; a step
 ringing twice; a step not ringing after the app re-planned.
 
-This expectation is from reading the code. It is checked on the emulator before Saturday; if the emulator
+The rule in the code (`applyActions`, `src/lib/cook.ts`): a +15 from the lock screen keeps serve when the
+holds can absorb it and moves serve later when they cannot; the wings hold 5 minutes, so here serve moves.
+SPEC section 5 says the same. (SPEC's "the lock screen always keeps serve" is about a step marked Done
+early, which never moves serve earlier.) This expectation is from reading the code. It is checked on the emulator before Saturday; if the emulator
 shows something else, this section is corrected first.
 
 ## Sunday readout (Claude, phone plugged in, each line read only and after Jason's yes)

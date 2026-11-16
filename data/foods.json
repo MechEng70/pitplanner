@@ -121,12 +121,12 @@
         { "id": "221", "label": "2-2-1", "note": "Smoke, wrapped, unwrapped hours at 225F. 2-2-1 suits St. Louis cut.", "cooker": "smoker", "timing": { "kind": "fixedScaled" },
           "phases": [
             { "id": "smoke", "fixedMin": 120, "temp": "pit", "label": "St. Louis ribs on, bone side down.", "short": "Smoke" },
-            { "id": "wrap", "fixedMin": 120, "temp": "pit", "label": "Wrap the ribs in foil with a splash of apple juice or ACV and a few pats of butter.", "short": "Wrapped" },
+            { "id": "wrap", "fixedMin": 120, "temp": "pit", "label": "Wrap the ribs in foil with a splash of apple juice or apple cider vinegar and a few pats of butter.", "short": "Wrapped" },
             { "id": "unwrap", "fixedMin": 60, "temp": "pit", "label": "Unwrap the ribs, back on to set the bark. Sauce in the last 30 min if saucing.", "short": "Set bark" } ] },
         { "id": "321", "label": "3-2-1", "note": "Smoke, wrapped, unwrapped hours at 225F. Longer smoke, softer ribs.", "cooker": "smoker", "timing": { "kind": "fixedScaled" },
           "phases": [
             { "id": "smoke", "fixedMin": 180, "temp": "pit", "label": "St. Louis ribs on, bone side down.", "short": "Smoke" },
-            { "id": "wrap", "fixedMin": 120, "temp": "pit", "label": "Wrap the ribs in foil with a splash of apple juice or ACV and a few pats of butter.", "short": "Wrapped" },
+            { "id": "wrap", "fixedMin": 120, "temp": "pit", "label": "Wrap the ribs in foil with a splash of apple juice or apple cider vinegar and a few pats of butter.", "short": "Wrapped" },
             { "id": "unwrap", "fixedMin": 60, "temp": "pit", "label": "Unwrap the ribs, back on to set the bark.", "short": "Set bark" } ] },
         { "id": "nowrap", "label": "No wrap", "cooker": "smoker", "timing": { "kind": "fixedScaled" },
           "phases": [ { "id": "smoke", "fixedMin": 330, "temp": "pit", "label": "St. Louis ribs on, bone side down. Spritz hourly after hour 2 if the bark looks dry.", "short": "Smoke" } ] }
@@ -233,7 +233,7 @@
         { "id": "hot", "label": "Smoker at 350F", "short": "smoker at 350F", "cooker": "smoker", "timing": { "kind": "phases" },
           "phases": [ { "id": "cook", "fixedMin": 60, "temp": 350, "label": "Wings on at 350F on a wire rack. Flip at 30 min.", "short": "350F" } ] },
         { "id": "griddle", "label": "Griddle", "cooker": "griddle", "timing": { "kind": "phases" },
-          "phases": [ { "id": "cook", "fixedMin": 28, "temp": 350, "label": "Wings on the griddle, medium (about 350F surface). Turn every 5 min; dome for the first 15.", "short": "Griddle" } ] }
+          "phases": [ { "id": "cook", "fixedMin": 28, "temp": 350, "label": "Wings on the griddle, medium (about 350F surface). Turn every 5 min. Dome for the first 15.", "short": "Griddle" } ] }
       ],
       "shared": {
         "options": { "drybrine": { "label": "Dry brine ahead", "default": "yes", "choices": { "yes": { "label": "Yes", "prep": { "leadMin": 480, "label": "Dry brine the wings." } }, "no": { "label": "No" } } } },
