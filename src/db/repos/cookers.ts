@@ -1,7 +1,9 @@
 // cookers: the user's gear, one row per cooker. The app has at most one of each kind today (engine
-// `Cookers`); the table already allows more. A row whose profile is corrupt is skipped.
+// `Cookers`); the table already allows more. A row whose profile is corrupt is skipped. An oven hold below
+// the 140F safety floor is read and written as 140F (T-077), so no plan is built with it.
 
 import type { Cookers, GriddleProfile, OvenProfile, SmokerProfile } from '../../../engine/types.ts';
+import { withSafeHold } from '../../lib/gear.ts';
 import type { Db } from '../db.ts';
 import { isNum, isNumOrNull, isObj, isStr, opt, parseJson } from './json.ts';
 import { quarantine } from './quarantine.ts';
@@ -62,7 +64,7 @@ export function cookersRepo(db: Db) {
         const p = parseJson(row.profile);
         if (row.kind === 'smoker' && !out.smoker && isSmoker(p)) out.smoker = p;
         else if (row.kind === 'griddle' && !out.griddle && isGriddle(p)) out.griddle = p;
-        else if (row.kind === 'oven' && !out.oven && isOven(p)) out.oven = p;
+        else if (row.kind === 'oven' && !out.oven && isOven(p)) out.oven = withSafeHold(p);
       }
       return out;
     },
@@ -80,8 +82,9 @@ export function cookersRepo(db: Db) {
         }
         db.run('DELETE FROM cookers');
         KINDS.forEach((kind, position) => {
-          const p = cookers[kind];
-          if (!p) return;
+          const given = cookers[kind];
+          if (!given) return;
+          const p = kind === 'oven' && cookers.oven ? withSafeHold(cookers.oven) : given;
           // The kind is part of the key so a smoker and a griddle can never collide on a profile id.
           db.run('INSERT INTO cookers (id, kind, profile, position, updated_at) VALUES (?, ?, ?, ?, ?)', [
             `${kind}:${p.id}`,

@@ -138,6 +138,28 @@ describe('cookers', () => {
     expect(r.cookers.load()).toEqual({ griddle: gear.griddle });
     expect(r.cookers.count()).toBe(3);
   });
+
+  // T-077 (parity T18): a hold below the 140F safety floor never reaches a plan.
+  test('a stored oven hold below 140F loads as 140F; 140F and above load as stored', () => {
+    const oven = defaultOven();
+    const stored = (lowestTempF: number) => {
+      r.cookers.save({ oven }, NOW);
+      corrupt('UPDATE cookers SET profile = ? WHERE kind = ?', [JSON.stringify({ ...oven, lowestTempF }), 'oven']);
+      return r.cookers.load().oven?.lowestTempF;
+    };
+    expect(stored(130)).toBe(140);
+    expect(stored(-5)).toBe(140);
+    expect(stored(140)).toBe(140);
+    expect(stored(150)).toBe(150);
+    // The rest of the profile is as stored.
+    expect(r.cookers.load().oven).toEqual({ ...oven, lowestTempF: 150 });
+  });
+
+  test('saving an oven hold below 140F stores 140F', () => {
+    r.cookers.save({ oven: { ...defaultOven(), lowestTempF: 120 } }, NOW);
+    const row = db.get<{ profile: string }>("SELECT profile FROM cookers WHERE kind = 'oven'");
+    expect(JSON.parse(row!.profile)).toEqual({ ...defaultOven(), lowestTempF: 140 });
+  });
 });
 
 describe('rate overrides', () => {

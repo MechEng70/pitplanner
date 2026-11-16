@@ -41,6 +41,12 @@ export const defaultGriddle = (): GriddleProfile => ({
 });
 export const defaultOven = (): OvenProfile => ({ id: 'oven', lowestTempF: 170, holdIn: 'ask' });
 
+/** Food safety floor for holding: the Oven sheet's stepper stops here and no stored hold is below it (T-077). */
+export const OVEN_HOLD_MIN_F = 140;
+/** The oven with its hold raised to the floor when it is below it; otherwise the same object. */
+export const withSafeHold = (o: OvenProfile): OvenProfile =>
+  o.lowestTempF < OVEN_HOLD_MIN_F ? { ...o, lowestTempF: OVEN_HOLD_MIN_F } : o;
+
 export type SmokerType = SmokerProfile['type'];
 export interface SmokerTypeInfo {
   chip: string;

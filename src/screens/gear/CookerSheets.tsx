@@ -8,7 +8,7 @@ import type { Cookers, GriddleProfile, OvenProfile } from '../../../engine/types
 import { cToF, fToC } from '../../../engine/units';
 import { Button, Chips, Field, Fill, InputField, Num, Sheet, Stack, Stepper, Text, useSheet } from '@/components/kit';
 import { fmtTemp, type Units } from '@/lib/format';
-import { defaultGriddle, defaultOven } from '@/lib/gear';
+import { defaultGriddle, defaultOven, OVEN_HOLD_MIN_F } from '@/lib/gear';
 import { useStore } from '@/lib/store';
 import { SmokerPicker } from '@/screens/setup/SmokerPicker';
 import type { CookerKind } from '@/screens/shared/AddCooker';
@@ -119,7 +119,6 @@ export function GriddleSheet({
   );
 }
 
-const HOLD_MIN_F = 140; // food safety floor for holding
 const TYPICAL_LOW_F = 170; // where most ovens bottom out
 const OVEN_MAX_F = 250;
 const STEP_F = 5;
@@ -146,14 +145,14 @@ export function OvenSheet({
   const shown = Math.round((C ? fToC(o.lowestTempF) : o.lowestTempF) / STEP) * STEP;
   const toF = (v: number) => (C ? Math.round(cToF(v)) : v);
   const step = (d: number) =>
-    setO({ ...o, lowestTempF: Math.min(OVEN_MAX_F, Math.max(HOLD_MIN_F, toF(shown + d * STEP))) });
+    setO({ ...o, lowestTempF: Math.min(OVEN_MAX_F, Math.max(OVEN_HOLD_MIN_F, toF(shown + d * STEP))) });
   return (
     <Sheet title="Oven" onClose={onClose} footer={<Actions what="oven" onSave={() => onSave(o)} onRemove={onRemove} />}>
       <Field
         label="Lowest oven setting"
         note={
           <Temps
-            text={`Holding needs at least ${fmtTemp(HOLD_MIN_F, units)}. Most ovens bottom out at ${fmtTemp(TYPICAL_LOW_F, units, true)}.`}
+            text={`Holding needs at least ${fmtTemp(OVEN_HOLD_MIN_F, units)}. Most ovens bottom out at ${fmtTemp(TYPICAL_LOW_F, units, true)}.`}
           />
         }
       >
@@ -163,7 +162,7 @@ export function OvenSheet({
           unit={units.temp}
           onDec={() => step(-1)}
           onInc={() => step(1)}
-          decDisabled={toF(shown - STEP) < HOLD_MIN_F - 0.5}
+          decDisabled={toF(shown - STEP) < OVEN_HOLD_MIN_F - 0.5}
           incDisabled={toF(shown + STEP) > OVEN_MAX_F + 0.5}
         />
       </Field>
