@@ -88,13 +88,36 @@ interface ReleaseJson {
   assets?: { name?: unknown; browser_download_url?: string }[];
 }
 
-/** The release's APK download link when there is one, else the release page. */
+/** One path segment of a tag or file name: letters, digits, dots, dashes, underscores; never `.` or `..`. */
+const SEG = '[A-Za-z0-9][A-Za-z0-9._-]*';
+const RELEASE_LINK = new RegExp(
+  `^https://github\\.com/MechEng70/pitplanner/releases/(?:download/${SEG}/${SEG}\\.apk|tag/${SEG}|latest)$`,
+);
+
+/**
+ * The link itself when it is one of Pit Planner's own GitHub release links, else null (T-035, security pass
+ * finding 8). The update check opens nothing else. The three shapes, as GitHub's API and RELEASES_PAGE give
+ * them:
+ *   https://github.com/MechEng70/pitplanner/releases/download/<tag>/<file>.apk   (an asset's download)
+ *   https://github.com/MechEng70/pitplanner/releases/tag/<tag>                   (a release's page)
+ *   https://github.com/MechEng70/pitplanner/releases/latest                      (RELEASES_PAGE)
+ * A download link redirects to GitHub's file host; the browser follows that, the app only opens github.com.
+ * Checked on the text, not with URL: React Native's URL does not parse or normalize like a browser.
+ */
+export function releaseLink(url: unknown): string | null {
+  return typeof url === 'string' && RELEASE_LINK.test(url) ? url : null;
+}
+
+/**
+ * The release's APK download link when there is one, else the release page, else the releases page. A link
+ * that is not one of Pit Planner's own GitHub release links counts as missing (releaseLink).
+ */
 export function fromRelease(json: ReleaseJson | null | undefined, now: number): UpdateInfo {
   const apk = (json?.assets ?? []).find(a => typeof a?.name === 'string' && a.name.endsWith('.apk'));
   return {
     checkedAt: now,
     latest: typeof json?.tag_name === 'string' ? json.tag_name : null,
-    url: apk?.browser_download_url ?? json?.html_url ?? RELEASES_PAGE,
+    url: releaseLink(apk?.browser_download_url) ?? releaseLink(json?.html_url) ?? RELEASES_PAGE,
   };
 }
 

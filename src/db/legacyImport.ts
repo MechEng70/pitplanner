@@ -7,6 +7,7 @@ import type { Cookers } from '../../engine/types.ts';
 import { normalize } from '../lib/cook.ts';
 import { parseDraft } from '../lib/draft.ts';
 import type { CookRecord } from '../lib/history.ts';
+import { releaseLink } from '../lib/update.ts';
 import type { LegacyStore } from '../platform/types.ts';
 import type { Db } from './db.ts';
 import { looksLikeCook } from './repos/activeCook.ts';
@@ -202,7 +203,8 @@ export function importLegacy(db: Db, legacy: LegacyStore, now: number): ImportRe
       const flags = read('flags', null, parseFlags);
       if (flags) r.settings.setFlags(flags, now);
       const update = read('update', null, parseUpdate);
-      if (update) r.settings.setUpdate(update, now);
+      // Gear opens the saved link: only one of Pit Planner's own GitHub release links (T-035, finding 8).
+      if (update) r.settings.setUpdate({ ...update, url: releaseLink(update.url) }, now);
 
       if (historyText !== null) {
         const json = parseJson(historyText);

@@ -30,8 +30,8 @@ justification, how it is excluded, follow-up task, review date.
 - **Exposure:** the netty and bouncycastle code runs only on Jason's machine during Gradle test and lint tasks
   (`testDebugUnitTest` for our modules; no `connectedAndroidTest` or managed devices). Device testing goes
   through `tools/device/`: adb, and Maestro from T-006.
-- **How it is excluded:** `tools/check.sh` passes `--configuration-matching='^releaseRuntimeClasspath$'` to
-  `snyk test`. npm projects are scanned unchanged. `npm run snyk:monitor` still monitors all configurations,
+- **How it is excluded:** `tools/snyk.sh` (called by `tools/check.sh`; the flag moved there from `check.sh`,
+  doc corrected in T-035) passes `--configuration-matching='^releaseRuntimeClasspath$'` to `snyk test`. npm projects are scanned unchanged. `npm run snyk:monitor` still monitors all configurations,
   so the findings stay visible in the Snyk dashboard.
 - **Follow-up:** T-057, upgrade AGP/Gradle within what the Expo SDK supports and re-run the full scan; if
   clean, remove the `--configuration-matching` flag and close this entry. Re-count after every Expo SDK upgrade.
@@ -75,7 +75,10 @@ justification, how it is excluded, follow-up task, review date.
   `main`. The shipped 0.2.0 code was scanned by this gate before the move (commits up to `b524245`); a 0.2.x
   hotfix is built on a branch from tag `v0.2.0`, where the old gate (and the old paths) apply.
   Excluded in `.snyk` (`legacy/**`), `.semgrepignore` (`legacy/`), and `snyk test --exclude=...,legacy`
-  in `tools/check.sh` (its Gradle project would otherwise be scanned as a second app).
+  (its Gradle project would otherwise be scanned as a second app). Since the Snyk step moved to
+  `tools/snyk.sh` that list is `EXCLUDE=reference,release,legacy,docs,modules,.claude`: `modules` because a
+  module's `build.gradle` cannot run alone (it is scanned as a subproject of `android/`, TECH-DESIGN section
+  11), `.claude` per SE-004 (doc corrected in T-035).
   Also excluded from Semgrep: the generated `android/` and `.expo/` (Continuous Native Generation,
   TECH-DESIGN D-7). Their sources (`app.config.ts`, and from later tasks `plugins/` and `modules/`) are
   scanned; `snyk test` still scans the generated Gradle project's dependencies (scope per SE-001).
