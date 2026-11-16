@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
+import { Dimensions } from 'react-native';
 import { SHEET_OUT_MS } from '@/components/kit/sheet';
 import { markPullDone } from '../../../engine/live';
 import { doneStep, pending, postpone, quiet, steps, type ActiveCook } from '@/lib/cook';
@@ -133,6 +134,86 @@ describe('live cook (mockup 12)', () => {
     );
     expect(screen.getByText(/^Smoker \d+C, serve 5:00 PM$/)).toBeOnTheScreen();
     expect(screen.queryByText(/165-170F/)).toBeNull();
+  });
+});
+
+// T-081 (Jason, 2026-11-16): the subtitle wrapped beside the status pill, so the pill's width (On plan, Ahead,
+// Behind) changed the header's height and moved the banners and Done. It has a full-width line of its own.
+describe('header (T-081)', () => {
+  type El = ReturnType<typeof screen.getByText>;
+  const SUB = 'Smoker 225F, serve 5:00 PM';
+  const holds = (box: El, el: El) => {
+    for (let n: El | null = el; n; n = n.parent) if (n === box) return true;
+    return false;
+  };
+  /** The header: the nearest element around the subtitle that also holds the status pill, and its parts. */
+  function header(pill: string) {
+    const sub = screen.getByText(SUB);
+    const chip = screen.getByText(pill);
+    let bar = sub.parent;
+    while (bar && !holds(bar, chip)) bar = bar.parent;
+    if (!bar) throw new Error('no header around the subtitle and the pill');
+    const parts = bar.children.filter((c): c is El => typeof c !== 'string');
+    return { bar, sub, chip, parts, of: (el: El) => parts.findIndex(p => holds(p, el)) };
+  }
+  /** The header as data (element types, props, text), with the status pill as one placeholder. */
+  function shape(pill: string): unknown {
+    const h = header(pill);
+    const options = button('Cook options');
+    let box = h.chip;
+    while (box.parent && box.parent !== h.bar && !holds(box.parent, options)) box = box.parent;
+    const walk = (n: El | string): unknown => {
+      if (typeof n === 'string') return n;
+      if (n === box) return 'pill';
+      const { children: _c, ...props } = n.props as Record<string, unknown>;
+      return { type: n.type, props: JSON.parse(JSON.stringify(props)) as unknown, kids: n.children.map(walk) };
+    };
+    return walk(h.bar);
+  }
+  /** The wings on at 10:23 AM instead of 3:15 PM, serve kept: their next step is due hours early. */
+  const ahead = () => doneStep(cookAt(AT_1023), 'phase:w:smoke', AT_1023, true).cook;
+
+  test('the subtitle is a line of its own under the title row, not beside the status pill', async () => {
+    await show(cookAt(AT_1023));
+    const h = header('On plan');
+    const row = h.of(h.chip);
+    // The title row keeps the title, the pill and the options button.
+    expect(h.of(screen.getByRole('heading', { name: 'Cooking' }))).toBe(row);
+    expect(h.of(button('Cook options'))).toBe(row);
+    // The subtitle comes after it, as the header's own full-width line: a line of text, nothing beside it.
+    expect(h.of(h.sub)).toBeGreaterThan(row);
+    expect(h.parts[h.of(h.sub)]!.type).toBe('Text');
+    expect(holds(h.parts[row]!, h.sub)).toBe(false);
+  });
+
+  test('On plan, Ahead and Behind give the same header at 115%: everything but the pill is the same', async () => {
+    const before = Dimensions.get('window');
+    const seen: unknown[] = [];
+    try {
+      Dimensions.set({ window: { ...before, fontScale: 1.15 }, screen: Dimensions.get('screen') });
+      for (const [cook, at, pill] of [
+        [cookAt(AT_1023), AT_1023, 'On plan'],
+        [ahead(), AT_1023, 'Ahead'],
+        [cookAt(AT_1023), AT_1023 + 82 * MIN, 'Behind'],
+      ] as const) {
+        await show(cook, at);
+        expect(Dimensions.get('window').fontScale).toBe(1.15);
+        expect(screen.getByText(pill)).toBeOnTheScreen();
+        seen.push(shape(pill));
+        await screen.unmount();
+      }
+    } finally {
+      Dimensions.set({ window: before, screen: Dimensions.get('screen') });
+    }
+    // Jest does not lay out, so this pins what the height comes from: two rows each time (the title row with
+    // the pill, then the subtitle on its own), with the same props and text. The device test measures it.
+    expect(seen[1]).toEqual(seen[0]);
+    expect(seen[2]).toEqual(seen[0]);
+    const rows = (seen[0] as { kids: unknown[] }).kids.map(k => JSON.stringify(k));
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toContain('"pill"');
+    expect(rows[1]).not.toContain('"pill"');
+    expect(rows[1]).toMatch(/Smoker/);
   });
 });
 
@@ -337,7 +418,7 @@ describe('a change that makes a new warning (T-069)', () => {
     const wingsOn = doneStep(behind(), 'phase:w:smoke', at(14, 45), true).cook;
     return doneStep(wingsOn, 'phase:c:cook', at(16, 15), true).cook;
   };
-  const BOTH = `${CONFLICT} Long hold: chicken wings 35 min (limit 30), chicken breasts 33 min (limit 20).`;
+  const BOTH = `${CONFLICT}\nLong hold: chicken wings 35 min (limit 30), chicken breasts 33 min (limit 20).`;
   /** One long hold with the conflict: only the breasts on early, 20 min, at 4:20 PM (a 28 min hold). */
   const breastsEarly = (): ActiveCook => doneStep(behind(), 'phase:c:cook', AT_420, true).cook;
 
@@ -387,10 +468,30 @@ describe('a change that makes a new warning (T-069)', () => {
     expect(repos.activeCook.load()!.warningsSeen).toEqual(['PIT_CONFLICT:b|w', 'HOLD_TOO_LONG:w', 'HOLD_TOO_LONG:c']);
   });
 
+  // T-081 (Jason, 2026-11-16): the two ran together. The long hold starts a line of its own, in the same text
+  // (one alert, read whole), and neither sentence is broken.
+  test('both at once: the long hold starts a new line, the conflict line is whole', async () => {
+    await show(both(), AT_420);
+    const text = screen.getByText(/^Smoker conflict:/);
+    const said = [text.props.children].flat().join('');
+    expect(said.split('\n')).toEqual([
+      CONFLICT,
+      'Long hold: chicken wings 35 min (limit 30), chicken breasts 33 min (limit 20).',
+    ]);
+    // The alert reads both sentences.
+    expect(screen.getByRole('alert', { name: BOTH })).toBeOnTheScreen();
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+  });
+
+  test('one kind alone has no line break', async () => {
+    await show(behind());
+    expect([screen.getByText(/^Smoker conflict:/).props.children].flat().join('')).toBe(CONFLICT);
+  });
+
   test('a conflict and one long hold: the one-food form of the hold sentence follows the conflict', async () => {
     const { repos } = await show(breastsEarly(), AT_420);
     expect(
-      screen.getByRole('alert', { name: `${CONFLICT} Long hold: chicken breasts 28 min, limit 20 min.` }),
+      screen.getByRole('alert', { name: `${CONFLICT}\nLong hold: chicken breasts 28 min, limit 20 min.` }),
     ).toBeOnTheScreen();
     expect(screen.getAllByRole('button', { name: 'OK' })).toHaveLength(1);
     await fireEvent.press(button('OK'));
@@ -442,11 +543,15 @@ describe('a change that makes a new warning (T-069)', () => {
       <CookScreen permissions={alarms} onResume={fakeResume().onResume} onGoPlan={jest.fn()} now={() => AT_420} />,
       { wrapper: storeWrapper(r.repos, () => AT_420, alarms) },
     );
+    // The accessible name reads the line break as a space; the text itself has it.
     expect(
       screen.getByRole('alert', {
-        name: /^Smoker conflict: brisket at \d+C and chicken wings at \d+C at the same time\. Long hold: chicken wings 35 min \(limit 30\), chicken breasts 33 min \(limit 20\)\.$/,
+        name: /^Smoker conflict: brisket at \d+C and chicken wings at \d+C at the same time\.\sLong hold: chicken wings 35 min \(limit 30\), chicken breasts 33 min \(limit 20\)\.$/,
       }),
     ).toBeOnTheScreen();
+    expect([screen.getByText(/^Smoker conflict:/).props.children].flat().join('')).toMatch(
+      /^Smoker conflict: brisket at \d+C and chicken wings at \d+C at the same time\.\nLong hold: chicken wings 35 min \(limit 30\), chicken breasts 33 min \(limit 20\)\.$/,
+    );
     expect(screen.queryByText(/225F|400F/)).toBeNull();
   });
 });

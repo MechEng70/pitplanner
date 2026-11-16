@@ -10,7 +10,8 @@
 // (FinishScreen.tsx), which CookFlow.tsx shows in place of this screen.
 //
 // A change during the cook that makes a smoker conflict, or a hold that grows past the food's limit, shows as
-// one banner with OK (T-069; Jason, 2026-11-16). It only reports: nothing is re-timed and nothing rings.
+// one banner with OK (T-069; Jason, 2026-11-16), the long holds on a line under the conflict (T-081). It only
+// reports: nothing is re-timed and nothing rings.
 //
 // The cook is saved through the store's `setCook`, which also replaces the phone's alarm set: this screen
 // never talks to the alarm service.
