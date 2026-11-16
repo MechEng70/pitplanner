@@ -265,10 +265,11 @@ describe('warnings made during the cook (T-069)', () => {
     const before = { ...fresh, done: { ...fresh.done, [wrap]: at - 60 * MIN } };
     const after = applyActions(before, actions);
     expect(after.plan.warnings.filter(w => w.code === 'PIT_CONFLICT').map(w => w.message)).toEqual([CONFLICT]);
-    // Serve moved with the brisket, so the wings and the breasts now hold past their limits too: one text,
-    // the conflict first. The breasts' "Move it to the griddle or start it later." is not said mid-cook.
+    // Serve moved with the brisket, so the wings and the breasts now hold past their limits too: two
+    // sentences, the conflict first, then the holds. The breasts' "Move it to the griddle or start it later." is not said mid-cook.
+    // The lock-screen +15 min path (serve moves, the other foods are not re-timed) is under review: these strings may change.
     expect(liveWarnings(after.plan, after.original, after.warningsSeen, at + 46 * MIN, F_UNITS)?.text).toBe(
-      `${CONFLICT} Chicken wings holds 35 min, past its 30 min limit. Chicken breasts holds 38 min, past its 20 min limit.`,
+      `${CONFLICT} Long hold: chicken wings 35 min (limit 30), chicken breasts 38 min (limit 20).`,
     );
     // Silent for 0.3.0: the notice says what the alert did and no more, and the alarm set has only steps.
     expect(after.notice).not.toMatch(/conflict/i);

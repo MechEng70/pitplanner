@@ -92,8 +92,8 @@ test('a brisket pulled early has a hold that grows past its 4 hr limit', () => {
     w.map(x => x.itemIds),
     [['b']],
   );
-  // The engine's own sentence stays in minutes (Plan's Conflicts sheet).
-  assert.equal(w[0].message, 'Brisket holds 310 min, past its 240 min limit. Keep it above 140F.');
+  // No verb, durations as Live cook writes them, the same words on Plan (Jason, 2026-11-16).
+  assert.equal(w[0].message, 'Long hold: brisket 5 hr 10 min, limit 4 hr. Keep it above 140F.');
 });
 
 test('conflict sentence: no verb to agree, food names in lower case, the earlier phase first', () => {
@@ -160,5 +160,36 @@ test('smokerConflicts: the stretch where the temps are more than 25F apart, with
   assert.deepEqual(
     smokerConflicts(later).map(c => [c.start, c.end]),
     [[local(16, 5), local(16, 40)]],
+  );
+});
+
+test('long hold on Plan: one warning per food; a food that holds poorly keeps its advice as its own sentence', () => {
+  // Breasts on the smoker come off before the 400F crisp and wait for serve.
+  const p = buildPlan(
+    rules,
+    menu([{ id: 'c', foodId: 'breasts', methodId: 'smoker', quantity: 4, options: { thickness: 'pounded' } }, wings]),
+  );
+  const holds = p.warnings.filter(w => w.code === 'HOLD_TOO_LONG');
+  assert.deepEqual(
+    holds.map(w => [w.itemIds, w.level]),
+    [[['c'], 'warn']],
+  );
+  assert.match(
+    holds[0].message,
+    /^Long hold: chicken breasts (\d+ hr)?( ?\d+ min)?, limit 20 min\. Move it to the griddle or start it later\.$/,
+  );
+});
+
+test('long hold on Plan: two of a food read by their labels', () => {
+  const p = buildPlan(
+    rules,
+    menu([
+      { ...brisket, id: 'b1', restMin: 300 },
+      { ...brisket, id: 'b2', quantity: 11.5, restMin: 60 },
+    ]),
+  );
+  assert.deepEqual(
+    p.warnings.filter(w => w.code === 'HOLD_TOO_LONG').map(w => w.message),
+    ['Long hold: 12 lb brisket 5 hr, limit 4 hr. Keep it above 140F.'],
   );
 });

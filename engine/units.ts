@@ -44,3 +44,12 @@ export function localizeText(text: string, temp: TempUnit, weight: WeightUnit): 
   if (weight === 'kg') s = s.replace(LB_IN_TEXT, (_m, a: string) => `${+lbToKg(+a).toFixed(1)} kg`);
   return s;
 }
+
+/** "12 min", "9 hr", "1 hr 40 min": how every screen and engine sentence writes a length of time. */
+export function durationText(min: number): string {
+  const m = Math.round(min);
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60),
+    r = m % 60;
+  return r ? `${h} hr ${r} min` : `${h} hr`;
+}

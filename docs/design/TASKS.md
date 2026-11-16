@@ -2848,6 +2848,19 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
     cook writes them).
 - **Added by Jason, 2026-11-16 (parity D9):** the banner also shows a hold that has grown past the food's
   hold limit during the cook.
+- **Jason's review of the built banner (2026-11-16):**
+  1. The banner with a conflict: approved as built.
+  2. Hold warnings have no verb, like the conflict line, and Plan uses the same words (the engine's
+     `HOLD_TOO_LONG` message changes). One food: "Long hold: brisket 6 hr 10 min, limit 4 hr. Keep it above
+     140F." Several foods on one line: "Long hold: chicken wings 35 min (limit 30), breasts 25 min (limit
+     20)." The banner is then the conflict, then the holds. This replaces "Brisket holds 5 hr, past its 4 hr
+     limit." above.
+  3. The lane chart note keeps the conflict's own stretch.
+  4. A warning hidden with OK stays hidden even if the hold keeps growing.
+  5. Two OK buttons when the alert notice and this banner both show: fine.
+  6. +15 min on the lock screen moving serve without re-timing the other foods is a separate must-fix,
+     looked at by another task first. The tests here that go through that path say so in a comment; their
+     expected strings may change.
 - **Status:** built on branch `worktree-agent-a31bfed3313b87e83` (2026-11-16), unit-tested, not gated
   (`npm run check` not run in the worktree), not seen on a device.
 - **Built:**
@@ -2855,12 +2868,15 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
     time." (`engine/plan.ts`). A food reads as its label when it has one ("2 lb chicken wings 1"), else its name
     with a lower-case first letter; "St. Louis ribs" keeps its capitals (`inSentence`, `engine/labels.ts`).
     `smokerConflicts(plan)` (`engine/live.ts`) gives the stretches where the foods on the smoker are more than
-    25F apart, with each food's temp. `HOLD_TOO_LONG`'s own message is unchanged (minutes, Plan).
+    25F apart, with each food's temp. `HOLD_TOO_LONG` reads "Long hold: brisket 5 hr, limit 4 hr. Keep it
+    above 140F." (`longHold`, `engine/labels.ts`; durations by `durationText`, `engine/units.ts`, which
+    `fmtDuration` now calls). Plan keeps one warning per food; a food that holds poorly keeps "Move it to the
+    griddle or start it later." as its own sentence there.
   - `liveWarnings` (`src/lib/cookView.ts`): the banner's text and the warnings it speaks for. A warning is
     new when `cook.original.warnings` has none with the same code and foods (wording is not compared).
-    Conflicts first in the engine's words, then holds as "Brisket holds 5 hr, past its 4 hr limit. Keep it
-    above 140F." (`fmtDuration`; no "Move it to the griddle or start it later."), joined with a space, in the
-    user's units.
+    Conflicts first in the engine's words (one sentence per pair of foods), then every long hold in one
+    sentence by the same `longHold` (no "Move it to the griddle or start it later."), joined with a space,
+    in the user's units.
   - Live cook: one amber banner under the notice banner with `OK`. OK adds the shown warnings to
     `cook.warningsSeen` (new field on the running cook); they stay hidden, a different warning shows. The
     banner goes away by itself when a later change or Undo removes the warning and when the conflict's
@@ -2876,8 +2892,14 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
      warning").
   3. A hold banner has no end of its own: it shows until OK, until a change brings the hold back under the
      limit, or until the cook ends.
-  4. The hold sentence starts with the label when there is one ("11.5 lb brisket holds ..."), and keeps the
-     engine's "holds" for plural names ("Chicken wings holds 35 min, past its 30 min limit.", as on the page).
+  4. Long hold, rules Jason's two examples did not spell out: (a) food names are the conflict sentence's
+     (label, else the name with a lower-case first letter), so "chicken breasts", not "breasts": the app has
+     no short-name data, only `shortName` in `cookView.ts`, which would also turn "chicken wings" into
+     "wings"; (b) in the several-foods line the limit drops its unit only when the hold before it is written
+     in that one unit ("35 min (limit 30)", "5 hr (limit 4)"), else it keeps it ("1 hr 5 min (limit 30
+     min)", "6 hr 10 min (limit 4 hr)"); (c) hold notes follow the several-foods line, each different note
+     once, in menu order, without saying which food it is for; (d) the several-foods line is only on the
+     banner, Plan's Conflicts sheet stays one row per food.
   5. A cook running across the update keeps its stored conflict sentence until its next change re-derives it.
 - **Open:** `tools/device/run.sh:803` still expects the old sentence (left for the main session);
   `docs/parity.md` D8, D9 and T16 are not updated.

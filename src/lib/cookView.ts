@@ -1,6 +1,7 @@
 // What the Cook tab shows, derived from the plan and the clock. Pure: `now` is passed in.
 
 import type { Plan, PlannedItem, Warning } from '../../engine/types.ts';
+import { inSentence, longHold, type HeldFood } from '../../engine/labels.ts';
 import { CONFLICT_TOLERANCE_F } from '../../engine/plan.ts';
 import { smokerConflicts, smokerOverlaps } from '../../engine/live.ts';
 import { fmtDuration, fmtTemp, fmtTime, tx, type Units } from './format.ts';
@@ -254,19 +255,28 @@ function conflictAhead(plan: Plan, ids: string[], now: number): boolean {
   });
 }
 
-/** "Brisket holds 5 hr, past its 4 hr limit. Keep it above 140F." Nothing about the griddle: not mid-cook. */
-function holdSentence(plan: Plan, itemId: string): string | null {
-  const it = plan.items.find(i => i.input.id === itemId);
-  if (!it) return null;
-  const hold = fmtDuration(holdMin(plan, itemId));
-  return `${cap(it.label ?? it.name)} holds ${hold}, past its ${fmtDuration(it.holdLimitMin)} limit.${it.holdNote ? ` ${it.holdNote}` : ''}`;
+/**
+ * The holds past their limit as one sentence, in the engine's words (`longHold`): "Long hold: brisket 6 hr
+ * 10 min, limit 4 hr. Keep it above 140F." or, for several foods, "Long hold: chicken wings 35 min (limit
+ * 30), chicken breasts 38 min (limit 20)." Each food's hold note follows the line, a note said once however
+ * many foods have it. Nothing about the griddle or starting later: neither can be done mid-cook.
+ */
+function holdsSentence(plan: Plan, itemIds: string[]): string {
+  const items = itemIds.flatMap(id => plan.items.filter(i => i.input.id === id));
+  const foods: HeldFood[] = items.map(it => ({
+    name: it.label ?? inSentence(it.name),
+    holdMin: holdMin(plan, it.input.id),
+    limitMin: it.holdLimitMin,
+  }));
+  const notes = [...new Set(items.flatMap(it => (it.holdNote ? [it.holdNote] : [])))];
+  return [longHold(foods), ...notes].join(' ');
 }
 
 /**
  * What the Live cook banner says (Jason, 2026-11-16): the smoker conflicts and the holds past their limit
  * that the plan has now and did not have at Start cook (`original`), less the ones hidden with OK (`seen`).
- * Conflicts first, in the engine's words; then holds, with durations as Live cook writes them. A conflict
- * whose stretch is over is left out. Null when there is nothing to say.
+ * Conflicts first, in the engine's words (one sentence per pair of foods); then every long hold in one
+ * sentence. A conflict whose stretch is over is left out. Null when there is nothing to say.
  */
 export function liveWarnings(
   plan: Plan,
@@ -277,19 +287,27 @@ export function liveWarnings(
 ): LiveWarnings | null {
   const had = new Set((original.warnings ?? []).map(warningKey));
   const hidden = new Set(seen ?? []);
-  const out: { key: string; text: string }[] = [];
-  for (const code of ['PIT_CONFLICT', 'HOLD_TOO_LONG'])
-    for (const w of plan.warnings ?? []) {
-      const key = warningKey(w);
-      if (w.code !== code || had.has(key) || hidden.has(key) || out.some(x => x.key === key)) continue;
-      const ids = w.itemIds ?? [];
-      if (code === 'PIT_CONFLICT') {
-        if (conflictAhead(plan, ids, now)) out.push({ key, text: w.message });
-        continue;
-      }
-      const text = ids[0] ? holdSentence(plan, ids[0]) : null;
-      if (text) out.push({ key, text });
+  const keys: string[] = [],
+    conflicts: string[] = [],
+    held: string[] = [];
+  for (const w of plan.warnings ?? []) {
+    const key = warningKey(w);
+    if (had.has(key) || hidden.has(key) || keys.includes(key)) continue;
+    const ids = w.itemIds ?? [];
+    if (w.code === 'PIT_CONFLICT' && conflictAhead(plan, ids, now)) {
+      keys.push(key);
+      conflicts.push(w.message);
     }
-  if (!out.length) return null;
-  return { keys: out.map(x => x.key), text: tx(out.map(x => x.text).join(' '), u) };
+  }
+  for (const w of plan.warnings ?? []) {
+    const key = warningKey(w);
+    const id = w.itemIds?.[0];
+    if (w.code !== 'HOLD_TOO_LONG' || had.has(key) || hidden.has(key) || keys.includes(key)) continue;
+    if (id == null || !plan.items.some(i => i.input.id === id)) continue;
+    keys.push(key);
+    held.push(id);
+  }
+  if (!keys.length) return null;
+  const text = [...conflicts, ...(held.length ? [holdsSentence(plan, held)] : [])].join(' ');
+  return { keys, text: tx(text, u) };
 }

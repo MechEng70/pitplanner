@@ -314,7 +314,7 @@ describe('Done on Serve (T-023)', () => {
 
 describe('a change that makes a new warning (T-069)', () => {
   const CONFLICT = 'Smoker conflict: brisket at 225F and chicken wings at 400F at the same time.';
-  const HOLD = 'Brisket holds 6 hr 10 min, past its 4 hr limit. Keep it above 140F.';
+  const HOLD = 'Long hold: brisket 6 hr 10 min, limit 4 hr. Keep it above 140F.';
   /** Not yet on the wrap check, an hour: the brisket comes off at 4:40 PM, after the smoker goes to 400F. */
   const behind = () => postpone(cookAt(AT_1023), 'phase:b:wrap', AT_1023, 60, true);
   /** The brisket off the smoker at 10:30 AM: it holds until it is sliced at 4:40 PM. */
@@ -342,12 +342,13 @@ describe('a change that makes a new warning (T-069)', () => {
     const wrapped = { ...c, done: { ...c.done, 'phase:b:wrap': pull.event.at - 60 * MIN } };
     return { ...applyActions(wrapped, taps), notice: null };
   };
-  const BOTH = `${CONFLICT} Chicken wings holds 35 min, past its 30 min limit. Chicken breasts holds 38 min, past its 20 min limit.`;
+  // The lock-screen +15 min path (serve moves, the other foods are not re-timed) is under review: these strings may change.
+  const BOTH = `${CONFLICT} Long hold: chicken wings 35 min (limit 30), chicken breasts 38 min (limit 20).`;
 
   test('no banner on a cook that is as it started', async () => {
     await show(cookAt(AT_1023));
     expect(screen.queryByText(/Smoker conflict/)).toBeNull();
-    expect(screen.queryByText(/past its/)).toBeNull();
+    expect(screen.queryByText(/Long hold/)).toBeNull();
     expect(screen.queryByRole('button', { name: 'OK' })).toBeNull();
   });
 
@@ -371,16 +372,16 @@ describe('a change that makes a new warning (T-069)', () => {
     expect(alarms.sets.flat().some(a => /conflict/i.test(`${a.title} ${a.body}`))).toBe(false);
   });
 
-  test('a hold that has grown past its limit shows the same way, in hours', async () => {
+  test('a hold that has grown past its limit shows the same way', async () => {
     const { repos } = await show(pulled(cookAt(AT_1023)));
     expect(screen.getByRole('alert', { name: HOLD })).toBeOnTheScreen();
     await fireEvent.press(button('OK'));
     await act(async () => {});
-    expect(screen.queryByText(/past its/)).toBeNull();
+    expect(screen.queryByText(/Long hold/)).toBeNull();
     expect(repos.activeCook.load()!.warningsSeen).toEqual(['HOLD_TOO_LONG:b']);
   });
 
-  test('both at once are one banner with one OK, the conflict first', async () => {
+  test('both at once are one banner of two sentences with one OK, the conflict first', async () => {
     const { repos } = await show(both(), AT_426);
     expect(screen.getByRole('alert', { name: BOTH })).toBeOnTheScreen();
     expect(screen.getAllByRole('button', { name: 'OK' })).toHaveLength(1);
@@ -394,7 +395,7 @@ describe('a change that makes a new warning (T-069)', () => {
     await show(pulled({ ...behind(), warningsSeen: ['PIT_CONFLICT:b|w'] }));
     expect(screen.queryByText(/Smoker conflict:/)).toBeNull();
     expect(
-      screen.getByRole('alert', { name: /^Brisket holds .*, past its 4 hr limit\. Keep it above 140F\.$/ }),
+      screen.getByRole('alert', { name: /^Long hold: brisket .*, limit 4 hr\. Keep it above 140F\.$/ }),
     ).toBeOnTheScreen();
   });
 
@@ -435,7 +436,7 @@ describe('a change that makes a new warning (T-069)', () => {
     );
     expect(
       screen.getByRole('alert', {
-        name: /^Smoker conflict: brisket at \d+C and chicken wings at \d+C at the same time\. Chicken wings holds 35 min, past its 30 min limit\. /,
+        name: /^Smoker conflict: brisket at \d+C and chicken wings at \d+C at the same time\. Long hold: chicken wings 35 min \(limit 30\), chicken breasts 38 min \(limit 20\)\.$/,
       }),
     ).toBeOnTheScreen();
     expect(screen.queryByText(/225F|400F/)).toBeNull();

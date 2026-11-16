@@ -377,7 +377,9 @@ describe('Plan tab with an opened file', () => {
     await fireEvent.press(button('Use this plan'));
     await settle();
     expect(sheet('Conflicts')).toBeOnTheScreen();
-    expect(screen.getByText(/Chicken breasts holds .* past its 20 min limit/)).toBeOnTheScreen();
+    expect(
+      screen.getByText(/^Long hold: chicken breasts .*, limit 20 min\. Move it to the griddle or start it later\.$/),
+    ).toBeOnTheScreen();
   });
 
   test('an oversized file shows an error and changes nothing', async () => {

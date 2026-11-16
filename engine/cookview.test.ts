@@ -222,7 +222,7 @@ const behind = shiftRemaining(rules, input, plan, at(10), 30, true, 'b');
 // The brisket off at 11:30 AM instead of 3:40 PM: it holds 5 hr 10 min until it is sliced at 4:40 PM.
 const pulledEarly = markPullDone(rules, input, plan, 'b', at(11, 30));
 const CONFLICT = 'Smoker conflict: brisket at 225F and chicken wings at 400F at the same time.';
-const HOLD = 'Brisket holds 5 hr 10 min, past its 4 hr limit. Keep it above 140F.';
+const HOLD = 'Long hold: brisket 5 hr 10 min, limit 4 hr. Keep it above 140F.';
 const metric = { temp: 'C', weight: 'kg' } as const;
 
 test('overlap note: a stretch that is a conflict says so, with its own times and each food at its temp', () => {
@@ -258,13 +258,13 @@ test('live warnings: a smoker conflict made during the cook reads as the engine 
   );
 });
 
-test('live warnings: a hold that grew past its limit reads in hours, with the hold note', () => {
+test('live warnings: a hold that grew past its limit reads as Plan says it, with the hold note', () => {
   const w = liveWarnings(pulledEarly, plan, [], at(12), units)!;
   assert.equal(w.text, HOLD);
   assert.deepEqual(w.keys, ['HOLD_TOO_LONG:b']);
   assert.equal(
     liveWarnings(pulledEarly, plan, [], at(12), metric)!.text,
-    'Brisket holds 5 hr 10 min, past its 4 hr limit. Keep it above 60C.',
+    'Long hold: brisket 5 hr 10 min, limit 4 hr. Keep it above 60C.',
   );
 });
 
@@ -280,7 +280,7 @@ test('live warnings: a food with no hold note stops at the limit, and never says
   // Had the cook started without it, the banner would say only this.
   const before = { ...started, warnings: [] };
   const w = liveWarnings(started, before, [], started.serveAt - 3 * 60 * MIN, units)!;
-  assert.match(w.text, /^Chicken breasts holds (\d+ hr ?)?(\d+ min)?, past its 20 min limit\.$/);
+  assert.match(w.text, /^Long hold: chicken breasts (\d+ hr)?( ?\d+ min)?, limit 20 min\.$/);
   // It was there at Start cook, so there is no banner for it.
   assert.equal(liveWarnings(started, started, [], started.serveAt - 3 * 60 * MIN, units), null);
 });
@@ -289,8 +289,11 @@ test('live warnings: both at once are one text, conflicts first', () => {
   // One plan with both: the brisket's phases as they are 30 min behind, and the hold warning of the early pull.
   const both = { ...behind, warnings: [...pulledEarly.warnings, ...behind.warnings] };
   const w = liveWarnings(both, plan, [], at(10), units)!;
-  assert.match(w.text, /^Smoker conflict: brisket at 225F and chicken wings at 400F at the same time\. Brisket holds /);
-  assert.match(w.text, / limit\. Keep it above 140F\.$/);
+  assert.match(
+    w.text,
+    /^Smoker conflict: brisket at 225F and chicken wings at 400F at the same time\. Long hold: brisket /,
+  );
+  assert.match(w.text, /, limit 4 hr\. Keep it above 140F\.$/);
   assert.deepEqual(w.keys, ['PIT_CONFLICT:b|w', 'HOLD_TOO_LONG:b']);
 });
 
@@ -326,4 +329,27 @@ test('live warnings: a warning the plan had at Start cook never shows, whatever 
   const bare = { ...plan, warnings: undefined } as unknown as typeof plan;
   assert.equal(liveWarnings(bare, bare, [], at(10), units), null);
   assert.equal(liveWarnings(behind, bare, undefined as unknown as string[], at(10), units)!.text, CONFLICT);
+});
+
+test('live warnings: several long holds are one sentence, and a hold note follows the line once', () => {
+  // The brisket off at 11:30 AM and the wings off at 3:30 PM, serve 5:00 PM.
+  const two = markPullDone(rules, input, pulledEarly, 'w', at(15, 30));
+  assert.deepEqual(
+    two.warnings.filter(x => x.code === 'HOLD_TOO_LONG').map(x => x.message),
+    [
+      'Long hold: brisket 5 hr 10 min, limit 4 hr. Keep it above 140F.',
+      'Long hold: chicken wings 1 hr 30 min, limit 30 min.',
+    ],
+  );
+  const w = liveWarnings(two, plan, [], at(15, 30), units)!;
+  assert.equal(
+    w.text,
+    'Long hold: brisket 5 hr 10 min (limit 4 hr), chicken wings 1 hr 30 min (limit 30 min). Keep it above 140F.',
+  );
+  assert.deepEqual(w.keys, ['HOLD_TOO_LONG:b', 'HOLD_TOO_LONG:w']);
+  // One of them hidden with OK: the other reads as a single food again.
+  assert.equal(
+    liveWarnings(two, plan, ['HOLD_TOO_LONG:b'], at(15, 30), units)!.text,
+    'Long hold: chicken wings 1 hr 30 min, limit 30 min.',
+  );
 });

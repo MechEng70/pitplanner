@@ -107,7 +107,7 @@ Artboard names refer to the mockup canvas.
 
 Scheduled times set by these changes round to 5 minutes (actual times, like when food came off, stay exact). After every change: re-run `derive`, cancel every scheduled alarm, schedule the new set from `plan.events`. Never patch alarms one at a time.
 
-A change that makes a smoker conflict the plan did not have at Start cook, or a hold that grows past the food's hold limit, shows as one amber banner on Live cook with an OK button (T-069; Jason, 2026-11-16): the conflict in the engine's words ("Smoker conflict: brisket at 225F and chicken wings at 400F at the same time."), the hold as "Brisket holds 5 hr, past its 4 hr limit. Keep it above 140F."; it never rings, re-times nothing, stays hidden for that warning after OK, and goes away when the warning does or the conflict is in the past.
+A change that makes a smoker conflict the plan did not have at Start cook, or a hold that grows past the food's hold limit, shows as one amber banner on Live cook with an OK button (T-069; Jason, 2026-11-16): the conflict in the engine's words ("Smoker conflict: brisket at 225F and chicken wings at 400F at the same time."), then every long hold in one sentence, worded as on Plan ("Long hold: brisket 6 hr 10 min, limit 4 hr. Keep it above 140F."; several foods: "Long hold: chicken wings 35 min (limit 30), chicken breasts 38 min (limit 20)."); it never rings, re-times nothing, stays hidden for that warning after OK, and goes away when the warning does or the conflict is in the past.
 
 ## 6. Alarms (the part that must not fail)
 

@@ -15,7 +15,7 @@ import type {
   TimingModel,
 } from './types.ts';
 import { isSettable } from './temps.ts';
-import { inSentence, itemLabels } from './labels.ts';
+import { inSentence, itemLabels, longHold } from './labels.ts';
 import {
   resolveMethod as mergeShared,
   type ResolvedMethod,
@@ -464,7 +464,8 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
         code: 'HOLD_TOO_LONG',
         level: it.holdsPoorly ? 'warn' : 'info',
         itemIds: [it.input.id],
-        message: `${nm(it)} holds ${Math.round(hold)} min, past its ${it.holdLimitMin} min limit.${it.holdsPoorly ? ' Move it to the griddle or start it later.' : ''}${it.holdNote ? ` ${it.holdNote}` : ''}`,
+        // One warning per food (the Conflicts sheet lists them, Food details shows a food's own).
+        message: `${longHold([{ name: inS(it), holdMin: hold, limitMin: it.holdLimitMin }])}${it.holdsPoorly ? ' Move it to the griddle or start it later.' : ''}${it.holdNote ? ` ${it.holdNote}` : ''}`,
       });
     if (hold < it.restFloorMin - 0.5)
       warnings.push({

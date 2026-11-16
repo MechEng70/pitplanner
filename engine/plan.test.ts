@@ -390,14 +390,11 @@ test('a hold past 4 hours says "Keep it above 140F." for brisket and pork butt, 
     buildPlan(rules, saturday({ items: [{ id: 'x', foodId, methodId, quantity: 8, restMin }] })).warnings.find(
       w => w.code === 'HOLD_TOO_LONG',
     )?.message;
-  assert.equal(
-    holdNote('brisket', 'smoked', 300),
-    'Brisket holds 300 min, past its 240 min limit. Keep it above 140F.',
-  );
-  assert.match(holdNote('butt', 'smoked', 300) ?? '', /holds 300 min, past its 240 min limit\. Keep it above 140F\.$/);
+  assert.equal(holdNote('brisket', 'smoked', 300), 'Long hold: brisket 5 hr, limit 4 hr. Keep it above 140F.');
+  assert.equal(holdNote('butt', 'smoked', 300), 'Long hold: pork butt 5 hr, limit 4 hr. Keep it above 140F.');
   assert.equal(holdNote('brisket', 'smoked', 240), undefined);
   assert.doesNotMatch(holdNote('turkey', 'smoked', 120) ?? 'none', /140F/);
-  assert.match(holdNote('turkey', 'smoked', 120) ?? '', /past its 60 min limit\.$/);
+  assert.equal(holdNote('turkey', 'smoked', 120), 'Long hold: whole turkey 2 hr, limit 1 hr.');
 });
 
 test('prep steps say when, not how (Jason, 2026-11-15): a plain "Prep the ..." reminder', () => {

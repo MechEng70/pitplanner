@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { itemLabels } from './labels.ts';
+import { itemLabels, longHold } from './labels.ts';
 import { buildPlan } from './plan.ts';
 import { markStepDone } from './live.ts';
 import { alarmsFromPlan, keyedEvents } from './alarms.ts';
@@ -153,4 +153,47 @@ test('the label survives a live change (derive runs again)', () => {
   const inp = input([brisket('a', 11.5), brisket('b', 6)]);
   const next = markStepDone(rules, inp, plan, 'b', 'wrap', wrap.at + 10 * 60_000, false).plan;
   assert.ok(next.events.filter(e => e.itemId === 'a').every(e => e.label.startsWith('11.5 lb brisket: ')));
+});
+
+// T-069 (Jason, 2026-11-16): "Long hold: ..." with no verb, on Plan and on the Live cook banner.
+test('long hold, one food: the hold, then ", limit" with its unit', () => {
+  assert.equal(
+    longHold([{ name: 'brisket', holdMin: 370, limitMin: 240 }]),
+    'Long hold: brisket 6 hr 10 min, limit 4 hr.',
+  );
+  assert.equal(
+    longHold([{ name: 'chicken wings', holdMin: 35, limitMin: 30 }]),
+    'Long hold: chicken wings 35 min, limit 30 min.',
+  );
+});
+
+test('long hold, several foods: one line, each limit in brackets', () => {
+  // Both written in min: the limit drops its unit.
+  assert.equal(
+    longHold([
+      { name: 'chicken wings', holdMin: 35, limitMin: 30 },
+      { name: 'chicken breasts', holdMin: 25, limitMin: 20 },
+    ]),
+    'Long hold: chicken wings 35 min (limit 30), chicken breasts 25 min (limit 20).',
+  );
+  // Both written in whole hours: the same.
+  assert.equal(
+    longHold([
+      { name: 'brisket', holdMin: 300, limitMin: 240 },
+      { name: 'pork butt', holdMin: 360, limitMin: 240 },
+    ]),
+    'Long hold: brisket 5 hr (limit 4), pork butt 6 hr (limit 4).',
+  );
+});
+
+test('long hold, several foods: the limit keeps its unit when the hold is not written in that one unit', () => {
+  assert.equal(
+    longHold([
+      { name: 'brisket', holdMin: 370, limitMin: 240 },
+      { name: 'chicken wings', holdMin: 65, limitMin: 30 },
+      { name: 'whole turkey', holdMin: 45, limitMin: 60 },
+      { name: 'St. Louis ribs', holdMin: 120, limitMin: 90 },
+    ]),
+    'Long hold: brisket 6 hr 10 min (limit 4 hr), chicken wings 1 hr 5 min (limit 30 min), whole turkey 45 min (limit 1 hr), St. Louis ribs 2 hr (limit 1 hr 30 min).',
+  );
 });

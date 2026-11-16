@@ -1,6 +1,7 @@
 // Default labels that tell two of the same food apart on one menu (T-061; Jason, 2026-11-14).
 import type { Rules } from './rules.ts';
 import type { ItemInput } from './types.ts';
+import { durationText } from './units.ts';
 
 /** "Brisket" -> "brisket", "Baby back ribs" -> "baby back ribs"; "St. Louis ribs" keeps its capitals. */
 export const inSentence = (name: string) => (/^St\. /.test(name) ? name : name.charAt(0).toLowerCase() + name.slice(1));
@@ -36,4 +37,34 @@ export function itemLabels(rules: Rules, items: ItemInput[]): Map<string, string
     out.set(id, `${label} ${n}`);
   }
   return out;
+}
+
+/** A food whose hold is past its limit; `name` as it reads mid-sentence ("brisket", "11.5 lb brisket"). */
+export interface HeldFood {
+  name: string;
+  holdMin: number;
+  limitMin: number;
+}
+
+/**
+ * The long-hold sentence, with no verb to agree (Jason, 2026-11-16), on Plan and on the Live cook banner.
+ * One food: "Long hold: brisket 6 hr 10 min, limit 4 hr." Several foods share one line with each limit in
+ * brackets: "Long hold: chicken wings 35 min (limit 30), chicken breasts 25 min (limit 20)." There the limit
+ * drops its unit only when the hold just before it is written in that one unit; otherwise it keeps it:
+ * "chicken wings 1 hr 5 min (limit 30 min)", "brisket 6 hr 10 min (limit 4 hr)".
+ */
+export function longHold(foods: HeldFood[]): string {
+  if (foods.length === 1) {
+    const f = foods[0];
+    return `Long hold: ${f.name} ${durationText(f.holdMin)}, limit ${durationText(f.limitMin)}.`;
+  }
+  const parts = foods.map(f => {
+    const hold = durationText(f.holdMin),
+      limit = durationText(f.limitMin);
+    const h = hold.split(' '),
+      l = limit.split(' ');
+    const sameUnit = h.length === 2 && l.length === 2 && h[1] === l[1];
+    return `${f.name} ${hold} (limit ${sameUnit ? l[0] : limit})`;
+  });
+  return `Long hold: ${parts.join(', ')}.`;
 }
