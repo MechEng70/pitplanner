@@ -36,6 +36,9 @@ is merged and gated, remove its worktree and branch. All leftover branches were 
 - Jason's idea for T-029: put the dev build on his phone, make a plan, he exports it to the computer, the
   file is checked. Part of the phone block; list the actions first.
 
+- T-034: `docs/parity.md` written (about 170 claims; open rows in its section 1). Not done: Jason's
+  decisions on 1a, the SPEC edits, fidelity sheets 08 to 10, the full device pass.
+
 **Next, in this order:**
 1. (done) Turkey device test.
 2. (done) T-037 prep.
@@ -766,6 +769,4 @@ Device scripts added this session (all via `npm run device -- --only <name>`): `
   remounts, the app returns to the Plan tab, and open sheets, the selected tab and unsaved edits are lost.
   Checked on a release build 2026-11-12. Now task T-058 (Jason, 2026-11-12), done before the Cook screen.
 
-- Quiet alerts holds scheduled steps but native repeats of an already-overdue step still ring.
-- History entries can be removed but not edited (SPEC failure mode 14 says editable).
 - Oven `warmingDrawer` is stored but unused by the planner.

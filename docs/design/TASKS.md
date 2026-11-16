@@ -2121,7 +2121,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   install prompts in INSTALL.md are written from stock Android, not checked on a phone.
 
 ### T-034 Parity review
-- **Status:** todo
+- **Status:** review written 2026-11-15 (nineteenth session), `docs/parity.md`; open rows wait for Jason's
+  decisions (section 1a), the full device pass at 115% and 130% is not run
 - **Goal:** every SPEC screen and failure mode that 0.2.0 handled works in the Expo build.
 - **Files:** `docs/parity.md` (checklist: SPEC 3 screens, SPEC 5 live rules, SPEC 7 failure modes 1-15, mockups
   01-20 with fidelity PNG links).
