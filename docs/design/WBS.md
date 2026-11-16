@@ -29,9 +29,9 @@ Task details in [TASKS.md](TASKS.md); architecture in [TECH-DESIGN.md](TECH-DESI
 | 9 | Share | T-029, T-030, T-031 | T-017, T-018 | `.pitplan` export and open (content URIs, 256 KB cap), with the conflict fix after import; a plan round-trips between two phones via Gmail and Drive (Jason). |
 | 10 | Beta release 0.3.0 | T-032, T-033, T-034, T-035, T-036, T-067, T-069, T-072, T-073, T-074, T-075, T-076, T-077, T-079, T-037, T-038, T-039 | phases 3-9 | Parity with 0.2.0 confirmed, security pass done, Saturday cook passed on the Expo build, `v0.3.0` on GitHub Releases signed with the same key, Jason's phone upgraded with data kept, `snyk:monitor` ran; `legacy/` removed a week later. |
 | 11 | After the beta (triage list: `BACKLOG.md`) | T-040, T-041, T-060, T-062 | phase 10 | Lane chart full screen (after mock approval) and the oven drawer decision are done; food cooking faster than the plan (T-060: brisket thickness, starting temp) is decided with Jason and built. |
-| 11b | 0.5.0 (Jason, 2026-11-16: not in the 0.3.0 count) | T-068, T-070, T-071 | phase 10 | A log of every alarm ring kept on the Android side (T-068); the receiver picks cookers on the Shared plan sheet (T-070, dropped from 0.3.0: Food details does it after import); fish in Add food, timed by thickness, after Jason approves the thickness input (T-071). |
+| 11b | 0.5.0 (Jason, 2026-11-16: not in the 0.3.0 count) | T-068, T-070, T-071, T-080 | phase 10; T-050 for T-080 | Chef iQ probes read direct over Bluetooth with no Home Assistant, mockup first (T-080); a log of every alarm ring kept on the Android side (T-068); the receiver picks cookers on the Shared plan sheet (T-070, dropped from 0.3.0: Food details does it after import); fish in Add food, timed by thickness, after Jason approves the thickness input (T-071). |
 | 12a | HA Phase 0 | done (`docs/ha-entities.md`) | none | Entity IDs recorded; the non-admin registry check moves to T-045. |
-| 12b | HA Phase 1: **0.4.0** (Jason, 2026-11-16) | T-042, T-043, T-044, T-045, T-046, T-047, T-048, T-049, T-050 | phase 10; D-9 for T-043 | Jason signs in as the `pitplanner` HA user, discovery finds his smoker and probes, each food maps to a probe, and Live cook shows live temps that go grey when stale. |
+| 12b | HA Phase 1: **0.4.0** (Jason, 2026-11-16) | T-042, T-043, T-044, T-045, T-046, T-047, T-048, T-049, T-050 | phase 10; D-9 for T-043 (both drop if Jason adopts the pasted token, `docs/HA-INTEGRATION.md` 8.1) | Jason signs in as the `pitplanner` HA user, discovery finds his smoker and probes, each food maps to a probe, and Live cook shows live temps that go grey when stale. |
 | 12c | HA Phase 2: 0.5.0 or later | T-051, T-052 | 12b | `sensor.pit_planner_cook` published during a cook; the imported blueprint notifies on a hot-water probe test. |
 | 12d | HA Phase 3: 0.5.0 or later | T-053, T-054 | 12c | Next up offers "Brisket hit 166F" with Done (never automatic), a pit drop offers "Pit went out?", probe times feed learning. |
 | 12e | HA Phase 4 (optional): 0.5.0 or later | T-055 | 12d; Jason opts in | A confirmed set-temp button works only while the grill runs. |
@@ -86,7 +86,8 @@ regressions in the port (T-014 tests, T-016 device run, T-037 real cook).
 (lock-screen taps re-plan with the app closed, headless JS) is 0.3.x, after 0.3.0 ships, spike first. 0.4.0 is Home Assistant phase 1, T-042 to
 T-050 (mockups, the client_id page, sign-in, the WebSocket client, discovery, Gear, a probe per food, live
 probe temps), gated by mock approval (T-042), GitHub Pages (D-9) and Jason's device tests. 0.5.0 is fish
-(T-071), the receiver picks cookers (T-070) and the alarm log (T-068). T-051 to T-055 are 0.5.0 or later.
+(T-071), the receiver picks cookers (T-070), the alarm log (T-068) and Chef iQ direct over Bluetooth
+(T-080). Pit Boss direct is not planned; grill control is never automatic (`docs/HA-INTEGRATION.md` 8.3, 8.4). T-051 to T-055 are 0.5.0 or later.
 None of it starts before 0.3.0 ships.
 
 ## Suggested order

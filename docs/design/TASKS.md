@@ -2650,6 +2650,9 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
      to get back to the cook), or (b) add a way back from Cook finished.
 
 ### T-042 Mock the HA screens (HA-INTEGRATION 4.5)
+- **Open decision (Jason, 2026-11-16; `docs/HA-INTEGRATION.md` 8.1):** a pasted long-lived token for the
+  dedicated non-admin `pitplanner` HA user instead of the HA login. If adopted: the connect mockup shows a token field and a short how-to instead of HA's login page. Until he decides, the
+  entry stands as written.
 - **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** six screens in the canvas style, approved before any code.
@@ -2660,6 +2663,9 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** none.
 
 ### T-043 GitHub Pages `client_id` page
+- **Open decision (Jason, 2026-11-16; `docs/HA-INTEGRATION.md` 8.1):** a pasted long-lived token for the
+  dedicated non-admin `pitplanner` HA user instead of the HA login. If adopted: this task and D-9 drop. Until he decides, the
+  entry stands as written.
 - **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** `https://mecheng70.github.io/pitplanner/` has `<link rel="redirect_uri" href="pitplanner://auth-callback">`
@@ -2671,6 +2677,9 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** none.
 
 ### T-044 HA auth logic (pure)
+- **Open decision (Jason, 2026-11-16; `docs/HA-INTEGRATION.md` 8.1):** a pasted long-lived token for the
+  dedicated non-admin `pitplanner` HA user instead of the HA login. If adopted: this shrinks to the address, one token check, 401 as signed out, and no token in a log. Until he decides, the
+  entry stands as written.
 - **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** address normalize, authorize URL with a state nonce, callback check, token exchange, refresh on 401,
@@ -2682,6 +2691,9 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** none.
 
 ### T-045 HA sign-in on the phone
+- **Open decision (Jason, 2026-11-16; `docs/HA-INTEGRATION.md` 8.1):** a pasted long-lived token for the
+  dedicated non-admin `pitplanner` HA user instead of the HA login. If adopted: this shrinks to the address and token fields, secure storage, the backup exclusion and Disconnect. Until he decides, the
+  entry stands as written.
 - **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** sign in to `ha.glithero.icu` as the `pitplanner` HA user; refresh token in `expo-secure-store`.
@@ -2802,6 +2814,8 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** a real cook with a probe.
 
 ### T-055 Confirmed set-temp button (HA Phase 4, optional)
+- **Jason, 2026-11-16 (`docs/HA-INTEGRATION.md` 8.4):** this is the most grill control the app will ever
+  have. Never automatic; no direct control over Bluetooth or the cloud; Pit Boss direct is not planned (8.3).
 - **Version (Jason, 2026-11-16):** 0.5.0 or later. Not started before 0.3.0 ships.
 - **Status:** todo (Jason opts in)
 - **Goal:** "Set smoker to 400F" on the wings step, confirm required, only while the grill is running; never
@@ -3285,3 +3299,29 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   acknowledge removes only what was read. Jest: taps are acknowledged after the save; a tap read twice is
   applied once. Regression tests written failing first.
 - **Device testing (Jason):** none; device tests `alarm` and `cook` must still pass.
+
+### T-080 Chef iQ probes direct over Bluetooth, no Home Assistant
+- **Version (Jason, 2026-11-16):** 0.5.0. Not started before 0.3.0 ships. Plan: `docs/HA-INTEGRATION.md` 8.2.
+- **Status:** todo. **Mockup first:** the Bluetooth scan permission is a new row in the Setup alerts step
+  design; Jason approves the mockup before any code.
+- **Goal:** during an active cook the app reads Chef iQ probe temps from their Bluetooth advertisements
+  and shows them on Live cook, with the probe's ambient reading as the pit temp. No Home Assistant, no
+  pairing, no connection, no Chef iQ account, read-only.
+- **Scope (Jason):** passive advertisement scan; manufacturer id `0x05CD`; models CQ50 and CQ60; the format
+  per the MIT `chefiq-ble` parser and Home Assistant's `chef_iq` integration (cited in the code and docs;
+  the MIT notice kept if code is ported; no field filled in without a source); scan only during an active
+  cook.
+- **Files:** a new Expo module (Kotlin scanner behind one TypeScript interface in `src/platform/`), a pure
+  parser with tests, `engine/probe.ts` (shared with T-050), `src/screens/setup/` (the permission row, after
+  the mockup), `src/screens/cook/CookScreen.tsx`, `app.config.ts` (the permission), SPEC, TECH-DESIGN.
+- **Depends on:** T-050 (probe readings on Live cook), T-049 (a probe per food), the approved mockup.
+- **To settle at design time:** minimum Android version and whether older ones need location for a scan;
+  declaring that the scan never derives location; the app in the background (scans are throttled; maybe
+  "app open only"); stale readings go grey as in T-050.
+- **Acceptance:** with a CQ60 in hot water and no HA connection, Live cook shows its temps and the ambient
+  reading; nothing scans when no cook is running; the permission is asked only when the feature is turned on.
+- **Tests:** parser unit tests on recorded advertisements from a real probe (and the sources' own test
+  vectors where their licences allow); Robolectric for scan start and stop with the cook; RNTL for the
+  permission row and the temps.
+- **Real phone:** yes: a real probe; the emulator has no Bluetooth radio to speak of.
+- **Device testing (Jason):** a probe in hot water against the Chef iQ app's reading.

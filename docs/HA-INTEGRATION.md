@@ -1,5 +1,8 @@
 # Pit Planner + Home Assistant: integration plan (v2)
 
+**Plan of record by version: section 8 (Jason, 2026-11-16).** 0.4.0 is Home Assistant read-only; 0.5.0 adds
+Chef iQ direct over Bluetooth; Pit Boss direct is not planned; grill control is never automatic.
+
 ## Do first: cook timing fix (before any Home Assistant work)
 
 Status: done in 0.2.0, closed out as T-001 on 2026-11-12 (checklist and screenshots in `docs/HANDOFF.md`).
@@ -111,6 +114,10 @@ Thresholds come from the published sensor attributes, so the blueprint needs no 
 - Be honest in the UI help text: HA has only admin and non-admin. A non-admin user can still read and control every entity in the house. Pit Planner limits itself in code (read-only toward everything; see 3.4); the HA user does not enforce that.
 
 ### 4.2 Sign-in (HA's standard login for third-party apps, no pasted tokens)
+
+> Open decision (Jason, 2026-11-16): section 8.1 weighs a pasted long-lived token for the dedicated
+> `pitplanner` user against this login. Until he decides, this section stands.
+
 1. Screen: "Your Home Assistant address" with one field, e.g. `ha.glithero.icu`. The app adds `https://` and checks `/api/` responds.
 2. The app opens HA's own login page in an Android Custom Tab: `/auth/authorize?client_id=...&redirect_uri=...&state=...`. The user types the HA username and password there (and MFA if enabled). The app never sees the password.
 3. HA redirects back to the app with a code; the app exchanges it at `/auth/token` (`grant_type=authorization_code`) for an access token (about 30 min) and a refresh token.
@@ -181,3 +188,102 @@ Engine stays pure: add `engine/probe.ts` with functions like `nextTempEvent(plan
 - ha-pitboss connection mode on the Sportsman 850 (`wss`, `local` or `ble`).
 - Which phone(s) have the HA Companion app (notify service names).
 - Chef iQ probe model(s) (the core integration documents the CQ60).
+
+## 8. Integration plan by version (Jason, 2026-11-16)
+
+Nothing here is built, and nothing starts before 0.3.0 ships. This section is the plan of record; where it
+disagrees with an earlier section, this one wins.
+
+| Version | What | Tasks |
+|---|---|---|
+| 0.4.0 | Home Assistant, read-only: sign in or token (8.1), discovery, a probe per food, live temps on Live cook | T-042 to T-050 |
+| 0.5.0 | Chef iQ probes direct over Bluetooth, no Home Assistant needed (8.2) | T-080 |
+| 0.5.0 or later | HA phases 2 to 4: publish the cook, the blueprint, suggestions, the confirmed set-temp tap | T-051 to T-055 |
+| Not planned | Pit Boss direct, by cloud, local Wi-Fi or Bluetooth (8.3) | none |
+
+### 8.1 Decision for Jason: a pasted long-lived token instead of the HA login (OAuth)
+
+**The idea.** Jason is the only HA user. Instead of HA's login flow for third-party apps (4.2), he creates
+a long-lived access token while signed in to HA as the dedicated non-admin `pitplanner` user (4.1) and
+pastes it into Gear once. The app keeps it in secure storage (`expo-secure-store`, Android Keystore) and
+it is excluded from backups (already a 0.4.0 requirement, T-035 finding 2).
+
+**What each needs.**
+
+| | HA login (OAuth, 4.2 as planned) | Pasted long-lived token |
+|---|---|---|
+| Setup by Jason | Type the address, sign in on HA's own page | In HA as `pitplanner`: profile, Security, create a token, copy it (shown once), paste it into Gear with the address |
+| Website | A GitHub Pages `client_id` page that must stay up (T-043, D-9) | None |
+| App pieces | Custom Tab, `pitplanner://auth-callback` intent filter, state nonce, code exchange, refresh on expiry or 401, revoke | One field, one check call, a bearer header |
+| What is stored | A refresh token (long-lived until revoked or unused) | The token itself (HA issues these for 10 years) |
+| What a thief of the stored secret gets | Everything the `pitplanner` user can do | The same |
+| Cutting the app off | Delete the session or disable the user in HA | Delete the token or disable the user in HA |
+| Disconnect in Gear | Revokes at HA, then deletes locally | Deletes locally; whether the app can also delete the token at HA is to be checked at build, otherwise the help text says to delete it in HA |
+| Signed-out case | Refresh fails: "Signed out of Home Assistant", Sign in again | A 401: the same banner, with "Paste a new token" |
+| Entry risk | A callback link another app could try to catch (the nonce guards it) | The token passes through the clipboard: mark the field sensitive, never log it, clear the clipboard after paste where Android allows |
+| A friend with their own HA | Friendly: they just sign in | Clumsy: a 180-character token to create and move to the phone |
+| HA's own guidance | The recommended way for apps | Meant for scripts and personal tools |
+
+**Trade-off in one paragraph.** Security is close to equal: both leave one long-lived secret for the same
+non-admin user in the same secure storage, and both are cut off in HA in one step. The token is much less
+to build, test and keep running: no website, no deep link, no refresh logic, fewer failure modes. Its costs
+are the paste step and that it does not suit other people's HA. With one HA user that cost is small.
+
+**If adopted:**
+- T-043 (GitHub Pages `client_id`) and decision D-9 drop.
+- T-044 shrinks to: normalize the address, check the token with one call, treat 401 as signed out, prove
+  no token reaches a logger.
+- T-045 shrinks to: the address and token fields, secure storage, the backup exclusion test, Disconnect.
+  The LAN cleartext rule and the non-admin registry-read check stay.
+- T-042's connect mockup changes (a token field and a short how-to instead of HA's login page).
+- T-046 onward are unchanged: the WebSocket and REST clients take a bearer token either way.
+- Keep the auth behind one small interface (`src/lib/ha/`), so the HA login can be added later if the app
+  is ever offered to other HA users.
+
+**Recommendation:** adopt the token for 0.4.0. **Jason decides**; until he does, T-043 to T-045 stay as
+written. To check before building, either way: that a non-admin HA user can create a long-lived token from
+their own profile on Jason's HA version.
+
+### 8.2 Chef iQ direct over Bluetooth, no Home Assistant (0.5.0, T-080)
+
+- **What:** the app listens for the probes' Bluetooth Low Energy advertisements itself. Passive scan only:
+  read-only, no pairing, no connection, no Chef iQ account.
+- **Which devices:** advertisements with manufacturer id `0x05CD`, models CQ50 and CQ60 (Jason, 2026-11-16).
+- **Format:** as decoded by the MIT-licensed `chefiq-ble` parser and by Home Assistant's `chef_iq`
+  integration (Jason, 2026-11-16). The byte layout is not written here: take it from those two sources at
+  build time, cite them, keep the MIT notice if code is ported, and check it against a real probe in hot
+  water before trusting it. No field is filled in without a source.
+- **What the app shows:** each probe's food temps, and the probe's ambient reading as the pit temp. So a
+  user with Chef iQ probes gets pit temp without any grill integration.
+- **When it scans:** only during an active cook. Never at other times.
+- **Where it plugs in:** readings feed the same `engine/probe.ts` and the same Live cook display as the HA
+  temps (T-050), so the engine and the screen do not care where a reading came from. The scanner is an Expo
+  module in Kotlin behind one TypeScript interface in `src/platform/` (iOS later with CoreBluetooth).
+- **Permission:** Android's Bluetooth scan permission (`BLUETOOTH_SCAN`, "Nearby devices"). It is a new row
+  in the Setup alerts step, which is new UI: **mockup first, approved by Jason, before any code.** Asked
+  only of users who turn the feature on.
+- **To settle at design time:** the app's minimum Android version and whether older versions need the
+  location permission for a scan; whether the scan can declare it never derives location; what happens
+  with the app in the background (Android throttles scans; live temps may be "app open only", as HA's are
+  in 3.3); stale readings going grey as in T-050; a probe per food (reuse T-049's screen).
+- **Not in scope:** writing to the probe, pairing, firmware, the Chef iQ cloud.
+
+### 8.3 Pit Boss direct: not planned
+
+No direct Pit Boss link, whether by the cloud, local Wi-Fi or Bluetooth. Reasons (Jason, 2026-11-16):
+- **Unofficial APIs.** Pit Boss publishes none; every route is reverse-engineered and can break with an
+  app or firmware update.
+- **Stored credentials.** The cloud route means keeping the user's Pit Boss account credentials in the app.
+- **Model coverage.** What works on one controller generation does not on another; the app could not
+  promise it for a friend's grill.
+- **Bluetooth conflict.** The grill accepts one Bluetooth connection; Pit Planner holding it would lock
+  out the Pit Boss app.
+
+Pit temp comes from the Chef iQ probe's ambient reading (8.2), or from HA where the user already has the
+grill there (ha-pitboss, section 1).
+
+### 8.4 Grill control
+
+Never automatic. At most a confirmed set-temp tap through Home Assistant (T-055, section 3.4): an explicit
+tap with a confirm, only while the grill is already running. No ignition, no power, no direct control from
+the app over Bluetooth or the cloud.
