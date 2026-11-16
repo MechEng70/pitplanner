@@ -1,9 +1,107 @@
-# Handoff (2026-11-15, end of the nineteenth session: turkey device test, alarm test on Android 14 and 15, parity review written; phone block is next)
+# Handoff (2026-11-16, end of the twenty-first session: twelve tasks merged, beta.1 not yet built; the emulator block is next, all before Friday)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## Restart, twenty-first session (written Monday 2026-11-16, 12:20 PM, end of the twentieth; read this first)
+## Restart, twenty-second session (written Monday 2026-11-16, end of the twenty-first; read this first)
+
+`main` is committed and clean, **not pushed** (about 60 commits ahead of `origin/main`). The gate passed on
+the last code change (T-068 merge: engine 208, gate self-tests 153, Jest 877, Kotlin 68 in Gradle; Snyk 26
+projects, none skipped); the commit after it is this file only. No agent is running, no worktree, no branch
+but `main`. Emulator and Metro are stopped. The phone was not touched this session. `dashboard.html` (local,
+never committed) was restyled in the medtechcto.com palette: the keeper edits only its `D` data block.
+
+**Usage (Jason):** Fable at 90% on 2026-11-16: every agent on Opus; the main session stays on Fable until he
+says 95%. The session limit was at 74% late in the day.
+
+### 1. First thing next session: the emulator block (all before Friday 2026-11-20)
+
+One job at a time, 115% only. The dev build on the emulator is OLDER than `main` (T-068 added native code):
+the first device run must build (no `--no-build`).
+
+1. `DEVICE_SCALES=1.15 tools/device/run.sh --only live-warnings` (builds first). It now also checks T-081:
+   the banner's line break (the dump should show `&#10;` between the two sentences; not yet seen on a
+   device, fix the grep if the dump differs) and the header's end and first banner top in px for On plan,
+   Ahead and Behind (it waits 4 minutes for Behind; the pill states are assumed from the pictures). Then
+   re-shoot `docs/fidelity/rn-12-live-warned.png` and `rn-12-live-conflict.png` from `out/1.15/` and show
+   Jason. Also look at Cook finished's header (same AppBar, now with the subtitle on its own line).
+2. Battery history across a reboot: does `dumpsys batterystats --history` keep the deep idle entries from
+   before a reboot? (`adb reboot` ends the headless emulator: `avd.sh stop` and `start`.) Report to Jason;
+   Sunday's "deep idle before the ring" column depends on it.
+3. The +15 pass line of `docs/t037-checklist.md`: on a running cook with the app swiped away, +15 on the lock
+   screen: the step rings again 15 min after the tap (`~snooze`), no other alarm moves until the app opens,
+   then one notice, serve moves and the others follow, alarms set once. Correct the checklist first if the
+   emulator shows otherwise. Check the ring log (T-068) in the debug file while there: one ring with the app
+   killed shows with planned and actual times, and a `snooze` source.
+4. Security finding 1 on the alpha.5 release build (it reports 0.2.0 / 200999).
+5. Build `npm run release -- --version 0.3.0-beta.1` (about 20 min; needs a clean tree and the version
+   commit, `docs/RELEASING.md`): must end `cert ok` and `app config ok: version 0.3.0-beta.1, versionCode
+   300301, io.github.mecheng70.pitplanner, variant production`. Then on the emulator: Gear's version line
+   and a Send to developer file read 0.3.0-beta.1 / 300301; the update check offers betas; `aapt2 dump
+   badging` has no `SYSTEM_ALERT_WINDOW`, `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL_STORAGE`; the two backup
+   attributes are in the manifest; a `bmgr` backup and restore of the rules (the 0.2.0 import marker comes
+   back with the database).
+6. `tools/device/upgrade020.sh check release/pitplanner-0.3.0-beta.1.apk` (the emulator upgrade over the real
+   0.2.0 APK), then `tools/device/locked-reboot.sh` on beta.1 (clears Pit Planner's data on the
+   `pitplanner-lock` emulator only).
+7. Device checks still owed for things merged today, none seen on a device: T-075 (Food details for tri-tip
+   with no griddle, the import box, the lane with a dashed hold for the climb), T-036 screen (Gear rows,
+   export, restore through the file picker, a refusal), T-076 (+15 with two foods and the notice), T-077.
+
+### 2. Friday and Saturday (T-038's phone check and T-037)
+
+`docs/t037-checklist.md` is the plan, agreed with Jason: Friday the beta.1 install over 0.2.0 on his phone
+(he screenshots 0.2.0 first, a short 0.2.0 cook is carried across, then ended and discarded), Saturday the
+staged cook with no food (brisket 10 lb so the first ring is 7:50 AM, wrap check 12:15 PM, reboot 12:05 PM),
+Sunday the readout table. Every phone action is listed there and still needs his yes on the day.
+
+### 3. Waiting on Jason
+
+- **Wings source (held, nothing committed):** he gave USDA FSIS "Safe Minimum Internal Temperature Chart",
+  https://www.fsis.usda.gov/food-safety/safe-food-handling-and-preparation/food-safety-basics/safe-temperature-chart
+  (all poultry 165F / 73.9C) and asked that it be opened once before committing. The site refuses automated
+  access (403 from the fetch tool, "Access Denied" in headless Chrome; the Chrome extension was not
+  connected). He confirms it in his browser, or connects the extension. Then: add it to wings, and to
+  breasts and beef where a `sources` entry is missing (brisket, ribs, pork butt, breasts and wings have
+  none). Trap: `engine/rules.test.ts` checks every number of a method once a source backs it, so a
+  `doneTemp`-only source makes the test ask for sources for that food's other numbers (rate, preheat, high
+  heat). Ask him: scope the check to the topics a source covers, or supply the other sources.
+- T-068: the debug screen's line "Alarm rings: when each alert was due and when it rang" (his wording).
+- T-075, three cases from the too-cool smoker rule (in its TASKS entry): the import wording when a tri-tip
+  falls to brisket-style, a silent method change on import, a smoker changed after planning.
+- T-081: the header is about 20 dp taller; his look after the re-shoot.
+- Mockup 16 on the live canvas artifact is not updated (only the repo's source and PNG are).
+- Still open from before: his look at the two-button alert on the phone; T-031 with two phones.
+
+### 4. Done in the twenty-first session (all on `main`, each through the gate)
+
+Merged: T-069 (hold note inside the food's entry), T-074, T-034 thin tests, T-036 logic and its screen
+(Export my data, Restore from a file, `expo-document-picker`), T-035 security fixes, T-079 (a lock-screen
+tap is never lost), T-076 (serve moves and the others follow; Done early rule; the lock screen never moves
+serve earlier), T-077 (oven hold raised to 140F), T-075 (tri-tip smoke then sear on the smoker), T-081
+(header line, banner line break, wings pull wording), T-068 (alarm ring log). Device tests at 115%:
+`plan-sheets`, `shared` (rewritten: files from Download by MediaStore link, own-cache open refused),
+`shared-soon` (new, T-073 closed), `live-warnings` (new, before T-081). New dev seeds `conflict` and
+`warned`. Recorded: T-078 (headless JS, 0.3.x, spike first), T-080 (Chef iQ over Bluetooth, 0.5.0), the HA
+plan (a pasted long-lived token for 0.4.0; T-043 and D-9 dropped), T-037 as a staged cook.
+
+### 5. Traps found today
+
+- `adb shell am start` cannot grant a `content://com.android.externalstorage.documents/...` link (shell has
+  no access); a MediaStore link (`content://media/external/file/<id>`) with
+  `--grant-read-uri-permission` works. A Maestro flow floods the device log: read `logcat` before the next
+  tap.
+- A worktree with a symlinked `node_modules` cannot add a dependency: that agent runs its own `npm ci`.
+  After merging a dependency change run `npm ci` on `main` (other agents' links see it change under them).
+- When removing a worktree, delete only the git-ignored extras (`node_modules` link, `.expo/`,
+  `expo-env.d.ts`); `nativewind-env.d.ts` is tracked.
+- Agents must not edit `SPEC.md` or `TASKS.md` in parallel: they put the text in their report and the main
+  session applies it at merge.
+- A JSON data edit: validate before writing the file (a bad write to `data/cookers.json` was caught by Jest).
+- Chrome headless renders a mockup source for a PNG: strip `<x-dc>`, `<helmet>` and the `support.js` script,
+  then `--headless=new --force-device-scale-factor=2 --window-size=390,844 --screenshot`.
+
+## Restart, twenty-first session (written Monday 2026-11-16, 12:20 PM, end of the twentieth)
 
 `main` is committed and clean, 1 commit ahead of `origin/main` (this handoff; Jason pushed the rest during the session), **not pushed**. The last gate pass
 was on `45a8b71`; the two commits after it are docs only (`CLAUDE.md`; then this file, `docs/alarm-testing.md` and two reports in `docs/proposals/`). Emulators and Metro are
