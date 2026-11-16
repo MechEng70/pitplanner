@@ -2168,6 +2168,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   install prompts in INSTALL.md are written from stock Android, not checked on a phone.
 
 ### T-034 Parity review
+- **Jason's review answer 10 (2026-11-16):** the ribs history card (a food not by weight with saved total
+  hours) is fine as built; drop "by-weight" from the SPEC wording about Cook history rate cards (row T7).
 - **Jason's decisions on the open rows (2026-11-16, also in `docs/parity.md` section 1):** D2 keep "Show
   180-500F". D9 goes into T-069: the Live cook banner also shows a hold past the food's hold limit. D10
   wording only for 0.3.0, done: the hold note for brisket and pork butt ends "Keep it above 140F." D11
@@ -2979,3 +2981,72 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Tests:** engine test for the Serve alarm's title and text (one food, several, two of the same food);
   RNTL for the three label pairs; the device test's labels.
 - **Device testing (Jason):** the Serve alert on the lock screen at 115%.
+- **Jason's review of the built task (2026-11-16), answers 7 to 9:** the Serve alert, the stepper button
+  names and Earlier / Later are approved as built. The Quiet time summary keeps "Serve." (it is a step
+  list, like the timeline).
+
+### T-075 Tri-tip with no griddle: smoke, then sear on the smoker
+- **Status:** todo. Decided by Jason, 2026-11-16. Small, in 0.3.0. Build after T-069, T-074 and the T-035
+  security fixes are merged (it touches `engine/plan.ts`, `src/lib/sharedPlan.ts`,
+  `src/screens/plan/FoodEdit.tsx`).
+- **Goal:** a tri-tip can be planned and imported on a setup with no griddle.
+- **The method (data only, `data/foods.json`):** a third tri-tip method, "Smoke, then sear on the smoker".
+  Each number cites its source in `sources`, "as given by Jason, 2026-11-16":
+  - Smoke at the plan's smoker temp to about 120F, as the reverse method does (Louisiana Grills
+    reverse-seared tri-tip: smoke at 225F until 5F below target, about 75 min to 115F,
+    https://louisiana-grills.com/blogs/pork/reverse-seared-tri-tip).
+  - Off the heat while the smoker climbs to 500F (450F if the smoker tops out lower), 15 min preheat
+    (Traeger smoked tri-tip, https://www.traeger.com/za/en/recipes/smoked-tri-tip).
+  - Sear 4 min per side at 500F to 130-135F, then rest 10 to 15 min (Traeger,
+    https://traeger.com/au/en/recipes/smoked-tri-tip).
+- **Import:** it is the fallback for a receiver with no griddle. The "No griddle set up." box reads "Tri-tip
+  will be seared on the smoker, or add a griddle in Gear." The import checks every cooker a method's steps
+  need (today only the main one: `mapToCookers`, `src/lib/sharedPlan.ts`).
+- **Add food:** picks the first tri-tip method the user's cookers can fully do.
+- **Food details:** a method whose steps need a missing cooker is greyed out with "Add in Gear", like the
+  Cook on chips.
+- **Plan warning:** names the other method instead of "move it to the smoker". His earlier wording, before
+  the new method existed: "Tri-tip's sear needs a griddle. Add one in Gear, or pick Smoked brisket-style in
+  Food details." With the new method the one to name is the smoker sear: **confirm the sentence with Jason
+  before building it.**
+- **Conflicts:** the climb to 500F conflicts with low foods the way wings do. That is fine.
+- **Also in this task (bug):** with no smoker in Gear a food gets "needs a smoker" once per smoker step
+  (twice for brisket, and a duplicate React key in `FoodEdit.tsx`). Say it once. Regression test first.
+- **Files:** `data/foods.json`, `engine/plan.ts`, `src/lib/sharedPlan.ts`, `src/screens/plan/FoodEdit.tsx`,
+  the Add food sheet, tests.
+- **Tests:** engine: the method's steps and times at 225F, the 450F cap, the sources test; import: a
+  tri-tip plan opened with no griddle; Add food's pick with and without a griddle; RNTL for the greyed-out
+  method; the "needs a smoker" regression.
+- **Device testing (Jason):** Food details for tri-tip with no griddle at 115%; the import box.
+
+### T-076 Serve moves for one food: the others follow
+- **Status:** todo. Must-fix for 0.3.0 (Jason, 2026-11-16). Build after T-069 merges. Report:
+  `docs/proposals/2026-11-16-lock-screen-actions.md`.
+- **Fault:** the lock screen and the app give identical plans; the fault is in the engine. `extendCook` and
+  `markStepDone` (`engine/live.ts`) move one food and serve and leave the rest, so the other foods' holds
+  grow. Only `shiftRemaining` moves every food.
+- **Jason's answers (2026-11-16):**
+  1. Approved: the others follow.
+  2. A food already on the heat cooks that much longer, as Running behind does.
+  3. The Live cook notice reads "Serve moved to {time}. The other foods moved with it."
+  4. Fix Back up to temp (`pitOutage`) in the same change.
+  5. Done early with Move serve: **propose the rule with tests before building.** His rule: serve no
+     earlier than the slowest other food can still be ready from now; otherwise keep serve.
+- **Closed-app limit, to evaluate before building:** the native side shifting every later alarm by the same
+  minutes when a lock-screen tap moves serve, with the app re-planning on next open. Report the cost to
+  Jason first; wanted for 0.3.0 only if small.
+- **Files:** `engine/live.ts`, `src/lib/cook.ts`, `src/screens/cook/CookScreen.tsx`, tests; `modules/pit-alarms`
+  only if the closed-app part is approved.
+- **Tests:** regression tests that fail first, one of them pinning that the lock screen and the app agree.
+  Three T-069 tests pin holds of 35 and 38 min that this task changes.
+- **Device testing (Jason):** +15 min on the lock screen with two foods, then the notice on Live cook at 115%.
+
+### T-077 Oven hold below 140F is raised to 140F
+- **Status:** todo. Decided by Jason, 2026-11-16 (parity row T18).
+- **Goal:** an oven hold temp below 140F never reaches a plan. Clamp to 140F at the 0.2.0 import and on
+  load, and say so in the import notice: "Oven hold raised to 140F, the safe minimum."
+- **Files:** `src/db/legacyImport.ts`, where gear is loaded (`src/db/repos/`), the import notice, tests;
+  `docs/parity.md` row T18.
+- **Tests:** a 0.2.0 file with an oven hold of 130F imports as 140F with the notice; a stored 130F loads as
+  140F; 140F and above are untouched and get no notice.
+- **Device testing (Jason):** none.
