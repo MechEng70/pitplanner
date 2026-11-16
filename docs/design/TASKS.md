@@ -3242,8 +3242,8 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** Food details for tri-tip with no griddle at 115%; the import box.
 
 ### T-076 Serve moves for one food: the others follow
-- **Status:** in progress on an agent branch (2026-11-16). Must-fix for 0.3.0 (Jason, 2026-11-16). Report:
-  `docs/proposals/2026-11-16-lock-screen-actions.md`.
+- **Status:** built on branch `worktree-agent-a4bb4f0f48b099655`, unit-tested, not gated (2026-11-16). Must-fix
+  for 0.3.0 (Jason, 2026-11-16). Report: `docs/proposals/2026-11-16-lock-screen-actions.md`.
 - **Fault:** the lock screen and the app give identical plans; the fault is in the engine. `extendCook` and
   `markStepDone` (`engine/live.ts`) move one food and serve and leave the rest, so the other foods' holds
   grow. Only `shiftRemaining` moves every food.
@@ -3327,6 +3327,71 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Tests:** regression tests that fail first, one of them pinning that the lock screen and the app agree.
   Three T-069 tests pin holds of 35 and 38 min that this task changes.
 - **Device testing (Jason):** +15 min on the lock screen with two foods, then the notice on Live cook at 115%.
+- **Built (2026-11-16, agent branch):**
+  - `engine/live.ts`: `shiftItem` (one food's per-food move, now shared with `shiftRemaining`) and `followServe`
+    (every other food follows a later serve from now; holds kept). `extendCook` and `markStepDone` call it with
+    Move serve when late; `pitOutage` with Move serve moves the foods it used to skip (griddle, oven) from
+    `upAt`. `markStepDone` takes an optional last `{ now, done, notBefore }` (`DoneContext`); `postponeStep`
+    passes its own `now`. Done early with Move serve is `moveServeEarlier` (the rule above) with
+    `startSooner` (slack) and `conflictMin`.
+  - `src/lib/cook.ts`: `doneStep` passes `{ now: at, done: keys of cook.done, notBefore: cook.quietUntil }`;
+    early with no earlier serve possible returns Keep serve and no `ask` (4A). The notice reads "Serve moved to
+    {time}. The other foods moved with it."
+  - Tests: `engine/cook.test.ts` (late Not yet and late Done move the others and keep their holds; a food
+    already off stays and its hold grows; Back up to temp moves the breasts; T1 to T8 and T7b),
+    `engine/plan.test.ts` (wrap 15 min late split into Keep and Move; pit outage title and a breasts
+    assertion), `src/lib/cook.test.ts` (four +15 taps: serve 5:30, holds 5 and 8, crisp 4:50, griddle 4:55,
+    breasts 5:10 to 5:22, wings off 5:25; the notice, with one food too; T9; Done at 10:23 Move gives 3:50 PM
+    with the others 70 min earlier; no question when no earlier serve is possible; Quiet blocks the breasts'
+    prep), `alertActions.test.tsx` (the one alarm set after the four taps has the wings and breasts at their
+    new times), `CookScreen.test.tsx` (the two banner tests reach conflict plus two long holds another way, all
+    with Keep serve: brisket an hour behind, wings on 30 min early at 2:45 PM, breasts on 25 min early at
+    4:15 PM, shown at 4:20: "Long hold: chicken wings 35 min (limit 30), chicken breasts 33 min (limit 20).",
+    three keys recorded; a third test keeps the one-food form, breasts alone 20 min early: "Long hold: chicken
+    breasts 28 min, limit 20 min."). Every T case gave the numbers above; none differed.
+  - SPEC section 5 (the Done, Not yet and Back up to temp rows, two new paragraphs) and failure mode 2.
+- **Choices made in building that Jason has not seen:**
+  - One food on the cook: the notice is "Serve moved to {time}." with no second sentence.
+  - Slack stops at the first 5 min that would clash on the smoker or drag a step too early ("stops short"),
+    rather than the largest value that happens to pass; this is what gives T6 its 25 min.
+  - Steps already in the past are not checked when a food starts sooner (the wings' 7:15 AM dry brine in T1
+    and T4); refill and smoker-off times are not checked either (the rule names fire, griddle, oven and smoker
+    temp steps only).
+  - "A clash K does not have" is measured per pair of foods in minutes on the smoker at temps too far apart.
+  - Each food's slack is worked out on its own against the Keep serve plan, as the rule says, and the whole
+    result is checked too (3A, coordinator 2026-11-16): if it has a smoker clash, or a longer one, that the
+    Keep plan does not, serve backs off 5 min at a time (each food's move shrinks with it) down to the Keep
+    plan. It cannot fire today: a clash between two foods depends only on how far one moved against the
+    other, and that gap is a move `startSooner` already checked step by step. No real menu was found that
+    breaks it (a search on the engine without this check: 22,680 early Dones over 21 pairs of smoker foods with
+    the brisket, 7,059 with both foods moving by different amounts, 2,001 of those at temps that clash; none
+    worse than Keep). Pinned by "the result never has a smoker conflict, or a longer
+    one, that Keep serve does not" (T1 to T8 and wings hot at 350F with breasts on the smoker at 225F).
+  - Back up to temp with Move serve moves the other foods from the time the pit is back up.
+  - Accepted by Jason (2026-11-16): stopping at the first 5 min that clashes or drags a step too early; past
+    steps, refill and smoker-off times not checked; Back up to temp moving the others from the time the pit
+    is back up.
+  - A food moved sooner never goes on the smoker before it is lit and at temp (Jason, 2026-11-16): its first
+    smoker phase is never before fire + preheat, nor before a set-smoker step + the climb. `startSooner`
+    checks every fire and set-smoker step the Keep plan does not have at that time, past or not, against the
+    floor (a lit fire or a done set-smoker step cannot happen again earlier). Pinned by "a food never goes on
+    the smoker before it is lit and up to that food's temp" (wings hot at 350F: smoker lit at 3:35 for 3:55;
+    and set to 350F at 3:40 after the brisket); it fails without that check.
+  - The lock screen never moves serve earlier (Jason, 2026-11-16; this replaces "in practice"). A food done
+    early from the alert that was already short of its minimum rest keeps serve; the other foods are not
+    re-planned. This is the one case where the lock screen and the in-app sheet's preselected choice differ:
+    there Keep serve does not cover the food, so the sheet preselects Move serve, which can bring serve
+    earlier (the test: wrap put off an hour with Keep, then done 20 min early at 12:15 PM; lock screen 5:00
+    PM, brisket rest 20 min; the sheet's Move serve 4:55 PM). The T-069 banner shows conflicts and long holds
+    only, so a short rest itself adds no banner line; it stays on the plan as REST_SHORT.
+  - Without a done list (engine callers other than `doneStep`), a step counts as done when it is due before
+    now.
+- **Check on a device (Jason, at 115%):** on a two-food cook, +15 min on the lock screen until serve moves,
+  then open the app: Live cook shows "Serve moved to {time}. The other foods moved with it." with OK, and the
+  other food's next step reads its new time; with the app in the background its alert rings at the new time.
+  Done 20 min early on the brisket wrap of a three-food cook: the sheet opens and Move serve gives serve 20 min
+  earlier with the wings and breasts earlier too. Done early on a step when another food is already behind
+  (for example ribs not put on): no sheet, serve stays.
 
 ### T-077 Oven hold below 140F is raised to 140F
 - **Status:** todo. Decided by Jason, 2026-11-16 (parity row T18).

@@ -110,13 +110,19 @@ export function doneStep(c: ActiveCook, key: string, at: number, keepServe?: boo
     const item = c.plan.items.find(i => i.input.id === e.itemId)!;
     const first = item.phases[0]?.id === e.phaseId;
     const withOn = first ? { ...base, onAt: { ...base.onAt, [e.itemId]: at } } : base;
+    // Done early with Move serve needs what the plan does not know: which steps are done, and Quiet time.
+    const ctx = { now: at, done: Object.keys(c.done), notBefore: c.quietUntil };
     const run = (keep: boolean) => ({
       ...withOn,
-      plan: markStepDone(rules, c.input, c.plan, e.itemId!, e.phaseId!, at, keep).plan,
+      plan: markStepDone(rules, c.input, c.plan, e.itemId!, e.phaseId!, at, keep, ctx).plan,
     });
     const deltaMin = Math.round((at - e.at) / MIN);
     if (keepServe != null || Math.abs(deltaMin) < ASK_SHIFT_MIN) return { cook: run(keepServe ?? true) };
-    return { cook: withOn, ask: { deltaMin, keepServe: run(true), moveServe: run(false) } };
+    const keep = run(true),
+      move = run(false);
+    // Early, and no other food could be ready sooner: serve stays and nothing is asked (T-076, 4A).
+    if (move.plan.serveAt === keep.plan.serveAt) return { cook: keep };
+    return { cook: withOn, ask: { deltaMin, keepServe: keep, moveServe: move } };
   }
   if (e.kind === 'pull' && e.itemId) {
     return {
@@ -226,7 +232,7 @@ export function keepServeIfCovered(run: (keepServe: boolean) => ActiveCook): Act
 
 /**
  * Done and +15 tapped on a notification while the app was closed. Keeps serve when the holds absorb
- * the change, else moves serve (no food comes off after serve). Adds to `notice` so the Cook tab
+ * the change, else moves serve later (no food comes off after serve), never earlier. Adds to `notice` so the Cook tab
  * says what changed.
  */
 export function applyActions(c: ActiveCook, actions: NotificationAction[]): ActiveCook {
@@ -240,13 +246,20 @@ export function applyActions(c: ActiveCook, actions: NotificationAction[]): Acti
       const title = stepText(k.event.label).title;
       const run = (keep: boolean) =>
         a.type === 'done' ? doneStep(cur, key, a.at, keep).cook : postpone(cur, key, a.at, 15, keep);
-      const next = keepServeIfCovered(run);
+      // The lock screen never moves serve earlier (Jason, 2026-11-16): a food done early that was already short
+      // of its minimum rest keeps serve, and the other foods are not re-planned.
+      const covered = keepServeIfCovered(run);
+      const next = covered.plan.serveAt < cur.plan.serveAt ? run(true) : covered;
       said.push(
         a.type === 'done'
           ? `${title}: done at ${fmtTime(a.at)} from the alert.`
           : `${title}: moved 15 min from the alert.`,
       );
-      if (next.plan.serveAt !== cur.plan.serveAt) said.push(`Serve moves to ${fmtTime(next.plan.serveAt)}.`);
+      if (next.plan.serveAt !== cur.plan.serveAt)
+        said.push(
+          // The other foods follow serve (T-076). With one food there are none to speak of.
+          `Serve moved to ${fmtTime(next.plan.serveAt)}.${next.plan.items.length > 1 ? ' The other foods moved with it.' : ''}`,
+        );
       cur = next;
     }
   }

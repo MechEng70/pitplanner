@@ -1,6 +1,7 @@
 // syncAlarms talks to the AlarmService interface (no native plugin), so it runs against a recording fake.
 import { keyedEvents, type AlarmSpec } from '../../engine/alarms.ts';
 import { buildPlan } from '../../engine/plan.ts';
+import { holdsCover } from '../../engine/live.ts';
 import { saturday } from './fixtures/saturday.ts';
 import type { AlarmService } from '../platform/types.ts';
 import { rules } from './rules.ts';
@@ -265,12 +266,9 @@ describe('warnings made during the cook (T-069)', () => {
     const before = { ...fresh, done: { ...fresh.done, [wrap]: at - 60 * MIN } };
     const after = applyActions(before, actions);
     expect(after.plan.warnings.filter(w => w.code === 'PIT_CONFLICT').map(w => w.message)).toEqual([CONFLICT]);
-    // Serve moved with the brisket, so the wings and the breasts now hold past their limits too: two
-    // sentences, the conflict first, then the holds. The breasts' "Move it to the griddle or start it later." is not said mid-cook.
-    // The lock-screen +15 min path (serve moves, the other foods are not re-timed) is under review: these strings may change.
-    expect(liveWarnings(after.plan, after.original, after.warningsSeen, at + 46 * MIN, F_UNITS)?.text).toBe(
-      `${CONFLICT} Long hold: chicken wings 35 min (limit 30), chicken breasts 38 min (limit 20).`,
-    );
+    // Serve moved with the brisket on taps 3 and 4, and the wings and the breasts moved with it (T-076), so
+    // the conflict is the only new warning. Before T-076 they stayed put and held 35 and 38 min.
+    expect(liveWarnings(after.plan, after.original, after.warningsSeen, at + 46 * MIN, F_UNITS)?.text).toBe(CONFLICT);
     // Silent for 0.3.0: the notice says what the alert did and no more, and the alarm set has only steps.
     expect(after.notice).not.toMatch(/conflict/i);
     const { svc, calls } = fakeAlarms();
@@ -280,5 +278,125 @@ describe('warnings made during the cook (T-069)', () => {
       expect(`${a.title} ${a.body}`).not.toMatch(/conflict/i);
       expect(a.keys.every(k => stepKeys.has(k))).toBe(true);
     }
+  });
+});
+
+// T-076: serve moves for one food, the others follow; the lock screen and the app give the same plan.
+describe('serve moves for one food: the others follow (T-076)', () => {
+  const MIN = 60_000;
+  const fresh = cookAt(AT_1023);
+  const wrap = 'phase:b:wrap';
+  const WRAP_AT = Date.UTC(2026, 10, 14, 16, 35); // 11:35 AM
+  const at = (h: number, m: number) => Date.UTC(2026, 10, 14, h + 5, m);
+  const item = (c: { plan: typeof plan }, id: string) => c.plan.items.find(i => i.input.id === id)!;
+  const startOf = (c: { plan: typeof plan }, id: string, phase: string) =>
+    item(c, id).phases.find(p => p.id === phase)!.start;
+  const hold = (c: { plan: typeof plan }, id: string) =>
+    (c.plan.serveAt - item(c, id).sliceMin * MIN - item(c, id).finish) / MIN;
+
+  test('four +15 taps on the brisket pull: serve 5:30 PM and the wings and breasts keep holds of 5 and 8', () => {
+    const pull = pending(fresh).find(k => k.event.kind === 'pull' && k.event.itemId === 'b')!;
+    const taps = [0, 1, 2, 3].map(i => ({
+      type: 'snooze15' as const,
+      alarmId: pull.key,
+      keys: [pull.key],
+      at: pull.event.at + i * 15 * MIN,
+    }));
+    const after = applyActions({ ...fresh, done: { ...fresh.done, [wrap]: WRAP_AT } }, taps);
+    expect(after.plan.serveAt).toBe(at(17, 30));
+    expect(hold(after, 'b')).toBe(30);
+    expect(hold(after, 'w')).toBe(5);
+    expect(hold(after, 'c')).toBe(8);
+    expect(startOf(after, 'w', 'crisp')).toBe(at(16, 50));
+    expect(after.plan.griddleOnAt).toBe(at(16, 55));
+    expect(startOf(after, 'c', 'cook')).toBe(at(17, 10));
+    expect(item(after, 'c').finish).toBe(at(17, 22));
+    expect(item(after, 'w').finish).toBe(at(17, 25));
+    expect(after.plan.warnings.some(w => w.code === 'HOLD_TOO_LONG')).toBe(false);
+  });
+
+  test('the notice says serve moved and that the other foods moved with it', () => {
+    const late = applyActions(fresh, [{ type: 'done', alarmId: wrap, keys: [wrap], at: WRAP_AT + 40 * MIN }]);
+    expect(late.notice).toBe(
+      'Check the brisket: done at 12:15 PM from the alert. Serve moved to 5:40 PM. The other foods moved with it.',
+    );
+    // One food on the cook: there are no other foods to speak of.
+    const alone = newCook(saturday, plan, start);
+    const key = keyedEvents(plan).find(k => k.event.kind === 'phase' && k.event.phaseId === 'wrap')!;
+    const one = applyActions(alone, [{ type: 'done', alarmId: key.key, keys: [key.key], at: key.event.at + 40 * MIN }]);
+    expect(one.notice).toMatch(/ Serve moved to 5:40 PM\.$/);
+    expect(one.notice).not.toMatch(/other foods/);
+  });
+
+  test('lock screen and app agree (T9): Done from the alert gives the plan of Done in the app with the choice the sheet preselects', () => {
+    for (const [doneAt, serve] of [
+      [AT_1023, at(17, 0)],
+      [WRAP_AT + 40 * MIN, at(17, 40)],
+    ] as const) {
+      const lock = applyActions(fresh, [{ type: 'done', alarmId: wrap, keys: [wrap], at: doneAt }]);
+      const r = doneStep(fresh, wrap, doneAt);
+      const keep = r.ask!.keepServe;
+      const app = holdsCover(keep.plan) ? keep : r.ask!.moveServe;
+      expect(lock.plan).toEqual(app.plan);
+      expect(lock.plan.serveAt).toBe(serve);
+    }
+  });
+
+  test('the lock screen never moves serve earlier, even for a food already short of its minimum rest (Jason)', () => {
+    // Not yet on the wrap check, an hour, with serve kept: the brisket comes off at 4:40 PM with no rest. Then
+    // the wrap is done from the alert at 12:15 PM, 20 min early: Keep serve still leaves it 20 min, under its 30.
+    const behind = postpone(fresh, wrap, AT_1023, 60, true);
+    expect(hold(behind, 'b')).toBe(0);
+    const doneAt = at(12, 15);
+    const lock = applyActions(behind, [{ type: 'done', alarmId: wrap, keys: [wrap], at: doneAt }]);
+    expect(lock.plan.serveAt).toBe(at(17, 0));
+    expect(hold(lock, 'b')).toBe(20);
+    // Serve kept and the other foods not re-planned: the same plan as Done with Keep serve in the app.
+    expect(lock.plan).toEqual(doneStep(behind, wrap, doneAt, true).cook.plan);
+    expect(lock.notice).not.toMatch(/Serve moved/);
+    // The one case where the lock screen and the app's preselected choice differ: Keep serve does not cover
+    // the brisket, so the sheet preselects Move serve, and Move serve brings serve 5 min earlier.
+    const r = doneStep(behind, wrap, doneAt);
+    expect(holdsCover(r.ask!.keepServe.plan)).toBe(false);
+    expect(r.ask!.moveServe.plan.serveAt).toBe(at(16, 55));
+  });
+
+  test('Done 72 min early on the wrap, Move serve: serve 3:50 PM and the wings and breasts move 70 min earlier', () => {
+    const r = doneStep(fresh, wrap, AT_1023);
+    const move = r.ask!.moveServe;
+    expect(move.plan.serveAt).toBe(at(15, 50));
+    expect(startOf(move, 'w', 'smoke')).toBe(startOf(fresh, 'w', 'smoke') - 70 * MIN);
+    expect(startOf(move, 'c', 'cook')).toBe(startOf(fresh, 'c', 'cook') - 70 * MIN);
+    for (const id of ['b', 'w', 'c']) expect(hold(move, id)).toBe(hold(fresh, id));
+  });
+
+  test('Done early when no food could be ready sooner: no Keep or Move question, serve is kept', () => {
+    // The brisket's pull put off 30 min (Keep serve): it comes off at 4:10 and rests its minimum 30 min.
+    const pull = 'pull:b:';
+    const waiting = postpone({ ...fresh, done: { ...fresh.done, [wrap]: WRAP_AT } }, pull, at(15, 40), 30, true);
+    expect(hold(waiting, 'b')).toBe(30);
+    // The wings' climb to 400F done 15 min early: serve could not come sooner for the brisket.
+    const r = doneStep(waiting, 'phase:w:ramp', at(15, 50));
+    expect(r.ask).toBeUndefined();
+    expect(r.cook.plan.serveAt).toBe(at(17, 0));
+    expect(r.cook.plan).toEqual(doneStep(waiting, 'phase:w:ramp', at(15, 50), true).cook.plan);
+  });
+
+  test('Done early in Quiet time: the other foods never move into it', () => {
+    // 3:50 PM, every step before it done on time (the brisket came off at 3:40). The wings' climb to 400F is
+    // done 15 min early: the breasts could start 15 min sooner and serve moves to 4:45 PM (T3).
+    const now = at(15, 50);
+    const done = Object.fromEntries(
+      steps(fresh)
+        .filter(k => k.event.at < now)
+        .map(k => [k.key, k.event.at]),
+    );
+    const c = { ...fresh, done };
+    expect(doneStep(c, 'phase:w:ramp', now).ask!.moveServe.plan.serveAt).toBe(at(16, 45));
+    // With Quiet on until 4:20 PM the breasts' prep at 4:10 is inside it and cannot come sooner, so neither can
+    // the breasts or serve: no question.
+    const r = doneStep(quiet(c, now), 'phase:w:ramp', now);
+    expect(r.ask).toBeUndefined();
+    expect(r.cook.plan.serveAt).toBe(at(17, 0));
   });
 });
