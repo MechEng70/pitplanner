@@ -202,7 +202,7 @@ Rows that are OK, with their proof. Open rows are in section 1 by number.
 | 13 | Foods mapped to the receiver's cookers; missing cookers flagged; breasts to the smoker | OK | `engine/share.test.ts`, `SharedPlanSheet.test.tsx` |
 | 14 | Blend with the prior at weight 3; Discard; history entries can be edited | OK | `engine/plan.test.ts`, `FinishScreen.test.tsx`, `HistoryScreen.test.tsx`; device `cook-finished`, `history` |
 | 15 | Warn on cooler holds over 4 hr | Part | D10 |
-| 15 | Oven hold setting at least 140F | OK | `CookerSheets.test.tsx` (T18) |
+| 15 | Oven hold setting at least 140F | OK | `CookerSheets.test.tsx`; stored, imported and restored values: `repos.test.ts`, `legacyImport.test.ts`, `restore.test.ts` (T18, T-077) |
 
 ## 5. Still to do in T-034
 

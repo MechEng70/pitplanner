@@ -3394,7 +3394,16 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   (for example ribs not put on): no sheet, serve stays.
 
 ### T-077 Oven hold below 140F is raised to 140F
-- **Status:** todo. Decided by Jason, 2026-11-16 (parity row T18).
+- **Status:** merged onto `main` 2026-11-16 and gated. Decided by Jason, 2026-11-16 (parity row T18).
+- **Built:** one floor, `OVEN_HOLD_MIN_F` in `src/lib/gear.ts`, with `withSafeHold`, used by the Oven sheet
+  stepper, `cookersRepo.load` and `save`, and `importLegacy`. The import report records `ovenRaised`, and
+  `importNotice(report, units)` adds the line (60C in Celsius, through `fmtTemp`), on its own line inside
+  the notice's existing text. The data-file restore writes through `cookersRepo.save`, so it ends at 140F
+  too. Tests: `repos.test.ts`, `legacyImport.test.ts`, `restore.test.ts`, `ImportNotice.test.tsx`.
+- **Choices made in the build (not decided by Jason):** on load a low hold is read as 140 and the stored
+  row is rewritten at the next save (no repo heals on read); any number below 140 is raised, zero and
+  negatives too; the line also shows on a "partial" import notice; if units change while the notice is
+  open the line keeps the unit it had.
 - **Goal:** an oven hold temp below 140F never reaches a plan. Clamp to 140F at the 0.2.0 import and on
   load, and say so in the import notice: "Oven hold raised to 140F, the safe minimum."
 - **Files:** `src/db/legacyImport.ts`, where gear is loaded (`src/db/repos/`), the import notice, tests;
