@@ -3132,8 +3132,10 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   picked before open as they did. Two RNTL tests. To do with the merge (Jason): one emulator check with the
   real Android date dialog (a plan under an hour out, the note, Pick a date opens on today, pick today, the
   note goes and the plan keeps today) and a picture of the sheet with the note for mockup 11.
-- **Status:** merged onto `main` and gated 2026-11-16, with the picker change below. The emulator check with
-  the real date dialog is the last step (see below).
+- **Status:** done 2026-11-16. Merged and gated with the picker change below; the emulator check with the
+  real Android date dialog passes at 115% as device test `shared-soon` (the note, Pick a date opens on
+  today, OK keeps today, the note goes, Plan keeps today). Picture for mockup 11:
+  `docs/fidelity/rn-11-open-shared-plan-note.png` (Jason's look is open).
 - **Why:** 0.2.0's `suggestServe` moves the date silently: a shared serve time that is less than an hour out
   becomes the next same weekday at the same local time, and the only sign is the date on the first "Serve on"
   chip. Found 2026-11-16 when a test plan landed a week out. The note was not in SPEC. The rule itself stays

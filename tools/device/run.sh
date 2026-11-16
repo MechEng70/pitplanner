@@ -20,7 +20,7 @@ set -uo pipefail
 . "$(dirname "$0")/lib.sh"
 cd "$DEVICE_DIR" || exit 1
 
-ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets food-details survive cook cook-options cook-finished setup gear history shared fast-cook followups turkey)
+ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets food-details survive cook cook-options cook-finished setup gear history shared shared-soon fast-cook followups turkey)
 TESTS=()
 NOBUILD=""
 REPEAT=1
@@ -1681,11 +1681,26 @@ test_history() {
   if [ $ok = 1 ]; then result "PASS  history $s"; else result "FAIL  history $s"; fi
 }
 
-# T-030: open a shared plan (mockup 11). Emulator only. A .pitplan is written into the dev build's own cache
-# (run-as) and opened with a file:// VIEW intent while the app runs (a cold start would open the dev launcher).
-# The Saturday plan opens the Shared plan sheet on Plan with its menu; Use this plan puts the three foods on
-# the plan. A file over the 256 KB cap says it is too big; a file that is not a plan says so. The files are removed at the end. Not covered here: a content:// open from Files, Gmail or Drive (T-031).
+# T-030, T-035: open a shared plan (mockup 11). Emulator only. The .pitplan files are pushed to the shared
+# Download folder and opened with a content:// VIEW intent (their MediaStore links, read access granted as a
+# sender app grants it), while the app runs (a cold start would open the dev launcher). The Saturday plan opens the Shared plan
+# sheet on Plan with its menu; Use this plan puts the three foods on the plan. A file over the 256 KB cap says
+# it is too big; a file that is not a plan says so. Regression for T-035 finding 3: a file in the app's OWN
+# cache opened with a file:// link is refused ("Could not read that file.", log line "PitShare: open refused").
+# The files are removed at the end. Not covered here: Gmail or Drive as the sender (T-031).
+SHARED_DIR=/sdcard/Download
+# The file's MediaStore link (adb's shell user may hand out read access to those; it may not for the storage
+# provider's document links, which only Files can grant).
 open_pitplan() {
+  local id
+  id=$(A shell content query --uri content://media/external/file --projection _id \
+    --where "_display_name=\'$1\'" 2>/dev/null | sed -n 's/.*_id=\([0-9]*\).*/\1/p' | tail -1)
+  if [ -z "$id" ]; then log "    $1 is not in MediaStore"; return; fi
+  A shell am start -W -a android.intent.action.VIEW -t application/json --grant-read-uri-permission \
+    -d "content://media/external/file/$id" "$PKG" >/dev/null
+  sleep 3
+}
+open_own_cache() {
   A shell am start -W -a android.intent.action.VIEW -t application/json \
     -d "file:///data/user/0/$PKG/cache/$1" "$PKG" >/dev/null
   sleep 3
@@ -1694,16 +1709,20 @@ test_shared() {
   local s="$1" dir="$2" ok=1 want
   if ! is_emulator; then result "SKIP  shared $s: emulator only"; return; fi
   launch "dev/plan?seed=empty" || { result "FAIL  shared $s: app did not open"; return; }
-  db_app "mkdir -p cache && cat >cache/test.pitplan" <<'JSON'
+  local tmp; tmp=$(mktemp -d)
+  cat >"$tmp/test.pitplan" <<'JSON'
 {"app":"pit-planner","version":1,"serveAt":"2026-11-14T22:00:00.000Z","pitTempF":225,"items":[
 {"id":"b","foodId":"brisket","methodId":"smoked","quantity":12,"options":{"wrap":"paper"},"restMin":60},
 {"id":"w","foodId":"wings","methodId":"smokeCrisp","quantity":2},
 {"id":"c","foodId":"breasts","methodId":"griddle","quantity":4,"options":{"thickness":"pounded"}}]}
 JSON
-  head -c 300000 /dev/zero | tr '\0' 'a' | db_app "cat >cache/big.pitplan"
-  echo "not a plan" | db_app "cat >cache/bad.pitplan"
+  head -c 300000 /dev/zero | tr '\0' 'a' >"$tmp/big.pitplan"
+  echo "not a plan" >"$tmp/bad.pitplan"
+  for want in test big bad; do A push "$tmp/$want.pitplan" "$SHARED_DIR/pp-$want.pitplan" >/dev/null || plan_miss "push $want.pitplan"; done
+  db_app "mkdir -p cache && cat >cache/own.pitplan" <"$tmp/test.pitplan"
+  rm -rf "$tmp"
 
-  open_pitplan test.pitplan
+  open_pitplan pp-test.pitplan
   if look "$dir/shared.xml" && says "$dir/shared.xml" "Open shared plan"; then
     for want in "Someone shared a Saturday plan." "Brisket, 12 lb" "Use this plan"; do
       says "$dir/shared.xml" "$want" || plan_miss "$want (Open shared plan)"
@@ -1720,20 +1739,90 @@ JSON
     else plan_miss "Plan with the sheet closed after Use this plan"; fi
   else plan_miss "the Open shared plan sheet after the file was opened"; fi
 
-  open_pitplan big.pitplan
+  open_pitplan pp-big.pitplan
   if look "$dir/shared-big.xml" && says "$dir/shared-big.xml" "That file is too big to be a Pit Planner plan."; then
     log "    a 300 KB file: too big, said so"
     shot "$dir/shared-big.png"
     tap "OK" 1 | tee -a "$REPORT"
   else plan_miss "That file is too big to be a Pit Planner plan. (300 KB file)"; fi
-  open_pitplan bad.pitplan
+  open_pitplan pp-bad.pitplan
   if look "$dir/shared-bad.xml" && says "$dir/shared-bad.xml" "This file is not a Pit Planner plan."; then
     log "    a file that is not a plan: said so"
     tap "OK" 1 | tee -a "$REPORT"
   else plan_miss "This file is not a Pit Planner plan. (a text file)"; fi
 
-  db_app "rm -f cache/test.pitplan cache/big.pitplan cache/bad.pitplan"
+  # T-035: the app's own cache is refused, with the same words as any unreadable file, and it is logged.
+  # The log is read before the next tap (a Maestro flow floods the device log).
+  A logcat -c </dev/null
+  open_own_cache own.pitplan
+  if A logcat -d </dev/null 2>/dev/null | grep -F "PitShare" | grep -q "open refused"; then
+    log "    log line: PitShare: open refused"
+  else plan_miss "the log line PitShare: open refused"; fi
+  if look "$dir/shared-own.xml" && says "$dir/shared-own.xml" "Could not read that file."; then
+    log "    a file in the app's own cache: refused, said so"
+    tap "OK" 1 | tee -a "$REPORT"
+  else plan_miss "Could not read that file. (a file in the app's own cache)"; fi
+
+  db_app "rm -f cache/own.pitplan"
+  A shell rm -f "$SHARED_DIR/pp-test.pitplan" "$SHARED_DIR/pp-big.pitplan" "$SHARED_DIR/pp-bad.pitplan"
   if [ $ok = 1 ]; then result "PASS  shared $s"; else result "FAIL  shared $s"; fi
+}
+
+# T-073: a shared plan served under an hour from now (mockup 11 with the note). Emulator only. The sheet
+# offers the same weekday next week and says why; Pick a date opens Android's own date dialog on TODAY (the
+# shared date), not on the moved one; OK on the date and on the time keeps today, the note goes, and Use this
+# plan puts today's serve time on Plan. Image: shared-soon.png, the sheet with the note.
+test_shared_soon() {
+  local s="$1" dir="$2" ok=1 tmp serve today moved id
+  if ! is_emulator; then result "SKIP  shared-soon $s: emulator only"; return; fi
+  launch "dev/plan?seed=empty" || { result "FAIL  shared-soon $s: app did not open"; return; }
+  # 40 to 45 minutes out, on a 5 minute mark, in the emulator's own clock and zone.
+  serve=$(( ( $(A shell date +%s | tr -d '\r') / 300 + 9 ) * 300 ))
+  today=$(A shell "date -d @$serve '+%a, %b %-d'" | tr -d '\r')
+  moved=$(A shell "date -d @$((serve + 7 * 86400)) '+%a, %b %-d'" | tr -d '\r')
+  tmp=$(mktemp -d)
+  node -e '
+    const [, at, out] = process.argv;
+    require("fs").writeFileSync(out, JSON.stringify({ app: "pit-planner", version: 1,
+      serveAt: new Date(Number(at) * 1000).toISOString(), pitTempF: 225,
+      items: [{ id: "c", foodId: "breasts", methodId: "griddle", quantity: 4, options: { thickness: "pounded" } }] }));
+  ' "$serve" "$tmp/pp-soon.pitplan"
+  A push "$tmp/pp-soon.pitplan" "$SHARED_DIR/pp-soon.pitplan" >/dev/null || plan_miss "push pp-soon.pitplan"
+  rm -rf "$tmp"
+  log "    shared serve: $today (today), under an hour out; moved date: $moved"
+
+  open_pitplan pp-soon.pitplan
+  if look "$dir/soon.xml" && says "$dir/soon.xml" "Open shared plan"; then
+    for want in "That's less than an hour away." "$moved" "Pick a date to keep today." "Pick a date"; do
+      says "$dir/soon.xml" "$want" || plan_miss "$want (the sheet with the note)"
+    done
+    shot "$dir/shared-soon.png"
+    tap "Pick a date" 1 | tee -a "$REPORT"
+    sleep 2
+    if look "$dir/soon-date.xml" && says "$dir/soon-date.xml" "$today"; then
+      log "    Pick a date: Android's date dialog opened on today ($today)"
+      says "$dir/soon-date.xml" "$moved" && plan_miss "the date dialog not showing the moved date ($moved)"
+      shot "$dir/shared-soon-date.png"
+      tap "OK" 1 | tee -a "$REPORT"
+      sleep 2
+      look "$dir/soon-time.xml"
+      tap "OK" 1 | tee -a "$REPORT"
+      sleep 2
+      if look "$dir/soon-picked.xml" && says "$dir/soon-picked.xml" "Open shared plan"; then
+        says "$dir/soon-picked.xml" "less than an hour away" && plan_miss "the note gone after picking today"
+        says "$dir/soon-picked.xml" "$today, " || plan_miss "the picked chip reading $today and a time"
+        shot "$dir/shared-soon-picked.png"
+        tap "Use this plan" 1 | tee -a "$REPORT"
+        sleep 2
+        if look "$dir/soon-used.xml" && on_tab "$dir/soon-used.xml" "Plan" && says "$dir/soon-used.xml" "$today at "; then
+          log "    Use this plan: Plan keeps today ($today)"
+        else plan_miss "Plan with Ready by on $today after Use this plan"; fi
+      else plan_miss "the sheet back after the date and time dialogs"; fi
+    else plan_miss "Android's date dialog on today ($today) after Pick a date"; fi
+  else plan_miss "the Open shared plan sheet after the file was opened"; fi
+
+  A shell rm -f "$SHARED_DIR/pp-soon.pitplan"
+  if [ $ok = 1 ]; then result "PASS  shared-soon $s"; else result "FAIL  shared-soon $s"; fi
 }
 
 # T-067: the fast test cook (dev link, emulator only). The mockup menu runs as a real cook squeezed in time,
