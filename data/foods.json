@@ -239,7 +239,7 @@
         "options": { "drybrine": { "label": "Dry brine ahead", "default": "yes", "choices": { "yes": { "label": "Yes", "prep": { "leadMin": 480, "label": "Dry brine the wings." } }, "no": { "label": "No" } } } },
         "restMin": { "default": 5, "min": 0 },
         "sliceMin": 0,
-        "pull": { "label": "Pull wings at 175-185F (165F is the safe minimum). Hold UNCOVERED; sauce right before serving.", "tempF": [175, 185] },
+        "pull": { "label": "Pull wings at 175-185F. 165F is the safe minimum. Hold uncovered, sauce right before serving.", "tempF": [175, 185] },
         "holdLimitMin": 30,
         "prep": [],
         "footprintSqInPerUnit": 55

@@ -1,5 +1,5 @@
 // syncAlarms talks to the AlarmService interface (no native plugin), so it runs against a recording fake.
-import { keyedEvents, type AlarmSpec } from '../../engine/alarms.ts';
+import { alarmsFromPlan, keyedEvents, type AlarmSpec } from '../../engine/alarms.ts';
 import { buildPlan } from '../../engine/plan.ts';
 import { holdsCover } from '../../engine/live.ts';
 import { saturday } from './fixtures/saturday.ts';
@@ -17,6 +17,7 @@ import {
   quiet,
   serveUndoable,
   shift,
+  stepText,
   steps,
   syncAlarms,
   undoStep,
@@ -397,5 +398,28 @@ describe('serve moves for one food: the others follow (T-076)', () => {
     const r = doneStep(quiet(c, now), 'phase:w:ramp', now);
     expect(r.ask).toBeUndefined();
     expect(r.cook.plan.serveAt).toBe(at(17, 0));
+  });
+});
+
+// T-081 (Jason, 2026-11-16): the wings pull step on the Next up card and in the alert.
+describe('wings pull step text (T-081)', () => {
+  const wingsPlan = buildPlan(rules, {
+    ...saturday,
+    items: [{ id: 'w', foodId: 'wings', methodId: 'smokeCrisp', quantity: 2 }],
+  });
+  const pull = keyedEvents(wingsPlan).find(k => k.event.kind === 'pull')!;
+  const LABEL = 'Pull wings at 175-185F. 165F is the safe minimum. Hold uncovered, sauce right before serving.';
+
+  test('Next up: the range is the title, the safe minimum and the hold the line under it', () => {
+    expect(stepText(pull.event.label)).toEqual({
+      title: 'Pull wings at 175-185F',
+      body: '165F is the safe minimum. Hold uncovered, sauce right before serving.',
+    });
+  });
+
+  test('the alert: the food as title, the whole step as body', () => {
+    const alert = alarmsFromPlan(wingsPlan, wingsPlan.fireAt! - 60 * 60_000).find(a => a.keys.includes(pull.key))!;
+    expect(alert.title).toBe('Chicken wings');
+    expect(alert.body).toBe(LABEL);
   });
 });

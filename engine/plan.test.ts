@@ -77,6 +77,22 @@ test('Saturday plan matches the mockups', () => {
   assert.ok(!p.warnings.some(w => w.code === 'PELLETS_OVER_HOPPER'));
 });
 
+// T-081 (Jason, 2026-11-16): the target range is the first sentence (the Next up title); the 165F minimum
+// and the hold go on the line under it.
+test('wings pull step: the range first, then the safe minimum and the hold, for every wings method', () => {
+  const wings = rules.foods.find((f: { id: string }) => f.id === 'wings');
+  const ids = wings.methods.map((m: { id: string }) => m.id);
+  assert.deepEqual(ids, ['smokeCrisp', 'hot', 'griddle']);
+  for (const methodId of ids) {
+    const p = buildPlan(rules, saturday({ items: [{ id: 'w', foodId: 'wings', methodId, quantity: 2 }] }));
+    assert.equal(
+      ev(p, 'pull', 'w').label,
+      'Pull wings at 175-185F. 165F is the safe minimum. Hold uncovered, sauce right before serving.',
+      methodId,
+    );
+  }
+});
+
 test('a cook that burns more than the hopper holds: refill alert plus an info warning', () => {
   const p = buildPlan(rules, saturday({ rateOverrides: {} })); // 15 hr brisket at the published rate
   assert.ok(p.pelletsLb > 21, `pellets ${p.pelletsLb}`);
