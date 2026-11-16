@@ -3,6 +3,35 @@
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
+## Twentieth session so far (written Monday 2026-11-16, late morning; read this first)
+
+The phone block is done and the phone is put back (dev build data as before the session, minus nothing of
+Jason's; notifications left on for the dev build, his choice). Results: `docs/alarm-testing.md` (three new
+sections dated 2026-11-16), `docs/parity.md` P1 to P4 and D2, D9, D10, D11, and each task's TASKS entry.
+
+**Done and committed (each through the gate):** the developer address is pitplanapp@gmail.com; a shared
+file that cannot be read logs its exception (tag `PitShare`, URIs cut to the provider); the alert buttons
+read a check mark, `+15`, `Open`; `db.sh restore` really removes the old folders; `AVD_LOCK=1` gives a
+second emulator, `pitplanner-lock`, with PIN 1111. `release/pitplanner-0.3.0-alpha.4.apk` is local only.
+
+**Waiting on Jason:**
+- T-072 (locked reboot, his must-fix): the crash is in dev-build code only; a release build keeps its alarms
+  on the PIN emulator. He decides what the fix and the device test should be now. Nothing is built.
+- Turkey at 275F to 18 min per lb (his measured value): how the rate should run between 225F and 275F and
+  above. D10: the exact words of the hold note ("keep it above 140F" past 4 hours). T-069 wording, T-070
+  design, T-071 fish answers, the pictures in `tools/device/out/phone/`.
+
+**Rules added today:** play a sound on the computer when Jason has to act (`paplay
+/usr/share/sounds/freedesktop/stereo/complete.oga`). A dashboard agent keeps `dashboard.html`. adb cannot
+grant or revoke permissions on the OnePlus: he switches them in Settings. `adb reboot` ends the headless
+emulator: restart it with `avd.sh stop` and `start`. Do not use `pkill -f` with a pattern that is in your
+own command line.
+
+**Gate facts:** as below. Snyk still prints its monthly-limit notice and scans all 26 projects; on
+2026-11-16 a throwaway project outside the repo proved it still flags an old lodash (7 high) and a planted
+command injection (Snyk Code, 1 high). With Metro bundling for a device at the same time, the first gate run
+can fail step 4 on Jest 5 s timeouts; run it again with nothing else running.
+
 ## Restart, twentieth session (written Sunday 2026-11-15, end of the nineteenth; read this first)
 
 Everything is committed on `main`; the gate passed on it (five runs in the nineteenth session, Snyk's

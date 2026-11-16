@@ -18,6 +18,11 @@ API="${AVD_API:-36}"
 [[ "$API" =~ ^[0-9]+$ ]] || { echo "AVD_API must be an API level, such as 34." >&2; exit 2; }
 NAME=pitplanner
 [ "$API" = 36 ] || NAME="pitplanner-api$API"
+# A second AVD that has a screen lock (T-072, the locked-reboot test): AVD_LOCK=1. It is its own AVD,
+# "pitplanner-lock", so the usual one stays without a lock and every other device test opens it as before.
+# The device test sets the PIN itself (LOCK_PIN in tools/device/lib.sh); with a PIN the emulator boots locked,
+# its credential-encrypted storage closed until the PIN is typed, like a phone after a restart.
+[ -z "${AVD_LOCK:-}" ] || NAME="$NAME-lock"
 # Fixed RAM for the emulator (Jason, 2026-11-12): passed on every start, so it holds whatever the AVD's
 # config.ini says (the AVD made in T-006 says 4096). 3 GB runs the dev build with Metro and Maestro.
 RAM_MB=3072

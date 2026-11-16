@@ -20,16 +20,16 @@ Everything that is not OK. T-034 is done when each row is fixed or accepted by J
 | # | SPEC | The build | Recorded OK? | Decision |
 |---|---|---|---|---|
 | D1 | Open shared plan: "the receiver picks ... their own cookers" (section 3) | Nothing to pick: "Your smoker" is read-only and foods are mapped onto the receiver's cookers (`SharedPlanSheet.tsx:91-107`, `mapToCookers`). Same as 0.2.0. | Screenshot approved (T-030), the difference itself not written down | **Jason, 2026-11-15: add a choice.** New UI: T-070, design to be approved first |
-| D2 | Temp menu: "Show all" | The button reads "Show 180-500F", the cooker's range (`TempMenu.tsx:86-92`). Same as 0.2.0. | Screenshots approved (T-018), wording not written down | open |
+| D2 | Temp menu: "Show all" | The button reads "Show 180-500F", the cooker's range (`TempMenu.tsx:86-92`). Same as 0.2.0. | Screenshots approved (T-018), wording not written down | Jason, 2026-11-16: keep as built |
 | D3 | Plan, empty: Cook a past plan again | Shown only when there is a past cook (`PlanEmpty.tsx:46-51`). | Yes: Jason 2026-11-13 (TASKS T-017, T-028) | SPEC edited 2026-11-15 |
 | D4 | Live cook: lane chart "10 AM to serve" | The chart starts at the hour of the first step, "6 AM to serve" (`cookView.ts:94-101`). Same as 0.2.0. | **Jason, 2026-11-15: keep as built** | accepted; SPEC edited 2026-11-15 |
 | D5 | Cook finished: Back to the cook "beside Discard this cook" | On its own line under Discard (`FinishScreen.tsx:94-101`). | Yes: Jason (TASKS T-063) | SPEC edited 2026-11-15 |
 | D6 | Live rules: Not yet calls `shiftRemaining(now, +30, keepServe, itemId)` | Calls `postponeStep` (`cook.ts:125-133`, `live.ts:165-185`): the same result for the user. Same as 0.2.0. | No | SPEC edited 2026-11-15 (Jason: yes to wording edits) |
 | D7 | "A Done 5 min or more early or late ... ask Keep serve or Move serve" | Asked for a Done on a step during the cook. A Done on a pull (food off the heat) never asks, and serve never moves, even when the food comes off after serve (`cook.ts:112-120`, `markPullDone`). The same for Done on an alert. Same as 0.2.0. | **Jason, 2026-11-15: leave as is, the rest absorbs it** | accepted; SPEC says so; test in `cook.test.ts` |
 | D8 | Failure mode 8: after an adjustment that makes a new pit conflict, a "banner with fixes" | On Plan the Conflicts tile and sheet do this. During a cook nothing does: a conflict made by Running behind, Not yet, a Done or Back up to temp is worked out and never shown (`src/screens/cook` reads no warnings). Same as 0.2.0. | **Jason, 2026-11-15: show it on Live cook as a banner** | T-069; wording to be approved first |
-| D9 | Failure mode 3: warn past the food's hold limit | Reported when planning (`HOLD_TOO_LONG`, an info line in Conflicts). A hold that grows during a cook is not flagged on Live cook. Same as 0.2.0. | No | open |
-| D10 | Failure mode 15: warn on cooler holds over 4 hr | Only the general hold note at 240 min for brisket and pork butt: not tied to a cooler, does not name the cooler or 140F, info level, Plan only. | No | open |
-| D11 | Failure mode 12: a warning if an imported plan has a temp the cooker cannot set | The import moves the temp to the closest one the smoker can set and says so in the sheet (`sharedPlan.ts:170-176`). Same as 0.2.0. | No | open |
+| D9 | Failure mode 3: warn past the food's hold limit | Reported when planning (`HOLD_TOO_LONG`, an info line in Conflicts). A hold that grows during a cook is not flagged on Live cook. Same as 0.2.0. | No | Jason, 2026-11-16: add to T-069, the Live cook banner also shows a hold past the food's hold limit |
+| D10 | Failure mode 15: warn on cooler holds over 4 hr | Only the general hold note at 240 min for brisket and pork butt: not tied to a cooler, does not name the cooler or 140F, info level, Plan only. | No | Jason, 2026-11-16: wording only for 0.3.0, the hold note says to keep it above 140F once the hold passes 4 hours |
+| D11 | Failure mode 12: a warning if an imported plan has a temp the cooker cannot set | The import moves the temp to the closest one the smoker can set and says so in the sheet (`sharedPlan.ts:170-176`). Same as 0.2.0. | No | Jason, 2026-11-16: accept as built |
 | D12 | Failure mode 6 and section 6: "reloads the active cook from storage" | The receiver puts back the alarms from the native alarm store; the app sets the whole list again from the cook when it next opens. | Yes: TECH-DESIGN sections on alarms | SPEC edited 2026-11-15 |
 | D13 | Failure mode 10: troubleshooting link per maker | A plain line, no link. | Yes: Jason 2026-11-15 (SPEC section 3 item 3) | SPEC edited 2026-11-15 |
 | D14 | Failure mode 4: suggests +25F | Not built. | Yes: Jason 2026-11-15 (SPEC section 5) | SPEC edited 2026-11-15 |
@@ -62,10 +62,10 @@ Everything that is not OK. T-034 is done when each row is fixed or accepted by J
 
 | # | What | State |
 |---|---|---|
-| P1 | Failure mode 6: reboot with the phone locked, on the Expo build | Not run. The one locked-reboot row is the 0.2.0 build on the OnePlus (2026-11-11); the emulator has no lock. Kotlin tests cover the receiver and its Direct Boot flags. Phone block |
-| P2 | Failure mode 1: repeats in Doze; six repeats then "Cook needs you" | Six repeats and the last alert are proven in Robolectric only. On a device: one repeat with the screen off. The `alarm` device test uses test alarms, which never repeat |
-| P3 | Failure mode 9: a permission taken away during a cook | Jest and Robolectric only; no run on a device is recorded |
-| P4 | Failure mode 10: a Samsung | Not run; one tester has one (T-037) |
+| P1 | Failure mode 6: reboot with the phone locked, on the Expo build | **Failed on the dev build, OnePlus, 2026-11-16**: the app crashes at start while the phone is locked, so alarms come back only after unlock (`docs/alarm-testing.md`). Must-fix for 0.3.0 (Jason): T-072. A release build on the PIN emulator keeps its alarms (2026-11-16), so the crash is dev-build code; Jason decides what T-072 becomes |
+| P2 | Failure mode 1: repeats in Doze; six repeats then "Cook needs you" | One repeat proven on the phone in forced Doze (2026-11-16); the six-repeat count and "Cook needs you" proven in Robolectric. Accepted for 0.3.0 (Jason, 2026-11-16) |
+| P3 | Failure mode 9: a permission taken away during a cook | Run on the phone, 2026-11-16: the Cook tab banner shows and goes, the alarms stay (`docs/alarm-testing.md`) |
+| P4 | Failure mode 10: a Samsung | Not run; one tester has one. At T-037: the locked-reboot check once on the tester's Samsung, after the T-072 fix (Jason, 2026-11-16) |
 | P5 | Reboot, app update, time zone change | Run by hand on the emulator (`docs/alarm-testing.md`); no device test function |
 
 ### 1c. Mockups with no fidelity sheet in `docs/fidelity`

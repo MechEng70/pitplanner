@@ -740,6 +740,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     opens the debug screen and rings its test alert.
 
 ### T-016 Device alarm tests on the Expo build
+- **Phone half (2026-11-16, twentieth session):** run with Jason on the OnePlus, dev build; results in
+  `docs/alarm-testing.md` ("Results on the Expo dev build, OnePlus"). Pass: test alert on the lock screen,
+  a step alert and one repeat in forced Doze, Done and +15 min from the lock screen without unlocking, a
+  permission taken away and given back. Fail: the locked reboot (T-072). Fixed: the alert's button labels
+  were cut off at 115% font, now a check mark, `+15`, `Open`.
 - **Status:** emulator half done (`b9b5d7d`); phone half blocked until Jason says his Saturday cook
   (2026-11-14) is done. Until then nothing runs against the phone: no adb commands, no installs, no reads
   (Jason, 2026-11-13). `tools/device/PHONE-BLOCKED` makes the device tools refuse it; only Jason lifts it.
@@ -1451,6 +1456,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   drops rows.
 
 ### T-065 Debug switch and send to developer
+- **Phone (2026-11-16, Jason's phone, dev build):** Send to developer with Gmail. The file was shown to
+  Jason line by line before he sent it; the attachment that arrived is byte for byte the same (2,698
+  bytes); the recipient was filled in. The address is pitplanapp@gmail.com from this day on.
 - **Tap to copy, gate and device test (2026-11-15, eighteenth session):** merged onto `main`; prebuild and a
   dev build rebuild with `expo-clipboard` 58.0.4; `npm run check` passed all six steps; device test
   `followups` passes on the emulator at 115%: the address is tapped and the screen says "Address copied."
@@ -1762,6 +1770,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   day.
 
 ### T-025 Alerts step, test alert, battery help
+- **Phone (2026-11-16):** a test alert rang on the locked phone; the lock-screen alert's picture is
+  `tools/device/out/phone/lock-alert-expanded.png` (git-ignored; cropped to the alert). Mockup 14 shows the
+  words Done and +15 min; the buttons now read a check mark and `+15` so they fit (Jason, 2026-11-16).
 - **Status:** built 2026-11-15 on branch `t025`, unit-tested (Jest). NOT run on a device or emulator, and
   `npm run check` was NOT run (the session that built it was not allowed to): prettier, ESLint, typecheck,
   Jest, engine and gate tests pass; Android tests, Semgrep and Snyk are still to run. The battery help link is
@@ -1978,6 +1989,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ## Phase 9: Share
 
 ### T-029 Share plan (export)
+- **Device check (2026-11-16, Jason's phone, dev build):** done. The share sheet offered Gmail and Drive, the
+  attachment arrived as `cook.pitplan`, and the file read back right on the computer (689 bytes, the plan's
+  serve time, smoker temp and three items; no rates, total hours or history).
 - **Status:** built and unit-tested on branch `t029`; not run on a device, and `npm run check` (Android tests,
   Semgrep, Snyk) not run on it yet.
 - **Built:** `toPitPlan` was not in the Expo app (only in `legacy/src/lib/share.ts`), so it is ported as
@@ -2053,6 +2067,14 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** see T-031.
 
 ### T-031 Share between two phones (Gmail, Drive)
+- **Single-phone stand-in (2026-11-16, Jason's phone, dev build):** a plan shared from the dev build and
+  emailed to himself opened the Shared plan sheet when the dev build was already running. On a cold start
+  it said "Could not read that file.": the Expo dev launcher takes the intent first and the read permission
+  for the attachment does not reach the app's own activity (`SecurityException: Permission Denial`, now
+  logged under the tag `PitShare`). 0.2.0 opens the file. The same two results on the emulator with the
+  Files app. A release build (0.3.0-alpha.4) opens the file from Files on a cold start: the failure is a
+  limitation of dev builds, recorded in `docs/alarm-testing.md`, not an app bug (Jason's rule, 2026-11-16).
+  The real two-phone test is still open.
 - **Status:** todo (Jason, hands-on)
 - **Goal:** SPEC definition of done: a plan round-trips between two phones through Gmail and through Drive.
 - **Files:** fixes only if a route fails; `docs/HANDOFF.md`.
@@ -2217,6 +2239,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Real phone:** no (Jason, 2026-11-15: emulator only).
 
 ### T-037 Saturday cook on the Expo build (SPEC definition of done)
+- **Added by Jason, 2026-11-16:** (1) on the Saturday cook, confirm every step alarm rang on time with the
+  phone idle and locked between steps, and read the Doze history back afterwards (`dumpsys deviceidle`) to
+  show the phone really was in deep idle. (2) Parity P4: run the locked-reboot check once on the tester's
+  Samsung too, after the T-072 fix is in. Not added: the six-repeat run (he will not ignore a real step
+  for an hour; Robolectric proves the count and "Cook needs you").
 - **Android versions (Jason, 2026-11-15):** run the `alarm` device test on emulator images for Android 14 and
   15 as well as 16 (one tester has the latest Samsung; none known below 14).
 - **Emulator prep done (2026-11-15, nineteenth session):** `tools/device/avd.sh` takes `AVD_API` (34, 35;
@@ -2762,6 +2789,8 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 | T-040 | TypeScript 6/7 split | T-002 (D-2) |
 
 ### T-069 Live cook: say when a change makes a smoker conflict
+- **Added by Jason, 2026-11-16 (parity D9):** the banner also shows a hold that has grown past the food's
+  hold limit during the cook.
 - **Status:** todo (Jason, 2026-11-15: "show it on Live cook, as a banner"; wording and fixes need his OK first)
 - **Why:** parity review D8 (`docs/parity.md`), SPEC failure mode 8. A conflict made by Running behind, Not yet,
   a Done or Back up to temp is worked out by the engine and shown nowhere during a cook. 0.2.0 was the same.
@@ -2796,3 +2825,27 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   sections 3 and 4. Prefer data over code (CLAUDE.md); a new timing kind only if thickness needs one.
 - **Tests:** engine tests per fish (times, done temp, sources); the Add food group.
 - **Device testing (Jason):** Food details for each fish at 115%, as the `turkey` device test does.
+
+### T-072 Alarms come back before the first unlock after a reboot
+- **Status:** todo. Must-fix for 0.3.0 (Jason, 2026-11-16: "a phone that reboots overnight (OS updates do
+  this) would lose every alarm until unlock").
+- **Why:** parity P1, SPEC failure mode 6. On the OnePlus, 2026-11-16, the dev build crashed in
+  `MainApplication.onCreate` when Android started it for LOCKED_BOOT_COMPLETED: React Native's dev support
+  read SharedPreferences in credential-encrypted storage, which is locked until the first unlock. The
+  alarm restore (pit-alarms `RestoreReceiver`, Direct Boot aware, device-protected storage) never ran; the
+  alarms came back about 90 seconds after unlock. An alarm that comes due while the phone is still locked
+  starts the app the same way.
+- **Goal (Jason):** nothing in app startup touches credential-encrypted storage before unlock. When the user
+  is locked, skip React Native and Expo setup entirely and run only the pit-alarms restore from
+  device-protected storage.
+- **Reproduction, 2026-11-16 (`docs/alarm-testing.md`, "Locked restart on an emulator with a PIN"):** it does
+  NOT reproduce on a release build: 0.3.0-alpha.4 with a running cook had all 10 alarms back while the
+  emulator was still locked, twice, with no crash. The dev build fails there exactly as on the phone. The
+  crash is in dev-only code (React Native dev support through `expo-dev-launcher`). The fix proposal and
+  the device test wait for Jason's answer on what he wants given this.
+- **Order (Jason):** reproduce on a release build on an emulator with a PIN first; a repeatable device test
+  that fails before the fix; propose the fix to him before building it.
+- **Acceptance:** after a reboot with the phone locked, the cook's alarms are registered before the first
+  unlock and a step that comes due rings on the lock screen, on the dev build and on a release build.
+- **Tests:** the device test; JUnit or Robolectric for whatever decides "locked, skip setup".
+- **Real phone:** the check again on the OnePlus after the fix; once on the tester's Samsung at T-037 (P4).

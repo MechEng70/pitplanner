@@ -124,6 +124,60 @@ cook (T-037).
 
 Not testable on the emulator: sound (it runs without audio), OEM power management, a locked reboot.
 
+## Results on the Expo dev build, OnePlus CPH2583, Android 16, 2026-11-16 (phone block, T-016 phone half)
+
+Jason at the phone; every action listed first and approved. The dev build (`...pitplanner.debug`) only; the
+real app was not touched. Evidence is the phone's own alarm list filtered to Pit Planner
+(`dumpsys alarm`), the app's screens, the lock and Doze state read back, and what Jason heard and saw. The
+phone's notification list is never read (it holds other apps' notifications). adb cannot grant or revoke
+permissions on this phone (OnePlus permission monitoring): Jason switches them in Settings.
+
+| Test | Result |
+|---|---|
+| Test alert, phone locked, battery reported unplugged | Pass. Rang and showed on the lock screen ("Test alert doze", "Alarms work."). Doze was not forced in this run (state `IDLE_PENDING`): the script waited for `Asleep`, this phone reports `Dozing`. |
+| Step alert in forced Doze | Pass. Locked 08:51:17, `deviceidle force-idle`, state `IDLE`, on the battery allowlist (Jason: set unrestricted first). "Wings on the smoker on a wire rack." showed on the lock screen at 08:52 (`tools/device/out/phone/step2-lock.png`, cropped to the alert). |
+| P2: an unanswered step repeats in Doze | Pass for one repeat. Doze stayed `IDLE` from 08:51 to 08:59; after 08:59 the alarm list held the step's next repeat at 09:09, so the 08:59 repeat fired and set the next. No picture (the screen was dark again when it was taken). Six repeats and "Cook needs you" stay proven in Robolectric only: accepted for 0.3.0 (Jason, 2026-11-16). |
+| P1: reboot with the phone locked | **Fail on the dev build.** Booted locked 09:00:29; Android started the app at 09:00:31 for LOCKED_BOOT_COMPLETED and it crashed in `MainApplication.onCreate`: `IllegalStateException: SharedPreferences in credential encrypted storage are not available until after user (id 0) is unlocked`, from React Native's `DevSupportManagerBase`. RestoreReceiver never ran: 0 alarms while locked, the 09:09 repeat did not ring. Unlocked 09:10:01; the alarms were back between 09:11:18 and 09:11:38 (BOOT_COMPLETED, late on this OnePlus as on 2026-11-11): four steps at their times, both repeats moved to 09:21:25. T-072. |
+| P3: a permission taken away during a cook | Pass. Notifications switched off in Settings: `POST_NOTIFICATIONS: granted=false`, the Cook tab showed "Alerts are off. Steps may not ring." with Fix. Switched on: `granted=true`, the banner gone, the cook's 6 alarms still held. |
+| Done and +15 min from the lock screen, without unlocking | Pass. With the phone reading locked at every check: Done took the step's repeat off the alarm list; +15 min set the step again 15 minutes on. Picture of the expanded alert: `tools/device/out/phone/lock-alert-expanded.png`. |
+| Button labels on the lock screen at 115% font | Bug, fixed. "Done" and "+15 min" were cut to "Do..." and "+15...". Now a check mark, `+15` and `Open` (Jason's choice). Not yet seen on the phone with the new labels. |
+
+Not run: Doze with a test alert more than an hour out (Android leaves deep idle ahead of a near alarm clock
+unless forced; Jason dropped the 65 minute round). It moves to the Saturday cook (T-037): every step alarm on
+time with the phone idle and locked between steps, and the Doze history read back afterwards
+(`dumpsys deviceidle`) to show the phone really was in deep idle.
+
+Jason's report, not instrumented: his real cook on Saturday 2026-11-14 ran on 0.2.0 on this phone and its step
+alerts notified him fine through the day. It is the same `setAlarmClock` path the Expo build ported.
+
+## Locked restart on an emulator with a PIN, 2026-11-16 (T-072)
+
+AVD `pitplanner-lock` (`AVD_LOCK=1 tools/device/avd.sh start`, API 36, PIN 1111 set with
+`locksettings set-pin`): it boots locked (`RUNNING_LOCKED`) like a phone after a restart. `adb reboot` ends
+the headless emulator, so a restart here is `avd.sh stop` then `start`.
+
+| Build | While still locked after the restart |
+|---|---|
+| Release build 0.3.0-alpha.4 (`io.github.mecheng70.pitplanner`), a cook started through its own screens, 10 alarms | **Pass, twice.** Android started the app for RestoreReceiver; all 10 alarms registered again; the process alive; no crash line. |
+| Dev build (`...pitplanner.debug`), `dev/alarm?cook=3`, 6 alarms | **Fail**, as on the OnePlus. `MainApplication.onCreate` builds the React host, whose dev support (`DevInternalSettings`, through `expo-dev-launcher`) reads default SharedPreferences in credential-encrypted storage: `IllegalStateException`, the process dies, 0 alarms. |
+
+So the failure seen on the phone is in code that only a dev build runs. A release build restores its alarms
+before the first unlock on this emulator. Not yet shown: a release build on a real phone (T-038, and the
+tester's Samsung at T-037), and a step that comes due while still locked.
+
+## Shared .pitplan file, cold start, 2026-11-16 (T-031 stand-in)
+
+| Build | Opened from | App not running | App already running |
+|---|---|---|---|
+| Dev build, OnePlus | Gmail attachment | "Could not read that file." | Shared plan sheet |
+| Dev build, emulator | Files app | "Could not read that file.": `SecurityException: Permission Denial: opening provider com.android.externalstorage.ExternalStorageProvider ...` (logged under `PitShare`) | Shared plan sheet |
+| Release build 0.3.0-alpha.4, emulator | Files app | Shared plan sheet | Shared plan sheet |
+
+A dev build that is not running starts in the Expo dev launcher, which takes the intent and hands it on; the
+read permission the sending app gave does not reach the app's own activity. A release build has no dev
+launcher. Limitation of dev builds only: open the dev build first, then the file. A release build opened for
+the first time shows Setup and the shared plan's sheet right after Finish setup.
+
 ## Android 14 and 15 emulator images, 2026-11-15 (T-037 prep)
 
 The `alarm` device test on the dev build, at 115%, on Google APIs x86_64 images started with
