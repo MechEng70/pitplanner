@@ -2170,6 +2170,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ### T-034 Parity review
 - **Jason's review answer 10 (2026-11-16):** the ribs history card (a food not by weight with saved total
   hours) is fine as built; drop "by-weight" from the SPEC wording about Cook history rate cards (row T7).
+- **Parity 1b tests (2026-11-16):** 12 of T6-T19 closed (`*.parity.test.ts(x)`, `src/lib/dst.parity.test.ts`, Kotlin `ParityTest.kt`); T16 with another agent, T18 open as a finding (`docs/parity.md` 1b).
 - **Jason's decisions on the open rows (2026-11-16, also in `docs/parity.md` section 1):** D2 keep "Show
   180-500F". D9 goes into T-069: the Live cook banner also shows a hold past the food's hold limit. D10
   wording only for 0.3.0, done: the hold note for brisket and pork butt ends "Keep it above 140F." D11

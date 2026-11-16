@@ -71,7 +71,7 @@ Artboard names refer to the mockup canvas.
 ### Gear tab
 - **Gear** (`Pit`): Cookers list with Add a cooker; Your numbers (cook rates, history); App (Alerts status, Home Assistant "Coming later", Buy me a bag of pellets linking to https://buymeacoffee.com/PitPlanner); units setting; version.
 - **Add a cooker** (`AddCooker`) then **Griddle** (`Griddle`) or **Oven** (`Oven`) or the smoker picker.
-- **Cook history** (`History`): Cook rates on the user's smoker, one card per by-weight food that is in a saved cook or has a saved rate or total hours (rate used and its source, cooks logged, saved total hours; tap to edit the saved rate or total hours); list of cooks with Cook again. Cook again replaces the plan; when the plan has food on it the first tap only says so ("This replaces the plan you have now. Tap Cook again to go on.") and the second tap does it.
+- **Cook history** (`History`): Cook rates on the user's smoker, one card per food that is in a saved cook or has a saved rate, and per any food with saved total hours, ribs included (rate used and its source, cooks logged, saved total hours; tap to edit the saved rate or total hours); list of cooks with Cook again. Cook again replaces the plan; when the plan has food on it the first tap only says so ("This replaces the plan you have now. Tap Cook again to go on.") and the second tap does it.
 
 ## 4. Scheduling engine (implemented in `engine/`, tested in `engine/plan.test.ts`)
 
