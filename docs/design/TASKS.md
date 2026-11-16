@@ -3230,8 +3230,15 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
     and T4); refill and smoker-off times are not checked either (the rule names fire, griddle, oven and smoker
     temp steps only).
   - "A clash K does not have" is measured per pair of foods in minutes on the smoker at temps too far apart.
-  - Each food's slack is worked out on its own against the Keep serve plan, as the rule says; two foods that
-    both start sooner are not checked against each other.
+  - Each food's slack is worked out on its own against the Keep serve plan, as the rule says, and the whole
+    result is checked too (3A, coordinator 2026-11-16): if it has a smoker clash, or a longer one, that the
+    Keep plan does not, serve backs off 5 min at a time (each food's move shrinks with it) down to the Keep
+    plan. It cannot fire today: a clash between two foods depends only on how far one moved against the
+    other, and that gap is a move `startSooner` already checked step by step. No real menu was found that
+    breaks it (a search on the engine without this check: 22,680 early Dones over 21 pairs of smoker foods with
+    the brisket, 7,059 with both foods moving by different amounts, 2,001 of those at temps that clash; none
+    worse than Keep). Pinned by "the result never has a smoker conflict, or a longer
+    one, that Keep serve does not" (T1 to T8 and wings hot at 350F with breasts on the smoker at 225F).
   - Back up to temp with Move serve moves the other foods from the time the pit is back up.
   - Without a done list (engine callers other than `doneStep`), a step counts as done when it is due before
     now.

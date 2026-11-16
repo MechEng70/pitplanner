@@ -153,19 +153,31 @@ function moveServeEarlier(
   }
   // The rule's S = ceil5(max(kept serve - d, ready)), written as how far serve moves (D, at most d, a multiple
   // of 5) so that a serve time off the 5-min grid still moves the full d with one food.
-  const D = Math.min(dMin, Math.floor((kept.serveAt - ready) / STEP) * STEP_MIN);
-  if (D <= 0) return kept;
-  const next = clone(kept);
-  for (const it of next.items) {
-    if (it.input.id === itemId) {
-      it.extraHoldMin -= D;
-      continue;
+  const most = Math.min(dMin, Math.floor((kept.serveAt - ready) / STEP) * STEP_MIN);
+  // 3A on the whole result, not only each food alone. It cannot fail today: a clash between two foods
+  // depends only on how far one moved against the other, and that gap (m_a - m_b, at most one food's slack)
+  // is a move startSooner already checked step by step against the Keep plan. Kept as a guard: if it ever
+  // fails, serve backs off 5 min at a time (every food's move is min(D, its slack), so each one shrinks with
+  // it) until nothing clashes that Keep serve does not; at D = 0 the result is the Keep plan.
+  const clash = new Map(others.map(it => [it.input.id, conflictMin(kept, it.input.id)]));
+  for (let D = most; D > 0; D -= STEP_MIN) {
+    const next = clone(kept);
+    for (const it of next.items) {
+      if (it.input.id === itemId) {
+        it.extraHoldMin -= D;
+        continue;
+      }
+      const m = Math.min(D, slack.get(it.input.id) ?? 0);
+      moveEarlier(it, m);
+      it.extraHoldMin -= D - m;
     }
-    const m = Math.min(D, slack.get(it.input.id) ?? 0);
-    moveEarlier(it, m);
-    it.extraHoldMin -= D - m;
+    const result = derive(rules, input, next.items, kept.serveAt - D * MIN);
+    const worse = others.some(it =>
+      [...conflictMin(result, it.input.id)].some(([o, m]) => m > (clash.get(it.input.id)?.get(o) ?? 0)),
+    );
+    if (!worse) return result;
   }
-  return derive(rules, input, next.items, kept.serveAt - D * MIN);
+  return kept;
 }
 
 function moveEarlier(it: PlannedItem, min: number) {

@@ -376,3 +376,57 @@ test('Done early, Move (T8): a step in Quiet time never moves into it', () => {
   assert.equal(free.serveAt, local(16, 45));
   assert.equal(at(free, 'w', 'smoke'), local(15, 0));
 });
+
+/** Minutes each pair of foods is on the smoker at temps too far apart to share it ("b|w" -> 25). */
+function clashMin(p: Plan): Map<string, number> {
+  const sm = p.items.flatMap(it =>
+    it.phases.filter(x => x.cooker === 'smoker').map(x => ({ ...x, food: it.input.id })),
+  );
+  const out = new Map<string, number>();
+  for (const a of sm)
+    for (const b of sm) {
+      const overlap = Math.min(a.end, b.end) - Math.max(a.start, b.start);
+      if (a.food < b.food && overlap > 0 && Math.abs(a.tempF - b.tempF) > 25)
+        out.set(`${a.food}|${b.food}`, (out.get(`${a.food}|${b.food}`) ?? 0) + overlap / MIN);
+    }
+  return out;
+}
+
+test('Done early, Move: the result never has a smoker conflict, or a longer one, that Keep serve does not (3A)', () => {
+  // Two foods not on yet at temps too far apart, both starting sooner: wings hot at 350F (on 3:55 PM) and
+  // breasts on the smoker at 225F (3:15 to 3:37 PM in the Keep plan). Wrap done 20 min early. On their own the
+  // wings can come 15 min sooner (20 would put them on with the breasts), the breasts 20; together the breasts
+  // are off at 3:17 and the wings on at 3:40, with no clash.
+  const twoMove: PlanInput = {
+    ...input,
+    items: [
+      input.items[0],
+      { id: 'h', foodId: 'wings', methodId: 'hot', quantity: 2 },
+      { id: 's', foodId: 'breasts', methodId: 'smoker', quantity: 4 },
+    ],
+  };
+  const p2 = buildPlan(rules, twoMove);
+  const now = local(11, 15);
+  const keep2 = markStepDone(rules, twoMove, p2, 'b', 'wrap', now, true).plan;
+  const two = early(twoMove, p2, 'b', 'wrap', now);
+  assert.equal(at(two, 'h', 'cook') - at(keep2, 'h', 'cook'), -15 * MIN);
+  assert.equal(at(two, 's', 'cook') - at(keep2, 's', 'cook'), -20 * MIN);
+  assert.equal(two.serveAt, keep2.serveAt - 20 * MIN);
+  const cases: [PlanInput, Plan, string, string, number, { skip?: string[]; notBefore?: number }?][] = [
+    [input, plan(), 'b', 'wrap', local(11, 15)], // T1
+    [input, plan(), 'w', 'ramp', local(15, 50)], // T3
+    [input, plan(), 'b', 'wrap', local(8, 35)], // T4
+    [input4, plan4(), 'r', 'unwrap', local(14, 45)], // T5
+    [input4, plan4(), 'r', 'unwrap', local(14, 25)], // T6
+    [input4, plan4(), 'b', 'wrap', local(11, 15), { skip: ['phase:r:smoke'] }], // T7
+    [input4, plan4(), 'b', 'wrap', local(11, 15)], // T7b
+    [input4, plan4(), 'r', 'unwrap', local(14, 50), { notBefore: local(15, 20) }], // T8
+    [input4, plan4(), 'r', 'unwrap', local(14, 50)], // T8 without Quiet
+    [twoMove, p2, 'b', 'wrap', now],
+  ];
+  for (const [inp, p, id, phase, t, o] of cases) {
+    const keep = clashMin(markStepDone(rules, inp, p, id, phase, t, true).plan);
+    for (const [pair, m] of clashMin(early(inp, p, id, phase, t, o)))
+      assert.ok(m <= (keep.get(pair) ?? 0), `${id} ${phase}: ${pair} ${m} min, Keep ${keep.get(pair) ?? 0}`);
+  }
+});
