@@ -44,9 +44,9 @@ const tabProps = () => ({
 });
 const settle = () => act(() => jest.advanceTimersByTime(SHEET_OUT_MS));
 
-async function show(items: ItemInput[], share?: FakeShare) {
+async function show(items: ItemInput[], share?: FakeShare, cookers: Cookers = gear) {
   const r = testRepos();
-  r.repos.cookers.save(gear, NOW);
+  r.repos.cookers.save(cookers, NOW);
   r.repos.rates.setRate('brisket', 0.75, NOW);
   const draft: Draft = { mode: 'readyBy', at: saturday.at, pitTempF: 225, items };
   r.repos.settings.setDraft(draft, NOW);
@@ -122,6 +122,26 @@ describe('Add food', () => {
     const ids = saved(repos).items.map(i => i.id);
     expect(ids).toHaveLength(2);
     expect(new Set(ids).size).toBe(2);
+  });
+
+  // T-075 (Jason, 2026-11-16): the first tri-tip method the cookers can fully do.
+  const upTo = (maxTempF: number) => ({ ...gear.smoker!, maxTempF });
+  test.each([
+    ['with a griddle', gear, 'Smoke, then griddle sear', 'reverse', 10],
+    ['with no griddle', { smoker: gear.smoker }, 'Smoke, then sear on the smoker', 'smokerSear', 10],
+    // Jason, 2026-11-16: a smoker that tops out under 450F cannot sear; the next method it can do.
+    ['on a 425F smoker, no griddle', { smoker: upTo(425) }, 'Smoked brisket-style (200F)', 'brisketStyle', 45],
+    ['on a 425F smoker with a griddle', { ...gear, smoker: upTo(425) }, 'Smoke, then griddle sear', 'reverse', 10],
+    ['on a 450F smoker, no griddle', { smoker: upTo(450) }, 'Smoke, then sear on the smoker', 'smokerSear', 10],
+  ])('tri-tip %s starts on the method the cookers can do', async (_, cookers, label, methodId, restMin) => {
+    const repos = await show([brisket], undefined, cookers);
+    await fireEvent.press(button('Add food'));
+    await fireEvent.press(button(/^Tri-tip/));
+    await settle();
+    expect(within(screen.getByLabelText('Method')).getByRole('radio', { name: label })).toBeChecked();
+    await fireEvent.press(button('Add to plan'));
+    await settle();
+    expect(saved(repos).items[1]).toMatchObject({ foodId: 'tritip', methodId, restMin });
   });
 });
 

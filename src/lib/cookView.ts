@@ -80,6 +80,8 @@ const HOT_OVER_F = 50;
 function segments(it: PlannedItem, plan: Plan, u: Units) {
   let smoke = 0;
   const out: ViewLane['segments'] = it.phases.map(p => {
+    // Off the heat while the smoker climbs (T-075): drawn as a hold, the food is not on the smoker.
+    if (p.offHeat) return { start: p.start, end: p.end, tone: 'hold', label: 'hold' };
     const label = /^\d+F$/.test(p.short) ? fmtTemp(p.tempF, u, true) : p.short.toLowerCase();
     if (p.cooker === 'griddle' || p.cooker === 'oven') return { start: p.start, end: p.end, tone: p.cooker, label };
     const tone: Tone = p.tempF > plan.pitTempF + HOT_OVER_F ? 'hot' : smoke++ ? 'smoke2' : 'smoke';

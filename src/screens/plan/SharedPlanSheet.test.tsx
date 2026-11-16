@@ -108,6 +108,81 @@ describe('Shared plan sheet', () => {
     expect(screen.getByText('Chicken breasts will move to the smoker, or add a griddle in Gear.')).toBeOnTheScreen();
   });
 
+  // T-075 (Jason, 2026-11-16): the import checks every cooker a method's steps need, not only its own.
+  const TRITIP = { id: 't', foodId: 'tritip', methodId: 'reverse', quantity: 2.5, restMin: 10 };
+  const SEARED = 'Tri-tip will be seared on the smoker, or add a griddle in Gear.';
+
+  test('a tri-tip with a griddle sear, no griddle: it is seared on the smoker, and the box says so', async () => {
+    const { onUse } = await show(noGriddle, { shared: sharedOf(fileText({ items: [TRITIP] })) });
+    expect(screen.getByText(/^Tri-tip, /)).toHaveTextContent('Tri-tip, 2.5 lb, smoke then sear');
+    expect(screen.getByText('No griddle set up.')).toBeOnTheScreen();
+    expect(screen.getByText(SEARED)).toBeOnTheScreen();
+    await fireEvent.press(button('Use this plan'));
+    await settle();
+    const [plan] = onUse.mock.calls[0]!;
+    expect(plan.items.map(i => [i.foodId, i.methodId, i.restMin])).toEqual([['tritip', 'smokerSear', 10]]);
+    expect(plan.moves).toEqual([
+      { foodName: 'Tri-tip', from: 'griddle', to: 'smoker', how: 'be seared on the smoker' },
+    ]);
+    expect(plan.movedIds).toEqual(['n0']);
+  });
+
+  test('a tri-tip with a griddle sear and a griddle set up stays as sent', async () => {
+    const { onUse } = await show(withGriddle, { shared: sharedOf(fileText({ items: [TRITIP] })) });
+    expect(screen.queryByText(/set up\./)).toBeNull();
+    await fireEvent.press(button('Use this plan'));
+    await settle();
+    expect(onUse.mock.calls[0]![0].items[0]!.methodId).toBe('reverse');
+  });
+
+  test('tri-tip and breasts with no griddle: one box, each food with its own words', async () => {
+    await show(noGriddle, { shared: sharedOf(fileText({ items: [TRITIP, MENU[2]] })) });
+    expect(screen.getAllByText('No griddle set up.')).toHaveLength(1);
+    expect(
+      screen.getByText(
+        'Tri-tip will be seared on the smoker and Chicken breasts will move to the smoker, or add a griddle in Gear.',
+      ),
+    ).toBeOnTheScreen();
+  });
+
+  // Jason, 2026-11-16: a smoker that tops out under 450F cannot do the smoker sear, so the import does not
+  // fall back to it.
+  const upTo = (maxTempF: number): Cookers => ({ smoker: { ...smoker, maxTempF } });
+
+  test('no griddle and a 425F smoker: the tri-tip falls back to brisket-style, not the smoker sear', async () => {
+    const { onUse } = await show(upTo(425), { shared: sharedOf(fileText({ items: [TRITIP] })) });
+    expect(screen.getByText('No griddle set up.')).toBeOnTheScreen();
+    expect(screen.getByText('Tri-tip will move to the smoker, or add a griddle in Gear.')).toBeOnTheScreen();
+    await fireEvent.press(button('Use this plan'));
+    await settle();
+    expect(onUse.mock.calls[0]![0].items.map(i => [i.methodId, i.restMin])).toEqual([['brisketStyle', 45]]);
+  });
+
+  test('no griddle and a 450F smoker: the tri-tip is seared on the smoker', async () => {
+    const { onUse } = await show(upTo(450), { shared: sharedOf(fileText({ items: [TRITIP] })) });
+    expect(screen.getByText(SEARED)).toBeOnTheScreen();
+    await fireEvent.press(button('Use this plan'));
+    await settle();
+    expect(onUse.mock.calls[0]![0].items[0]!.methodId).toBe('smokerSear');
+  });
+
+  test('a shared smoker sear on a 425F smoker takes the first method that smoker can do', async () => {
+    const sent = { ...TRITIP, methodId: 'smokerSear' };
+    const { onUse } = await show(upTo(425), { shared: sharedOf(fileText({ items: [sent] })) });
+    await fireEvent.press(button('Use this plan'));
+    await settle();
+    const [plan] = onUse.mock.calls[0]!;
+    expect(plan.items[0]!.methodId).toBe('brisketStyle');
+    expect(plan.movedIds).toEqual(['n0']);
+  });
+
+  test('a tri-tip with no smoker can be cooked no way: it needs a smoker', async () => {
+    await show({ griddle: defaultGriddle() }, { shared: sharedOf(fileText({ items: [TRITIP] })) });
+    expect(screen.getByText('No smoker set up.')).toBeOnTheScreen();
+    expect(screen.getByText('Tri-tip needs a smoker. Add one in Gear.')).toBeOnTheScreen();
+    expect(screen.queryByText('No griddle set up.')).toBeNull();
+  });
+
   test('a food with no cooker to move to says what it needs', async () => {
     await show({ griddle: defaultGriddle() }, { shared: sharedOf(fileText({ items: [MENU[0]] })) });
     expect(screen.getByText('No smoker set up.')).toBeOnTheScreen();

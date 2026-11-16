@@ -94,6 +94,8 @@ export interface Phase {
   setsPit?: boolean;
   anchorToEnd?: boolean;
   checkStep?: boolean;
+  /** Off the heat while the smoker climbs (rules: RulePhase.offHeat). Absent in plans saved before T-075. */
+  offHeat?: boolean;
 }
 
 export interface PlannedItem {

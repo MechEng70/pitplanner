@@ -2,13 +2,15 @@
 // bar, and the regression test for the 0.2.0 scroll bug (a value change scrolled the screen to the result).
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { AccessibilityInfo, ScrollView, TextInput, View } from 'react-native';
+import { NO_GRIDDLE_PICK_METHOD } from '../../../engine/plan';
 import type { ItemInput, PlanInput } from '../../../engine/types';
 import { SHEET_OUT_MS } from '@/components/kit/sheet';
 import { saturday } from '@/lib/fixtures/saturday';
 import { defaultOptions, foods } from '@/lib/rules';
 import { defaultGriddle } from '@/lib/gear';
+import type { Units } from '@/lib/format';
 import { NOW, storeWrapper, testRepos } from '@/test/store';
-import { FoodEdit } from './FoodEdit';
+import { FoodEdit, SMOKER_NEEDS } from './FoodEdit';
 
 const units = { temp: 'F', weight: 'lb' } as const;
 const base = (over: Partial<PlanInput> = {}): PlanInput => ({ ...saturday, rateOverrides: {}, items: [], ...over });
@@ -45,7 +47,7 @@ const settle = () => act(() => jest.advanceTimersByTime(SHEET_OUT_MS));
 const frames = () => act(() => jest.advanceTimersByTime(100));
 
 /** As the Plan tab opens it: an existing item is already in the plan, a new one is not. */
-async function open(item: ItemInput, opts: { isNew?: boolean; base?: PlanInput } = {}) {
+async function open(item: ItemInput, opts: { isNew?: boolean; base?: PlanInput; units?: Units } = {}) {
   const onSave = jest.fn();
   const onRemove = jest.fn();
   const onClose = jest.fn();
@@ -56,7 +58,7 @@ async function open(item: ItemInput, opts: { isNew?: boolean; base?: PlanInput }
       initial={item}
       isNew={opts.isNew ?? false}
       base={opts.isNew ? b : { ...b, items: [...b.items, item] }}
-      units={units}
+      units={opts.units ?? units}
       onSave={onSave}
       onRemove={onRemove}
       onClose={onClose}
@@ -228,6 +230,107 @@ describe('the rest of the form', () => {
     await open(brisket, { isNew: true });
     expect(button('Add to plan')).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
+  });
+});
+
+// T-075 (Jason, 2026-11-16): a method whose steps need a cooker that is not set up is offered but off, with
+// Add in Gear, the way the Cook on chips do it. The Saturday cookers have no griddle.
+describe('tri-tip with and without a griddle (T-075)', () => {
+  const tritip = (methodId: string): ItemInput => ({ id: 't', foodId: 'tritip', methodId, quantity: 2.5, restMin: 10 });
+  const methods = () => within(screen.getByLabelText('Method'));
+
+  test('no griddle: the griddle sear is off with Add in Gear; the smoker sear and brisket-style are on', async () => {
+    await open(tritip('smokerSear'));
+    expect(labels(methods())).toEqual([
+      'Smoke, then griddle sear',
+      'Smoke, then sear on the smoker',
+      'Smoked brisket-style (200F)',
+    ]);
+    const griddle = methods().getByRole('radio', { name: 'Smoke, then griddle sear' });
+    expect(griddle).toBeDisabled();
+    expect(within(griddle).getByText('Add in Gear')).toBeOnTheScreen();
+    for (const name of ['Smoke, then sear on the smoker', 'Smoked brisket-style (200F)']) {
+      const chip = methods().getByRole('radio', { name });
+      expect(chip).toBeEnabled();
+      expect(within(chip).queryByText('Add in Gear')).toBeNull();
+    }
+    expect(methods().getByRole('radio', { name: 'Smoke, then sear on the smoker' })).toBeChecked();
+  });
+
+  test('with a griddle every method is on', async () => {
+    await open(tritip('reverse'), { base: base({ cookers: { ...saturday.cookers, griddle: defaultGriddle() } }) });
+    for (const r of methods().getAllByRole('radio')) expect(r).toBeEnabled();
+    expect(screen.queryByText('Add in Gear')).toBeNull();
+  });
+
+  test('a griddle sear already on the menu with no griddle says which method to pick', async () => {
+    await open(tritip('reverse'));
+    const line = NO_GRIDDLE_PICK_METHOD.replace('{food}', 'Tri-tip')
+      .replace('{step}', 'sear')
+      .replace('{method}', 'Smoke, then sear on the smoker');
+    expect(screen.getByText(line)).toBeOnTheScreen();
+    await fireEvent.press(methods().getByRole('radio', { name: 'Smoke, then sear on the smoker' }));
+    expect(screen.queryByText(line)).toBeNull();
+  });
+
+  // Jason, 2026-11-16: the smoker sear is offered only on a smoker that reaches its sear temp, 500F or the
+  // 450F fallback. Below that its chip is off, with the temp it needs where Add in Gear shows.
+  const smoker = (maxTempF: number) => ({ smoker: { ...saturday.cookers.smoker!, maxTempF } });
+  const sear = () => methods().getByRole('radio', { name: 'Smoke, then sear on the smoker' });
+
+  test('smoker max 425F: the smoker sear is off, "Needs 450F" in the Add in Gear place', async () => {
+    await open(tritip('brisketStyle'), { base: base({ cookers: smoker(425) }) });
+    expect(sear()).toBeDisabled();
+    expect(within(sear()).getByText(SMOKER_NEEDS.replace('{temp}', '450F'))).toBeOnTheScreen();
+    expect(within(sear()).getByText('Needs 450F')).toBeOnTheScreen();
+    expect(within(sear()).queryByText('Add in Gear')).toBeNull();
+    // The griddle sear is off for the griddle, with its own note.
+    const griddle = methods().getByRole('radio', { name: 'Smoke, then griddle sear' });
+    expect(within(griddle).getByText('Add in Gear')).toBeOnTheScreen();
+    expect(methods().getByRole('radio', { name: 'Smoked brisket-style (200F)' })).toBeEnabled();
+  });
+
+  test('smoker max 425F in Celsius: the note is in C', async () => {
+    await open(tritip('brisketStyle'), { base: base({ cookers: smoker(425) }), units: { temp: 'C', weight: 'kg' } });
+    expect(within(sear()).getByText('Needs 232C')).toBeOnTheScreen();
+  });
+
+  test.each([450, 500, 550])('smoker max %iF: the smoker sear is on, with no note', async max => {
+    await open(tritip('smokerSear'), { base: base({ cookers: smoker(max) }) });
+    expect(sear()).toBeEnabled();
+    expect(within(sear()).queryByText(/^Needs/)).toBeNull();
+  });
+
+  test('no smoker: the smoker sear needs a smoker (Add in Gear), not a temp', async () => {
+    await open(tritip('smokerSear'), { base: base({ cookers: {} }) });
+    expect(sear()).toBeDisabled();
+    expect(within(sear()).getByText('Add in Gear')).toBeOnTheScreen();
+    expect(screen.queryByText(/^Needs/)).toBeNull();
+  });
+});
+
+// Regression (T-075): with no smoker in Gear, brisket's result card said "needs a smoker" once per smoker
+// step and React reported two children with the same key. A food that conflicts with two others has two
+// warnings with one code: their keys must differ too.
+describe('regression: one line per warning and no duplicate React keys', () => {
+  let errors: jest.SpyInstance;
+  beforeEach(() => {
+    errors = jest.spyOn(console, 'error');
+  });
+  const keyErrors = () => errors.mock.calls.filter((c: unknown[]) => c.some(a => /same key/.test(String(a))));
+
+  test('no smoker: brisket says it needs one once', async () => {
+    await open(brisket, { base: base({ cookers: {} }) });
+    expect(keyErrors()).toEqual([]);
+    expect(screen.getAllByText('Brisket needs a smoker. Add one in Gear.')).toHaveLength(1);
+  });
+
+  test('two smoker conflicts for one food show as two lines', async () => {
+    const wings = (id: string, methodId: string): ItemInput => ({ id, foodId: 'wings', methodId, quantity: 2 });
+    const tri: ItemInput = { id: 't', foodId: 'tritip', methodId: 'smokerSear', quantity: 2.5, restMin: 10 };
+    await open(tri, { base: base({ items: [wings('w1', 'smokeCrisp'), wings('w2', 'hot')] }) });
+    expect(screen.getAllByText(/^Smoker conflict: tri-tip at /)).toHaveLength(2);
+    expect(keyErrors()).toEqual([]);
   });
 });
 

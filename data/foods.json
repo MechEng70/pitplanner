@@ -48,6 +48,13 @@
       "name": "Tri-tip",
       "blurb": "Smoke and sear, or brisket-style",
       "group": "Beef",
+      "$comment": "T-075. smokerSear is for a setup with no griddle, second so it is the first method a smoker alone can do (Add food, Open shared plan). Its numbers are Jason's (2026-11-16, sources below; the sources back that method only). Not given, so kept from the reverse method: the smoke time model (35 min per lb at 225F, 60 min floor), the pull line, slice, hold limit, prep and space. Off the heat during the climb: the climb is a smoker step at the high temp with setsPit, as wings' ramp is, marked offHeat (no grate space, drawn as a hold). The pull line's 130-145F: 145F is USDA's minimum for whole beef, 130-135F the sear's target. A smoker that tops out below 450F (fallbackTemp) cannot do it.",
+      "sources": [
+        { "cite": "Louisiana Grills, reverse-seared tri-tip (https://louisiana-grills.com/blogs/pork/reverse-seared-tri-tip), given by Jason, 2026-11-16", "methods": ["smokerSear"], "covers": ["rate"], "says": "Smoke at 225F until 5F below the target temp, about 75 min to 115F." },
+        { "cite": "Traeger, smoked tri-tip (https://www.traeger.com/za/en/recipes/smoked-tri-tip), given by Jason, 2026-11-16", "methods": ["smokerSear"], "covers": ["preheat", "highHeat"], "says": "Off the heat while the smoker climbs to 500F, 450F if the smoker tops out lower. 15 min preheat." },
+        { "cite": "Traeger, smoked tri-tip (https://traeger.com/au/en/recipes/smoked-tri-tip), given by Jason, 2026-11-16", "methods": ["smokerSear"], "covers": ["highHeat", "doneTemp", "rest"], "says": "Sear 4 min per side at 500F to 130-135F, then rest 10 to 15 min." },
+        { "cite": "USDA FSIS, given by Jason, 2026-11-16", "methods": ["smokerSear"], "covers": ["doneTemp"], "says": "145F is the minimum for whole cuts of beef, with a 3 min rest." }
+      ],
       "quantity": { "kind": "weight", "unit": "lb", "default": 2.5, "min": 1, "max": 5, "step": 0.25 },
       "methods": [
         {
@@ -61,6 +68,25 @@
             { "id": "sear", "fixedMin": 8, "cooker": "griddle", "temp": 450, "anchorToEnd": true, "label": "Sear tri-tip on the griddle, high heat, 2-3 min per side to 130-135F.", "short": "Sear" }
           ],
           "restMin": { "default": 10, "min": 5 },
+          "sliceMin": 5,
+          "pull": { "label": "Tri-tip off at 130-135F (medium-rare, below the USDA 145F minimum) or 145F.", "tempF": [130, 145] },
+          "holdLimitMin": 30,
+          "prep": [ { "leadMin": 60, "label": "Prep the tri-tip." } ],
+          "footprintSqInPerUnit": 18
+        },
+        {
+          "id": "smokerSear",
+          "label": "Smoke, then sear on the smoker",
+          "short": "smoke then sear on the smoker",
+          "cooker": "smoker",
+          "importMove": "be seared on the smoker",
+          "timing": { "kind": "perWeightMinutes", "minPerLbAt225": 35, "minMinutes": 60 },
+          "phases": [
+            { "id": "smoke", "fraction": 1.0, "temp": "pit", "label": "Tri-tip on the smoker, fat cap up. Pull at about 120F.", "short": "Smoke" },
+            { "id": "ramp", "fixedMin": 15, "temp": 500, "fallbackTemp": 450, "setsPit": true, "offHeat": true, "label": "Tri-tip off the smoker at about 120F. Tent it and turn the smoker up to {temp}F.", "short": "Ramp" },
+            { "id": "sear", "fixedMin": 8, "temp": 500, "fallbackTemp": 450, "label": "Tri-tip back on at {temp}F. Sear 4 min per side to 130-135F.", "short": "Sear" }
+          ],
+          "restMin": { "default": 10, "min": 10 },
           "sliceMin": 5,
           "pull": { "label": "Tri-tip off at 130-135F (medium-rare, below the USDA 145F minimum) or 145F.", "tempF": [130, 145] },
           "holdLimitMin": 30,

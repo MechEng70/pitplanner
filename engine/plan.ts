@@ -17,6 +17,7 @@ import type {
 import { isSettable } from './temps.ts';
 import { inSentence, itemLabels, longHold } from './labels.ts';
 import {
+  firstDoableMethod,
   resolveMethod as mergeShared,
   type ResolvedMethod,
   type RuleFood,
@@ -33,6 +34,12 @@ export const CONFLICT_TOLERANCE_F = 25; // two smoker phases further apart than 
 const PIT_CLIMB_MIN = 15; // time to raise the pit before a high-heat phase
 const OVEN_LEAD_MIN = 15;
 const REFILL_AT_FRACTION = 0.1; // top-off alert when the hopper is estimated under 10%
+
+// Jason, 2026-11-16 (T-075). A food whose own cooker is set up but one of whose steps needs the griddle that
+// is not (tri-tip's sear), when another of its methods needs no griddle. {food}: its name or label; {step}:
+// that step, lower case; {method}: the other method's label, in straight double quotes.
+export const NO_GRIDDLE_PICK_METHOD =
+  '{food}\'s {step} needs a griddle. Add one in Gear, or pick "{method}" in Food details.';
 
 export function tempFactor(rules: Rules, tempF: number): number {
   const m = rules.tempModel;
@@ -170,8 +177,12 @@ function buildItem(rules: Rules, input: ItemInput, plan: PlanInput): Omit<Planne
     totalScaled = Math.max(timing.minMinutes!, timing.minPerLbAt225! * W) * tf;
   }
 
+  const smokerMax = plan.cookers.smoker?.maxTempF;
   const phases: Phase[] = rawPhases.map(p => {
     const cooker = p.cooker ?? method.cooker;
+    // A fixed temp the smoker cannot reach is replaced by the step's fallback (T-075: 450F for 500F).
+    const lower = p.temp !== 'pit' && p.fallbackTemp != null && smokerMax != null && smokerMax < p.temp;
+    const tempF = p.temp === 'pit' ? pit : lower ? p.fallbackTemp! : p.temp;
     let minutes: number;
     if (p.fraction != null) minutes = totalScaled * p.fraction;
     else if (timing.kind === 'fixedScaled') minutes = p.fixedMin! * tf;
@@ -182,16 +193,17 @@ function buildItem(rules: Rules, input: ItemInput, plan: PlanInput): Omit<Planne
     } else minutes = p.fixedMin! * (p.scaleWithPit ? tf : 1);
     return {
       id: p.id,
-      label: p.label,
+      label: p.label.replaceAll('{temp}', String(tempF)),
       short: p.short,
       cooker,
-      tempF: p.temp === 'pit' ? pit : p.temp,
+      tempF,
       minutes,
       start: 0,
       end: 0,
       setsPit: !!p.setsPit,
       anchorToEnd: !!p.anchorToEnd,
       checkStep: !!p.checkStep,
+      ...(p.offHeat ? { offHeat: true } : {}),
     };
   });
 
@@ -330,6 +342,22 @@ export function applyClearPitRule(items: PlannedItem[], input: PlanInput) {
   }
 }
 
+/**
+ * The missing-griddle line. A food on its own cooker with a griddle step (tri-tip's sear) names another of its
+ * methods the cookers can fully do; anything else keeps the line it has always had.
+ */
+function noGriddle(rules: Rules, input: PlanInput, it: PlannedItem, name: string): string {
+  const food = rules.foods.find(f => f.id === it.input.foodId);
+  const own = food?.methods.find(m => m.id === it.input.methodId);
+  const step = it.phases.find(p => p.cooker === 'griddle');
+  const other = food && firstDoableMethod(food, input.cookers);
+  if (own && own.cooker !== 'griddle' && input.cookers[own.cooker] && step && other && other.id !== own.id)
+    return NO_GRIDDLE_PICK_METHOD.replace('{food}', name)
+      .replace('{step}', step.short.toLowerCase())
+      .replace('{method}', other.label);
+  return `${name} needs a griddle. Add one in Gear or move it to the smoker.`;
+}
+
 /** Everything that follows from phase times: events, warnings, pellets, grate load. Re-run after any live change. */
 export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], serveAt: number): Plan {
   const pit = input.pitTempF;
@@ -374,23 +402,24 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
     if (!isSettable(smoker, pit))
       warnings.push({ code: 'TEMP_NOT_SETTABLE', level: 'warn', message: `${smoker.name} cannot be set to ${pit}F.` });
   }
-  for (const it of items)
-    for (const p of it.phases) {
-      if (p.cooker === 'smoker' && !smoker)
-        warnings.push({
-          code: 'NO_SMOKER',
-          level: 'warn',
-          message: `${nm(it)} needs a smoker. Add one in Gear.`,
-          itemIds: [it.input.id],
-        });
-      if (p.cooker === 'griddle' && !input.cookers.griddle)
-        warnings.push({
-          code: 'NO_GRIDDLE',
-          level: 'warn',
-          message: `${nm(it)} needs a griddle. Add one in Gear or move it to the smoker.`,
-          itemIds: [it.input.id],
-        });
-    }
+  // A missing cooker is said once per food, however many of its steps need it (T-075).
+  for (const it of items) {
+    const needs = new Set(it.phases.map(p => p.cooker));
+    if (needs.has('smoker') && !smoker)
+      warnings.push({
+        code: 'NO_SMOKER',
+        level: 'warn',
+        message: `${nm(it)} needs a smoker. Add one in Gear.`,
+        itemIds: [it.input.id],
+      });
+    if (needs.has('griddle') && !input.cookers.griddle)
+      warnings.push({
+        code: 'NO_GRIDDLE',
+        level: 'warn',
+        message: noGriddle(rules, input, it, nm(it)),
+        itemIds: [it.input.id],
+      });
+  }
 
   for (const it of items) {
     const i = it.input;
@@ -484,11 +513,12 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
       });
   }
 
-  // Grate load (estimate)
+  // Grate load (estimate). A food off the heat while the smoker climbs takes no space (T-075).
   let peak = 0;
-  for (const x of sm) {
+  const onGrate = sm.filter(x => !x.p.offHeat);
+  for (const x of onGrate) {
     const t = x.p.start;
-    const active = new Set(sm.filter(y => y.p.start <= t && t < y.p.end).map(y => y.it));
+    const active = new Set(onGrate.filter(y => y.p.start <= t && t < y.p.end).map(y => y.it));
     peak = Math.max(
       peak,
       [...active].reduce((a, it) => a + it.footprintSqIn, 0),

@@ -9,7 +9,8 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { View, type HostInstance, type LayoutChangeEvent } from 'react-native';
 import { buildPlan, onHeatSpan, rateHintFor } from '../../../engine/plan';
-import type { CookerKind, ItemInput, PlanInput, TimingModel } from '../../../engine/types';
+import type { CookerKind, Cookers, ItemInput, PlanInput, TimingModel } from '../../../engine/types';
+import { missingCookers, smokerReachF, smokerTooCool } from '../../../engine/rules';
 import { kgToLb, lbToKg } from '../../../engine/units';
 import {
   Button,
@@ -27,15 +28,44 @@ import {
   useSheet,
   type ResultCell,
 } from '@/components/kit';
-import { fmtDuration, fmtRate, fmtTempRange, fmtTime, tx, type Units } from '@/lib/format';
+import { fmtDuration, fmtRate, fmtTemp, fmtTempRange, fmtTime, tx, type Units } from '@/lib/format';
 import { sourceText } from '@/lib/historyView';
-import { cookerKinds, cookerName, defaultOptions, food, hasCooker, method, rules } from '@/lib/rules';
+import {
+  cookerKinds,
+  cookerName,
+  defaultOptions,
+  food,
+  hasCooker,
+  method,
+  rules,
+  type FoodDef,
+  type MethodDef,
+} from '@/lib/rules';
 import { useStore } from '@/lib/store';
 import { HOURS_MAX, HOURS_MIN, hoursText, rateText, rateUnusual, roundHours, stepHours, stepRate } from '@/lib/timing';
 
 const REST_STEP = 5;
 const REST_MAX = 240;
 const KG_STEP = 0.25;
+
+/**
+ * The note on a method chip whose smoker cannot get hot enough for it (Jason, 2026-11-16, T-075): {temp} is
+ * the lowest temp the method can be done at, from the rules (450F for the smoker sear), in the user's units.
+ */
+export const SMOKER_NEEDS = 'Needs {temp}';
+
+/**
+ * A method the cookers cannot do is offered but off, with its note where the Cook on chips put "Add in Gear"
+ * (T-075): a step on a cooker that is not set up (tri-tip's griddle sear), or a smoker that tops out below
+ * the method's lowest temp (the smoker sear on a smoker under 450F).
+ */
+function methodOff(f: FoodDef, x: MethodDef, cookers: Cookers, units: Units): { disabled?: boolean; hint?: string } {
+  if (missingCookers(f, x, cookers).length > 0) return { disabled: true, hint: 'Add in Gear' };
+  const reach = smokerReachF(f, x);
+  if (reach != null && smokerTooCool(f, x, cookers))
+    return { disabled: true, hint: SMOKER_NEEDS.replace('{temp}', fmtTemp(reach, units, true)) };
+  return {};
+}
 
 export interface FoodEditProps {
   initial: ItemInput;
@@ -289,7 +319,11 @@ function Body({
               label="Method"
               value={m.id}
               onChange={pickMethod}
-              options={methodsHere.map(x => ({ id: x.id, label: tx(x.label, units) }))}
+              options={methodsHere.map(x => ({
+                id: x.id,
+                label: tx(x.label, units),
+                ...methodOff(f, x, cookers, units),
+              }))}
             />
           </Field>
         ) : null}
@@ -373,7 +407,7 @@ function Body({
                 ) : null}
               </Text>
               {itemWarnings.map(w => (
-                <Text key={w.code} variant="caption" tone={w.level === 'warn' ? 'warn' : 'secondary'}>
+                <Text key={`${w.code}:${w.message}`} variant="caption" tone={w.level === 'warn' ? 'warn' : 'secondary'}>
                   {tx(w.message, units)}
                 </Text>
               ))}
