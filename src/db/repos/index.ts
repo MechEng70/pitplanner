@@ -23,6 +23,8 @@ export function repos(db: Db) {
     quarantined: () => quarantined(db),
     /** Every row of every table, for "Send to developer" (T-065); the same read as Export my data. */
     dump: (now: number) => exportDump(db, now, ''),
+    /** Several repository writes as one: all of them land or none (src/db/restore.ts, T-036). */
+    transaction: <T>(fn: () => T): T => db.transaction(fn),
   };
 }
 export type Repos = ReturnType<typeof repos>;

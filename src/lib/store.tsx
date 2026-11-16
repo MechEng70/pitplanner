@@ -10,8 +10,10 @@ import { createContext, useContext, useMemo, useRef, useState, type ReactNode } 
 import type { CookLog, Cookers, PlanInput } from '../../engine/types.ts';
 import type { Repos } from '../db/repos/index.ts';
 import type { Flags } from '../db/repos/settings.ts';
+import { restoreData as restore, type RestoreResult } from '../db/restore.ts';
 import type { AlarmService } from '../platform/types.ts';
 import { applyActions, syncAlarms, type ActiveCook } from './cook.ts';
+import type { RestoreData } from './dataFile.ts';
 import type { ReportData } from './debugReport.ts';
 import type { Draft } from './draft.ts';
 import { EVENT_LOG_KEY, appendEvent, describeCookChange, errorText, parseEventLog, type LogKind } from './eventLog.ts';
@@ -123,6 +125,11 @@ export interface Store {
   logEvent: (kind: LogKind, text: string) => void;
   /** Every stored row, for the file "Send to developer" builds (T-065). Read only. */
   debugData: () => ReportData;
+  /**
+   * T-036: replace the cookers, rates and history with a checked data file (src/lib/dataFile.ts). Call only
+   * after the user has agreed to the replace. Refused while a cook runs (src/db/restore.ts says what stays).
+   */
+  restoreData: (data: RestoreData) => RestoreResult;
 }
 
 const Ctx = createContext<Store | null>(null);
@@ -278,6 +285,26 @@ export function StoreProvider({ repos, clock = Date.now, alarms, children }: Pro
       },
       logEvent,
       debugData: () => repos.dump(clock()),
+      restoreData(data) {
+        if (latest.current.cook) return { ok: false, problem: 'cook running' };
+        const result = restore(repos, data, clock(), 'replace');
+        if (!result.ok) {
+          if (result.problem === 'failed') logEvent('error', `restore failed: ${result.message}`);
+          return result;
+        }
+        // No cook runs, so no alarms change. The plan draft stays as it was.
+        const records = repos.history.list();
+        commit({
+          gear: repos.cookers.load(),
+          firstRun: repos.cookers.count() === 0,
+          units: repos.settings.units(),
+          ...repos.rates.load(),
+          records,
+          history: logsOf(records),
+          flags: repos.settings.flags(),
+        });
+        return result;
+      },
       ui: {
         read: () => repos.settings.ui(),
         write(patch) {

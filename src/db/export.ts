@@ -1,6 +1,7 @@
 // "Export my data": every row of every table as JSON (TECH-DESIGN section 5). It reads whatever tables the
 // file has, so it works on a database stuck at an old version after a failed migration, and it includes the
-// quarantined values (kv rows `quarantine:...`). T-036 adds the Gear row and importing this file.
+// quarantined values (kv rows `quarantine:...`). src/lib/dataFile.ts `readDataFile` reads this file back
+// for a restore (T-036).
 
 import type { Db, SqlValue } from './db.ts';
 import { userVersion } from './migrate.ts';
