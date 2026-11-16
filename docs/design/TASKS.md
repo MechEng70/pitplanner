@@ -1,5 +1,15 @@
 # Pit Planner: tasks
 
+## Versions (Jason, 2026-11-16)
+
+- **0.3.0:** the Expo rebuild, parity with 0.2.0. Its tasks are WBS phases 1 to 10.
+- **0.3.x:** reserved for bug fixes.
+- **0.4.0:** Home Assistant phase 1, T-042 to T-050 (mockups, the client_id page, sign-in, the WebSocket
+  client, discovery, Gear, a probe per food, live probe temps).
+- **0.5.0:** fish (T-071), the receiver picks cookers (T-070), the alarm log on the Android side (T-068).
+- **0.5.0 or later:** T-051 to T-055 (Home Assistant phases 2 to 4).
+- Nothing from 0.4.0 or later is started before 0.3.0 ships.
+
 One entry per task, each sized for one session (under a day). Phases, order and the critical path are in
 [WBS.md](WBS.md); architecture and rules in [TECH-DESIGN.md](TECH-DESIGN.md).
 
@@ -746,7 +756,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   permission taken away and given back. Fail: the locked reboot (T-072). Fixed: the alert's button labels
   were cut off at 115% font with three buttons; now two, Done and +15 min (no Open: a tap on the alert
   opens the app).
-- **Status:** emulator half done (`b9b5d7d`); phone half blocked until Jason says his Saturday cook
+- **Status:** **done**, closed 2026-11-16 on the emulator proof (Jason): a release build passes the locked-reboot test on the PIN emulator, including a step that comes due while still locked (T-072, `docs/alarm-testing.md`). The same check on his phone with the release build is now part of T-038's acceptance. What this line said while it was open: Met on the phone with the dev build: alerts on the lock screen, a step and its repeat in forced Doze, Done and +15 min from the lock screen, a permission taken away. NOT met: "a locked reboot ringing on time" on the phone. The dev build cannot pass it (it crashes at start while locked, dev-only code); a release build passes on the PIN emulator (T-072) but has not been on the phone. It can close at T-038, when a release build is on the phone, or earlier if Jason accepts the emulator proof. Before that: emulator half done (`b9b5d7d`); phone half blocked until Jason says his Saturday cook
   (2026-11-14) is done. Until then nothing runs against the phone: no adb commands, no installs, no reads
   (Jason, 2026-11-13). `tools/device/PHONE-BLOCKED` makes the device tools refuse it; only Jason lifts it.
   A task that needs the phone skips that step and notes it.
@@ -1093,6 +1103,12 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   the thumb and the screen does not scroll, compared with 0.2.0 on his phone, where it jumps.
 
 ### T-059 Whole turkey in `data/foods.json`
+- **Size note (Jason, 2026-11-16; replaces "no size warning"):** above 16 lb the plan adds an info line, a
+  warning and not a block: "Whole turkey is 16.5 lb. USDA recommends 16 lb or less for safe smoking." It
+  shows in Conflicts like the hold note and under the food in Food details. Data: `sizeNote` on the method
+  in `data/foods.json` with its own source (USDA FSIS, quoted by Jason: "Turkeys 16 pounds or less are the
+  recommended size for safe smoking"); `engine/plan.ts` code `SIZE_OVER_RECOMMENDED`; the sources check in
+  `engine/rules.test.ts` now also asks for a `size` source. Tests at 16 lb (none) and 16.5 lb (one).
 - **Rate at 275F (Jason, 2026-11-16):** 18 min per lb, his measured value (the shared curve gave 21.7). In
   `data/foods.json` as a measured point, `timing.tempPoints` (`engine/plan.ts` `tempFactorFor`): 30 min per
   lb at 225F, 23.2 at 250F, 18 at 275F, then the shared curve from that point, 15.3 at 300F. He agreed to the
@@ -1117,13 +1133,13 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   temperature in the step text: 165F in the thigh, the wing and the thickest part of the breast (the FSIS
   rule), since he did not pick between the two.
 - **Jason (2026-11-15, later the same session), two answers:**
-  - **Size warning: left out of 0.3.0.** He gave no size limit and none may be invented. Not built: no limit in
+  - **Size warning: left out of 0.3.0 (changed 2026-11-16, see "Size note" at the top of this entry).** He gave no size limit and none may be invented. Not built: no limit in
     `foods.json`, no warning in Food details. The "Size warning" requirement and its engine test below do not
     apply to 0.3.0.
   - **Rest: 30 minutes default, 20 minutes minimum.**
   - Sources are cited as "USDA FSIS (fsis.usda.gov), read by Jason 2026-11-15" and "Jason, 2026-11-15"; no URL
     or quote is needed (this replaces the "Sources" requirement's URL, page title, date and quoted sentence).
-- **Status:** built 2026-11-15, on `main` and gate-complete; device test `turkey` passes on the emulator at 115%
+- **Status:** **done**, closed 2026-11-16 (Jason: closes once the size note is in). The size note and the 275F rate point are on `main` and gated. Before that: built 2026-11-15, on `main` and gate-complete; device test `turkey` passes on the emulator at 115%
   (2026-11-15, nineteenth session; pictures in `tools/device/out/turkey-115.png` for Jason)
 - **Built (2026-11-15):**
   - `data/foods.json`: food `turkey` ("Whole turkey", group "Turkey"), one method `smoked`, `perWeight`
@@ -1512,7 +1528,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device test (2026-11-15):** in `followups` the debug screen shows Send to developer, where the file goes and
   what it holds (emulator, 115%; `docs/fidelity/rn-debug-send.png`). Send is not tapped by the test. Not
   checked anywhere: the share sheet, the To field in an email app, the file's contents from a real phone.
-- **Status:** built 2026-11-15, unit-tested on a worktree branch; `npm run check` and device test not run.
+- **Status:** **done**, closed 2026-11-16 (Jason). On his phone with Gmail: the file was shown to him before sending, arrived byte for byte the same, the recipient was filled in; the file's phone facts read right (model CPH2583, Android 16, build 200999), which settles the "not checked on a phone" item below. The address is pitplanapp@gmail.com. Before that: built 2026-11-15, unit-tested on a worktree branch; `npm run check` and device test not run.
   0.3.0 (Jason, 2026-11-15: "since I'm going to send 0.3.0 to somebody, I'm going to need
   that debug switch and the send to developer thing").
 - **Built:**
@@ -1571,6 +1587,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Tests:** unit tests for what goes into the file; RNTL for the action.
 
 ### T-068 A log of every alarm ring, kept on the Android side
+- **Version (Jason, 2026-11-16):** 0.5.0. Not started before 0.3.0 ships.
 - **Status:** todo, after 0.3.0 unless Jason moves it up (Jason, 2026-11-15: agreed as a task for later).
 - **Why:** the app's event log (T-065) only has rings seen while the app is open, plus Done and +15 taps read
   afterwards. A missed or late alarm with the app closed is the case the debug file is most wanted for.
@@ -1779,7 +1796,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   `tools/device/out/phone/lock-alert-expanded.png` (git-ignored; cropped to the alert). Mockup 14 shows the
   words Done and +15 min; the alert now has those two buttons and no Open, so they fit (Jason,
   2026-11-16).
-- **Status:** built 2026-11-15 on branch `t025`, unit-tested (Jest). NOT run on a device or emulator, and
+- **Status:** **done**, closed 2026-11-16 (Jason). The battery help link is dropped per parity D13 (a plain line, no link: the Alerts step already says "Alerts late or missing? Check the battery settings for Pit Planner in your phone's settings."). The Doze item is accepted: the step alert and its repeat rang in forced Doze on the phone through the same alarm path. What this line said while it was open: Gated on `main` since 2026-11-15 and seen on the phone today (a test alert rang on the locked phone). NOT met: (1) the battery help link is not built: it still needs Jason's makers, URLs, wording and place on the screen (see Left); (2) "the test alert rings in Doze" is proven on the emulator (`alarm` device test) but on the phone the test alert rang locked with Doze not forced (state `IDLE_PENDING`); the step alert and its repeat did ring in forced Doze there. Before that: built 2026-11-15 on branch `t025`, unit-tested (Jest). NOT run on a device or emulator, and
   `npm run check` was NOT run (the session that built it was not allowed to): prettier, ESLint, typecheck,
   Jest, engine and gate tests pass; Android tests, Semgrep and Snyk are still to run. The battery help link is
   NOT on the screen (no approved wording or links, see Left). Not done until the gate passes, the link is
@@ -1814,7 +1831,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   battery help link for makers with aggressive battery killers (failure mode 10).
 - **Files:** `src/screens/shared/AlertChecks.tsx`, `src/lib/maker.ts`, tests.
 - **Depends on:** T-015, T-024.
-- **Acceptance:** the test alert rings in Doze; a Samsung shows its help link, a Pixel shows none.
+- **Acceptance (changed by Jason, 2026-11-16):** alerts ring in Doze on the phone (met by the step alert and its repeat in forced Doze, same alarm path as the test alert); the Alerts step shows the plain battery line, with no per-maker link (parity D13). Was: the test alert rings in Doze; a Samsung shows its help link, a Pixel shows none.
 - **Tests:** maker mapping unit test; RNTL rows.
 - **Real phone:** yes: the test alert in Doze and the OEM battery help (OnePlus; a Samsung if available).
 - **Device testing (Jason):** none on a Pixel; a friend's Samsung if available.
@@ -1998,7 +2015,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device check (2026-11-16, Jason's phone, dev build):** done. The share sheet offered Gmail and Drive, the
   attachment arrived as `cook.pitplan`, and the file read back right on the computer (689 bytes, the plan's
   serve time, smoker temp and three items; no rates, total hours or history).
-- **Status:** built and unit-tested on branch `t029`; not run on a device, and `npm run check` (Android tests,
+- **Status:** **done**, closed 2026-11-16 (Jason). Acceptance met on his phone with the dev build: Gmail and Drive are in the share sheet, the attachment arrives as `cook.pitplan`, and the file read back matches the plan (`toPitPlan`: no rates, total hours or history). On `main` and gated since 2026-11-15; `pitPlanFile.ts` is in `src/lib`. Before that: built and unit-tested on branch `t029`; not run on a device, and `npm run check` (Android tests,
   Semgrep, Snyk) not run on it yet.
 - **Built:** `toPitPlan` was not in the Expo app (only in `legacy/src/lib/share.ts`), so it is ported as
   `src/lib/pitPlanFile.ts` (pure: `toPitPlan`, `pitPlanText`, `PLAN_FILE_NAME`). It keeps only `id`,
@@ -2022,7 +2039,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   again." / OK (built).
 
 ### T-030 Open a shared plan (11), with the conflict fix
-- **Status:** built, merged onto `main` and gate-complete 2026-11-15 (the Kotlin module compiles, its 16 JUnit
+- **Status:** **done**, closed 2026-11-16 (Jason). Acceptance: `file://` opens and the oversized-file error pass in device test `shared`; `content://` opens work on the dev build when it is running (Gmail on the phone, Files on the emulator) and on a release build from a cold start too. Not met, by Jason's ruling a limitation of dev builds and not an app bug: a `content://` open that cold-starts the dev build through the Expo dev launcher ("Could not read that file.", `docs/alarm-testing.md`). Before that: built, merged onto `main` and gate-complete 2026-11-15 (the Kotlin module compiles, its 16 JUnit
   tests pass, Snyk covers the new Gradle project). Device test `shared` passes on the emulator at 115%: a
   `.pitplan` opened with a `file://` VIEW intent shows the sheet, Use this plan fills Plan, a 300 KB file says
   it is too big, a text file says "This file is not a Pit Planner plan." Fidelity PNG
@@ -2151,6 +2168,13 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   install prompts in INSTALL.md are written from stock Android, not checked on a phone.
 
 ### T-034 Parity review
+- **Jason's decisions on the open rows (2026-11-16, also in `docs/parity.md` section 1):** D2 keep "Show
+  180-500F". D9 goes into T-069: the Live cook banner also shows a hold past the food's hold limit. D10
+  wording only for 0.3.0, done: the hold note for brisket and pork butt ends "Keep it above 140F." D11
+  accept as built. P1 is T-072 (test only, no start-up guard; the locked-reboot test is required before
+  every release). P2 accepted: one repeat proven on the phone in forced Doze, the six-repeat count and "Cook
+  needs you" in Robolectric. P3 run on the phone. P4 at T-037 on the tester's Samsung. No parity decision
+  is waiting on him.
 - **Status:** review written 2026-11-15 (nineteenth session), `docs/parity.md`; open rows wait for Jason's
   decisions (section 1a), the full device pass at 115% and 130% is not run
 - **Goal:** every SPEC screen and failure mode that 0.2.0 handled works in the Expo build.
@@ -2184,7 +2208,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** none.
 
 ### T-067 Fast test cook: a whole cook in minutes
-- **Status:** built 2026-11-15 (eighteenth session); device test `fast-cook` passes on the emulator at 115%.
+- **Status:** **done**, closed 2026-11-16: Jason accepts it as built (emulator only; the phone run in the acceptance line is not wanted). Before that: built 2026-11-15 (eighteenth session); device test `fast-cook` passes on the emulator at 115%.
   Not run on the phone (needs Jason's yes to the listed actions). Asked for by Jason, 2026-11-15: "we should
   run a test cook, using minutes as hours and seconds as minutes to simulate".
 - **Built:**
@@ -2278,6 +2302,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Depends on:** T-012, T-033, T-035, T-036, T-037.
 - **Approach:** emulator upgrade test with the real 0.2.0 APK, then `docs/RELEASING.md`. Publish 0.3.0 as a
   normal release (not a prerelease) so 0.2.0's update check (`/releases/latest`) sees it.
+- **Added to the acceptance by Jason, 2026-11-16 (from T-016):** a locked reboot on his phone with the release
+  build: a step that comes due while the phone is still locked rings before unlock.
 - **Acceptance:** release `v0.3.0` with APK and SHA-256; `snyk:monitor` ran; Jason's phone upgraded with gear,
   rates and history intact (or the notice says what was not kept).
   The emulator upgrade test checks the imported cookers, rates, plan and history on the actual Gear, Plan and
@@ -2591,6 +2617,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
      to get back to the cook), or (b) add a way back from Cook finished.
 
 ### T-042 Mock the HA screens (HA-INTEGRATION 4.5)
+- **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** six screens in the canvas style, approved before any code.
 - **Files:** `docs/mockups/source/Ha*.dc.html`, `docs/mockups/21-26-*.png`.
@@ -2600,6 +2627,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** none.
 
 ### T-043 GitHub Pages `client_id` page
+- **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** `https://mecheng70.github.io/pitplanner/` has `<link rel="redirect_uri" href="pitplanner://auth-callback">`
   in its first 10 kB.
@@ -2610,6 +2638,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** none.
 
 ### T-044 HA auth logic (pure)
+- **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** address normalize, authorize URL with a state nonce, callback check, token exchange, refresh on 401,
   revoke, all with an injected `fetch`.
@@ -2620,6 +2649,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** none.
 
 ### T-045 HA sign-in on the phone
+- **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** sign in to `ha.glithero.icu` as the `pitplanner` HA user; refresh token in `expo-secure-store`.
 - **Files:** `src/screens/gear/HaConnect.tsx`, `src/lib/ha/session.ts`, `src/platform/links.ts`,
@@ -2633,6 +2663,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   "Signed out".
 
 ### T-046 HA WebSocket client
+- **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** auth, `get_states`, `subscribe_entities`, registry lists, reconnect with backoff, REST fallback every
   15 s, stale after 2 min.
@@ -2643,6 +2674,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** none.
 
 ### T-047 Discovery and add a sensor
+- **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** "Here's what we found" and the searchable add-sensor list (HA-INTEGRATION 4.3); save `haConfig`
   through a new migration.
@@ -2656,6 +2688,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** run discovery at home with probes awake and asleep.
 
 ### T-048 Gear > Home Assistant connected
+- **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** address, user, status, probes, Rescan (marks missing entities), Disconnect.
 - **Files:** `src/screens/gear/HaConnected.tsx`, tests.
@@ -2665,6 +2698,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** rename a probe entity in HA, then Rescan.
 
 ### T-049 Probe per food at Start cook
+- **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** a Probe dropdown per food, last choice remembered, no two foods on one probe.
 - **Files:** `src/screens/plan/StartCheckSheet.tsx`, `src/lib/cook.ts` (probe map; `normalize` handles older
@@ -2676,6 +2710,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** start a cook with two probes.
 
 ### T-050 `engine/probe.ts` and live temps on Live cook
+- **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** pure `nextTempEvent` and `isStale`; Live cook shows probe and pit temps with "updated N s ago",
   grey when stale, never interpolated.
@@ -2688,6 +2723,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** probe in hot water; unplug it; grey after 2 min.
 
 ### T-051 Publish `sensor.pit_planner_cook` (HA Phase 2)
+- **Version (Jason, 2026-11-16):** 0.5.0 or later. Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** HA-INTEGRATION 3.1: publish on Start cook, each change, End cook, app open, and every 10 min while
   open.
@@ -2699,6 +2735,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** watch the sensor in HA during a short cook.
 
 ### T-052 HA blueprint
+- **Version (Jason, 2026-11-16):** 0.5.0 or later. Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** `blueprints/pit_planner_cook_watcher.yaml` (HA-INTEGRATION 3.2) and `docs/HA-BLUEPRINT.md`.
   Claude writes files only and never changes HA through MCP.
@@ -2710,6 +2747,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** import and hot-water test.
 
 ### T-053 Probe suggestions and pit-drop prompt (HA Phase 3)
+- **Version (Jason, 2026-11-16):** 0.5.0 or later. Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** Next up offers "Brisket hit 166F" with Done (never auto-done); a pit drop offers "Pit went out?".
 - **Files:** `engine/probe.ts` (`suggestion`), `src/screens/cook/CookScreen.tsx`, tests.
@@ -2720,6 +2758,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** hot-water test.
 
 ### T-054 Probe times feed rate learning
+- **Version (Jason, 2026-11-16):** 0.5.0 or later. Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** use the time the probe reached the pull target instead of the button tap when available.
 - **Files:** `src/lib/finish.ts`, tests.
@@ -2730,6 +2769,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** a real cook with a probe.
 
 ### T-055 Confirmed set-temp button (HA Phase 4, optional)
+- **Version (Jason, 2026-11-16):** 0.5.0 or later. Not started before 0.3.0 ships.
 - **Status:** todo (Jason opts in)
 - **Goal:** "Set smoker to 400F" on the wings step, confirm required, only while the grill is running; never
   ignition, power or automatic.
@@ -2795,6 +2835,17 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 | T-040 | TypeScript 6/7 split | T-002 (D-2) |
 
 ### T-069 Live cook: say when a change makes a smoker conflict
+- **Jason's answers to `docs/proposals/2026-11-16-open-decisions.md` (2026-11-16); approved to build:** options
+  A1 + B1 of the page, one banner, an OK button, silent for 0.3.0 (also for a conflict made by a Done or +15
+  min tapped on the lock screen), and only warnings the plan did not have at Start cook. Two wording changes
+  he added:
+  - The engine's conflict sentence changes on Plan and on Live cook, so it has no verb to agree: "Smoker
+    conflict: brisket at 225F and chicken wings at 400F at the same time."
+  - The lane chart's note is reworded when the overlap is a conflict, instead of "share the smoker at 225F"
+    (`src/lib/cookView.ts`). His words (2026-11-16): "3:15 to 3:40 PM: smoker conflict, brisket at 225F and
+    wings at 400F." The existing note stays when the overlap is not a conflict.
+  - Hold case: "Brisket holds 5 hr, past its 4 hr limit. Keep it above 140F." (B1: durations written as Live
+    cook writes them).
 - **Added by Jason, 2026-11-16 (parity D9):** the banner also shows a hold that has grown past the food's
   hold limit during the cook.
 - **Status:** todo (Jason, 2026-11-15: "show it on Live cook, as a banner"; wording and fixes need his OK first)
@@ -2808,6 +2859,10 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** the banner at 115% against the other Live cook banners.
 
 ### T-070 Open shared plan: the receiver picks their cookers
+- **Version (Jason, 2026-11-16):** 0.5.0. Not started before 0.3.0 ships.
+- **Dropped from 0.3.0 (Jason, 2026-11-16, his answer to the proposals page):** moved to After 0.3.0. Parity D1
+  is closed as "handled by Food details after import": the receiver changes a food's cooker in Food details
+  once the plan is on Plan.
 - **Status:** todo (Jason, 2026-11-15: "add a choice"; new UI, the design needs his OK first)
 - **Why:** parity review D1, SPEC section 3 "the receiver picks date and their own cookers". As built (and in
   0.2.0) foods are put on the receiver's cookers automatically and the sheet says where.
@@ -2817,6 +2872,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** the sheet against mockup 11 at 115%.
 
 ### T-071 Fish: salmon, sea bass, catfish
+- **Version (Jason, 2026-11-16):** 0.5.0. Not started before 0.3.0 ships.
 - **Jason's answers (2026-11-16); after 0.3.0:**
   1. Salmon (fillet portions and a whole side), catfish fillets, Chilean sea bass fillets. No whole fish yet.
   2. Salmon: smoker and griddle. Catfish: smoker and griddle. Sea bass: griddle, smoker optional.
@@ -2843,7 +2899,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** Food details for each fish at 115%, as the `turkey` device test does.
 
 ### T-072 Alarms come back before the first unlock after a reboot
-- **Status:** in work. Jason, 2026-11-16, after the reproduction below: **test only, no start-up guard** ("the
+- **Status:** **done** 2026-11-16, as test only (below). Built: `tools/device/locked-reboot.sh <release apk>` on the emulator `pitplanner-lock` (`avd.sh` `AVD_LOCK=1`, `LOCK_PIN` in `lib.sh`); it passes on 0.3.0-alpha.5, including a step due while still locked (11:35:00 rang, its repeat set). Required before every release: `docs/RELEASING.md` section 5b, which also states the one data-clearing limit (Pit Planner's data, on `pitplanner-lock` only). The dev-build limitation is in RELEASING, the device README and `docs/alarm-testing.md`. Left for real phones: T-038 (Jason's phone) and T-037 (the tester's Samsung). Earlier status: in work. Jason, 2026-11-16, after the reproduction below: **test only, no start-up guard** ("the
   release build passed twice; the guard adds risky code to fix a dev-only crash"). To do: the locked-reboot
   device test on the PIN emulator with a release build, with the missing case (a step that comes due while
   the phone is still locked rings before unlock); a required step in `docs/RELEASING.md` before every
@@ -2871,8 +2927,14 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Real phone:** the check again on the OnePlus after the fix; once on the tester's Samsung at T-037 (P4).
 
 ### T-073 Open shared plan: say when the serve date was moved
-- **Status:** built on the agent's branch, unit-tested, not gated (`npm run check` not run), not seen on a
-  device.
+- **Merged and changed, 2026-11-16 (main session):** fast-forwarded onto `main`. Jason then asked for one
+  change: in the under-an-hour case Pick a date opens on the shared date (today), not the moved one, as long
+  as the moved date is still the one set (`SharedPlanSheet.tsx` `pick`); a passed time and a date the user
+  picked before open as they did. Two RNTL tests. To do with the merge (Jason): one emulator check with the
+  real Android date dialog (a plan under an hour out, the note, Pick a date opens on today, pick today, the
+  note goes and the plan keeps today) and a picture of the sheet with the note for mockup 11.
+- **Status:** merged onto `main` and gated 2026-11-16, with the picker change below. The emulator check with
+  the real date dialog is the last step (see below).
 - **Why:** 0.2.0's `suggestServe` moves the date silently: a shared serve time that is less than an hour out
   becomes the next same weekday at the same local time, and the only sign is the date on the first "Serve on"
   chip. Found 2026-11-16 when a test plan landed a week out. The note was not in SPEC. The rule itself stays
@@ -2901,3 +2963,19 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   `src/screens/plan/SharedPlanSheet.test.tsx`, "Serve on" (passed, under an hour, kept, both edges, the note
   going and coming back with the selection, Pick a date today).
 - **Device testing (Jason):** the sheet at 115% with a plan that is under an hour away and one that has passed.
+
+
+### T-074 Alert and label wording: the Serve alert, the stepper, the shift buttons
+- **Status:** todo. Approved by Jason, 2026-11-16 (his answers to `docs/proposals/2026-11-16-open-decisions.md`,
+  items 3 and 4, "as one small task").
+- **Serve alert:** today its title and text are both "Serve" ("Serve Serve."; its last repeat reads "Cook
+  needs you" / "Serve: Serve."). New: title "Time to serve", text the menu with plain names, each once
+  (for example "Brisket, chicken wings and chicken breasts."). The `serve` event's label on Live cook stays.
+- **Stepper labels (accessibility):** "More weight" / "Less weight" for foods by weight; for foods by count
+  the unit, "More breasts" / "Less breasts" (today "More quantity" / "Less quantity" for tri-tip, pork butt,
+  wings, turkey and chicken breasts; `src/screens/plan/FoodEdit.tsx`). The `turkey` device test names the old
+  labels (`tools/device/run.sh`) and needs the new ones.
+- **Cook options:** "More shift" / "Less shift" become "Later" / "Earlier".
+- **Tests:** engine test for the Serve alarm's title and text (one food, several, two of the same food);
+  RNTL for the three label pairs; the device test's labels.
+- **Device testing (Jason):** the Serve alert on the lock screen at 115%.

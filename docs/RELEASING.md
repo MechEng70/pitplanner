@@ -140,6 +140,36 @@ tools/device/avd.sh stop
 For 0.3.0, T-038 adds the upgrade on Jason's phone with his real data and a live cook. Every phone action
 is listed first and waits for his yes.
 
+## 5b. Locked-reboot test on the emulator (required before every release)
+
+Required for every release (Jason, 2026-11-16, T-072): a phone that restarts overnight must have its cook's
+alarms back before anyone unlocks it. On request at other times.
+
+```
+tools/device/locked-reboot.sh release/pitplanner-<version>.apk
+```
+
+- It runs on its own emulator, `pitplanner-lock` (the usual image with a PIN, so it boots locked like a
+  phone after a restart). The script starts and stops it; the usual emulator is stopped first.
+- It installs the release APK, goes through Setup, opens a plan file made for the run from the Files app,
+  starts the cook, restarts the emulator, and while it is still locked checks: the app did not crash, every
+  alarm still to come is registered again, and the first step that comes due rings (its alert is posted and
+  its repeat is set). Then it unlocks and checks the app opens on the cook. About 20 to 25 minutes: it waits
+  for a real step to come due.
+- **The one place data is cleared.** At the start of each run the script runs `pm clear` on Pit Planner's
+  data, on the `pitplanner-lock` emulator only. Jason's limit (2026-11-16): nowhere else, not the main
+  emulator, not his phone. The script checks the target itself before clearing (an emulator serial, and
+  the emulator's own name read back) and stops if it is anything else. Do not copy that line elsewhere.
+- A release APK only. A dev build fails this test by design: it crashes at start while the phone is locked,
+  in React Native's developer support code, which a release build does not run
+  (`docs/alarm-testing.md`, "Locked restart on an emulator with a PIN"). That is a limit of dev builds: after
+  a restart, a dev build's alarms come back when the phone is unlocked.
+- The emulator proves the app's start-up while locked. It does not prove a maker's own power management:
+  the same check runs once on Jason's phone with the release build at T-038, and once on the tester's
+  Samsung at T-037.
+
+- [ ] `== locked-reboot: PASS`, with every line above it a `PASS`.
+
 ## 6. Tag and push (Jason's yes first)
 
 - [ ] `git tag v<version>` on the commit that was built. The tag must match `package.json` (`v0.3.0`).

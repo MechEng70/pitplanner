@@ -67,6 +67,17 @@ Upgrade with a live cook (T-016, T-038): after `setup`, `upgrade020.sh live` sta
 `upgrade020.sh alarms` lists the release app's pending alarms in AlarmManager beside its own stored set, before
 and after `adb install -r` of the new build. The steps and what to look for are in `docs/alarm-testing.md`.
 
+## Locked reboot (its own emulator, a release APK)
+
+`tools/device/locked-reboot.sh <release apk>` (T-072; required before every release, `docs/RELEASING.md`
+section 5b) checks that after a restart, while the device is still locked, a release build has its cook's
+alarms registered again and a step that comes due rings. It uses a second emulator, `pitplanner-lock`
+(`AVD_LOCK=1 tools/device/avd.sh start`; PIN `LOCK_PIN` in `lib.sh`), drives the app, the Files app and the
+lock screen with `uiautomator` and `input` alone, and writes `out/locked-reboot.txt`. It is the only tool
+here that clears an app's data: Pit Planner's, on `pitplanner-lock` only, at the start of each run (Jason's
+limit; the script checks the target before it clears). `adb reboot` ends a headless emulator, so the script
+restarts it with `avd.sh stop` and `start`. A dev build fails this test by design (see RELEASING).
+
 ## Safety
 
 The phone is Jason's own. With `--phone`, `run.sh` wakes it and stops if it is locked; backs up the dev build's data

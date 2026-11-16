@@ -86,7 +86,7 @@ session's "Restart" (items 2 to 4, 6 to 8) still hold.
   another speed), device test `fast-cook` (240 times, saves a picture at every step and alert to
   `tools/device/out/fast-cook-N.png`). Emulator only (Jason); he approved the pictures.
 - **T-059** whole turkey: in `data/foods.json` with cited sources, the 225F floor issue, its own "Unusual
-  rate" range from 0.33 hr/lb. Smoker flame icon, no size warning, rest 30 / 20. Not yet seen on a device.
+  rate" range from 0.33 hr/lb. Smoker flame icon, no size warning (changed 2026-11-16: an info line above 16 lb), rest 30 / 20. Not yet seen on a device.
 - **Prep steps** on every food are plain reminders ("Prep the brisket."), Jason's wording.
 - **T-065** tap the address to copy it (`expo-clipboard`, `src/platform/clipboard.ts`); dev build rebuilt and
   on the emulator; `followups` passes at 115%; Jason approved `rn-debug-copied.png`.

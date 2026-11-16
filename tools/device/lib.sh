@@ -10,6 +10,9 @@ OUT="${DEVICE_OUT:-$DEVICE_DIR/out}"
 PKG=io.github.mecheng70.pitplanner.debug
 MAESTRO="${MAESTRO:-$(command -v maestro || echo "$HOME/.maestro/bin/maestro")}"
 METRO_PORT=8081
+# The PIN of the emulator that has a screen lock (avd.sh AVD_LOCK=1, the locked-reboot test). An emulator's
+# PIN, never a phone's: nothing here unlocks a phone.
+LOCK_PIN=1111
 # Present = Jason has said not to touch his phone (the file says why and until when). Only he lifts it.
 PHONE_BLOCK_FILE="${PHONE_BLOCK_FILE:-$DEVICE_DIR/PHONE-BLOCKED}"
 

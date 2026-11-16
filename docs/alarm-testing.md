@@ -161,9 +161,15 @@ the headless emulator, so a restart here is `avd.sh stop` then `start`.
 | Release build 0.3.0-alpha.4 (`io.github.mecheng70.pitplanner`), a cook started through its own screens, 10 alarms | **Pass, twice.** Android started the app for RestoreReceiver; all 10 alarms registered again; the process alive; no crash line. |
 | Dev build (`...pitplanner.debug`), `dev/alarm?cook=3`, 6 alarms | **Fail**, as on the OnePlus. `MainApplication.onCreate` builds the React host, whose dev support (`DevInternalSettings`, through `expo-dev-launcher`) reads default SharedPreferences in credential-encrypted storage: `IllegalStateException`, the process dies, 0 alarms. |
 
+The scripted test, `tools/device/locked-reboot.sh release/pitplanner-0.3.0-alpha.5.apk`, 2026-11-16 (T-072), on
+the same emulator: **PASS**. A cook started at 11:1x with 5 alarms; after the restart, still locked
+(`RUNNING_LOCKED`): no crash, all 5 alarms registered again, the step due at 11:35:00 rang (its alert posted
+on the step channel) and its repeat was set; after the PIN the app opened on the running cook. This is the
+case the hand run above had not shown: a step that comes due before the first unlock.
+
 So the failure seen on the phone is in code that only a dev build runs. A release build restores its alarms
 before the first unlock on this emulator. Not yet shown: a release build on a real phone (T-038, and the
-tester's Samsung at T-037), and a step that comes due while still locked.
+tester's Samsung at T-037).
 
 ## Shared .pitplan file, cold start, 2026-11-16 (T-031 stand-in)
 

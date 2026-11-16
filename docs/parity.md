@@ -19,8 +19,8 @@ Everything that is not OK. T-034 is done when each row is fixed or accepted by J
 
 | # | SPEC | The build | Recorded OK? | Decision |
 |---|---|---|---|---|
-| D1 | Open shared plan: "the receiver picks ... their own cookers" (section 3) | Nothing to pick: "Your smoker" is read-only and foods are mapped onto the receiver's cookers (`SharedPlanSheet.tsx:91-107`, `mapToCookers`). Same as 0.2.0. | Screenshot approved (T-030), the difference itself not written down | **Jason, 2026-11-15: add a choice.** New UI: T-070, design to be approved first |
-| D2 | Temp menu: "Show all" | The button reads "Show 180-500F", the cooker's range (`TempMenu.tsx:86-92`). Same as 0.2.0. | Screenshots approved (T-018), wording not written down | Jason, 2026-11-16: keep as built |
+| D1 | Open shared plan: "the receiver picks ... their own cookers" (section 3) | Nothing to pick: "Your smoker" is read-only and foods are mapped onto the receiver's cookers (`SharedPlanSheet.tsx:91-107`, `mapToCookers`). Same as 0.2.0. | Screenshot approved (T-030), the difference itself not written down | Jason, 2026-11-16: closed, handled by Food details after import (T-070 moved to after 0.3.0) |
+| D2 | Temp menu: "Show all" | The button reads "Show 180-500F", the cooker's range (`TempMenu.tsx:86-92`). Same as 0.2.0. | Screenshots approved (T-018), wording not written down | Jason, 2026-11-16: keep as built, the button stays "Show 180-500F" |
 | D3 | Plan, empty: Cook a past plan again | Shown only when there is a past cook (`PlanEmpty.tsx:46-51`). | Yes: Jason 2026-11-13 (TASKS T-017, T-028) | SPEC edited 2026-11-15 |
 | D4 | Live cook: lane chart "10 AM to serve" | The chart starts at the hour of the first step, "6 AM to serve" (`cookView.ts:94-101`). Same as 0.2.0. | **Jason, 2026-11-15: keep as built** | accepted; SPEC edited 2026-11-15 |
 | D5 | Cook finished: Back to the cook "beside Discard this cook" | On its own line under Discard (`FinishScreen.tsx:94-101`). | Yes: Jason (TASKS T-063) | SPEC edited 2026-11-15 |
