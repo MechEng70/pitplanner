@@ -53,6 +53,17 @@ export function ratesRepo(db: Db) {
     setRate: (foodId: string, hrPerLb: number | null, now: number) => put('hr_per_lb', foodId, hrPerLb, now),
     setTotalHours: (foodId: string, hours: number | null, now: number) => put('total_hours', foodId, hours, now),
     setLock: (foodId: string, locked: boolean, now: number) => put('locked', foodId, locked ? 1 : 0, now),
+    /** Remove every saved rate, total hours and lock (a restore, T-036). A row with an unreadable value is kept aside first. */
+    clear(now: number): void {
+      db.transaction(() => {
+        const rows = db.all<Row>('SELECT food_id, hr_per_lb, total_hours, locked FROM rate_overrides ORDER BY food_id');
+        for (const row of rows) {
+          const bad = (['hr_per_lb', 'total_hours', 'locked'] as const).some(c => unreadable(c, row[c]));
+          if (bad) quarantine(db, `rate_overrides:${row.food_id}`, JSON.stringify(row), now);
+        }
+        db.run('DELETE FROM rate_overrides');
+      });
+    },
   };
 }
 export type RatesRepo = ReturnType<typeof ratesRepo>;

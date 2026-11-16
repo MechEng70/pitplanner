@@ -2200,14 +2200,44 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** none.
 
 ### T-036 Data export
-- **Status:** todo
+- **Status:** logic built 2026-11-16 on the T-036 agent branch, unit-tested, not gated (`npm run check` not
+  run). No screen part: nothing in SPEC or the mockups shows Export or Import, so the UI waits for Jason's
+  answers in `docs/proposals/2026-11-16-data-export-ui.md`. (SPEC has no "history exportable" line; that is
+  0.2.0's `legacy/src/lib/history.ts:1`.)
 - **Goal:** Gear > Export shares a JSON dump of cookers, rates and history (SPEC: history exportable); importing
   that file restores it.
-- **Files:** `src/db/export.ts` (the dump exists since T-010: every table, raw, including quarantine rows; this
-  task adds reading it back), `src/screens/gear/GearScreen.tsx`, tests.
+- **Files:** `src/lib/dataFile.ts` (pure: `buildDataFile`, `dataFileName`, `readDataFile`), `src/db/restore.ts`
+  (`restoreData`), `src/db/repos/rates.ts` (`clear`), `src/db/repos/index.ts` (`transaction`),
+  `src/lib/store.tsx` (`restoreData`). Still to come with the UI: `src/screens/gear/GearScreen.tsx`.
+- **Built:**
+  - The file, format `pitplanner-data` version 1, compact JSON, name `pitplanner-data-<UTC date>-<hhmm>.json`:
+    `format`, `version`, `exportedAt`, `appVersion`, `units`, `gear` (smoker, griddle, oven), `rates`,
+    `totalHours`, `rateLocks` (by food id), `history` (CookRecord[]: id, date, notes, pitTempF, lateMin
+    number/null/absent, items with name, plannedMin, actualMin, log), `flags` (the one-time hints).
+    Left out: the running cook (its alarms belong to the phone), the plan draft (Share plan moves plans),
+    `ui`, the event log, the update check, `legacy_import`, dev flags, quarantine rows (these stay in the
+    error screen's "Export my data" dump for Jason).
+  - The reader treats the file as untrusted: 2,000,000 character cap before parsing; format and version
+    check (`newer` asks for an update); every field checked by type and range and rebuilt from known fields
+    only (unknown fields ignored, nothing path- or URI-like is ever read); foods and methods checked
+    against `data/foods.json`; rates within `rateLimits`, total hours 0.25-36; ids `[A-Za-z0-9_.:-]`, 64
+    chars; at most 1000 cooks (the newest) and 20 foods per cook; notes over 5000 chars cut. Each thing left
+    out is listed (`part`, `key`, `reason`). A file with nothing to restore is refused, so it cannot wipe a
+    phone. It also reads the error screen's dump (`pitplanner-export`, schema 1), so that file can be
+    restored on a new install.
+  - Restore: replace, in one transaction through the repositories; the caller passes `'replace'` after the
+    user agreed. Refused while a cook runs. Never touches `active_cook` or any kv row but `units` and
+    `flags`. No cookers in the file keeps the phone's; flags are joined. Unreadable values on the phone are
+    quarantined before they are replaced. Any failed write undoes all of it.
+- **Choices made without Jason (flag):** replace, not merge; refuse during a cook; a history food or method
+  the app does not know is left out (the app tolerates them in history, so keeping them is possible); out of
+  range numbers drop the value, never clamp; 1000-cook cap (the app has none); flags joined; plan untouched.
+- **Open questions:** see the proposal page (placement and wording, file picker vs open-with, replace vs
+  merge, a restore offer on Setup, Gear's file vs the full dump, `.json` vs its own extension).
 - **Depends on:** T-028, T-029.
 - **Acceptance:** export on the dev build, import on a fresh install, rates and history match.
-- **Tests:** Jest round trip; bad-file validation.
+- **Tests:** Jest round trip; bad-file validation. Built: `src/lib/dataFile.test.ts` (19),
+  `src/db/restore.test.ts` (7), `src/test/restore.test.tsx` (2).
 - **Device testing (Jason):** none.
 
 ### T-067 Fast test cook: a whole cook in minutes
