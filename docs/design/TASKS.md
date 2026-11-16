@@ -3116,7 +3116,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** Food details for tri-tip with no griddle at 115%; the import box.
 
 ### T-076 Serve moves for one food: the others follow
-- **Status:** todo. Must-fix for 0.3.0 (Jason, 2026-11-16). Build after T-069 merges. Report:
+- **Status:** in progress on an agent branch (2026-11-16). Must-fix for 0.3.0 (Jason, 2026-11-16). Report:
   `docs/proposals/2026-11-16-lock-screen-actions.md`.
 - **Fault:** the lock screen and the app give identical plans; the fault is in the engine. `extendCook` and
   `markStepDone` (`engine/live.ts`) move one food and serve and leave the rest, so the other foods' holds
@@ -3128,9 +3128,74 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   4. Fix Back up to temp (`pitOutage`) in the same change.
   5. Done early with Move serve: **propose the rule with tests before building.** His rule: serve no
      earlier than the slowest other food can still be ready from now; otherwise keep serve.
-- **Closed-app limit, to evaluate before building:** the native side shifting every later alarm by the same
-  minutes when a lock-screen tap moves serve, with the app re-planning on next open. Report the cost to
-  Jason first; wanted for 0.3.0 only if small.
+- **Done early with Move serve: the rule (Jason approved 2026-11-16, choices 1A, 2A, 3A, 4A).** It applies
+  only to `markStepDone` with a step done early and Move serve (the in-app sheet; the lock screen never
+  moves serve earlier). In plain words: serve moves earlier only as far as every other food can still come
+  off the heat and rest to its minimum. (1A) "Ready" is off the heat and rested to its minimum, the floor
+  Keep serve already uses (`min(restFloorMin, restMin)`, `engine/live.ts` about 252-256). (2A) Foods not on
+  yet start sooner and keep their planned rest; holds give the remainder. (3A) The move stops short of any
+  smoker conflict the keep-serve plan does not already have. (4A) When the rule gives no earlier serve, no
+  Keep or Move sheet: serve is kept. A food on the heat never cooks shorter; only its hold can give.
+  ```
+  K = markStepDone(..., keepServe = true)          // done food earlier, serve kept
+  d = minutes early (on the 5-min grid)
+  nowG = ceil5(now); floor = ceil5(max(now, quietUntil))
+  for each other food i:
+    first_i  = its earliest phase-start or pull step not in done
+    lateBy_i = first_i.at < nowG ? nowG - first_i.at : 0
+    slack_i  = 0 if it is on or off the heat, or lateBy_i > 0
+             else the largest multiple of 5 min, at most d, such that moving all its phases earlier by it
+             keeps every future event it drags at or after floor (its phase starts, its future prep, and
+             the fire / griddle on / oven on / set-smoker times worked out from it) and makes no smoker
+             conflict that K does not already have
+    ready_i  = finish_i + lateBy_i - slack_i + min(restFloorMin, restMin) + sliceMin
+  S = ceil5(max(K.serveAt - d, max_i ready_i))
+  S >= K.serveAt -> the result is K (keep serve)
+  else D = K.serveAt - S; each other food moves m_i = min(D, slack_i) earlier; its hold shrinks by
+       D - m_i (never below its minimum); the done food's hold grows by d - D
+  ```
+  The engine has no list of done steps (it judges "started" by time); the done list is `ActiveCook.done`
+  (`src/lib/cook.ts`), so `markStepDone` gets an optional last parameter `{ now, done, notBefore }`. Steps
+  never move into Quiet time. One food: serve moves by the full amount, as today. Under 5 min off: no
+  sheet, the rule never runs.
+- **Test cases computed by the report's prototype (2026-11-16).** 3F is `input` in `engine/cook.test.ts`
+  (brisket on 6:40 AM, wrap 11:35 AM, off 3:40 PM, hold 60, min 30, slice 20; wings on 3:15, 400F 4:05, crisp
+  4:20, off 4:55, hold 5, min 0; breasts griddle on 4:25, on 4:40, off 4:52, hold 8, min 5; serve 5:00 PM).
+  4F is 3F plus St. Louis ribs 3-2-1, 2 lb (on 10:05 AM, wrap 1:05, unwrap 3:05, off 4:05, hold 45, min 10).
+  Steps before `now` are done on time unless said. Recompute each before pinning it.
+  - T1: 3F, wrap Done 11:15 AM (20 early), Move: serve 4:40; brisket off 3:20, hold 60; wings on 2:55, 400F
+    3:45, off 4:35, hold 5; griddle 4:05, breasts 4:20 to 4:32, hold 8. (Today: wings hold -15, breasts -12.)
+  - T2: brisket alone (`src/lib/fixtures/saturday.ts`), same Done: serve 4:40, off 3:20, hold 60 (unchanged).
+  - T3: 3F, the wings' 400F step Done at 3:50 (15 early), brisket off since 3:40: serve 4:45; brisket hold
+    45; wings off 4:40, hold 5; griddle 4:10, breasts 4:25 to 4:37, hold 8.
+  - T4: 3F, wrap Done 8:35 AM (3 hr early): serve 2:00; brisket off 12:40, hold 60; wings on 12:15, off 1:55,
+    hold 5; breasts 1:40 to 1:52, hold 8.
+  - T5: 4F, ribs unwrap Done 2:45 (20 early): serve 4:40; brisket (on heat) hold 40; wings on 2:55, 400F 3:45;
+    breasts 4:20 to 4:32.
+  - T6: 4F, ribs unwrap Done 2:25 (40 early): serve 4:30; brisket hold 30 (its min); wings move 25, not 30
+    (400F at 3:40, as the brisket comes off), hold 0; breasts 4:10 to 4:22; ribs hold 55.
+  - T7: 4F, wrap Done 11:15 AM, ribs "on" (10:05 AM) never tapped: serve stays 5:00, the Keep plan; no sheet.
+  - T7b: the same with ribs on: serve 4:55; ribs at 225F until 4:05 block the wings' climb; wings stay, hold
+    0; breasts 5 min earlier.
+  - T8: 4F, ribs unwrap Done 2:50 (15 early), Quiet until 3:20: serve 4:55; the wings' 3:15 step is in Quiet
+    and cannot move, hold 0; breasts 5 min earlier. Without Quiet: 4:45, wings on 3:00.
+  - T9, lock screen and app agree: `src/test/cook.ts` `cookAt(AT_1023)`, Done on the wrap at 10:23 AM through
+    `applyActions`, and again 40 min late: the plan deep-equals `doneStep(...)` with the sheet's preselected
+    choice (Keep for early, Move for late); serve 5:00 / 5:40. It pins the agreement; it passes before too.
+  - Also: `cookAt(AT_1023)`, Done at 10:23 AM, Move still gives serve 3:50 PM; wings and breasts now move 70
+    min earlier with it. Four +15 taps on the lock screen give serve 5:30 and holds 5 and 8 (crisp 4:50,
+    griddle on 4:55, breasts on 5:10, off 5:22, wings off 5:25).
+- **Tests that pin the old behaviour and change:** `engine/plan.test.ts` "wrapping 15 min late shifts only
+  the brisket" (split into a Keep case and a Move case) and "pit outage adds downtime plus recovery to
+  smoker items only" (title, plus a breasts assertion); `src/lib/cook.test.ts` "+15 min tapped on the lock
+  screen can make a conflict: it is on the plan, and nothing rings for it" (35 and 38); `CookScreen.test.tsx`
+  "both at once are one banner of two sentences with one OK, the conflict first" and "temps in the banner
+  read in Celsius when that is the unit".
+- **Closed app (Jason, 2026-11-16):** no native re-plan in Kotlin (the report: a correct one is about 3
+  days and breaks "never patch alarms one at a time"; the naive shift is wrong whenever holds cover). To be
+  costed instead, not built: a React Native headless task started by the lock-screen action's receiver that
+  runs the same JS path as the app (`applyActions`, then the alarm sync) without opening the UI. Until
+  then a lock-screen tap with the app closed is queued and the other alarms move when the app opens.
 - **Files:** `engine/live.ts`, `src/lib/cook.ts`, `src/screens/cook/CookScreen.tsx`, tests; `modules/pit-alarms`
   only if the closed-app part is approved.
 - **Tests:** regression tests that fail first, one of them pinning that the lock screen and the app agree.
