@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { buildPlan } from './plan.ts';
 import { markPullDone, markStepDone, extendCook, pitOutage, postponeStep, smokerOverlaps, holdsCover } from './live.ts';
 import { alarmsFromPlan, keyedEvents } from './alarms.ts';
-import type { Plan, PlanInput, SmokerProfile } from './types.ts';
+import type { ItemInput, Plan, PlanInput, SmokerProfile } from './types.ts';
 
 const rules = JSON.parse(readFileSync(new URL('../data/foods.json', import.meta.url), 'utf8'));
 const MIN = 60_000;
@@ -429,4 +429,33 @@ test('Done early, Move: the result never has a smoker conflict, or a longer one,
     for (const [pair, m] of clashMin(early(inp, p, id, phase, t, o)))
       assert.ok(m <= (keep.get(pair) ?? 0), `${id} ${phase}: ${pair} ${m} min, Keep ${keep.get(pair) ?? 0}`);
   }
+});
+
+test("Done early, Move: a food never goes on the smoker before it is lit and up to that food's temp", () => {
+  const griddle = input.items[2]; // breasts on the griddle, on at 4:40 PM
+  const hot: ItemInput = { id: 'h', foodId: 'wings', methodId: 'hot', quantity: 2 }; // 350F, on at 3:55 PM
+  const preheat = pitBoss.preheatMin * MIN;
+  // The wings are the only smoker food: the smoker is lit at 3:35 PM for them. At 3:40 the breasts go on 60
+  // min early. The wings could go on at 3:40 by the clock, but the smoker is not at temp until 3:55.
+  const lit: PlanInput = { ...input, items: [hot, griddle] };
+  const p1 = buildPlan(rules, lit);
+  const keep1 = markStepDone(rules, lit, p1, 'c', 'cook', local(15, 40), true).plan;
+  assert.equal(keep1.fireAt, local(15, 35));
+  const q1 = early(lit, p1, 'c', 'cook', local(15, 40));
+  assert.equal(q1.fireAt, keep1.fireAt, 'a fire already lit cannot move');
+  assert.ok(at(q1, 'h', 'cook') >= keep1.fireAt! + preheat);
+  // The brisket at 225F comes off at 3:40 PM and the smoker goes up to 350F for the wings then (set at 3:40,
+  // at temp at 3:55). At 3:45 the breasts go on 55 min early. The wings could go on at 3:45 by the clock and
+  // they would no longer share the smoker with the brisket, but the smoker is still climbing.
+  const climb: PlanInput = { ...input, items: [input.items[0], hot, griddle] };
+  const p2 = buildPlan(rules, climb);
+  const set = keyedEvents(p2).find(k => k.event.kind === 'setPit')!.event;
+  assert.equal(set.at, local(15, 40));
+  const q2 = early(climb, p2, 'c', 'cook', local(15, 45));
+  assert.ok(at(q2, 'h', 'cook') >= set.at + 15 * MIN);
+  assert.equal(
+    keyedEvents(q2).find(k => k.event.kind === 'setPit')!.event.at,
+    set.at,
+    'a set-smoker step already done cannot move',
+  );
 });

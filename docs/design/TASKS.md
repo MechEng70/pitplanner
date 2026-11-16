@@ -3240,6 +3240,22 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
     worse than Keep). Pinned by "the result never has a smoker conflict, or a longer
     one, that Keep serve does not" (T1 to T8 and wings hot at 350F with breasts on the smoker at 225F).
   - Back up to temp with Move serve moves the other foods from the time the pit is back up.
+  - Accepted by Jason (2026-11-16): stopping at the first 5 min that clashes or drags a step too early; past
+    steps, refill and smoker-off times not checked; Back up to temp moving the others from the time the pit
+    is back up.
+  - A food moved sooner never goes on the smoker before it is lit and at temp (Jason, 2026-11-16): its first
+    smoker phase is never before fire + preheat, nor before a set-smoker step + the climb. `startSooner`
+    checks every fire and set-smoker step the Keep plan does not have at that time, past or not, against the
+    floor (a lit fire or a done set-smoker step cannot happen again earlier). Pinned by "a food never goes on
+    the smoker before it is lit and up to that food's temp" (wings hot at 350F: smoker lit at 3:35 for 3:55;
+    and set to 350F at 3:40 after the brisket); it fails without that check.
+  - The lock screen never moves serve earlier (Jason, 2026-11-16; this replaces "in practice"). A food done
+    early from the alert that was already short of its minimum rest keeps serve; the other foods are not
+    re-planned. This is the one case where the lock screen and the in-app sheet's preselected choice differ:
+    there Keep serve does not cover the food, so the sheet preselects Move serve, which can bring serve
+    earlier (the test: wrap put off an hour with Keep, then done 20 min early at 12:15 PM; lock screen 5:00
+    PM, brisket rest 20 min; the sheet's Move serve 4:55 PM). The T-069 banner shows conflicts and long holds
+    only, so a short rest itself adds no banner line; it stays on the plan as REST_SHORT.
   - Without a done list (engine callers other than `doneStep`), a step counts as done when it is due before
     now.
 - **Check on a device (Jason, at 115%):** on a two-food cook, +15 min on the lock screen until serve moves,

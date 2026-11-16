@@ -232,7 +232,7 @@ export function keepServeIfCovered(run: (keepServe: boolean) => ActiveCook): Act
 
 /**
  * Done and +15 tapped on a notification while the app was closed. Keeps serve when the holds absorb
- * the change, else moves serve (no food comes off after serve). Adds to `notice` so the Cook tab
+ * the change, else moves serve later (no food comes off after serve), never earlier. Adds to `notice` so the Cook tab
  * says what changed.
  */
 export function applyActions(c: ActiveCook, actions: NotificationAction[]): ActiveCook {
@@ -246,7 +246,10 @@ export function applyActions(c: ActiveCook, actions: NotificationAction[]): Acti
       const title = stepText(k.event.label).title;
       const run = (keep: boolean) =>
         a.type === 'done' ? doneStep(cur, key, a.at, keep).cook : postpone(cur, key, a.at, 15, keep);
-      const next = keepServeIfCovered(run);
+      // The lock screen never moves serve earlier (Jason, 2026-11-16): a food done early that was already short
+      // of its minimum rest keeps serve, and the other foods are not re-planned.
+      const covered = keepServeIfCovered(run);
+      const next = covered.plan.serveAt < cur.plan.serveAt ? run(true) : covered;
       said.push(
         a.type === 'done'
           ? `${title}: done at ${fmtTime(a.at)} from the alert.`

@@ -342,6 +342,25 @@ describe('serve moves for one food: the others follow (T-076)', () => {
     }
   });
 
+  test('the lock screen never moves serve earlier, even for a food already short of its minimum rest (Jason)', () => {
+    // Not yet on the wrap check, an hour, with serve kept: the brisket comes off at 4:40 PM with no rest. Then
+    // the wrap is done from the alert at 12:15 PM, 20 min early: Keep serve still leaves it 20 min, under its 30.
+    const behind = postpone(fresh, wrap, AT_1023, 60, true);
+    expect(hold(behind, 'b')).toBe(0);
+    const doneAt = at(12, 15);
+    const lock = applyActions(behind, [{ type: 'done', alarmId: wrap, keys: [wrap], at: doneAt }]);
+    expect(lock.plan.serveAt).toBe(at(17, 0));
+    expect(hold(lock, 'b')).toBe(20);
+    // Serve kept and the other foods not re-planned: the same plan as Done with Keep serve in the app.
+    expect(lock.plan).toEqual(doneStep(behind, wrap, doneAt, true).cook.plan);
+    expect(lock.notice).not.toMatch(/Serve moved/);
+    // The one case where the lock screen and the app's preselected choice differ: Keep serve does not cover
+    // the brisket, so the sheet preselects Move serve, and Move serve brings serve 5 min earlier.
+    const r = doneStep(behind, wrap, doneAt);
+    expect(holdsCover(r.ask!.keepServe.plan)).toBe(false);
+    expect(r.ask!.moveServe.plan.serveAt).toBe(at(16, 55));
+  });
+
   test('Done 72 min early on the wrap, Move serve: serve 3:50 PM and the wings and breasts move 70 min earlier', () => {
     const r = doneStep(fresh, wrap, AT_1023);
     const move = r.ask!.moveServe;

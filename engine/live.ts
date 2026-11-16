@@ -191,7 +191,9 @@ function moveEarlier(it: PlannedItem, min: number) {
 /**
  * How many minutes (a multiple of 5, at most maxMin) food `id` can start sooner than in `kept`: each step of
  * 5 min up to it keeps every future step it drags (its own steps and prep, and the fire, griddle, oven and
- * smoker temp steps worked out from it) at or after `floor`, and adds no smoker conflict.
+ * smoker temp steps worked out from it) at or after `floor`, and adds no smoker conflict. A fire or set-smoker
+ * step is checked even when its Keep plan time is past: one already done cannot be done again earlier, so the
+ * food never goes on before the smoker is lit (fire + preheat) and up to its temp (set + climb).
  */
 function startSooner(
   rules: Rules,
@@ -203,6 +205,9 @@ function startSooner(
   floor: number,
 ): number {
   const before = new Map(keyedEvents(kept).map(k => [k.key, k.event.at]));
+  const pitSteps = (p: Plan) =>
+    p.events.filter(e => e.kind === 'fire' || e.kind === 'setPit').map(e => `${e.label}@${e.at}`);
+  const keptPit = pitSteps(kept);
   const clash = conflictMin(kept, id);
   let ok = 0;
   for (let s = STEP_MIN; s <= maxMin; s += STEP_MIN) {
@@ -216,6 +221,16 @@ function startSooner(
       return was == null || (was !== k.event.at && was >= now);
     });
     if (dragged.some(k => k.event.at < floor)) break;
+    // A fire or set-smoker step the Keep plan does not have at that time, past or not.
+    const left = [...keptPit];
+    const newPit = cand.events.filter(e => {
+      if (e.kind !== 'fire' && e.kind !== 'setPit') return false;
+      const i = left.indexOf(`${e.label}@${e.at}`);
+      if (i < 0) return true;
+      left.splice(i, 1);
+      return false;
+    });
+    if (newPit.some(e => e.at < floor)) break;
     const c = conflictMin(cand, id);
     if ([...c].some(([other, m]) => m > (clash.get(other) ?? 0))) break;
     ok = s;
