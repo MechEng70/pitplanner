@@ -2274,7 +2274,22 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     was changed."
   - A history food the app does not know is kept on restore (today the reader leaves it out: change it).
   - No "Restore from a file" on Setup in 0.3.0: in `docs/design/BACKLOG.md`.
-  - Build order: after T-077 merges (both touch the data file and restore path), then an agent.
+- **Screen built and merged onto `main`, 2026-11-16, gated:** Gear rows, the file picker
+  (`expo-document-picker` ~58.0.5: a new dev build, no config change; its manifest adds an OPEN_DOCUMENT
+  `<queries>` entry), the confirm sheet and the refusals, `src/lib/restoreText.ts` (the sentences, singular
+  and plural), `src/platform/pickFile.ts`, `shareDataFile`, kit icons Upload and Download (paths from the
+  mockup). A history food the app does not know is kept; a known food with an unknown method is still left
+  out. Tests: `dataFile.test.ts` 21, `GearData.test.tsx` 19, `restoreText.test.ts` 11, `pickFile.test.ts` 6,
+  `shareFile.test.ts` +1. Not seen on a device.
+- **Choices made in the build (not decided by Jason):** a count of zero is left out of the sentences (open
+  with him: a restore empties the phone's rates and cooks even when the file has none, and the sentence
+  then does not mention them); refusals and the Restored line show in the existing notice sheet titled
+  "Restore from a file" with OK; a running cook is refused when the row is tapped, before the picker; the
+  date reads "Nov 16" (`fmtMonthDay`, local time, no year); a file over 1000 cooks counts as 1 part left
+  out; the picker offers any file type; one new string, shown only if the database write fails and is
+  undone: "The restore did not work. Nothing was changed."
+- **Device testing (Jason):** export on the dev build, restore on a fresh install, rates and history match;
+  a cancelled picker; a refusal.
 - **Status:** logic built 2026-11-16 on the T-036 agent branch, unit-tested, not gated (`npm run check` not
   run). No screen part: nothing in SPEC or the mockups shows Export or Import, so the UI waits for Jason's
   answers in `docs/proposals/2026-11-16-data-export-ui.md`. (SPEC has no "history exportable" line; that is
