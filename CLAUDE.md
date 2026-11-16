@@ -20,6 +20,21 @@
 - No UI element that isn't in `docs/mockups` or SPEC without asking Jason first.
 - UI copy: plain, short, no exclamation marks except greetings. Straight apostrophes.
 
+# Models and agents
+
+- Main session: the strongest model available (Fable when included). It plans, merges, runs the gate and talks
+  to Jason.
+- Agents: the cheapest model that can do the job well. Fable for design judgment, tricky native or debugging
+  work, security decisions. Opus for implementation from a clear spec, tests, refactors, code review. Sonnet or
+  Haiku for mechanical work (the dashboard keeper, doc edits, log scraping).
+- Run independent tasks in parallel, each in its own worktree off local `main`: no emulator, no gate in the
+  worktree, stop with a report.
+- Never run two agents that edit the same file; sequence those.
+- Device work is serial, one emulator job at a time. The main session owns the emulators and the phone.
+- Merge one branch at a time, run the gate after each merge, then delete the worktree and branch.
+- At most 5 agents at once. Stack UI reviews for Jason into one list.
+- If the Fable allowance passes 80%, move agents to Opus first, then the main session.
+
 # Plan
 
 - Engineering plan: `docs/design/TECH-DESIGN.md` (architecture, layer rules, platform services, alarms,
