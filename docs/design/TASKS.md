@@ -2225,11 +2225,13 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - 10: SE-001 and SE-002 name `tools/snyk.sh`; TECH-DESIGN section 10 names `exp+pitplanner` and BROWSABLE.
 - **Left as they are (Jason, 2026-11-16):** finding 7 (dev leftovers in the release build: dev routes,
   `exp+pitplanner`, `_sitemap`) and finding 9 (Send to developer free text, old cache copies).
-- **Still to do (main session):** apply the fixture patch for `engine/update.test.ts` and
-  `GearScreen.test.tsx` (their example.org APK links fail the pin of finding 8); run the pit-share Kotlin
-  tests; change the device test `shared` (it opens a file from the app's own cache, now refused by design);
-  `npm run check`; build `--version 0.3.0-beta.1` and check its version, update offer, backup rules and
-  permissions on the emulator; a `bmgr` backup/restore check of the rules.
+- **Merged onto `main` 2026-11-16 and gated** (gate self-tests 153, Jest 771; the pit-share Kotlin tests ran
+  for the first time: `OpenedPlanTest`, 27 tests, 0 failures; Semgrep and Snyk Code clean on the new Kotlin
+  and scripts). **Still to do (main session, on the emulator):** change the device test `shared` (it opens
+  a file from the app's own cache, now refused by design: open from Download through Files, keep one
+  own-cache open as the regression); build `--version 0.3.0-beta.1` and check its version, update offer,
+  backup rules and permissions; a `bmgr` backup/restore check of the rules. Jason has not yet seen the
+  agent's choices or the permission list.
 - **Goal:** the release build reviewed: exported components, backup rules (secure-store excluded),
   permissions, no debug flags, no secrets; Semgrep and Snyk clean.
 - **Files:** `plugins/*` as needed, `docs/design/SECURITY-EXCEPTIONS.md`.
