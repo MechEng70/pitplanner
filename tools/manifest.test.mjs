@@ -21,6 +21,11 @@ function mainManifest(variant) {
 }
 const manifests = { production: mainManifest('production'), development: mainManifest('development') };
 const app = m => m.application[0].$;
+/** Permission name -> its attributes, the android.permission. prefix dropped. */
+const permissions = m =>
+  Object.fromEntries(
+    (m['uses-permission'] ?? []).map(p => [p.$['android:name'].replace('android.permission.', ''), p.$]),
+  );
 
 test('regression (finding 2): both variants keep backup on, with explicit rules', () => {
   for (const [variant, m] of Object.entries(manifests)) {
@@ -35,5 +40,27 @@ test('no debug flags in the app manifest', () => {
     assert.equal(app(m)['android:debuggable'], undefined);
     assert.equal(app(m)['android:usesCleartextTraffic'], undefined);
     assert.equal(app(m)['android:requestLegacyExternalStorage'], undefined);
+  }
+});
+
+test('regression (finding 6): the storage permissions are removed from both variants', () => {
+  for (const [variant, m] of Object.entries(manifests)) {
+    const p = permissions(m);
+    for (const name of ['READ_EXTERNAL_STORAGE', 'WRITE_EXTERNAL_STORAGE'])
+      assert.equal(p[name]?.['tools:node'], 'remove', `${variant}: ${name}`);
+  }
+});
+
+test('regression (finding 6): "Display over other apps" is removed from the release; the dev build keeps it', () => {
+  // React Native's developer tools (its debug manifest asks for it too) draw over other apps in a dev build.
+  assert.equal(permissions(manifests.production).SYSTEM_ALERT_WINDOW?.['tools:node'], 'remove');
+  assert.notEqual(permissions(manifests.development).SYSTEM_ALERT_WINDOW?.['tools:node'], 'remove');
+});
+
+test('the release keeps what it uses: INTERNET (update check) and VIBRATE (alerts)', () => {
+  const p = permissions(manifests.production);
+  for (const name of ['INTERNET', 'VIBRATE']) {
+    assert.ok(p[name], name);
+    assert.equal(p[name]['tools:node'], undefined, name);
   }
 });

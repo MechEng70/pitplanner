@@ -46,6 +46,16 @@ test('backup stays on, with explicit rules written at prebuild (plugins/withBack
   }
 });
 
+// T-035, finding 6. The manifest result is tested in tools/manifest.test.mjs.
+test('unused permissions are blocked: storage in both variants, "Display over other apps" in the release', () => {
+  const storage = ['android.permission.READ_EXTERNAL_STORAGE', 'android.permission.WRITE_EXTERNAL_STORAGE'];
+  expect(build('production').android?.blockedPermissions).toEqual([
+    'android.permission.SYSTEM_ALERT_WINDOW',
+    ...storage,
+  ]);
+  expect(build().android?.blockedPermissions).toEqual(storage);
+});
+
 test('development is the default variant; only "production" builds the release app ID', () => {
   expect(variantOf(undefined)).toBe('development');
   expect(variantOf('preview')).toBe('development');

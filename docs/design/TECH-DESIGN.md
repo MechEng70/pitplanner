@@ -358,6 +358,7 @@ Plan of record `docs/HA-INTEGRATION.md`, survey `docs/ha-entities.md`. Changes f
 | `.pitplan` import | Untrusted: 256 KB cap, validated by `src/lib/sharedPlan.ts`, numbers clamped, unknown foods dropped. |
 | Network | HTTPS only for remote HA; anonymous GitHub update check. |
 | Exported components | Main activity only (launcher, `.pitplan` VIEW/SEND, `pitplanner://`); receivers `exported=false`. The `.pitplan` filters (`plugins/pitplanIntents.ts`): VIEW of `content://`/`file://` typed JSON, octet-stream or x-pitplan; VIEW of a path ending `.pitplan`; SEND of those three types. Category DEFAULT only, no BROWSABLE. |
+| Permissions | Release: `INTERNET` (update check), and from `modules/pit-alarms` `POST_NOTIFICATIONS`, `USE_EXACT_ALARM`, `SCHEDULE_EXACT_ALARM` (API 32 and lower), `RECEIVE_BOOT_COMPLETED`, `USE_FULL_SCREEN_INTENT`, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, `VIBRATE`; androidx's own signature permission `<app id>.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`. Blocked in `app.config.ts` (`blockedPermissions`, T-035): `READ/WRITE_EXTERNAL_STORAGE` (both variants, never used) and `SYSTEM_ALERT_WINDOW` (release only; React Native's dev tools use it in the dev build). `tools/manifest.test.mjs` checks the app manifest. |
 | Tool tokens | Snyk and GitHub tokens from the user's own CLI config only. |
 | Static checks | Semgrep + Snyk in `npm run check`; exceptions only via `SECURITY-EXCEPTIONS.md`. |
 
