@@ -17,6 +17,9 @@ object AlarmScheduler {
     const val NAG_REPEATS = 6
     const val SNOOZE_MS = 15 * 60_000L
 
+    /** A +15 min ring is the step's alarm again under its id with this ending. */
+    const val SNOOZE_SUFFIX = "~snooze"
+
     data class Result(val scheduled: Int, val exact: Boolean)
 
     /** Replace the cook's alarm set. Test alarms are left alone. */
@@ -108,7 +111,7 @@ object AlarmScheduler {
 
     fun snooze(ctx: Context, alarm: Alarm, now: Long) {
         val store = AlarmStore(ctx)
-        val again = alarm.copy(id = "${alarm.id}~snooze", at = now + SNOOZE_MS)
+        val again = alarm.copy(id = alarm.id + SNOOZE_SUFFIX, at = now + SNOOZE_MS)
         store.alarms = store.alarms.filterNot { it.id == again.id } + again
         setAlarmClock(ctx, again.at, firePi(ctx, again.id))
     }

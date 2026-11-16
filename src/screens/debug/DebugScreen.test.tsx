@@ -156,6 +156,22 @@ test('Send opens the share sheet once with one file for the address: phone, perm
     nags: [{ alarmId: 'f', keys: ['fire::'], title: 'Fire the smoker', body: 'To 225F.', count: 2, nextAt: NOW }],
   };
   repos.kv.set(EVENT_LOG_KEY, [{ at: NOW - 1000, kind: 'fired', text: 'wrap:b:p1' }], NOW);
+  alarms.ringLog = [
+    {
+      alarmId: 'a',
+      keys: ['wrap:b:p1'],
+      plannedAt: NOW - 60_000,
+      actualAt: NOW - 58_000,
+      elapsedRealtime: 9_000_000,
+      repeat: 0,
+      last: false,
+      source: 'alarm',
+      test: false,
+      idle: true,
+      interactive: false,
+      posted: true,
+    },
+  ];
   await fireEvent.press(screen.getByRole('button', { name: 'Send' }));
   await waitFor(() => expect(report.sent).toHaveLength(1));
   const sent = report.sent[0]!;
@@ -175,7 +191,22 @@ test('Send opens the share sheet once with one file for the address: phone, perm
   expect(file.alarms).toEqual({ alarms: alarms.stored.alarms, repeats: alarms.stored.nags });
   expect(file.data!.tables.active_cook).toHaveLength(1);
   expect(file.log).toEqual([{ at: NOW - 1000, kind: 'fired', text: 'wrap:b:p1' }]);
+  expect(file.rings.error).toBeNull();
+  expect(file.rings.records.map(r => [r.alarmId, r.plannedAt, r.actualAt, r.lateMs])).toEqual([
+    ['a', NOW - 60_000, NOW - 58_000, 2_000],
+  ]);
   expect(file.problems).toEqual([]);
+});
+
+test('a ring log the phone will not hand over is named in its section, and the file is still sent', async () => {
+  const { alarms, report } = await show(false);
+  alarms.failRings = new Error('no ring log');
+  await fireEvent.press(screen.getByRole('button', { name: 'Send' }));
+  await waitFor(() => expect(report.sent).toHaveLength(1));
+  const file = JSON.parse(report.sent[0]!.text) as DebugReport;
+  expect(file.rings).toEqual({ records: [], error: 'Error: no ring log' });
+  expect(file.alarms).not.toBeNull();
+  expect(file.data).not.toBeNull();
 });
 
 test('what the phone will not say is noted in the file, and the file is still sent', async () => {

@@ -1,8 +1,8 @@
 // pit-alarms: step alarms through AlarmManager.setAlarmClock, notifications with Done / +15 min, repeats
 // until a step is handled, and restore after a reboot (TECH-DESIGN section 6). The 0.2.0 Capacitor plugin on
-// the Expo Modules API, plus setQuiet. App code reaches this through src/platform/alarms.ts, never directly.
-// The shapes below match AlarmService, AlertTapQueue and PermissionService in src/platform/types.ts (checked
-// there).
+// the Expo Modules API, plus setQuiet and the ring log (T-068). App code reaches this through
+// src/platform/alarms.ts, never directly. The shapes below match AlarmService, AlertTapQueue, RingLog and
+// PermissionService in src/platform/types.ts (checked there).
 import { NativeModule, requireNativeModule } from 'expo';
 
 export interface PitAlarm {
@@ -42,6 +42,25 @@ export interface PitAlarmStatus {
   batteryUnrestricted: boolean;
   fullScreen: boolean;
 }
+/**
+ * One ring as the phone logged it (T-068), with the app dead too. Keys and times only. Instants are epoch ms;
+ * `elapsedRealtime` is ms since boot. `repeat` is 0 for the first ring, 1 to 6 for "Still waiting", 7 for
+ * the last "Cook needs you" (`last`). `idle` and `interactive` are null when the phone could not say.
+ */
+export interface PitRing {
+  alarmId: string;
+  keys: string[];
+  plannedAt: number;
+  actualAt: number;
+  elapsedRealtime: number;
+  repeat: number;
+  last: boolean;
+  source: 'alarm' | 'restore' | 'snooze';
+  test: boolean;
+  idle: boolean | null;
+  interactive: boolean | null;
+  posted: boolean;
+}
 export type PitSettingsScreen = 'exactAlarm' | 'battery' | 'fullScreen' | 'notifications';
 
 type Events = {
@@ -58,6 +77,8 @@ declare class PitAlarmsNative extends NativeModule<Events> {
   getScheduled(): Promise<{ alarms: (PitAlarm & { test: boolean })[]; nags: PitNag[] }>;
   peekActions(): Promise<PitAlarmAction[]>;
   ackActions(ids: string[]): Promise<void>;
+  getRings(): Promise<PitRing[]>;
+  clearRings(): Promise<void>;
   status(): Promise<PitAlarmStatus>;
   requestNotifications(): Promise<PitAlarmStatus>;
   openSettings(which: PitSettingsScreen): Promise<void>;
@@ -82,6 +103,10 @@ export const pitAlarms = {
   peekActions: () => native.peekActions(),
   /** Remove exactly these taps, once the cook with them applied is saved. A tap queued since stays. */
   ackActions: (ids: string[]) => native.ackActions(ids),
+  /** Every ring the phone logged, oldest first (the newest 500 kept). */
+  rings: () => native.getRings(),
+  /** Empty the ring log. */
+  clearRings: () => native.clearRings(),
   onFired(fn: (e: PitAlarmEvent) => void): () => void {
     const sub = native.addListener('alarmFired', fn);
     return () => sub.remove();

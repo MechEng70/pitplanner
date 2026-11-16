@@ -3,6 +3,7 @@
 import type { AlarmSpec } from '../../engine/alarms.ts';
 import type {
   AlarmEvent,
+  AlarmRing,
   AlarmStatus,
   AppLinks,
   CopyText,
@@ -35,6 +36,10 @@ export interface FakeAlarms extends PhoneAlarms, PermissionService {
   queued: (NotificationAction & { id?: string })[];
   /** Set to make the next `ackActions` reject (the call is still recorded, nothing is removed). */
   failAck: Error | null;
+  /** The phone's ring log, oldest first, as `rings()` answers it (T-068). Replanning and ending leave it. */
+  ringLog: AlarmRing[];
+  /** Set to make the next `rings()` reject. */
+  failRings: Error | null;
   granted: AlarmStatus;
   /** What `replaceAll` and `testAlarm` report. */
   exact: boolean;
@@ -62,6 +67,8 @@ export function fakeAlarms(): FakeAlarms {
     exact: true,
     failNext: null,
     failAck: null,
+    ringLog: [],
+    failRings: null,
     async replaceAll(alarms) {
       f.calls.push(`replaceAll ${alarms.length}`);
       if (f.failNext) {
@@ -104,6 +111,18 @@ export function fakeAlarms(): FakeAlarms {
         throw e;
       }
       f.queued = f.queued.filter(a => a.id === undefined || !ids.includes(a.id));
+    },
+    async rings() {
+      if (f.failRings) {
+        const e = f.failRings;
+        f.failRings = null;
+        throw e;
+      }
+      return f.ringLog.map(r => ({ ...r, keys: [...r.keys] }));
+    },
+    async clearRings() {
+      f.calls.push('clearRings');
+      f.ringLog = [];
     },
     onFired: fn => listen(fired, fn),
     onAction: fn => listen(acted, fn),

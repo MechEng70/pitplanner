@@ -73,6 +73,12 @@ class PitAlarmsModule : Module() {
             Unit
         }
 
+        /** Every ring the phone logged, oldest first, the newest RingLog.CAP kept (T-068: the debug file). */
+        AsyncFunction<List<Any?>>("getRings") { RingLog(context).all().map { plain(it.toJson()) } }
+
+        /** Empty the ring log. Nothing in the app calls it today; ending a cook does not. */
+        AsyncFunction<Unit>("clearRings") { RingLog(context).clear() }
+
         AsyncFunction<Map<String, Boolean>>("status") { status() }
 
         AsyncFunction("requestNotifications") { promise: Promise ->

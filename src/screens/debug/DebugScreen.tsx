@@ -3,7 +3,8 @@
 // rings any step of the cook (or the draft plan) in 10 seconds through the real alarm path.
 // Doze and reboot commands for testing are in docs/alarm-testing.md.
 // Send to developer (T-065, SPEC section 6): one file through the share sheet, built by src/lib/debugReport.ts
-// from the phone's facts, the alert permissions, the stored alarms, the app's data and its event log.
+// from the phone's facts, the alert permissions, the stored alarms, the phone's ring log (T-068), the app's
+// data and its event log.
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +16,7 @@ import {
   debugReportFileName,
   debugReportText,
   DEVELOPER_EMAIL,
+  readRings,
   REPORT_HOLDS,
   REPORT_HOLDS_NOT,
 } from '@/lib/debugReport';
@@ -120,6 +122,8 @@ export function DebugScreen({
         permissions: await read('alert permissions', () => permissions.status()),
         scheduled: await read('stored alarms', () => alarms.scheduled()),
         data: await read('app data', () => debugData()),
+        // Read now, as the file is built: rings from while the app was closed are in it.
+        rings: await readRings(() => alarms.rings()),
         problems,
       });
       await share(debugReportFileName(at), debugReportText(report), DEVELOPER_EMAIL);

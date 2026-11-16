@@ -1,4 +1,4 @@
-import type { DeviceFacts } from '../platform/types';
+import type { AlarmRing, DeviceFacts } from '../platform/types';
 import {
   buildDebugReport,
   debugReportFileName,
@@ -7,6 +7,7 @@ import {
   isSecretName,
   REPORT_HOLDS,
   REPORT_HOLDS_NOT,
+  readRings,
   reportData,
   type ReportData,
   type ReportInput,
@@ -40,6 +41,31 @@ const data = (): ReportData => ({
   },
   errors: {},
 });
+const ring = (over: Partial<AlarmRing> = {}): AlarmRing => ({
+  alarmId: 'wrap',
+  keys: ['wrap:b:p1'],
+  plannedAt: NOW - 20 * 60_000,
+  actualAt: NOW - 20 * 60_000 + 3_000,
+  elapsedRealtime: 5_000_000,
+  repeat: 0,
+  last: false,
+  source: 'alarm',
+  test: false,
+  idle: false,
+  interactive: false,
+  posted: true,
+  ...over,
+});
+const rings = (): AlarmRing[] => [
+  ring(),
+  ring({
+    plannedAt: NOW - 10 * 60_000,
+    actualAt: NOW - 10 * 60_000 + 1_000,
+    elapsedRealtime: 5_598_000,
+    repeat: 1,
+    interactive: true,
+  }),
+];
 const input = (over: Partial<ReportInput> = {}): ReportInput => ({
   now: NOW,
   device,
@@ -49,6 +75,7 @@ const input = (over: Partial<ReportInput> = {}): ReportInput => ({
     nags: [{ alarmId: 'f', keys: ['fire::'], title: 'Fire the smoker', body: 'To 225F.', count: 2, nextAt: NOW }],
   },
   data: data(),
+  rings: { records: rings() },
   problems: [],
   ...over,
 });
@@ -101,6 +128,7 @@ test('nothing outside the list: the top level and each part have exactly these f
       'permissions',
       'phone',
       'problems',
+      'rings',
     ].sort(),
   );
   expect(Object.keys(r.app).sort()).toEqual(['build', 'version']);
@@ -112,6 +140,26 @@ test('nothing outside the list: the top level and each part have exactly these f
     'notifications',
   ]);
   expect(Object.keys(r.data!).sort()).toEqual(['errors', 'schemaVersion', 'tables']);
+  expect(Object.keys(r.rings).sort()).toEqual(['error', 'records']);
+  expect(Object.keys(r.rings.records[0]!).sort()).toEqual(
+    [
+      'actualAt',
+      'actualIso',
+      'alarmId',
+      'elapsedRealtime',
+      'idle',
+      'interactive',
+      'keys',
+      'last',
+      'lateMs',
+      'plannedAt',
+      'plannedIso',
+      'posted',
+      'repeat',
+      'source',
+      'test',
+    ].sort(),
+  );
 });
 
 test('anything extra a caller passes does not ride along: device, permissions, alarms, repeats', () => {
@@ -126,10 +174,94 @@ test('anything extra a caller passes does not ride along: device, permissions, a
       alarms: base.scheduled!.alarms.map(a => ({ ...a, ...extra })),
       nags: base.scheduled!.nags.map(n => ({ ...n, ...extra })),
     },
+    rings: { records: rings().map(x => ({ ...x, ...extra, title: 'Brisket', body: 'Wrap.' })) },
   } as ReportInput);
   const text = debugReportText(r);
   for (const word of ['41.8', 'someone@example.com', 'contacts', 'ABC123', 'location', 'account', 'serial'])
     expect(text).not.toContain(word);
+  expect(r.rings.records.map(x => Object.keys(x))).not.toContainEqual(expect.arrayContaining(['title']));
+});
+
+test('the ring log: every ring with when it was due and when it rang, as ms and as ISO, and how late', () => {
+  const r = buildDebugReport(input());
+  expect(r.rings.error).toBeNull();
+  expect(r.rings.records).toEqual([
+    {
+      alarmId: 'wrap',
+      keys: ['wrap:b:p1'],
+      source: 'alarm',
+      repeat: 0,
+      last: false,
+      test: false,
+      plannedAt: NOW - 1_200_000,
+      plannedIso: '2026-11-15T21:45:00.000Z',
+      actualAt: NOW - 1_197_000,
+      actualIso: '2026-11-15T21:45:03.000Z',
+      lateMs: 3_000,
+      elapsedRealtime: 5_000_000,
+      idle: false,
+      interactive: false,
+      posted: true,
+    },
+    {
+      alarmId: 'wrap',
+      keys: ['wrap:b:p1'],
+      source: 'alarm',
+      repeat: 1,
+      last: false,
+      test: false,
+      plannedAt: NOW - 600_000,
+      plannedIso: '2026-11-15T21:55:00.000Z',
+      actualAt: NOW - 599_000,
+      actualIso: '2026-11-15T21:55:01.000Z',
+      lateMs: 1_000,
+      elapsedRealtime: 5_598_000,
+      idle: false,
+      interactive: true,
+      posted: true,
+    },
+  ]);
+});
+
+test('the rings keep the order and the marks the phone gave: restore, snooze, test, the last repeat, unknowns', () => {
+  const r = buildDebugReport(
+    input({
+      rings: {
+        records: [
+          ring({ source: 'restore', plannedAt: NOW - 3_600_000, actualAt: NOW, idle: null, interactive: null }),
+          ring({ alarmId: 'wrap~snooze', source: 'snooze', repeat: 7, last: true }),
+          ring({ alarmId: 'test:1', keys: [], test: true, posted: false }),
+        ],
+      },
+    }),
+  );
+  expect(r.rings.records.map(x => [x.alarmId, x.source, x.repeat, x.last, x.test, x.posted])).toEqual([
+    ['wrap', 'restore', 0, false, false, true],
+    ['wrap~snooze', 'snooze', 7, true, false, true],
+    ['test:1', 'alarm', 0, false, true, false],
+  ]);
+  expect(r.rings.records[0]).toMatchObject({ lateMs: 3_600_000, idle: null, interactive: null });
+});
+
+test('a ring before its time (the clock was changed) shows as negative lateness; a time that is not one has no ISO', () => {
+  const r = buildDebugReport(
+    input({ rings: { records: [ring({ actualAt: NOW - 1_260_000 }), ring({ plannedAt: Number.NaN })] } }),
+  );
+  expect(r.rings.records[0]!.lateMs).toBe(-60_000);
+  expect(r.rings.records[1]).toMatchObject({ plannedAt: null, plannedIso: null, lateMs: null });
+  expect(() => debugReportText(r)).not.toThrow();
+});
+
+test('a ring log that cannot be read is named in its section, and the rest of the file is still built', async () => {
+  const failed = await readRings(async () => {
+    throw new Error('module gone');
+  });
+  expect(failed).toEqual({ error: 'Error: module gone' });
+  const r = buildDebugReport(input({ rings: failed }));
+  expect(r.rings).toEqual({ records: [], error: 'Error: module gone' });
+  expect(r.alarms).not.toBeNull();
+  expect(r.data).not.toBeNull();
+  expect(await readRings(async () => rings())).toEqual({ records: rings() });
 });
 
 test('a table that is not the app data named in SPEC is left out, by name', () => {
@@ -215,5 +347,6 @@ test('the file is JSON with a dated name; the address is one constant', () => {
 
 test('the words on the screen: plain, straight apostrophes, no dashes or exclamation marks', () => {
   for (const line of [...REPORT_HOLDS, REPORT_HOLDS_NOT]) expect(line).not.toMatch(/[!—–‘’]/);
-  expect(REPORT_HOLDS).toHaveLength(5);
+  expect(REPORT_HOLDS).toHaveLength(6);
+  expect(REPORT_HOLDS).toContain('Alarm rings: when each alert was due and when it rang');
 });

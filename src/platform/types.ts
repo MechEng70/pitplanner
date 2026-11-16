@@ -66,8 +66,41 @@ export interface AlarmService {
   onAction(fn: (e: AlarmEvent) => void): Unsubscribe;
 }
 
-/** The phone's alarms as the app wires them: the alarm set and the queue of taps. */
-export type PhoneAlarms = AlarmService & AlertTapQueue;
+/**
+ * One ring as the phone logged it (T-068), with the app dead too: keys and times only, no step text.
+ * `plannedAt` is when this ring was due (the step's time; for a repeat, the time that repeat was set for) and
+ * `actualAt` when it rang, both epoch ms. `elapsedRealtime` is ms since boot at the ring: it does not move
+ * when the time is changed. `repeat` is 0 for the first ring, 1 to 6 for "Still waiting", 7 for the last
+ * "Cook needs you" (`last`). `source`: the alarm's own time came, the restore after a boot rang it as missed,
+ * or a +15 min ring. `idle` and `interactive` (screen on) are null when the phone could not say. `posted`:
+ * the notification was handed to the system without an error.
+ */
+export interface AlarmRing {
+  alarmId: string;
+  keys: string[];
+  plannedAt: number;
+  actualAt: number;
+  elapsedRealtime: number;
+  repeat: number;
+  last: boolean;
+  source: 'alarm' | 'restore' | 'snooze';
+  test: boolean;
+  idle: boolean | null;
+  interactive: boolean | null;
+  posted: boolean;
+}
+
+/**
+ * The phone's log of rings (T-068), the newest 500, oldest first. Re-planning and ending a cook leave it;
+ * only the cap and `clearRings` remove rings.
+ */
+export interface RingLog {
+  rings(): Promise<AlarmRing[]>;
+  clearRings(): Promise<void>;
+}
+
+/** The phone's alarms as the app wires them: the alarm set, the queue of taps and the ring log. */
+export type PhoneAlarms = AlarmService & AlertTapQueue & RingLog;
 
 export interface PermissionService {
   status(): Promise<AlarmStatus>;

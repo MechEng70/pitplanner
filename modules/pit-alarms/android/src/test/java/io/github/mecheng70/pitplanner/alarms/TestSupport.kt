@@ -17,23 +17,36 @@ abstract class AlarmTestBase {
   protected val store get() = AlarmStore(context)
   protected val min = 60_000L
 
-  /** The clock the alarm code reads (Clock.source), moved only by `advance`. */
+  /** The clocks the alarm code reads (Clock.source, Clock.elapsedSource), moved only by `advance`. */
   private var clockMs = 1_800_000_000_000L
+  private var elapsedMs = 5_000_000L
 
   @Before
   fun useTestClock() {
     Clock.source = { clockMs }
+    Clock.elapsedSource = { elapsedMs }
   }
 
   @After
   fun useRealClock() {
     Clock.source = { System.currentTimeMillis() }
+    Clock.elapsedSource = { android.os.SystemClock.elapsedRealtime() }
+    RingLog.open = ::RingLog
   }
 
   protected fun now() = clockMs
+  protected fun elapsed() = elapsedMs
   protected fun advance(ms: Long) {
     clockMs += ms
+    elapsedMs += ms
   }
+
+  /** The wall clock jumps (a time change), the elapsed clock does not. */
+  protected fun setWallClock(ms: Long) {
+    clockMs = ms
+  }
+
+  protected val rings get() = RingLog(context).all()
 
   protected fun alarm(id: String, at: Long, vararg keys: String, critical: Boolean = false) =
     Alarm(id, at, "Title $id", "Body $id", critical, keys.toList().ifEmpty { listOf(id) })
