@@ -5,7 +5,7 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
 
 ## Restart, twenty-second session (written Monday 2026-11-16, end of the twenty-first; read this first)
 
-`main` is committed and clean, **not pushed** (about 60 commits ahead of `origin/main`). The gate passed on
+`main` is committed and clean, **the last few commits not pushed** (Jason pushed during the session; check `git log origin/main..main`). The gate passed on
 the last code change (T-075's three cases: engine 218, gate self-tests 153, Jest 882, Kotlin 68 in
 Gradle; Snyk 26 projects, none skipped); a later commit that touches only this file is not gated. No agent is running, no worktree, no branch but `main`. Emulator and Metro are stopped. The phone was not touched this session. `dashboard.html` (local,
 never committed) was restyled in the medtechcto.com palette: the keeper edits only its `D` data block.
