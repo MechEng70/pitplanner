@@ -1,9 +1,46 @@
-# Handoff (2026-11-15, end of the eighteenth session: T-067, T-059, T-065 tap to copy and the T-033 answers on main and gated; device tests fast-cook and followups pass at 115%)
+# Handoff (2026-11-15, end of the nineteenth session: turkey device test, alarm test on Android 14 and 15, parity review written; phone block is next)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## Restart, nineteenth session (written Sunday 2026-11-15, end of the eighteenth; read this first)
+## Restart, twentieth session (written Sunday 2026-11-15, end of the nineteenth; read this first)
+
+Everything is committed on `main`; the gate passed on it (five runs in the nineteenth session, Snyk's
+monthly-limit notice in each, scans complete). `main` is ahead of `origin/main` by the T-034 commits unless
+Jason pushed (my `git push` is blocked by the permission system: he runs `! git push origin main`). Emulators
+and Metro are stopped. No agents, worktrees or branches. The working rules of the sections below still hold.
+
+**Done in the nineteenth session:** device test `turkey` (T-059, 115% only by Jason's choice); T-037 prep
+(`AVD_API=34|35`, `alarm` passes on Android 14, 15, 16); T-034 review written (`docs/parity.md`), SPEC wording
+edits, five missing tests; new tasks T-069 (conflict banner on Live cook) and T-070 (the receiver picks
+cookers), both new UI that needs Jason's OK on wording and design before any code.
+
+**Twentieth session, in this order (Jason: phone work first thing in the morning):**
+1. Phone block. List every action and wait for his yes; reboots need him there.
+   a. Rebuild and install the dev build on the phone (data backed up and put back by `run.sh --phone`).
+   b. T-029, his idea: make a plan on the phone, he shares it to the computer, check the `.pitplan` file.
+   c. T-065: Send to developer with a real email app; the file arrives and reads right.
+   d. T-016 phone half and T-025: test alert in Doze, lock-screen alert (a picture for mockup 14).
+   e. Parity P1 to P3: reboot with the phone locked on the new build; an unanswered step's repeats in Doze;
+      a permission taken away during a cook.
+   f. T-017 check on the phone. T-031 (two phones) only if the second phone is at hand.
+2. His answers still open: parity D2, D4, D9, D10, D11; wording for T-069; design for T-070; the turkey
+   picture (`tools/device/out/turkey-115.png`); "More quantity" for the turkey weight stepper.
+3. Then, without the phone: T-069, T-070 once approved.
+
+**Sessions after that (a guess, one line each; the dashboard has the same list):**
+- 21: finish T-034: tests for the parity 1b rows he picks, fidelity sheets for mockups 08 to 10, the full
+  device pass at 115% and 130%.
+- 22: T-035 security pass, T-036 data export, the rest of T-064.
+- 23: T-066 user README with screenshots, the small open points (Serve alert "Serve Serve.", turkey at 275F),
+  INSTALL.md on his wife's phone (his).
+- T-071 fish (salmon, sea bass, catfish; Jason, 2026-11-15): not placed yet. Ask him whether it is in 0.3.0
+  and for his sources and answers (the task lists the questions).
+- His: T-037, a real Saturday cook on the new build (earliest Saturday 2026-11-21). It sets the earliest date.
+- 24: T-038 upgrade test over 0.2.0 and the first GitHub release, with him step by step. `npm run
+  snyk:monitor` is part of the release and is held until 2026-12-01 (the monthly limit).
+
+## Restart, nineteenth session (written Sunday 2026-11-15, end of the eighteenth)
 
 Everything is committed on `main` and pushed (Jason pushed once himself, then allowed the push at the end of
 the session). The gate passed on this `main`. Emulator and Metro are stopped. No agents, no worktrees, no

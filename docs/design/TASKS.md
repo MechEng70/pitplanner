@@ -2778,3 +2778,19 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Files:** `src/screens/plan/SharedPlanSheet.tsx`, `src/lib/sharedPlan.ts`, tests.
 - **Tests:** RNTL for the choice; `engine/share.test.ts` for the mapping it produces.
 - **Device testing (Jason):** the sheet against mockup 11 at 115%.
+
+### T-071 Fish: salmon, sea bass, catfish
+- **Status:** todo (Jason, 2026-11-15: "add a fish task for adding common types of fish like Salmon, Sea Bass,
+  Catfish"). Whether it is in 0.3.0 or after is his to say.
+- **Goal:** a "Fish" group in Add food with salmon, sea bass and catfish (and which others, his list), each
+  with its cooker (smoker, griddle or both), method, timing and done temperature in `data/foods.json`.
+- **Sources first, as for T-059:** every cooking number (done temperature, smoker temp range or floor, time
+  per pound or per inch of thickness, rest) needs a source he names or reads himself; nothing goes into
+  `foods.json` without one, and `engine/rules.test.ts` fails a food-safety number with no `sources` entry.
+- **Questions for Jason before building:** which fish and cuts (fillet, side, whole); smoked, griddled or
+  both; timed by weight, by thickness or as a fixed time; hot smoke only (cold smoking is a different
+  food-safety matter); the group's place in Add food (SPEC lists Beef, Pork, Chicken, Turkey).
+- **Files:** `data/foods.json`, `engine/rules.test.ts`, `engine/plan.test.ts`, `FoodPick.test.tsx`, SPEC
+  sections 3 and 4. Prefer data over code (CLAUDE.md); a new timing kind only if thickness needs one.
+- **Tests:** engine tests per fish (times, done temp, sources); the Add food group.
+- **Device testing (Jason):** Food details for each fish at 115%, as the `turkey` device test does.
