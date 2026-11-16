@@ -62,11 +62,6 @@ export interface AlarmService {
   testAlarm(seconds: number, title?: string, body?: string): Promise<{ at: number; exact: boolean }>;
   /** What the phone holds to fire. `test` marks a test alarm, which is not part of the cook's set. */
   scheduled(): Promise<{ alarms: (AlarmSpec & { test?: boolean })[]; nags: StoredNag[] }>;
-  /**
-   * Gone (T-079): the taps are read with `AlertTapQueue`. Kept as an optional, uncallable member only so the
-   * fakes in src/lib/cook.test.ts (owned by T-076 at the time) still compile; remove it with them.
-   */
-  drainActions?: unknown;
   onFired(fn: (e: AlarmEvent) => void): Unsubscribe;
   onAction(fn: (e: AlarmEvent) => void): Unsubscribe;
 }

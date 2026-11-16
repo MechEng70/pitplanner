@@ -3242,8 +3242,8 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** Food details for tri-tip with no griddle at 115%; the import box.
 
 ### T-076 Serve moves for one food: the others follow
-- **Status:** built on branch `worktree-agent-a4bb4f0f48b099655`, unit-tested, not gated (2026-11-16). Must-fix
-  for 0.3.0 (Jason, 2026-11-16). Report: `docs/proposals/2026-11-16-lock-screen-actions.md`.
+- **Status:** merged onto `main` 2026-11-16 and gated (engine 193, Jest 792, gate self-tests 153). Not seen
+  on a device. Must-fix for 0.3.0 (Jason, 2026-11-16).
 - **Fault:** the lock screen and the app give identical plans; the fault is in the engine. `extendCook` and
   `markStepDone` (`engine/live.ts`) move one food and serve and leave the rest, so the other foods' holds
   grow. Only `shiftRemaining` moves every food.
@@ -3469,8 +3469,8 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   - `src/lib/cook.ts` not touched (T-076 owns it): `appliedTaps` is not on the `ActiveCook` type and
     `normalize` does not fill it; `alertTaps.ts` reads it off the cook's JSON (missing reads as empty), and
     every cook operation spreads the cook, so it rides along. `AlarmService` keeps an optional, uncallable
-    `drainActions?: unknown` only so the fakes in `src/lib/cook.test.ts` still compile: remove both after the
-    T-076 merge.
+    `drainActions?: unknown` only so the fakes in `src/lib/cook.test.ts` still compile: both removed at the
+    T-076 merge (2026-11-16).
 - **Tests:** JUnit (`AlarmStoreTest`): read in order and kept until acknowledged; acknowledge removes only the
   ids given; a tap queued between the read and the acknowledge is kept (the old drain lost it); 200 taps, 200
   ids; taps from a build before ids get ids that stay; 4 threads queue 400 taps while another reads and
