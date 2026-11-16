@@ -116,7 +116,9 @@ restore() {
   # The survive test turns "Don't keep activities" on (emulator only): never leave it on.
   if is_emulator; then A shell settings put global always_finish_activities 0 >/dev/null 2>&1; fi
   if [ -n "$BACKUP" ]; then ./db.sh restore "$BACKUP" | tee -a "$REPORT"; fi
-  A shell settings put system font_scale "$ORIG_SCALE" && log "font scale back to $ORIG_SCALE"
+  # A fresh emulator image has no font scale set ("null", which `settings put` refuses): unset it again.
+  if [ "$ORIG_SCALE" = null ]; then A shell settings delete system font_scale >/dev/null && log "font scale unset again (the default)"
+  else A shell settings put system font_scale "$ORIG_SCALE" && log "font scale back to $ORIG_SCALE"; fi
   A shell settings put global stay_on_while_plugged_in "$ORIG_STAYON"
   A shell settings put global heads_up_notifications_enabled "$ORIG_HEADSUP" && log "heads-up back to $ORIG_HEADSUP"
   if [ -n "$METRO_PID" ]; then kill -- "-$METRO_PID" 2>/dev/null && log "Metro stopped"; fi
@@ -622,8 +624,12 @@ test_alarm() {
   if launch "debug" && dump >"$dir/debug.xml"; then
     has_text "$dir/debug.xml" "Alarm tests" || miss "the Alarm tests screen"
     has_text "$dir/debug.xml" "Notifications on" || miss "Notifications on"
-    has_text "$dir/debug.xml" "Nothing scheduled." || miss "Nothing scheduled."
+    # The stored list is under Send to developer (T-065), off screen as opened: read it scrolled to the end.
+    scroll_bottom | tee -a "$REPORT"
+    dump >"$dir/debug-list.xml" && has_text "$dir/debug-list.xml" "Nothing scheduled." || miss "Nothing scheduled."
+    on_screen "Send a test alert in 10 sec" UP
     tap "Send a test alert in 10 sec" 1 | tee -a "$REPORT"
+    scroll_bottom | tee -a "$REPORT"
     dump >"$dir/debug-set.xml" && grep -q 'text="[^"]*Test alert (test) (critical)"' "$dir/debug-set.xml" || miss "the test alert in the stored list"
     sleep 12
     tap "Refresh" 1 | tee -a "$REPORT"

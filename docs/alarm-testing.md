@@ -124,3 +124,16 @@ cook (T-037).
 
 Not testable on the emulator: sound (it runs without audio), OEM power management, a locked reboot.
 
+## Android 14 and 15 emulator images, 2026-11-15 (T-037 prep)
+
+The `alarm` device test on the dev build, at 115%, on Google APIs x86_64 images started with
+`AVD_API=34` and `AVD_API=35` (`tools/device/README.md`, "Other Android versions"), and again on the
+Android 16 emulator.
+
+| Android | Result |
+|---|---|
+| 14 (API 34) | Pass. Test alarm rang with the screen off; a second rang in forced deep idle with the app off the battery allowlist; the debug screen's 10 second test alert rang and left the stored list. |
+| 15 (API 35) | Pass, the same three. |
+| 16 (API 36) | Pass, the same three (the test's debug screen step was changed, so it was run again here). |
+
+Emulator images are not a Samsung phone: its own battery rules are only seen on the tester's phone.

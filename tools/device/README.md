@@ -15,6 +15,7 @@ npm run device -- --no-build --only sheet-keyboard
 npm run device -- --only smoke,stable-controls
 npm run device -- --no-build --only db --repeat 10   # a test that only sometimes fails
 tools/device/avd.sh start; DEVICE_SCALES=1.15 tools/device/run.sh --no-build --only history   # one long test per call
+AVD_API=34 tools/device/avd.sh start; AVD_API=34 DEVICE_SCALES=1.15 tools/device/run.sh --no-build --only alarm   # Android 14
 ```
 
 Read `out/report.txt` first (the "device summary" block at the end), then the images it lists.
@@ -43,6 +44,15 @@ Read `out/report.txt` first (the "device summary" block at the end), then the im
 | `fast-cook` | Emulator only (T-067). The fast test cook from the dev link `pitplanner://dev/plan?seed=fast&x=240`: the mockup menu as a real cook squeezed 240 times (about 3 minutes; Jason's own run is `seed=fast`, 60 times, about 12 minutes). The Cook tab opens on Fire the smoker with the phone holding the cook's alarms; each step that comes due is marked Done from Next up; alerts show in the shade while it runs; no keep-or-move question comes up; Serve opens Cook finished; ending the cook leaves no alarms. The cook is not saved. Images: `out/<scale>/fast-start.png`, `fast-finished.png`, and for Jason to read the cook from, `out/fast-cook-1.png`, `-2.png` ...: the Cook tab at every step as it comes due and the notification shade at every new alert, side by side in time order. |
 | `followups` | Emulator only (T-063, T-065). On the mockup cook, Done on the next step (done early, so keep or move serve is asked and Apply keeps it): Cook options then offers "Undo: <that step>" first; Undo puts Next up back and the row is gone. With all done but Serve, Done on Serve opens Cook finished with Back to the cook on its own line; tapping it shows Live cook on Serve again. The hidden debug screen shows Send to developer, where the file goes and what it holds; Send is not tapped (the share sheet lists other apps). Tapping the address shows "Address copied." (the clipboard is not read). Images: `out/<scale>/undo-options.png`, `cook-finished-back.png`, `debug-send.png`, `debug-copied.png`. |
 | `turkey` | Emulator only (T-059). Food details for a new whole turkey (`pitplanner://dev/plan?seed=empty&add=turkey`): Weight 12.0 lb, Rest after pull 30 min, the result bar reads fire 9:55 AM, off heat 4:15 PM, serve 5:00 PM; the rest stops at its 20 min floor; 0.50 hr/lb shows with no "Unusual rate". Add to plan gives 1 item and no conflict at 225F. With 220F chosen from the temp menu the Conflicts tile reads 1 and the sheet says "Whole turkey needs the smoker at 225F or hotter. It is set to 220F." with Change smoker temp; back at 225F the conflict is gone. Images: `out/turkey-<pct>.png`. |
+
+## Other Android versions (T-037)
+
+`AVD_API=34` (Android 14) or `AVD_API=35` (Android 15) in front of `avd.sh` and `run.sh` uses that version's own
+emulator, `pitplanner-api34` or `pitplanner-api35`: the same screen, its image downloaded on the first create
+(about 4 GB each on disk). One emulator runs at a time: stop one before starting another, with the same
+`AVD_API`. A new emulator has no dev build: install it once (`adb install -r
+android/app/build/outputs/apk/debug/app-debug.apk`, or a run without `--no-build`). The first test run on a
+new emulator fails once: the dev build opens its developer menu on its first launch. Run it again.
 
 ## Upgrade from 0.2.0 (emulator only)
 

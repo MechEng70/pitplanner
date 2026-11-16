@@ -2216,6 +2216,12 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ### T-037 Saturday cook on the Expo build (SPEC definition of done)
 - **Android versions (Jason, 2026-11-15):** run the `alarm` device test on emulator images for Android 14 and
   15 as well as 16 (one tester has the latest Samsung; none known below 14).
+- **Emulator prep done (2026-11-15, nineteenth session):** `tools/device/avd.sh` takes `AVD_API` (34, 35;
+  default 36), each version its own AVD. The `alarm` device test passes at 115% on Android 14, 15 and 16: the
+  test alarm rings with the screen off and in forced deep idle off the battery allowlist, and the debug
+  screen's test alert rings and leaves the stored list. Two rig fixes, none in the app: the test read the
+  stored list where it was before Send to developer (T-065) went above it; a fresh image has no font scale
+  to put back. The real cook is still Jason's.
 - **Status:** todo (Jason, hands-on)
 - **Goal:** a full cook (brisket, wings, breasts) on the dev build with every alarm on time with the screen off,
   including after a reboot mid-cook; Adjust, Pit went out, Not yet and End cook leave no duplicate alarms.

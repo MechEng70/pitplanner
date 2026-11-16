@@ -15,3 +15,18 @@ test('avd.sh never sets a display size; it only resets one left by an earlier ve
   assert.ok(calls.length > 0, 'expected the reset of an overridden size');
   for (const args of calls) assert.equal(args, 'reset');
 });
+
+// T-037: the alarm test also runs on Android 14 and 15 images. The default stays the API 36 AVD "pitplanner".
+test('avd.sh defaults to API 36 and the AVD "pitplanner"; AVD_API picks another image and its own AVD', () => {
+  assert.match(code, /API="\$\{AVD_API:-36\}"/);
+  assert.match(code, /NAME=pitplanner\n\[ "\$API" = 36 \] \|\| NAME="pitplanner-api\$API"/);
+  assert.match(code, /IMAGE="system-images;android-\$API;google_apis;x86_64"/);
+});
+
+test('avd.sh start prints only the serial on stdout (run.sh reads it): notices go to stderr', () => {
+  const echoes = code.split('\n').filter(l => /^\s*echo /.test(l) && !/>&2/.test(l) && !/^\s*echo no \|/.test(l));
+  assert.deepEqual(
+    echoes.map(l => l.trim()),
+    ['echo "$s"'],
+  );
+});

@@ -28,9 +28,17 @@ before 2026-12-01).
 **Jason's rule (2026-11-15):** "You should be deleting things you don't need anymore." After an agent's work
 is merged and gated, remove its worktree and branch. All leftover branches were deleted with his yes.
 
+**Nineteenth session (2026-11-15, evening), both on `main` and gated, not pushed:**
+- Device test `turkey` (T-059) passes at 115%; Jason chose 115% only. His look at
+  `tools/device/out/turkey-115.png` is open.
+- T-037 prep: `AVD_API=34|35` for `avd.sh` and `run.sh`; `alarm` passes on Android 14, 15 and 16
+  (`docs/alarm-testing.md`). A new emulator fails its first run once (dev menu on first launch).
+- Jason's idea for T-029: put the dev build on his phone, make a plan, he exports it to the computer, the
+  file is checked. Part of the phone block; list the actions first.
+
 **Next, in this order:**
-1. A device test for whole turkey (Food details, the issue below 225F, 100/115/130%) and screenshots for him.
-2. T-037 prep: emulator images for Android 14 and 15, the `alarm` device test on each.
+1. (done) Turkey device test.
+2. (done) T-037 prep.
 3. Phone (list every action, wait for his yes): rebuild and reinstall the dev build, T-016 phone half, T-017
    check, T-065 Send to developer with a real email app, T-031 with two phones.
 4. T-034 parity review, T-035 security pass, T-036 data export, T-066 user README, T-064, T-038 upgrade test
