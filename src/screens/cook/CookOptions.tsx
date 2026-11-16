@@ -112,6 +112,8 @@ export function CookOptions({
           </Stack>
           <Stepper
             label="Shift"
+            decLabel="Earlier"
+            incLabel="Later"
             value={`${delta > 0 ? '+' : ''}${delta}`}
             unit="min"
             onDec={() => setDelta(d => d - STEP)}

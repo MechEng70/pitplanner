@@ -3,7 +3,7 @@ import type { Rules } from './rules.ts';
 import type { ItemInput } from './types.ts';
 
 /** "Brisket" -> "brisket", "Baby back ribs" -> "baby back ribs"; "St. Louis ribs" keeps its capitals. */
-const inSentence = (name: string) => (/^St\. /.test(name) ? name : name.charAt(0).toLowerCase() + name.slice(1));
+export const inSentence = (name: string) => (/^St\. /.test(name) ? name : name.charAt(0).toLowerCase() + name.slice(1));
 
 /**
  * Labels for the items that share their food with another item on the menu, by item id: "11.5 lb brisket",

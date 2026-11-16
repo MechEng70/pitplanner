@@ -37,6 +37,18 @@ describe('Stepper', () => {
     expect(onDec).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'More weight' })).toBeEnabled();
   });
+
+  test('the buttons can have their own names (Cook options: Earlier / Later, T-074)', async () => {
+    const onDec = jest.fn();
+    const onInc = jest.fn();
+    await render(<Stepper label="Shift" decLabel="Earlier" incLabel="Later" value="0" onDec={onDec} onInc={onInc} />);
+    expect(screen.getByLabelText('Shift').props.role).toBe('group');
+    await fireEvent.press(screen.getByRole('button', { name: 'Earlier' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Later' }));
+    expect(onDec).toHaveBeenCalledTimes(1);
+    expect(onInc).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: /shift/i })).toBeNull();
+  });
 });
 
 describe('Chips', () => {

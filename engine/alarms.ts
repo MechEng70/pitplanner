@@ -1,9 +1,24 @@
 // plan.events -> the alarm set the native scheduler gets (SPEC section 6, failure mode 11).
 // Pure: the caller passes `now` and gets back the full set to replace whatever was scheduled.
 
+import { inSentence } from './labels.ts';
 import type { EventKind, Plan, PlanEvent } from './types.ts';
 
 const MIN = 60_000;
+
+/**
+ * The Serve alert's text: the menu by plain food names, each once, in menu order (T-074; Jason, 2026-11-16).
+ * "Brisket.", "Brisket and chicken wings.", "Brisket, chicken wings and chicken breasts." Two briskets are
+ * "brisket" once: the labels ("11.5 lb brisket") are for telling steps apart, not for the menu.
+ * Null when the plan has no foods.
+ */
+export function serveMenu(plan: Plan): string | null {
+  const names = [...new Set(plan.items.map(it => it.name))];
+  if (!names.length) return null;
+  const words = names.map((n, i) => (i === 0 ? n.charAt(0).toUpperCase() + n.slice(1) : inSentence(n)));
+  const last = words.pop()!;
+  return `${words.length ? `${words.join(', ')} and ` : ''}${last}.`;
+}
 
 export interface AlarmSpec {
   id: string; // the step keys joined; groups can change on a replan, so nags are tracked per key
@@ -24,7 +39,7 @@ const KIND_TITLE: Partial<Record<EventKind, string>> = {
   pitOff: 'Smoker',
   griddleOn: 'Griddle',
   ovenOn: 'Oven',
-  serve: 'Serve',
+  serve: 'Time to serve',
 };
 
 export interface KeyedEvent {
@@ -70,6 +85,10 @@ export function alarmsFromPlan(
     (e.itemId && (labels.get(e.itemId) ?? nameOf?.(e.itemId) ?? names.get(e.itemId))) ||
     KIND_TITLE[e.kind] ||
     'Pit Planner';
+  // The alert's text for a step: its label, except Serve, which names the menu. The label stays "Serve."
+  // (Live cook and the timelines read it), and so does the Quiet time summary, which lists steps.
+  const menu = serveMenu(plan);
+  const text = (e: PlanEvent) => (e.kind === 'serve' && menu) || tx(e.label);
   const done = new Set(opts.done ?? []);
 
   // Each step rings at its plan time, or at its reminder time if one is set and later.
@@ -104,7 +123,7 @@ export function alarmsFromPlan(
     id: g.map(s => s.key).join('|'),
     at: g[0].at,
     title: [...new Set(g.map(s => title(s.event)))].join(' + '),
-    body: g.map(s => tx(s.event.label)).join('\n'),
+    body: g.map(s => text(s.event)).join('\n'),
     critical: g.some(s => s.event.critical),
     keys: g.map(s => s.key),
   }));

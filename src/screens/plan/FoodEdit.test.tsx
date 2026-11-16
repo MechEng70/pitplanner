@@ -5,6 +5,7 @@ import { AccessibilityInfo, ScrollView, TextInput, View } from 'react-native';
 import type { ItemInput, PlanInput } from '../../../engine/types';
 import { SHEET_OUT_MS } from '@/components/kit/sheet';
 import { saturday } from '@/lib/fixtures/saturday';
+import { defaultOptions, foods } from '@/lib/rules';
 import { defaultGriddle } from '@/lib/gear';
 import { NOW, storeWrapper, testRepos } from '@/test/store';
 import { FoodEdit } from './FoodEdit';
@@ -168,6 +169,32 @@ describe('the rest of the form', () => {
     await fireEvent.press(button('Save'));
     await settle();
     expect(onSave.mock.calls[0][0].quantity).toBe(12.5);
+  });
+
+  // T-074 (Jason, 2026-11-16): the quantity buttons were read "More quantity" / "Less quantity" for every
+  // food without its own label. Weight foods say weight; count foods say their unit, as the screen shows it.
+  test.each([
+    ['brisket', 'trimmed weight'],
+    ['tritip', 'weight'],
+    ['stlribs', 'racks'],
+    ['bbribs', 'racks'],
+    ['butt', 'weight'],
+    ['breasts', 'breasts'],
+    ['wings', 'weight'],
+    ['turkey', 'weight'],
+  ])('the %s quantity buttons are More / Less %s', async (foodId, name) => {
+    const f = foods.find(x => x.id === foodId)!;
+    const m = f.methods[0]!;
+    await open({ id: 'q', foodId, methodId: m.id, quantity: f.quantity.default, options: defaultOptions(m) });
+    expect(button(`More ${name}`)).toBeOnTheScreen();
+    expect(button(`Less ${name}`)).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: /quantity/i })).toBeNull();
+  });
+
+  test('every food in the rules has its quantity buttons named above', () => {
+    expect(foods.map(f => f.id).sort()).toEqual(
+      ['brisket', 'tritip', 'stlribs', 'bbribs', 'butt', 'breasts', 'wings', 'turkey'].sort(),
+    );
   });
 
   test('a cooker the user does not have is offered but off, with Add in Gear', async () => {

@@ -1919,7 +1919,7 @@ test_turkey() {
   for want in "Whole turkey" "Weight" "Rest after pull"; do
     has_text "$dir/turkey-food.xml" "$want" || plan_miss "$want"
   done
-  for want in "More quantity" "Less quantity" "Add to plan" "$BAR_TURKEY"; do
+  for want in "More weight" "Less weight" "Add to plan" "$BAR_TURKEY"; do
     has_label "$dir/turkey-food.xml" "$want" || plan_miss "$want"
   done
   says "$dir/turkey-food.xml" 'text="12.0 lb"' || plan_miss "12.0 lb as the weight"
