@@ -1587,8 +1587,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Tests:** unit tests for what goes into the file; RNTL for the action.
 
 ### T-068 A log of every alarm ring, kept on the Android side
-- **Version (Jason, 2026-11-16):** 0.5.0. Not started before 0.3.0 ships.
-- **Status:** todo, after 0.3.0 unless Jason moves it up (Jason, 2026-11-15: agreed as a task for later).
+- **Version (Jason, 2026-11-16, later the same day):** moved into 0.3.0, before the beta.1 build (it is the
+  record the staged Saturday cook, T-037, is read from). Was 0.5.0. Failing tests first; JUnit/Robolectric
+  for the store and its cap, Jest for the report.
+- **Status:** in progress on an agent branch (2026-11-16).
 - **Why:** the app's event log (T-065) only has rings seen while the app is open, plus Done and +15 taps read
   afterwards. A missed or late alarm with the app closed is the case the debug file is most wanted for.
 - **Goal:** `pit-alarms` records each ring (step key, planned time, actual time, repeat number) in a small
@@ -2393,6 +2395,13 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Real phone:** no (Jason, 2026-11-15: emulator only).
 
 ### T-037 Saturday cook on the Expo build (SPEC definition of done)
+- **Plan change (Jason, 2026-11-16): Saturday is a staged cook, no food.** The full-length real timeline
+  (brisket, wings, breasts) on his phone, on 0.3.0-beta.1; the phone locked, unplugged and idle between
+  steps. Used on purpose during it: Adjust, Pit went out (and Back up to temp), Not yet, one Undo, and one
+  reboot mid-cook. It ends with Discard, so the cook rates are not touched. This replaces "a real cook with
+  food" as the 0.3.0 gate; the acceptance below (each alarm within 1 min of plan, none lost on the reboot,
+  no duplicate alarms) is unchanged. The Sunday readout uses the alarm ring log (T-068), the debug file and
+  `dumpsys deviceidle`.
 - **Added by Jason, 2026-11-16:** (1) on the Saturday cook, confirm every step alarm rang on time with the
   phone idle and locked between steps, and read the Doze history back afterwards (`dumpsys deviceidle`) to
   show the phone really was in deep idle. (2) Parity P4: run the locked-reboot check once on the tester's
