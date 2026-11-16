@@ -3582,6 +3582,12 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   row, so the status pill's width can never change its wrapping. Layout rule: a status change must not
   move the banners or Done. Test: the pill reading On plan, Ahead and Behind gives the same header height at
   115%.
+- **Fixes 1 and 3 as built (merged and gated 2026-11-16):** the kit AppBar puts its subtitle on a full-width
+  line under the title row (title, pill, options as before); the header is about 20 dp taller; Cook
+  finished uses the same AppBar (not yet looked at on a device). Jest: the structure, and the header
+  identical but for the pill for On plan, Ahead and Behind at 115%; pixel heights are checked in device test
+  `live-warnings`. `liveWarnings` puts a line break between the conflict line and the long-hold line; one
+  text, one alert, one OK. Still owed: the device run and the two pictures.
 - **Fix 2 as built:** data only, the wings' shared pull label: the first sentence is the title, the rest is
   the line under it. The alert body reads "Pull wings at 175-185F. 165F is the safe minimum. Hold uncovered,
   sauce right before serving." No other food's pull title had a "(...F is the safe minimum)". **Open with

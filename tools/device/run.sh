@@ -1829,6 +1829,13 @@ test_shared_soon() {
 # seed=conflict: the brisket an hour behind, so the smoker conflict banner shows and the lane chart's note
 # says smoker conflict. seed=warned: the same plus two foods on early, so the banner has the conflict and the
 # long holds of two foods. OK hides the banner. Images for Jason: live-conflict.png, live-warned.png.
+# "<subtitle bottom> <first banner top>" in px from a looked-at dump (T-081).
+hdr_at() {
+  local sb bt
+  sb=$(grep -oE 'text="Smoker [0-9]+[FC], serve [0-9:]+ [AP]M"[^>]*bounds="\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]"' "$1.txt" | head -n 1 | grep -oE '[0-9]+\]"$' | tr -d ']"')
+  bt=$(grep -oE '="(Alerts are off|Smoker conflict:)[^"]*"[^>]*bounds="\[[0-9]+,[0-9]+\]' "$1.txt" | head -n 1 | grep -oE '[0-9]+$')
+  [ -n "$sb" ] && [ -n "$bt" ] && echo "$sb $bt"
+}
 test_live_warnings() {
   local s="$1" dir="$2" ok=1
   if ! is_emulator; then result "SKIP  live-warnings $s: emulator only"; return; fi
@@ -1845,8 +1852,9 @@ test_live_warnings() {
   else plan_miss "the smoker conflict banner (seed=conflict)"; fi
   open_route "dev/plan?seed=warned"
   sleep 2
-  if look "$dir/live-warned.xml" && says "$dir/live-warned.xml" "Smoker conflict: brisket at 225F and chicken wings at 400F at the same time. Long hold: chicken wings"; then
-    grep -oE 'Smoker conflict:[^"]*' "$dir/live-warned.xml.txt" | head -n 1 | sed 's/^/    banner: /' | tee -a "$REPORT"
+  # T-081: the long holds start on a new line (the dump writes the break as &#10;).
+  if look "$dir/live-warned.xml" && grep -qE 'Smoker conflict: brisket at 225F and chicken wings at 400F at the same time\.(&#10;|\\n)Long hold: chicken wings' "$dir/live-warned.xml.txt"; then
+    grep -oE 'Smoker conflict:[^"]*' "$dir/live-warned.xml.txt" | head -n 1 | sed 's/&#10;/ | /; s/^/    banner: /' | tee -a "$REPORT"
     says "$dir/live-warned.xml" "chicken breasts" || plan_miss "chicken breasts in the long hold sentence"
     shot "$dir/live-warned.png"
     tap "OK" 1 | tee -a "$REPORT"
@@ -1854,6 +1862,16 @@ test_live_warnings() {
     if look "$dir/live-warned-ok.xml" && ! says "$dir/live-warned-ok.xml" "Smoker conflict: brisket"; then log "    OK hides the banner"
     else plan_miss "the banner gone after OK"; fi
   else plan_miss "the banner with the conflict and the long holds (seed=warned)"; fi
+  # T-081: the pill reading On plan, Ahead or Behind leaves the header's end and the first banner where they were.
+  local onp="" ahd="" bhd=""
+  says "$dir/live-conflict.xml" 'text="On plan"' && onp=$(hdr_at "$dir/live-conflict.xml")
+  says "$dir/live-warned.xml" 'text="Ahead"' && ahd=$(hdr_at "$dir/live-warned.xml")
+  open_route "dev/plan?seed=conflict"
+  sleep 240 # its next step (about 3 min out) is overdue by then: Behind
+  look "$dir/live-behind.xml" && says "$dir/live-behind.xml" 'text="Behind"' && bhd=$(hdr_at "$dir/live-behind.xml")
+  log "    header end, first banner top (px): On plan $onp, Ahead $ahd, Behind $bhd"
+  if [ -n "$onp" ] && [ "$onp" = "$ahd" ] && [ "$onp" = "$bhd" ]; then log "    a status change moves nothing"
+  else plan_miss "the same header end and first banner top for On plan, Ahead and Behind"; fi
   A shell am start -W -a android.intent.action.VIEW -d "'pitplanner://dev/alarm?cook=end'" "$PKG" >/dev/null
   if [ $ok = 1 ]; then result "PASS  live-warnings $s"; else result "FAIL  live-warnings $s"; fi
 }
