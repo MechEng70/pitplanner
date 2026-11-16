@@ -71,7 +71,7 @@ For an internal alpha, skip this step and use `--version`.
 npm run release                                # the version in package.json; needs clean main
 npm run release -- --version 0.3.0-alpha.4     # internal prerelease; any branch state
 npm run release -- --dry-run                   # print the steps and checks, run nothing
-npm run release -- --verify release/<apk>      # only check an APK's cert, app ID and version
+npm run release -- --verify release/<apk>      # only check an APK's cert, app ID, version and app config
 ```
 
 - `--version` only takes a prerelease (`x.y.z-alpha.N`, `-beta.N`, `-rc.N`). For a release, bump
@@ -85,9 +85,14 @@ What a run does, in order:
 2. Runs `npm run check`.
 3. Production prebuild: `APP_VARIANT=production APP_VERSION=<version> npx expo prebuild --platform android
    --clean --no-install`.
-4. `./gradlew assembleRelease` in `android/`, signed through `plugins/withReleaseSigning` and
-   `keystore.properties`.
-5. Verifies the APK: signing certificate, app ID `io.github.mecheng70.pitplanner`, versionCode, versionName.
+4. `./gradlew assembleRelease` in `android/`, with the same `APP_VARIANT=production APP_VERSION=<version>`,
+   signed through `plugins/withReleaseSigning` and `keystore.properties`. The variable pair matters here
+   too: expo-constants writes `assets/app.config` (what the app reads about itself at run time: Gear's
+   version, the update check, Send to developer) during this build. 0.3.0-alpha.5 was built without them
+   and said 0.2.0 inside (T-035).
+5. Verifies the APK: signing certificate, app ID `io.github.mecheng70.pitplanner`, versionCode, versionName,
+   and the embedded `assets/app.config`: the same version and versionCode, the app ID, variant `production`
+   (`tools/release-app-config.mjs`).
 6. Copies it to `release/pitplanner-<version>.apk` and prints its SHA-256. Keep that line for the release
    notes.
 7. On exit, generates the development `android/` again, so `npm run android` and the gate keep working.
@@ -97,8 +102,8 @@ It stops before building when `keystore.properties` is missing, when the APK alr
 
 A run takes about 20 minutes.
 
-- [ ] The run ended with `cert ok; package: name='io.github.mecheng70.pitplanner' versionCode=... ` and a
-      SHA-256 line.
+- [ ] The run ended with `cert ok; package: name='io.github.mecheng70.pitplanner' versionCode=... `,
+      `app config ok: version <version>, versionCode <code>, ...` and a SHA-256 line.
 
 ## 4. Signing certificate
 
@@ -214,5 +219,8 @@ A Google Drive copy of the APK is optional.
 - `WRONG CERT`: the keystore in `keystore.properties` is not the release key. Stop. Do not publish.
 - `WRONG PACKAGE OR VERSION`: the build did not pick up the version or the production variant. Stop and
   read the line it prints.
+- `WRONG APP CONFIG`: the manifest is right but the app config inside the APK is not (the Gradle build ran
+  without the production variant or the version). The app would show the wrong version and miss updates.
+  Stop. Do not publish.
 - Snyk's Gradle scan fails inside `npm run check`: see CLAUDE.md, "Quality gate". Never remove a gate step
   to get a pass.

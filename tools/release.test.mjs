@@ -1,21 +1,25 @@
 // tools/release.sh --dry-run prints the release steps without running them (T-007).
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { appConfigProblems } from './release-app-config.mjs';
 
 const run = (...args) => spawnSync('tools/release.sh', ['--dry-run', ...args], { encoding: 'utf8' });
+/** The release steps of a dry run, as printed: the same words the script hands to `env`. */
+const stepsOf = r =>
+  r.stdout
+    .split('\n')
+    .filter(l => l.startsWith('+ '))
+    .map(l => l.slice(2));
 
 // The emulator is stopped first: it crashed during a release build at 23 of 30 GB in use (T-007).
 test('an internal prerelease: emulator stopped, check, production prebuild with the version, signed build, verify, restore dev', () => {
   const r = run('--version', '9.8.7-alpha.1');
   assert.equal(r.status, 0, r.stderr);
-  const steps = r.stdout
-    .split('\n')
-    .filter(l => l.startsWith('+ '))
-    .map(l => l.slice(2));
+  const steps = stepsOf(r);
   // The restore step's text is part of the production prebuild line too, so it is the last match.
   const at = s =>
     s.startsWith('npx expo prebuild') ? steps.findLastIndex(x => x === s) : steps.findIndex(x => x.includes(s));
@@ -23,8 +27,9 @@ test('an internal prerelease: emulator stopped, check, production prebuild with 
     'tools/device/avd.sh stop',
     'npm run check',
     'APP_VARIANT=production APP_VERSION=9.8.7-alpha.1 npx expo prebuild --platform android --clean',
-    './gradlew assembleRelease',
+    'APP_VARIANT=production APP_VERSION=9.8.7-alpha.1 MALLOC_ARENA_MAX=2 ./gradlew -q assembleRelease',
     'apksigner verify --print-certs',
+    'unzip -p android/app/build/outputs/apk/release/app-release.apk assets/app.config | node tools/release-app-config.mjs 9.8.7-alpha.1 90807001 io.github.mecheng70.pitplanner',
     'cp android/app/build/outputs/apk/release/app-release.apk release/pitplanner-9.8.7-alpha.1.apk',
     'npx expo prebuild --platform android --clean --no-install',
   ];
@@ -61,8 +66,26 @@ function stubTools(digest, badging) {
   sh('aapt2', `echo "${badging}"; for i in $(seq 20000); do echo "uses-permission: name='x.$i'"; done`);
   return bt;
 }
-const verify = bt =>
-  spawnSync('tools/release.sh', ['--verify', 'some.apk', '--version', '0.3.0-alpha.1'], {
+const appConfig = (over = {}) =>
+  JSON.stringify({
+    name: 'Pit Planner',
+    version: '0.3.0-alpha.1',
+    android: { package: 'io.github.mecheng70.pitplanner', versionCode: 300001 },
+    extra: { variant: 'production' },
+    ...over,
+  });
+/** A zip standing in for the APK, with `assets/app.config` holding `config` (left out when null). */
+function apkWith(config) {
+  const dir = mkdtempSync(join(tmpdir(), 'apk-'));
+  mkdirSync(join(dir, 'assets'));
+  writeFileSync(join(dir, 'assets', 'index.android.bundle'), 'bundle');
+  if (config !== null) writeFileSync(join(dir, 'assets', 'app.config'), config);
+  const z = spawnSync('zip', ['-qr', 'app.apk', 'assets'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(z.status, 0, z.stderr);
+  return join(dir, 'app.apk');
+}
+const verify = (bt, apk = apkWith(appConfig())) =>
+  spawnSync('tools/release.sh', ['--verify', apk, '--version', '0.3.0-alpha.1'], {
     encoding: 'utf8',
     env: { ...process.env, RELEASE_BUILD_TOOLS: bt },
   });
@@ -73,9 +96,78 @@ test('--verify passes a right APK even when the badging dump is long (no SIGPIPE
   const r = verify(stubTools(GOOD, BADGING));
   assert.equal(r.status, 0, r.stdout + r.stderr);
   assert.match(r.stdout, /cert ok/);
+  assert.match(r.stdout, /app config ok: version 0.3.0-alpha.1, versionCode 300001/);
 });
 
 test('--verify fails on the wrong certificate or version', () => {
   assert.match(verify(stubTools('00'.repeat(32), BADGING)).stderr, /WRONG CERT/);
   assert.match(verify(stubTools(GOOD, BADGING.replace("'300001'", "'300'"))).stderr, /WRONG PACKAGE OR VERSION/);
+});
+
+// T-035 (security pass finding 1): expo-constants writes assets/app.config, what Constants.expoConfig reads
+// at run time, during the Gradle build, by evaluating app.config.ts again in Gradle's environment.
+// 0.3.0-alpha.5 had APP_VARIANT and APP_VERSION on the prebuild only, so its manifest was right while its app
+// config said 0.2.0, build 200999, variant development.
+
+test('regression (finding 1): --verify refuses an APK whose embedded app config is the development one', () => {
+  const dev = appConfig({
+    name: 'Pit Planner dev',
+    version: '0.2.0',
+    android: { package: 'io.github.mecheng70.pitplanner.debug', versionCode: 200999 },
+    extra: { variant: 'development' },
+  });
+  const r = verify(stubTools(GOOD, BADGING), apkWith(dev));
+  assert.notEqual(r.status, 0);
+  assert.match(r.stdout, /cert ok/); // the manifest was right; only the app config was wrong
+  assert.match(r.stderr, /WRONG APP CONFIG .*version is "0.2.0", must be "0.3.0-alpha.1"/);
+  assert.match(r.stderr, /extra.variant is "development", must be "production"/);
+});
+
+test('--verify refuses an APK without an app config', () => {
+  const r = verify(stubTools(GOOD, BADGING), apkWith(null));
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /WRONG APP CONFIG: no assets\/app.config/);
+});
+
+/** The VAR=value words in front of the Gradle command of a dry run, which runs in android/. */
+function gradleEnv(version) {
+  const r = run('--version', version);
+  assert.equal(r.status, 0, r.stderr);
+  const line = stepsOf(r).find(s => s.includes('./gradlew'));
+  assert.ok(line, `no Gradle step:\n${r.stdout}`);
+  const m = /^\(cd android && (.*)\)$/.exec(line);
+  assert.ok(m, `the Gradle step does not run in android/: ${line}`);
+  const words = m[1].split(' ');
+  return Object.fromEntries(
+    words.slice(0, words.indexOf('./gradlew')).map(w => [w.slice(0, w.indexOf('=')), w.slice(w.indexOf('=') + 1)]),
+  );
+}
+
+test('regression (finding 1): the Gradle build gets the production variant and the version, as the prebuild does', () => {
+  const env = gradleEnv('0.3.0-beta.1');
+  assert.equal(env.APP_VARIANT, 'production');
+  assert.equal(env.APP_VERSION, '0.3.0-beta.1');
+});
+
+/** Runs what Gradle's create<Variant>ExpoConfig task runs (expo-constants), in an environment with `extra`. */
+function embeddedConfig(extra) {
+  const out = mkdtempSync(join(tmpdir(), 'app-config-'));
+  const env = { ...process.env };
+  delete env.APP_VARIANT;
+  delete env.APP_VERSION;
+  const script = join('node_modules', 'expo-constants', 'scripts', 'getAppConfig.js');
+  const r = spawnSync('node', [script, process.cwd(), out, 'android', 'false', 'production'], {
+    encoding: 'utf8',
+    env: { ...env, ...extra },
+  });
+  assert.equal(r.status, 0, r.stderr);
+  return readFileSync(join(out, 'app.config'), 'utf8');
+}
+
+test('the app config written in the Gradle step environment is the release asked for (0.3.0-beta.1, 300301)', () => {
+  const want = { version: '0.3.0-beta.1', versionCode: 300301, appId: 'io.github.mecheng70.pitplanner' };
+  assert.deepEqual(appConfigProblems(embeddedConfig(gradleEnv('0.3.0-beta.1')), want), []);
+  // Without it (0.3.0-alpha.5's Gradle step) the file is the development config, and verify refuses it.
+  const bare = appConfigProblems(embeddedConfig({}), want);
+  assert.ok(bare.includes('extra.variant is "development", must be "production"'), bare.join('; '));
 });

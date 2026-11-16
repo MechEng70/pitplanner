@@ -3,12 +3,18 @@
 #   npm run release                          the version in package.json (a real release: clean main)
 #   npm run release -- --version 0.3.0-alpha.1   an internal prerelease (not distributed; any branch state)
 #   --dry-run                                print the steps and checks, run nothing
-#   --verify <apk>                           only check an APK's cert, package and version
+#   --verify <apk>                           only check an APK's cert, package, version and app config
 # Steps: stop the test emulator (it crashed once during a release build, 23 of 30 GB in use, and a build
 # needs the memory); npm run check; production prebuild (--clean) with the version; assembleRelease (signing from
-# plugins/withReleaseSigning and the git-ignored keystore.properties); verify the cert SHA-256, package,
-# versionCode and versionName; copy to release/pitplanner-<version>.apk and print its SHA-256. On exit the
-# development android/ is generated again, so the dev build and the gate keep working.
+# plugins/withReleaseSigning and the git-ignored keystore.properties), in the same environment as the prebuild;
+# verify the cert SHA-256, package, versionCode and versionName, and the embedded app config; copy to
+# release/pitplanner-<version>.apk and print its SHA-256. On exit the development android/ is generated again,
+# so the dev build and the gate keep working.
+#
+# The variant and version go to the Gradle build too, not only to the prebuild (T-035, security pass finding
+# 1): expo-constants writes assets/app.config (what Constants.expoConfig reads: Gear's version, the update
+# check, Export my data, Send to developer) during the Gradle build, by evaluating app.config.ts again with
+# Gradle's environment. Without them 0.3.0-alpha.5 said 0.2.0, build 200999, variant development.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
@@ -48,6 +54,10 @@ verify_apk() {
   [[ "$badging" == *"name='$APP_ID' versionCode='$CODE' versionName='$V'"* ]] ||
     { echo "WRONG PACKAGE OR VERSION: $badging" >&2; return 1; }
   echo "cert ok; $badging"
+  # What the app itself reads at run time (finding 1): version, versionCode, app ID, production variant.
+  local config
+  config=$(unzip -p "$1" assets/app.config) || { echo "WRONG APP CONFIG: no assets/app.config in $1" >&2; return 1; }
+  node tools/release-app-config.mjs "$V" "$CODE" "$APP_ID" <<<"$config" || return 1
 }
 if [ -n "$VERIFY" ]; then
   verify_apk "$VERIFY"
@@ -72,6 +82,15 @@ run() {
   echo "+ $*"
   [ -n "$DRY" ] || env "$@"
 }
+# The same, in folder $1. What it prints is exactly what it hands to `env`.
+run_in() {
+  local dir="$1"
+  shift
+  echo "+ (cd $dir && $*)"
+  [ -n "$DRY" ] || (cd "$dir" && env "$@")
+}
+# The production variant and the version, for the prebuild AND the Gradle build (finding 1, see the top).
+RELEASE_ENV=(APP_VARIANT=production "APP_VERSION=$V")
 restore_dev() {
   echo "== generating the development android/ again"
   run npx expo prebuild --platform android --clean --no-install && { [ -n "$DRY" ] || touch android/.prebuild-stamp; }
@@ -80,12 +99,12 @@ restore_dev() {
 run tools/device/avd.sh stop
 run npm run check
 [ -n "$DRY" ] || trap restore_dev EXIT
-run APP_VARIANT=production APP_VERSION="$V" npx expo prebuild --platform android --clean --no-install
-echo "+ (cd android && ./gradlew assembleRelease)"
-[ -n "$DRY" ] || (cd android && MALLOC_ARENA_MAX=2 ./gradlew -q assembleRelease)
+run "${RELEASE_ENV[@]}" npx expo prebuild --platform android --clean --no-install
+run_in android "${RELEASE_ENV[@]}" MALLOC_ARENA_MAX=2 ./gradlew -q assembleRelease
 OUT_APK=android/app/build/outputs/apk/release/app-release.apk
 
 echo "+ $BT/apksigner verify --print-certs $OUT_APK"
+echo "+ unzip -p $OUT_APK assets/app.config | node tools/release-app-config.mjs $V $CODE $APP_ID"
 [ -n "$DRY" ] || verify_apk "$OUT_APK"
 mkdir -p release
 run cp "$OUT_APK" "$APK"
