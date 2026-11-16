@@ -257,9 +257,10 @@ function conflictAhead(plan: Plan, ids: string[], now: number): boolean {
 
 /**
  * The holds past their limit as one sentence, in the engine's words (`longHold`): "Long hold: brisket 6 hr
- * 10 min, limit 4 hr. Keep it above 140F." or, for several foods, "Long hold: chicken wings 35 min (limit
- * 30), chicken breasts 38 min (limit 20)." Each food's hold note follows the line, a note said once however
- * many foods have it. Nothing about the griddle or starting later: neither can be done mid-cook.
+ * 10 min, limit 4 hr. Keep it above 140F." or, for several foods, "Long hold: brisket 5 hr 10 min (limit
+ * 4 hr, keep above 140F), chicken wings 35 min (limit 30)." One food's hold note follows the line; with
+ * several, each food's inline note goes in its own brackets (none for an item saved before it existed).
+ * Nothing about the griddle or starting later: neither can be done mid-cook.
  */
 function holdsSentence(plan: Plan, itemIds: string[]): string {
   const items = itemIds.flatMap(id => plan.items.filter(i => i.input.id === id));
@@ -267,9 +268,10 @@ function holdsSentence(plan: Plan, itemIds: string[]): string {
     name: it.label ?? inSentence(it.name),
     holdMin: holdMin(plan, it.input.id),
     limitMin: it.holdLimitMin,
+    holdNoteInline: it.holdNoteInline,
   }));
-  const notes = [...new Set(items.flatMap(it => (it.holdNote ? [it.holdNote] : [])))];
-  return [longHold(foods), ...notes].join(' ');
+  const line = longHold(foods);
+  return items.length === 1 && items[0].holdNote ? `${line} ${items[0].holdNote}` : line;
 }
 
 /**

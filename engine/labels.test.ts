@@ -197,3 +197,44 @@ test('long hold, several foods: the limit keeps its unit when the hold is not wr
     'Long hold: brisket 6 hr 10 min (limit 4 hr), chicken wings 1 hr 5 min (limit 30 min), whole turkey 45 min (limit 1 hr), St. Louis ribs 2 hr (limit 1 hr 30 min).',
   );
 });
+
+// Jason, 2026-11-16: each food's hold note goes inside its own brackets, after the limit.
+const KEEP = 'keep above 140F';
+
+test('long hold, several foods: a food with a hold note carries it in its own brackets', () => {
+  assert.equal(
+    longHold([
+      { name: 'brisket', holdMin: 310, limitMin: 240, holdNoteInline: KEEP },
+      { name: 'chicken wings', holdMin: 35, limitMin: 30 },
+    ]),
+    'Long hold: brisket 5 hr 10 min (limit 4 hr, keep above 140F), chicken wings 35 min (limit 30).',
+  );
+});
+
+test('long hold, several foods: two foods with hold notes each carry their own', () => {
+  assert.equal(
+    longHold([
+      { name: 'brisket', holdMin: 300, limitMin: 240, holdNoteInline: KEEP },
+      { name: 'pork butt', holdMin: 360, limitMin: 240, holdNoteInline: KEEP },
+    ]),
+    'Long hold: brisket 5 hr (limit 4, keep above 140F), pork butt 6 hr (limit 4, keep above 140F).',
+  );
+});
+
+test('long hold, several foods: the note does not change how the limit is written', () => {
+  assert.equal(
+    longHold([
+      { name: 'chicken wings', holdMin: 65, limitMin: 30 },
+      { name: 'brisket', holdMin: 370, limitMin: 240, holdNoteInline: KEEP },
+      { name: 'chicken breasts', holdMin: 25, limitMin: 20 },
+    ]),
+    'Long hold: chicken wings 1 hr 5 min (limit 30 min), brisket 6 hr 10 min (limit 4 hr, keep above 140F), chicken breasts 25 min (limit 20).',
+  );
+});
+
+test('long hold, one food: the inline note is not used (the caller adds the full sentence)', () => {
+  assert.equal(
+    longHold([{ name: 'brisket', holdMin: 310, limitMin: 240, holdNoteInline: KEEP }]),
+    'Long hold: brisket 5 hr 10 min, limit 4 hr.',
+  );
+});

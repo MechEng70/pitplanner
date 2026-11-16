@@ -226,6 +226,7 @@ function buildItem(rules: Rules, input: ItemInput, plan: PlanInput): Omit<Planne
     extraHoldMin: 0,
     holdLimitMin: method.holdLimitMin,
     holdNote: method.holdNote,
+    holdNoteInline: method.holdNoteInline,
     pullLabel,
     pullCheckStep: !!method.pull.checkStep,
     footprintSqIn: (perUnit ?? 0) * W,

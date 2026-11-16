@@ -44,14 +44,18 @@ export interface HeldFood {
   name: string;
   holdMin: number;
   limitMin: number;
+  /** The food's hold note as it reads inside its brackets ("keep above 140F"); used only for several foods. */
+  holdNoteInline?: string;
 }
 
 /**
  * The long-hold sentence, with no verb to agree (Jason, 2026-11-16), on Plan and on the Live cook banner.
- * One food: "Long hold: brisket 6 hr 10 min, limit 4 hr." Several foods share one line with each limit in
- * brackets: "Long hold: chicken wings 35 min (limit 30), chicken breasts 25 min (limit 20)." There the limit
- * drops its unit only when the hold just before it is written in that one unit; otherwise it keeps it:
- * "chicken wings 1 hr 5 min (limit 30 min)", "brisket 6 hr 10 min (limit 4 hr)".
+ * One food: "Long hold: brisket 6 hr 10 min, limit 4 hr." (the caller adds the food's full hold note after
+ * it). Several foods share one line with each limit in brackets: "Long hold: chicken wings 35 min (limit
+ * 30), chicken breasts 25 min (limit 20)." There the limit drops its unit only when the hold just before it
+ * is written in that one unit; otherwise it keeps it: "chicken wings 1 hr 5 min (limit 30 min)", "brisket
+ * 6 hr 10 min (limit 4 hr)". A food's hold note goes inside its own brackets after the limit: "brisket 5 hr
+ * 10 min (limit 4 hr, keep above 140F), chicken wings 35 min (limit 30)."
  */
 export function longHold(foods: HeldFood[]): string {
   if (foods.length === 1) {
@@ -64,7 +68,8 @@ export function longHold(foods: HeldFood[]): string {
     const h = hold.split(' '),
       l = limit.split(' ');
     const sameUnit = h.length === 2 && l.length === 2 && h[1] === l[1];
-    return `${f.name} ${hold} (limit ${sameUnit ? l[0] : limit})`;
+    const note = f.holdNoteInline ? `, ${f.holdNoteInline}` : '';
+    return `${f.name} ${hold} (limit ${sameUnit ? l[0] : limit}${note})`;
   });
   return `Long hold: ${parts.join(', ')}.`;
 }

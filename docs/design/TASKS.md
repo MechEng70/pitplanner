@@ -2854,7 +2854,9 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
      `HOLD_TOO_LONG` message changes). One food: "Long hold: brisket 6 hr 10 min, limit 4 hr. Keep it above
      140F." Several foods on one line: "Long hold: chicken wings 35 min (limit 30), breasts 25 min (limit
      20)." The banner is then the conflict, then the holds. This replaces "Brisket holds 5 hr, past its 4 hr
-     limit." above.
+     limit." above. A food's hold note goes inside that food's own brackets, after the limit, not after the
+     line (Jason, 2026-11-16): "Long hold: brisket 5 hr 10 min (limit 4 hr, keep above 140F), chicken wings
+     35 min (limit 30)." Food names stay as built ("chicken breasts"). One food reads as above.
   3. The lane chart note keeps the conflict's own stretch.
   4. A warning hidden with OK stays hidden even if the hold keeps growing.
   5. Two OK buttons when the alert notice and this banner both show: fine.
@@ -2897,8 +2899,11 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
      no short-name data, only `shortName` in `cookView.ts`, which would also turn "chicken wings" into
      "wings"; (b) in the several-foods line the limit drops its unit only when the hold before it is written
      in that one unit ("35 min (limit 30)", "5 hr (limit 4)"), else it keeps it ("1 hr 5 min (limit 30
-     min)", "6 hr 10 min (limit 4 hr)"); (c) hold notes follow the several-foods line, each different note
-     once, in menu order, without saying which food it is for; (d) the several-foods line is only on the
+     min)", "6 hr 10 min (limit 4 hr)"); (c) replaced by Jason (2026-11-16): in the several-foods line a
+     food's hold note goes inside its own brackets after the limit, comma separated, in its inline form
+     (`holdNoteInline` next to `holdNote` in `data/foods.json`): "brisket 5 hr 10 min (limit 4 hr, keep above
+     140F), chicken wings 35 min (limit 30)"; a food with no note reads "(limit 30)", and so does an item of
+     a cook saved before the field existed; (d) the several-foods line is only on the
      banner, Plan's Conflicts sheet stays one row per food.
   5. A cook running across the update keeps its stored conflict sentence until its next change re-derives it.
 - **Open:** `tools/device/run.sh:803` still expects the old sentence (left for the main session);

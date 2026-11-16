@@ -37,6 +37,7 @@
           "pull": { "label": "Check tenderness: pull at 200-205F when the probe slides in like butter.", "tempF": [200, 205], "checkStep": true },
           "holdLimitMin": 240,
           "holdNote": "Keep it above 140F.",
+          "holdNoteInline": "keep above 140F",
           "prep": [ { "leadMin": 75, "label": "Prep the brisket." } ],
           "footprintSqInPerUnit": 16
         }
@@ -159,6 +160,7 @@
           "pull": { "label": "Check tenderness: pull at 200-205F when the bone wiggles free.", "tempF": [200, 205], "checkStep": true },
           "holdLimitMin": 240,
           "holdNote": "Keep it above 140F.",
+          "holdNoteInline": "keep above 140F",
           "prep": [ { "leadMin": 60, "label": "Prep the pork butt." } ],
           "footprintSqInPerUnit": 7
         }

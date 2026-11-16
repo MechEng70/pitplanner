@@ -331,7 +331,7 @@ test('live warnings: a warning the plan had at Start cook never shows, whatever 
   assert.equal(liveWarnings(behind, bare, undefined as unknown as string[], at(10), units)!.text, CONFLICT);
 });
 
-test('live warnings: several long holds are one sentence, and a hold note follows the line once', () => {
+test('live warnings: several long holds are one sentence, each hold note inside its own food', () => {
   // The brisket off at 11:30 AM and the wings off at 3:30 PM, serve 5:00 PM.
   const two = markPullDone(rules, input, pulledEarly, 'w', at(15, 30));
   assert.deepEqual(
@@ -344,7 +344,11 @@ test('live warnings: several long holds are one sentence, and a hold note follow
   const w = liveWarnings(two, plan, [], at(15, 30), units)!;
   assert.equal(
     w.text,
-    'Long hold: brisket 5 hr 10 min (limit 4 hr), chicken wings 1 hr 30 min (limit 30 min). Keep it above 140F.',
+    'Long hold: brisket 5 hr 10 min (limit 4 hr, keep above 140F), chicken wings 1 hr 30 min (limit 30 min).',
+  );
+  assert.equal(
+    liveWarnings(two, plan, [], at(15, 30), metric)!.text,
+    'Long hold: brisket 5 hr 10 min (limit 4 hr, keep above 60C), chicken wings 1 hr 30 min (limit 30 min).',
   );
   assert.deepEqual(w.keys, ['HOLD_TOO_LONG:b', 'HOLD_TOO_LONG:w']);
   // One of them hidden with OK: the other reads as a single food again.
@@ -352,4 +356,22 @@ test('live warnings: several long holds are one sentence, and a hold note follow
     liveWarnings(two, plan, ['HOLD_TOO_LONG:b'], at(15, 30), units)!.text,
     'Long hold: chicken wings 1 hr 30 min, limit 30 min.',
   );
+});
+
+test("live warnings: Jason's example, brisket 5 hr 10 min and wings 35 min, the note in the brisket's brackets", () => {
+  // The brisket off at 11:30 AM and the wings off at 4:25 PM, serve 5:00 PM.
+  const two = markPullDone(rules, input, pulledEarly, 'w', at(16, 25));
+  const w = liveWarnings(two, plan, [], at(16, 25), units)!;
+  assert.equal(
+    w.text,
+    'Long hold: brisket 5 hr 10 min (limit 4 hr, keep above 140F), chicken wings 35 min (limit 30).',
+  );
+  // A cook saved before the inline note existed: its items have none, so no note, and no crash.
+  const saved = { ...two, items: two.items.map(({ holdNoteInline: _drop, ...it }) => it) };
+  assert.equal(
+    liveWarnings(saved, plan, [], at(16, 25), units)!.text,
+    'Long hold: brisket 5 hr 10 min (limit 4 hr), chicken wings 35 min (limit 30).',
+  );
+  // Alone, the brisket still reads with the full sentence after the line.
+  assert.equal(liveWarnings(two, plan, ['HOLD_TOO_LONG:w'], at(16, 25), units)!.text, HOLD);
 });
