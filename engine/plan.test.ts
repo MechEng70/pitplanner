@@ -2,9 +2,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { buildPlan, derive, NO_GRIDDLE_PICK_METHOD, rateHintFor, tempFactor, type Rules } from './plan.ts';
+import {
+  buildPlan,
+  derive,
+  NO_GRIDDLE_PICK_METHOD,
+  rateHintFor,
+  SMOKER_TOO_COOL_PICK_METHOD,
+  tempFactor,
+  type Rules,
+} from './plan.ts';
 import { shiftRemaining, markStepDone, pitOutage, smokerOverlaps } from './live.ts';
-import { showTemp } from './units.ts';
+import { smokerReachF } from './rules.ts';
+import { localizeText, showTemp } from './units.ts';
 import type { Plan, PlanInput, SmokerProfile } from './types.ts';
 
 const rules = JSON.parse(readFileSync(new URL('../data/foods.json', import.meta.url), 'utf8'));
@@ -726,4 +735,86 @@ test("no griddle: tri-tip names the method that needs none (Jason's words); othe
   );
   // The smoker sear needs no griddle at all.
   assert.ok(!buildPlan(rules, tritipSear({ cookers: smokerOnly })).warnings.some(w => w.code.startsWith('NO_')));
+});
+
+// T-075 follow-up (Jason, 2026-11-16): a plan that holds a smoker-sear tri-tip when the smoker in Gear is changed
+// to one that tops out under the method's lowest sear temp. The method is not changed for the user; the plan
+// says so once per food and still builds (at the 450F fallback).
+const coolSear = (maxTempF: number, items?: PlanInput['items']) =>
+  buildPlan(rules, tritipSear({ cookers: { smoker: { ...pitBoss, maxTempF } }, ...(items ? { items } : {}) }));
+const tooCool = (p: Plan) => p.warnings.filter(w => w.code === 'SMOKER_TOO_COOL');
+
+test('tri-tip smoker sear on a smoker under 450F: one warning naming both temps, no method change', () => {
+  const tritip = (rules as Rules).foods.find(f => f.id === 'tritip')!;
+  const need = smokerReachF(
+    tritip,
+    tritip.methods.find(m => m.id === 'smokerSear')!,
+  )!;
+  const lineFor = (max: number) =>
+    SMOKER_TOO_COOL_PICK_METHOD.replace('{food}', 'Tri-tip')
+      .replace('{step}', 'sear')
+      .replace('{need}', String(need))
+      .replace('{max}', String(max));
+  const p = coolSear(425);
+  assert.deepEqual(
+    tooCool(p).map(w => [w.message, w.itemIds, w.level]),
+    [[lineFor(425), ['t'], 'warn']],
+  );
+  // Jason, 2026-11-16: the exact sentence, and in Celsius through the app's text conversion.
+  assert.equal(
+    lineFor(425),
+    "Tri-tip's sear needs 450F and this smoker tops out at 425F. Pick another method in Food details.",
+  );
+  assert.equal(
+    localizeText(tooCool(p)[0]!.message, 'C', 'lb'),
+    "Tri-tip's sear needs 232C and this smoker tops out at 218C. Pick another method in Food details.",
+  );
+  assert.deepEqual(
+    tooCool(coolSear(449)).map(w => w.message),
+    [lineFor(449)],
+  );
+  // No method change, and the plan is built as before: 450F for the climb and the sear.
+  assert.equal(p.items[0].input.methodId, 'smokerSear');
+  assert.deepEqual(
+    p.items[0].phases.map(x => [x.id, x.tempF]),
+    [
+      ['smoke', 225],
+      ['ramp', 450],
+      ['sear', 450],
+    ],
+  );
+  // Nothing else is said about it.
+  assert.deepEqual(
+    p.warnings.map(w => w.code),
+    ['SMOKER_TOO_COOL'],
+  );
+});
+
+test('tri-tip smoker sear: a smoker at exactly 450F or above gets no warning; no smoker is the missing-smoker line', () => {
+  for (const max of [450, 475, 500, 550]) assert.deepEqual(tooCool(coolSear(max)), [], `${max}F`);
+  const none = buildPlan(rules, tritipSear({ cookers: {} }));
+  assert.deepEqual(
+    none.warnings.map(w => w.code),
+    ['NO_SMOKER'],
+  );
+});
+
+test('smoker under 450F: the warning is once per food, and only for a method whose smoker step needs the heat', () => {
+  const two = [
+    { id: 't1', foodId: 'tritip', methodId: 'smokerSear', quantity: 2.5 },
+    { id: 't2', foodId: 'tritip', methodId: 'smokerSear', quantity: 3 },
+  ];
+  const p = coolSear(425, two);
+  assert.deepEqual(
+    tooCool(p).map(w => w.itemIds),
+    [['t1'], ['t2']],
+  );
+  // Two tri-tips: each named by its label, as the other per-food warnings are.
+  for (const w of tooCool(p)) assert.match(w.message, /^\d+(\.\d+)? lb tri-tip's sear needs 450F /);
+  // The griddle sear and brisket-style need no hot smoker: nothing on a 425F smoker.
+  const others = [
+    { id: 'r', foodId: 'tritip', methodId: 'reverse', quantity: 2.5 },
+    { id: 'b', foodId: 'tritip', methodId: 'brisketStyle', quantity: 2.5 },
+  ];
+  assert.deepEqual(tooCool(coolSear(425, others)), []);
 });

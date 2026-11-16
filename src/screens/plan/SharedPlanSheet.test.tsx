@@ -7,7 +7,7 @@ import { SHEET_OUT_MS } from '@/components/kit/sheet';
 import type { Draft } from '@/lib/draft';
 import { saturday } from '@/lib/fixtures/saturday';
 import { defaultGriddle } from '@/lib/gear';
-import { rules } from '@/lib/rules';
+import { method, rules } from '@/lib/rules';
 import { parsePitPlan, type ImportedPlan, type SharedPlan } from '@/lib/sharedPlan';
 import { fakeAlarms, fakeResume } from '@/platform/fakes';
 import type { OpenedPlanFile } from '@/platform/types';
@@ -149,10 +149,20 @@ describe('Shared plan sheet', () => {
   // fall back to it.
   const upTo = (maxTempF: number): Cookers => ({ smoker: { ...smoker, maxTempF } });
 
-  test('no griddle and a 425F smoker: the tri-tip falls back to brisket-style, not the smoker sear', async () => {
+  // T-075 follow-up (Jason, 2026-11-16): a tri-tip that falls to brisket-style stays on the smoker, so the box
+  // says what it will do there, in the brisket-style method's own words from the data.
+  const brisketStyleMove = method('tritip', 'brisketStyle').importMove!;
+  const BRISKET_STYLE = `Tri-tip will ${brisketStyleMove}, or add a griddle in Gear.`;
+
+  test('the brisket-style sentence, as Jason wrote it', () => {
+    expect(BRISKET_STYLE).toBe('Tri-tip will cook brisket-style with no sear, or add a griddle in Gear.');
+  });
+
+  test('no griddle and a 425F smoker: the tri-tip falls back to brisket-style, and the box says so', async () => {
     const { onUse } = await show(upTo(425), { shared: sharedOf(fileText({ items: [TRITIP] })) });
     expect(screen.getByText('No griddle set up.')).toBeOnTheScreen();
-    expect(screen.getByText('Tri-tip will move to the smoker, or add a griddle in Gear.')).toBeOnTheScreen();
+    expect(screen.getByText(BRISKET_STYLE)).toBeOnTheScreen();
+    expect(screen.queryByText(/will move to the smoker/)).toBeNull();
     await fireEvent.press(button('Use this plan'));
     await settle();
     expect(onUse.mock.calls[0]![0].items.map(i => [i.methodId, i.restMin])).toEqual([['brisketStyle', 45]]);
@@ -166,13 +176,31 @@ describe('Shared plan sheet', () => {
     expect(onUse.mock.calls[0]![0].items[0]!.methodId).toBe('smokerSear');
   });
 
-  test('a shared smoker sear on a 425F smoker takes the first method that smoker can do', async () => {
+  test('a shared smoker sear on a 425F smoker takes the first method that smoker can do, and says so', async () => {
     const sent = { ...TRITIP, methodId: 'smokerSear' };
     const { onUse } = await show(upTo(425), { shared: sharedOf(fileText({ items: [sent] })) });
+    // Never silent (Jason, 2026-11-16): the same box and words as for a griddle sear.
+    expect(screen.getByText('No griddle set up.')).toBeOnTheScreen();
+    expect(screen.getByText(BRISKET_STYLE)).toBeOnTheScreen();
     await fireEvent.press(button('Use this plan'));
     await settle();
     const [plan] = onUse.mock.calls[0]!;
     expect(plan.items[0]!.methodId).toBe('brisketStyle');
+    expect(plan.movedIds).toEqual(['n0']);
+  });
+
+  test('a shared smoker sear on a 425F smoker with a griddle: the griddle sear, and no box', async () => {
+    const sent = { ...TRITIP, methodId: 'smokerSear' };
+    const gear = { ...upTo(425), griddle: defaultGriddle() };
+    const { onUse } = await show(gear, { shared: sharedOf(fileText({ items: [sent] })) });
+    // Every cooker is set up, and the brisket-style sentence would be untrue: nothing new is shown.
+    expect(screen.queryByText(/set up\./)).toBeNull();
+    expect(screen.queryByText(BRISKET_STYLE)).toBeNull();
+    await fireEvent.press(button('Use this plan'));
+    await settle();
+    const [plan] = onUse.mock.calls[0]!;
+    expect(plan.items.map(i => [i.methodId, i.restMin])).toEqual([['reverse', 10]]);
+    expect(plan.moves).toEqual([]);
     expect(plan.movedIds).toEqual(['n0']);
   });
 

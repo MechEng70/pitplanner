@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { buildPlan } from '../../../engine/plan';
+import { buildPlan, SMOKER_TOO_COOL_PICK_METHOD } from '../../../engine/plan';
+import { smokerReachF } from '../../../engine/rules';
 import type { Cookers, ItemInput, PlanInput, Warning } from '../../../engine/types';
 import { SHEET_OUT_MS } from '@/components/kit/sheet';
 import { saturday } from '@/lib/fixtures/saturday';
@@ -124,6 +125,47 @@ describe('Conflicts sheet', () => {
     expect(screen.getByTestId('issue-message')).toHaveTextContent(
       /^Whole turkey needs the smoker at \d+C or hotter\. It is set to \d+C\.$/,
     );
+  });
+
+  // T-075 follow-up (Jason, 2026-11-16): a smoker-sear tri-tip on a smoker changed to one under 450F keeps its
+  // method; Conflicts lists the warning with Edit, as for a missing griddle.
+  const tritip: ItemInput = { id: 't', foodId: 'tritip', methodId: 'smokerSear', quantity: 2.5, restMin: 10 };
+  const coolSmoker = (maxTempF: number): Cookers => ({ ...withGriddle, smoker: { ...smoker, maxTempF } });
+  const tooCool = (need: number, max: number) =>
+    SMOKER_TOO_COOL_PICK_METHOD.replace('{food}', 'Tri-tip')
+      .replace('{step}', 'sear')
+      .replace('{need}', String(need))
+      .replace('{max}', String(max));
+
+  test('a smoker-sear tri-tip on a 425F smoker: the warning with Edit, and no temp or griddle fix', async () => {
+    const { plan, props } = await show({ items: [tritip], cookers: coolSmoker(425) });
+    expect(plan.warnings.map(w => [w.code, w.level, w.itemIds])).toEqual([['SMOKER_TOO_COOL', 'warn', ['t']]]);
+    expect(plan.items[0]!.input.methodId).toBe('smokerSear');
+    const need = smokerReachF(
+      rules.foods.find(f => f.id === 'tritip')!,
+      method('tritip', 'smokerSear'),
+    )!;
+    expect(screen.getByTestId('issue-message')).toHaveTextContent(tooCool(need, 425));
+    expect(screen.getByTestId('issue-message')).toHaveTextContent(
+      "Tri-tip's sear needs 450F and this smoker tops out at 425F. Pick another method in Food details.",
+    );
+    noButton('Change smoker temp');
+    noButton(/to the griddle$/);
+    await fireEvent.press(button('Edit tri-tip'));
+    await settle();
+    expect(props.onEdit).toHaveBeenCalledWith('t');
+  });
+
+  test('the too-cool smoker warning reads in Celsius', async () => {
+    await show({ items: [tritip], cookers: coolSmoker(425) }, { temp: 'C', weight: 'kg' });
+    expect(screen.getByTestId('issue-message')).toHaveTextContent(
+      "Tri-tip's sear needs 232C and this smoker tops out at 218C. Pick another method in Food details.",
+    );
+  });
+
+  test('a smoker at exactly 450F: nothing to fix', async () => {
+    await show({ items: [tritip], cookers: coolSmoker(450) });
+    expect(screen.getByText('Nothing to fix. The plan fits your cookers.')).toBeOnTheScreen();
   });
 
   test('Edit closes the sheet, then opens that food', async () => {
