@@ -81,6 +81,7 @@ function unsourced(food: RuleFood): string[] {
     const m = resolveMethod(food, raw);
     if (m.pull?.tempF) needs.add('doneTemp');
     if (m.minPitTempF != null) needs.add('minPitTemp');
+    if (m.sizeNote) needs.add('size');
     if (m.timing?.hrPerLbAt225 != null || m.timing?.minPerLbAt225 != null) needs.add('rate');
   }
   const covered = new Set<string>(
@@ -88,6 +89,18 @@ function unsourced(food: RuleFood): string[] {
   );
   return [...needs].filter(n => !covered.has(n)).sort();
 }
+
+test('rules: the turkey size note (over 16 lb) has its own source, and fails the check without one', () => {
+  const turkey = rules.foods.find(f => f.id === 'turkey')!;
+  const m = resolveMethod(turkey, turkey.methods[0]);
+  assert.deepEqual(m.sizeNote, { aboveLb: 16, text: 'USDA recommends 16 lb or less for safe smoking.' });
+  const src = turkey.sources!.find(s => s.covers.includes('size'))!;
+  assert.match(src.cite, /USDA FSIS/);
+  assert.equal(src.says, 'Turkeys 16 pounds or less are the recommended size for safe smoking.');
+  assert.deepEqual(unsourced(turkey), []);
+  const without = turkey.sources!.filter(s => !s.covers.includes('size'));
+  assert.deepEqual(unsourced({ ...turkey, sources: without }), ['size']);
+});
 
 test('rules: turkey cites a source for its done temp, smoker temp floor and rate', () => {
   const checked = rules.foods.filter(f => f.sources || f.methods.some(m => resolveMethod(f, m).minPitTempF != null));
@@ -117,7 +130,7 @@ test('rules: turkey cites a source for its done temp, smoker temp floor and rate
 
 test('rules: the sources check fails when a number loses its source', () => {
   const turkey = rules.foods.find(f => f.id === 'turkey')!;
-  const all = ['doneTemp', 'minPitTemp', 'rate'];
+  const all = ['doneTemp', 'minPitTemp', 'rate', 'size'];
   assert.deepEqual(unsourced({ ...turkey, sources: [] }), all);
   assert.deepEqual(unsourced({ ...turkey, sources: turkey.sources!.map(s => ({ ...s, cite: ' ' })) }), all);
   const noFloor = turkey.sources!.map(s => ({ ...s, covers: s.covers.filter(c => c !== 'minPitTemp') }));

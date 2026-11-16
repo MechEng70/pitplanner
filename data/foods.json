@@ -221,11 +221,12 @@
       "id": "turkey",
       "name": "Whole turkey",
       "group": "Turkey",
-      "$comment": "T-059. Unstuffed, whole. Food-safety numbers (done temp, smoker temp floor, rate) each have a source below; engine/rules.test.ts fails without one. The rate has a measured point (timing.tempPoints: Jason's 18 min per lb at 275F, 2026-11-16; the shared tempModel alone gave 21.7): 30 min per lb at 225F, 23.2 at 250F, 18 at 275F, then the shared model from that point, 15.3 at 300F and 13 at 325F. No size limit: none was given (Jason, 2026-11-15). Prep steps say when, not how (Jason, 2026-11-15); the 30 min lead is not sourced. rateHint starts at the low end of the cited range, so a rate for a hotter smoker is not flagged as unusual.",
+      "$comment": "T-059. Unstuffed, whole. Food-safety numbers (done temp, smoker temp floor, rate) each have a source below; engine/rules.test.ts fails without one. The rate has a measured point (timing.tempPoints: Jason's 18 min per lb at 275F, 2026-11-16; the shared tempModel alone gave 21.7): 30 min per lb at 225F, 23.2 at 250F, 18 at 275F, then the shared model from that point, 15.3 at 300F and 13 at 325F. Size: no limit, but above 16 lb the plan adds an info line (sizeNote; Jason, 2026-11-16, a warning and not a block, citing USDA FSIS). Prep steps say when, not how (Jason, 2026-11-15); the 30 min lead is not sourced. rateHint starts at the low end of the cited range, so a rate for a hotter smoker is not flagged as unusual.",
       "rateHint": [0.33, 1.6],
       "sources": [
         { "cite": "USDA FSIS (fsis.usda.gov), read by Jason 2026-11-15", "covers": ["doneTemp", "minPitTemp", "rate"], "says": "Smoker air at 225F to 300F. 20 to 30 min per lb. Done at 165F in the innermost thigh, the innermost wing and the thickest part of the breast." },
         { "cite": "Jason, 2026-11-15", "covers": ["rate", "rest"], "says": "Closer to 30 min per lb at 225F to 250F, 15 to 20 min per lb at 275F to 325F. Rest 30 min, 20 min minimum." },
+        { "cite": "USDA FSIS (fsis.usda.gov), quoted by Jason 2026-11-16", "covers": ["size"], "says": "Turkeys 16 pounds or less are the recommended size for safe smoking." },
         { "cite": "Jason, 2026-11-16, his measured value", "covers": ["rate"], "says": "18 min per lb at 275F. About 23 min per lb at 250F and about 15 at 300F through that point." }
       ],
       "quantity": { "kind": "weight", "unit": "lb", "default": 12, "min": 8, "max": 24, "step": 0.5, "referenceWeight": 12 },
@@ -235,6 +236,7 @@
           "label": "Smoked",
           "cooker": "smoker",
           "minPitTempF": 225,
+          "sizeNote": { "aboveLb": 16, "text": "USDA recommends 16 lb or less for safe smoking." },
           "timing": { "kind": "perWeight", "hrPerLbAt225": 0.5, "rangeAt225": [0.33, 0.5], "tempPoints": [{ "tempF": 275, "hrPerLb": 0.3 }] },
           "phases": [
             { "id": "smoke", "fraction": 1.0, "temp": "pit", "label": "Turkey on the smoker. Probe in the thickest part of the breast.", "short": "Smoke" }

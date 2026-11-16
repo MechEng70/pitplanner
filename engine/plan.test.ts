@@ -456,6 +456,38 @@ test('turkey: below 225F the plan reports an issue and keeps the temp; at 225F i
     assert.ok(!turkeyPlan({ pitTempF: t }).warnings.some(x => x.code === 'TEMP_BELOW_FOOD_MIN'), `${t}F`);
 });
 
+// Jason, 2026-11-16: a warning, not a block, above 16 lb for a whole turkey on the smoker (USDA FSIS:
+// "Turkeys 16 pounds or less are the recommended size for safe smoking"). An info line in Conflicts.
+const sizeNotes = (quantity: number, foodId = 'turkey', methodId = 'smoked') =>
+  buildPlan(rules, saturday({ rateOverrides: {}, items: [{ id: 't', foodId, methodId, quantity }] })).warnings.filter(
+    w => w.code === 'SIZE_OVER_RECOMMENDED',
+  );
+
+test('turkey: 16 lb has no size note; 16.5 lb has one info line that names the weight and the USDA size', () => {
+  assert.deepEqual(sizeNotes(16), []);
+  assert.deepEqual(sizeNotes(12), []);
+  assert.deepEqual(sizeNotes(16.5), [
+    {
+      code: 'SIZE_OVER_RECOMMENDED',
+      level: 'info',
+      itemIds: ['t'],
+      message: 'Whole turkey is 16.5 lb. USDA recommends 16 lb or less for safe smoking.',
+    },
+  ]);
+  assert.equal(sizeNotes(24)[0].message, 'Whole turkey is 24 lb. USDA recommends 16 lb or less for safe smoking.');
+});
+
+test('turkey: the size note blocks nothing (the plan is built as asked) and no other food has one', () => {
+  const p = buildPlan(
+    rules,
+    saturday({ rateOverrides: {}, items: [{ id: 't', foodId: 'turkey', methodId: 'smoked', quantity: 20 }] }),
+  );
+  assert.equal(p.items[0].input.quantity, 20);
+  assert.equal(p.items[0].phases.find(x => x.id === 'smoke')!.minutes, 20 * 30);
+  assert.ok(!p.warnings.some(w => w.level === 'warn'));
+  assert.deepEqual(sizeNotes(18, 'brisket', 'smoked'), []);
+});
+
 test("turkey: the temp floor is the food's own; brisket at 200F has no such issue", () => {
   const p = buildPlan(rules, saturday({ pitTempF: 200, items: [saturday().items[0]] }));
   assert.ok(!p.warnings.some(x => x.code === 'TEMP_BELOW_FOOD_MIN'));

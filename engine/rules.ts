@@ -83,10 +83,12 @@ export interface RuleMethod extends MethodShared {
   short?: string;
   note?: string;
   minPitTempF?: number; // lowest smoker set point for this method; below it the plan reports an issue
+  /** By-weight foods: above this weight the plan adds an info line (never a block), `text` after the weight. */
+  sizeNote?: { aboveLb: number; text: string };
 }
 
-/** What a source backs: the food-safety numbers (done temp, smoker temp floor, rate) and the rest time. */
-export type SourceTopic = 'doneTemp' | 'minPitTemp' | 'rate' | 'rest';
+/** What a source backs: the food-safety numbers (done temp, smoker temp floor, rate, size) and the rest time. */
+export type SourceTopic = 'doneTemp' | 'minPitTemp' | 'rate' | 'rest' | 'size';
 
 /** Where a food's numbers come from. `cite` names the source and who read it when; `says` is what it gives. */
 export interface RuleSource {

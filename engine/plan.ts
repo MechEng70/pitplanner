@@ -416,6 +416,20 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
       });
   }
 
+  // A size the food's source recommends staying under (whole turkey over 16 lb): said, never enforced.
+  for (const it of items) {
+    const food = rules.foods.find(f => f.id === it.input.foodId);
+    const raw = food?.methods.find(m => m.id === it.input.methodId);
+    const size = food && raw ? mergeShared(food, raw).sizeNote : undefined;
+    if (size && it.input.quantity > size.aboveLb)
+      warnings.push({
+        code: 'SIZE_OVER_RECOMMENDED',
+        level: 'info',
+        itemIds: [it.input.id],
+        message: `${nm(it)} is ${it.input.quantity} lb. ${size.text}`,
+      });
+  }
+
   // Smoker temperature conflicts between items
   const sm = items
     .flatMap(it => it.phases.filter(p => p.cooker === 'smoker').map(p => ({ it, p })))
