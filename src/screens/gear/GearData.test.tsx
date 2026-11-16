@@ -111,7 +111,7 @@ test('both rows are in Your numbers, after Cook rates and before the App card, e
   const buttons = screen.getAllByRole('button');
   const at = (re: RegExp) => buttons.indexOf(row(re));
   expect(screen.getByText('Cookers, rates and past cooks in one file')).toBeOnTheScreen();
-  expect(screen.getByText('Replaces the cookers, rates and cooks on this phone')).toBeOnTheScreen();
+  expect(screen.getByText('Replaces the data on this phone')).toBeOnTheScreen();
   const order = [/Cook rates/, /^Export my data/, /^Restore from a file/, /^Alerts/].map(at);
   expect(order.every(i => i >= 0)).toBe(true);
   expect([...order].sort((a, b) => a - b)).toEqual(order);

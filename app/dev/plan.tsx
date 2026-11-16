@@ -12,6 +12,11 @@
 //   pitplanner://dev/plan?seed=cooking  mockup 12: the mockup menu as a running cook, 6 hr 37 min before serve
 //                                       (10:23 AM on a 5:00 PM serve; up to 5 min more, as serve lands on a 5 minute mark), earlier steps done; opens the Cook tab.
 //                                       End it with pitplanner://dev/alarm?cook=end
+//   pitplanner://dev/plan?seed=conflict the mockup cook 40 min before serve with the brisket an hour behind (Not yet
+//                                       on the wrap, Keep serve): it is still on at 225F while the wings crisp at
+//                                       400F, so Live cook shows the smoker conflict banner (T-069)
+//   pitplanner://dev/plan?seed=warned   the same, plus the wings on 30 min early and the breasts on 25 min early,
+//                                       each with Keep serve: the banner has the conflict and two long holds (T-069)
 //   pitplanner://dev/plan?seed=finished mockup 15: the mockup cook with every step done but Serve, which is due in
 //                                       about a minute (brisket off 25 min early, breasts 3 min late); opens the
 //                                       Cook tab: Done on Serve leads to Cook finished. The saved 0.75 hr/lb
@@ -37,7 +42,7 @@ import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { buildPlan } from '../../engine/plan';
 import type { ItemInput, PlanInput } from '../../engine/types';
-import { newCook, steps } from '@/lib/cook';
+import { doneStep, newCook, postpone, steps, type ActiveCook } from '@/lib/cook';
 import { BLEND_RECORDS, finishedCook, HISTORY_RECORD, MOCKUP_MENU } from '@/lib/fixtures/finishedCook';
 import { FAST_FACTOR, squeezeCook } from '@/lib/fastCook';
 import { saturday } from '@/lib/fixtures/saturday';
@@ -78,6 +83,8 @@ const SEEDS: Record<string, ItemInput[]> = {
   twins: [brisket('b1', 6), brisket('b2', 6)],
   tomorrow: MENU,
   cooking: MENU,
+  conflict: MENU,
+  warned: MENU,
   finished: MENU,
   'finished-blend': MENU,
   history: [],
@@ -91,6 +98,8 @@ const FAST_LEAD_MS = 20_000;
 const fastFactor = (x?: string) => (Number(x) >= 1 ? Number(x) : FAST_FACTOR);
 /** Mockup 12 shows 10:23 AM on a 5:00 PM serve. */
 const COOKING_BEFORE_SERVE_MIN = 397;
+/** The two banner seeds show the cook 40 min before serve (4:20 PM on a 5:00 PM serve; up to 5 min more). */
+const WARNED_BEFORE_SERVE_MIN = 40;
 
 /** When the seed's plan serves: the fixture's Saturday, or a time set from the clock for the two cook seeds. */
 function serveAt(seed: string, now: number): number {
@@ -104,6 +113,8 @@ function serveAt(seed: string, now: number): number {
   // Serve is the one step left, due in 30 to 90 seconds: Done on it reads as served on time.
   if (seed === 'finished' || seed === 'finished-blend') return Math.floor((now + 1.5 * MIN) / MIN) * MIN;
   if (seed === 'cooking') return Math.ceil((now + COOKING_BEFORE_SERVE_MIN * MIN) / (5 * MIN)) * 5 * MIN;
+  if (seed === 'conflict' || seed === 'warned')
+    return Math.ceil((now + WARNED_BEFORE_SERVE_MIN * MIN) / (5 * MIN)) * 5 * MIN;
   return saturday.at;
 }
 
@@ -175,6 +186,32 @@ export default function PlanSeed() {
       const start = Math.ceil((now + FAST_LEAD_MS) / 1000) * 1000;
       const fast = squeezeCook(input, buildPlan(rules, input), start, fastFactor(x));
       setCook(newCook(fast.input, fast.plan, now));
+      router.replace('/cook');
+      return;
+    }
+    if (seed === 'conflict' || seed === 'warned') {
+      // Every change is a real cook operation with Keep serve, at the times the CookScreen tests use
+      // (10:23 AM, 2:45 PM and 4:15 PM on a 5:00 PM serve); steps due before each moment were done on time.
+      const input: PlanInput = { ...saturday, at, cookers, items };
+      const doneBefore = (c: ActiveCook, t: number): ActiveCook => ({
+        ...c,
+        done: {
+          ...Object.fromEntries(
+            steps(c)
+              .filter(k => k.event.at < t)
+              .map(k => [k.key, k.event.at]),
+          ),
+          ...c.done,
+        },
+      });
+      const t0 = at - COOKING_BEFORE_SERVE_MIN * MIN;
+      let cook = doneBefore(newCook(input, buildPlan(rules, input), t0), t0);
+      cook = postpone(cook, 'phase:b:wrap', t0, 60, true);
+      if (seed === 'warned') {
+        cook = doneStep(doneBefore(cook, at - 135 * MIN), 'phase:w:smoke', at - 135 * MIN, true).cook;
+        cook = doneStep(doneBefore(cook, at - 45 * MIN), 'phase:c:cook', at - 45 * MIN, true).cook;
+      }
+      setCook(doneBefore(cook, now));
       router.replace('/cook');
       return;
     }

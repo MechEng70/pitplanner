@@ -2258,7 +2258,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - "Export my data", subtitle "Cookers, rates and past cooks in one file": shares the `pitplanner-data` file
     (not the full dump); the name stays `pitplanner-data-<date>-<time>.json`. A failed share: "Couldn't
     export" / "Your data was not shared. Try again."
-  - "Restore from a file", subtitle "Replaces the cookers, rates and cooks on this phone": the system file
+  - "Restore from a file", subtitle "Replaces the data on this phone" (Jason, 2026-11-16; first "Replaces the cookers, rates and
+    cooks on this phone"): the system file
     picker only (`expo-document-picker`, a new dev build; lands in 0.3.0-beta.1). No open-with from another
     app.
   - Replace, after the confirm sheet: title "Replace your data?", text "This file has 2 cookers, 3 cook
@@ -2281,9 +2282,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   mockup). A history food the app does not know is kept; a known food with an unknown method is still left
   out. Tests: `dataFile.test.ts` 21, `GearData.test.tsx` 19, `restoreText.test.ts` 11, `pickFile.test.ts` 6,
   `shareFile.test.ts` +1. Not seen on a device.
-- **Choices made in the build (not decided by Jason):** a count of zero is left out of the sentences (open
-  with him: a restore empties the phone's rates and cooks even when the file has none, and the sentence
-  then does not mention them); refusals and the Restored line show in the existing notice sheet titled
+- **Choices made in the build (not decided by Jason):** no cook rates and no cooks are said ("This file has 2 cookers, no
+  cook rates and no cooks, from Nov 16."; Jason, 2026-11-16, since a restore empties them), no cookers is left
+  out (the phone keeps its own), and the Restored line uses the same list; refusals and the Restored line show in the existing notice sheet titled
   "Restore from a file" with OK; a running cook is refused when the row is tapped, before the picker; the
   date reads "Nov 16" (`fmtMonthDay`, local time, no year); a file over 1000 cooks counts as 1 part left
   out; the picker offers any file type; one new string, shown only if the database write fails and is
@@ -3007,6 +3008,9 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   6. +15 min on the lock screen moving serve without re-timing the other foods is a separate must-fix,
      looked at by another task first. The tests here that go through that path say so in a comment; their
      expected strings may change.
+- **Device check, 2026-11-16:** device test `live-warnings` passes at 115% (the banner with the conflict
+  alone, with the conflict and two long holds, OK hides it, the lane chart note); Jason accepted the
+  pictures (`docs/fidelity/rn-12-live-*.png`) and asked for three fixes, T-081.
 - **Status:** merged onto `main` 2026-11-16 with the hold note inside the food's entry (`holdNoteInline` in
   `data/foods.json`); gated; not seen on a device. `tools/device/run.sh` (`plan-sheets`) and `docs/parity.md`
   D8, D9, T16 updated at the merge.
@@ -3536,3 +3540,20 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   permission row and the temps.
 - **Real phone:** yes: a real probe; the emulator has no Bluetooth radio to speak of.
 - **Device testing (Jason):** a probe in hot water against the Chef iQ app's reading.
+
+### T-081 Live cook: header line, wings pull wording, banner line break
+- **Status:** todo. In 0.3.0, before beta.1 (Jason, 2026-11-16, from the T-069 pictures). One task, failing
+  test first where testable. Starts after T-075 merges (both edit `data/foods.json`).
+- **1. Header.** The subtitle ("Smoker 225F, serve 2:30 PM") goes on its own full-width line under the title
+  row, so the status pill's width can never change its wrapping. Layout rule: a status change must not
+  move the banners or Done. Test: the pill reading On plan, Ahead and Behind gives the same header height at
+  115%.
+- **2. Wings pull step.** Title "Pull wings at 175-185F in 8 min" (the countdown as today); subtitle "165F is
+  the safe minimum. Hold uncovered, sauce right before serving." The FSIS citation on the 165F stays. Check
+  `data/foods.json` for other all-caps words or semicolons carried over from 0.2.0 and list them for Jason;
+  change none of them without asking.
+- **3. Banner.** When the Live cook warning banner has two sentences (the conflict, then the long holds), a
+  line break between them. Same text, one OK.
+- **Not changed (Jason):** the status pill stays as it is while a conflict shows.
+- **Files:** `src/screens/cook/CookScreen.tsx`, `src/lib/cookView.ts`, `data/foods.json`, tests.
+- **Device testing:** re-shoot `docs/fidelity/rn-12-live-warned.png` and `rn-12-live-conflict.png` at 115%.

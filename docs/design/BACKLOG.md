@@ -25,6 +25,7 @@ decided until Jason triages it. New ideas that come up during the port are added
 | iOS readiness (interfaces only, no Xcode work) | T-056 | Depends on T-015, T-030, T-045 |
 | Setup offers "Restore from a file" on a new phone's first screen | T-036 | Jason, 2026-11-16: not in 0.3.0 (a restore is reached from Gear after Setup) |
 | Lock-screen taps re-plan with the app closed (headless JS), spike first | T-078 | Jason, 2026-11-16: 0.3.x, after 0.3.0 ships |
+| Wings at 400F on a smoker that tops out lower: offer the method only when the smoker's max reaches its temp, greyed with the reason otherwise (as tri-tip's smoker sear does, T-075) | none yet | Jason, 2026-11-16: 0.3.x |
 
 ## Maintenance (has a date, not a version)
 

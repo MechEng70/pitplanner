@@ -20,12 +20,12 @@ describe('countList', () => {
   test('one of each reads as one', () => {
     expect(countList(c(1, 1, 1))).toBe('1 cooker, 1 cook rate and 1 cook');
   });
-  test('a zero is left out of the list', () => {
+  test('no cook rates and no cooks are said (a restore empties them); no cookers is left out (the phone keeps its own)', () => {
     expect(countList(c(0, 3, 30))).toBe('3 cook rates and 30 cooks');
-    expect(countList(c(2, 0, 30))).toBe('2 cookers and 30 cooks');
-    expect(countList(c(2, 3, 0))).toBe('2 cookers and 3 cook rates');
-    expect(countList(c(1, 0, 0))).toBe('1 cooker');
-    expect(countList(c(0, 0, 1))).toBe('1 cook');
+    expect(countList(c(2, 0, 30))).toBe('2 cookers, no cook rates and 30 cooks');
+    expect(countList(c(2, 3, 0))).toBe('2 cookers, 3 cook rates and no cooks');
+    expect(countList(c(1, 0, 0))).toBe('1 cooker, no cook rates and no cooks');
+    expect(countList(c(0, 0, 1))).toBe('no cook rates and 1 cook');
   });
 });
 
@@ -41,9 +41,13 @@ describe('the confirm sheet', () => {
       'This file has 1 cooker, 1 cook rate and 1 cook. They replace what is on this phone. Your plan stays.',
     );
   });
-  test('a zero count is left out', () => {
+  test('zero cook rates and cooks are named (Jason, 2026-11-16)', () => {
+    expect(confirmText(c(2, 0, 0), 'Nov 16')).toBe(
+      'This file has 2 cookers, no cook rates and no cooks, from Nov 16. They replace what is on this phone. ' +
+        'Your plan stays.',
+    );
     expect(confirmText(c(0, 0, 4), 'Nov 2')).toBe(
-      'This file has 4 cooks, from Nov 2. They replace what is on this phone. Your plan stays.',
+      'This file has no cook rates and 4 cooks, from Nov 2. They replace what is on this phone. Your plan stays.',
     );
   });
 });
@@ -68,7 +72,7 @@ describe('parts left out', () => {
 test('after Replace', () => {
   expect(restoredText(c(2, 3, 30))).toBe('Restored 2 cookers, 3 cook rates and 30 cooks.');
   expect(restoredText(c(1, 1, 1))).toBe('Restored 1 cooker, 1 cook rate and 1 cook.');
-  expect(restoredText(c(0, 0, 5))).toBe('Restored 5 cooks.');
+  expect(restoredText(c(0, 0, 5))).toBe('Restored no cook rates and 5 cooks.');
 });
 
 test('every refusal says why and ends "Nothing was changed."', () => {

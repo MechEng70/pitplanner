@@ -20,7 +20,7 @@ set -uo pipefail
 . "$(dirname "$0")/lib.sh"
 cd "$DEVICE_DIR" || exit 1
 
-ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets food-details survive cook cook-options cook-finished setup gear history shared shared-soon fast-cook followups turkey)
+ALL=(smoke sheet-keyboard stable-controls db migration-error db-unopenable legacy-import alarm plan plan-3button plan-sheets food-details survive cook cook-options cook-finished setup gear history shared shared-soon live-warnings fast-cook followups turkey)
 TESTS=()
 NOBUILD=""
 REPEAT=1
@@ -1823,6 +1823,39 @@ test_shared_soon() {
 
   A shell rm -f "$SHARED_DIR/pp-soon.pitplan"
   if [ $ok = 1 ]; then result "PASS  shared-soon $s"; else result "FAIL  shared-soon $s"; fi
+}
+
+# T-069: the Live cook warning banner (emulator only), on two dev seeds built from real cook operations.
+# seed=conflict: the brisket an hour behind, so the smoker conflict banner shows and the lane chart's note
+# says smoker conflict. seed=warned: the same plus two foods on early, so the banner has the conflict and the
+# long holds of two foods. OK hides the banner. Images for Jason: live-conflict.png, live-warned.png.
+test_live_warnings() {
+  local s="$1" dir="$2" ok=1
+  if ! is_emulator; then result "SKIP  live-warnings $s: emulator only"; return; fi
+  launch "dev/plan?seed=conflict" || { result "FAIL  live-warnings $s: app did not open"; return; }
+  sleep 2
+  if look "$dir/live-conflict.xml" && says "$dir/live-conflict.xml" "Smoker conflict: brisket at 225F and chicken wings at 400F at the same time."; then
+    says "$dir/live-conflict.xml" "Long hold" && plan_miss "no long hold on the conflict seed"
+    shot "$dir/live-conflict.png"
+    scroll_bottom | tee -a "$REPORT"
+    if look "$dir/live-conflict-lanes.xml" && says "$dir/live-conflict-lanes.xml" "smoker conflict, brisket at 225F and wings at 400F"; then
+      grep -oE '[0-9:]+ to [0-9:]+ [AP]M: smoker conflict[^"]*' "$dir/live-conflict-lanes.xml.txt" | head -n 1 | sed 's/^/    lane note: /' | tee -a "$REPORT"
+    else plan_miss "the lane chart note with smoker conflict"; fi
+    shot "$dir/live-conflict-lanes.png"
+  else plan_miss "the smoker conflict banner (seed=conflict)"; fi
+  open_route "dev/plan?seed=warned"
+  sleep 2
+  if look "$dir/live-warned.xml" && says "$dir/live-warned.xml" "Smoker conflict: brisket at 225F and chicken wings at 400F at the same time. Long hold: chicken wings"; then
+    grep -oE 'Smoker conflict:[^"]*' "$dir/live-warned.xml.txt" | head -n 1 | sed 's/^/    banner: /' | tee -a "$REPORT"
+    says "$dir/live-warned.xml" "chicken breasts" || plan_miss "chicken breasts in the long hold sentence"
+    shot "$dir/live-warned.png"
+    tap "OK" 1 | tee -a "$REPORT"
+    sleep 1
+    if look "$dir/live-warned-ok.xml" && ! says "$dir/live-warned-ok.xml" "Smoker conflict: brisket"; then log "    OK hides the banner"
+    else plan_miss "the banner gone after OK"; fi
+  else plan_miss "the banner with the conflict and the long holds (seed=warned)"; fi
+  A shell am start -W -a android.intent.action.VIEW -d "'pitplanner://dev/alarm?cook=end'" "$PKG" >/dev/null
+  if [ $ok = 1 ]; then result "PASS  live-warnings $s"; else result "FAIL  live-warnings $s"; fi
 }
 
 # T-067: the fast test cook (dev link, emulator only). The mockup menu runs as a real cook squeezed in time,

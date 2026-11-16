@@ -256,7 +256,7 @@ export function GearScreen({
             }
             title="Restore from a file"
             wrap
-            subtitle="Replaces the cookers, rates and cooks on this phone"
+            subtitle="Replaces the data on this phone"
             onPress={() => void restoreFromFile()}
           />
         </GroupCard>

@@ -1,7 +1,7 @@
 // The words of Gear's Restore from a file (T-036; Jason, 2026-11-16, docs/design/TASKS.md). Pure: counts in,
-// sentences out. Counts read right for one ("1 cook"). A zero count is left out of the list: a file with no
-// cookers keeps the phone's cookers, and the list never says "0 cooks". The reader refuses a file with
-// nothing at all to restore, so the list is never empty.
+// sentences out. Counts read right for one ("1 cook"). No cook rates and no cooks are said ("no cooks";
+// Jason, 2026-11-16): a restore empties the phone's rates and cooks even when the file has none. No cookers
+// is left out: a file with no cookers keeps the phone's cookers.
 import type { DataCheck, Dropped, FileProblem } from './dataFile.ts';
 
 export type Counts = Extract<DataCheck, { ok: true }>['counts'];
@@ -12,10 +12,9 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 export function countList(c: Counts): string {
   const parts = [
     c.cookers > 0 ? plural(c.cookers, 'cooker', 'cookers') : null,
-    c.rates > 0 ? plural(c.rates, 'cook rate', 'cook rates') : null,
-    c.cooks > 0 ? plural(c.cooks, 'cook', 'cooks') : null,
+    c.rates > 0 ? plural(c.rates, 'cook rate', 'cook rates') : 'no cook rates',
+    c.cooks > 0 ? plural(c.cooks, 'cook', 'cooks') : 'no cooks',
   ].filter((p): p is string => p !== null);
-  if (parts.length <= 1) return parts.join('');
   return `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
 }
 
