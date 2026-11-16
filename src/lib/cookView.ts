@@ -239,7 +239,10 @@ export function shiftImpact(before: Plan, after: Plan): { tone: 'ok' | 'warn'; t
 
 /* ---------- Warnings made during the cook (T-069) ---------- */
 
-/** One banner: every sentence in `text`, and the warnings it speaks for (what OK hides). */
+/**
+ * One banner: every sentence in `text`, and the warnings it speaks for (what OK hides). With both kinds, a
+ * line break ("\n") separates the conflicts from the long holds.
+ */
 export interface LiveWarnings {
   keys: string[];
   text: string;
@@ -279,8 +282,9 @@ function holdsSentence(plan: Plan, itemIds: string[]): string {
 /**
  * What the Live cook banner says (Jason, 2026-11-16): the smoker conflicts and the holds past their limit
  * that the plan has now and did not have at Start cook (`original`), less the ones hidden with OK (`seen`).
- * Conflicts first, in the engine's words (one sentence per pair of foods); then every long hold in one
- * sentence. A conflict whose stretch is over is left out. Null when there is nothing to say.
+ * Conflicts first, in the engine's words (one sentence per pair of foods, all on one line); then, on the next
+ * line, every long hold in one sentence. A conflict whose stretch is over is left out. Null when there is
+ * nothing to say.
  */
 export function liveWarnings(
   plan: Plan,
@@ -312,6 +316,8 @@ export function liveWarnings(
     held.push(id);
   }
   if (!keys.length) return null;
-  const text = [...conflicts, ...(held.length ? [holdsSentence(plan, held)] : [])].join(' ');
-  return { keys, text: tx(text, u) };
+  // Each kind on a line of its own (T-081, Jason 2026-11-16): the conflict sentences together on the first,
+  // the long holds on the next. One text, so the banner stays one alert that reads both.
+  const parts = [conflicts.join(' '), held.length ? holdsSentence(plan, held) : ''].filter(Boolean);
+  return { keys, text: tx(parts.join('\n'), u) };
 }

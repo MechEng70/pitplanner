@@ -305,16 +305,29 @@ test('live warnings: a food with no hold note stops at the limit, and never says
   assert.equal(liveWarnings(started, started, [], started.serveAt - 3 * 60 * MIN, units), null);
 });
 
-test('live warnings: both at once are one text, conflicts first', () => {
-  // One plan with both: the brisket's phases as they are 30 min behind, and the hold warning of the early pull.
-  const both = { ...behind, warnings: [...pulledEarly.warnings, ...behind.warnings] };
+// One plan with both: the brisket's phases as they are 30 min behind, and the hold warning of the early pull.
+const both = { ...behind, warnings: [...pulledEarly.warnings, ...behind.warnings] };
+
+test('live warnings: both at once are one text, conflicts first, the long hold on a line of its own', () => {
   const w = liveWarnings(both, plan, [], at(10), units)!;
   assert.match(
     w.text,
-    /^Smoker conflict: brisket at 225F and chicken wings at 400F at the same time\. Long hold: brisket /,
+    /^Smoker conflict: brisket at 225F and chicken wings at 400F at the same time\.\nLong hold: brisket /,
   );
   assert.match(w.text, /, limit 4 hr\. Keep it above 140F\.$/);
   assert.deepEqual(w.keys, ['PIT_CONFLICT:b|w', 'HOLD_TOO_LONG:b']);
+});
+
+test('live warnings: the one line break is between the conflict and the long hold, never inside a sentence (T-081)', () => {
+  // Jason, 2026-11-16: the two ran together in the banner.
+  const lines = liveWarnings(both, plan, [], at(10), units)!.text.split('\n');
+  assert.equal(lines.length, 2);
+  assert.equal(lines[0], CONFLICT);
+  assert.match(lines[1]!, /^Long hold: brisket [\w ]+, limit 4 hr\. Keep it above 140F\.$/);
+  assert.equal(liveWarnings(both, plan, [], at(10), metric)!.text.split('\n').length, 2);
+  // One kind alone has no break.
+  assert.doesNotMatch(liveWarnings(behind, plan, [], at(10), units)!.text, /\n/);
+  assert.doesNotMatch(liveWarnings(pulledEarly, plan, [], at(12), units)!.text, /\n/);
 });
 
 test('live warnings: OK hides that warning for good; a different one still shows', () => {
