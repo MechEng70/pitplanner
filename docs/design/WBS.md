@@ -27,7 +27,7 @@ Task details in [TASKS.md](TASKS.md); architecture in [TECH-DESIGN.md](TECH-DESI
 | 7 | Setup | T-024, T-025 | T-005, T-010, T-015 | First run (mockups 01-03, 17) sets up cookers and alerts; the test alert rings in Doze through setAlarmClock. |
 | 8 | Gear and history | T-026, T-027, T-028, T-065 | phase 7, T-009 | Mockups 16-20, including editing or excluding a past cook (failure mode 14). |
 | 9 | Share | T-029, T-030, T-031 | T-017, T-018 | `.pitplan` export and open (content URIs, 256 KB cap), with the conflict fix after import; a plan round-trips between two phones via Gmail and Drive (Jason). |
-| 10 | Beta release 0.3.0 | T-032, T-033, T-034, T-035, T-036, T-067, T-069, T-072, T-073, T-074, T-075, T-076, T-077, T-037, T-038, T-039 | phases 3-9 | Parity with 0.2.0 confirmed, security pass done, Saturday cook passed on the Expo build, `v0.3.0` on GitHub Releases signed with the same key, Jason's phone upgraded with data kept, `snyk:monitor` ran; `legacy/` removed a week later. |
+| 10 | Beta release 0.3.0 | T-032, T-033, T-034, T-035, T-036, T-067, T-069, T-072, T-073, T-074, T-075, T-076, T-077, T-079, T-037, T-038, T-039 | phases 3-9 | Parity with 0.2.0 confirmed, security pass done, Saturday cook passed on the Expo build, `v0.3.0` on GitHub Releases signed with the same key, Jason's phone upgraded with data kept, `snyk:monitor` ran; `legacy/` removed a week later. |
 | 11 | After the beta (triage list: `BACKLOG.md`) | T-040, T-041, T-060, T-062 | phase 10 | Lane chart full screen (after mock approval) and the oven drawer decision are done; food cooking faster than the plan (T-060: brisket thickness, starting temp) is decided with Jason and built. |
 | 11b | 0.5.0 (Jason, 2026-11-16: not in the 0.3.0 count) | T-068, T-070, T-071 | phase 10 | A log of every alarm ring kept on the Android side (T-068); the receiver picks cookers on the Shared plan sheet (T-070, dropped from 0.3.0: Food details does it after import); fish in Add food, timed by thickness, after Jason approves the thickness input (T-071). |
 | 12a | HA Phase 0 | done (`docs/ha-entities.md`) | none | Entity IDs recorded; the non-admin registry check moves to T-045. |
@@ -82,7 +82,8 @@ the two-phone share test (T-031), the Saturday cook (T-037) and the upgrade on h
 is ported), the 0.2.0 data import (T-012, tested against the real 0.2.0 APK on an emulator), and alarm
 regressions in the port (T-014 tests, T-016 device run, T-037 real cook).
 
-**Versions (Jason, 2026-11-16):** 0.3.x is reserved for bug fixes. 0.4.0 is Home Assistant phase 1, T-042 to
+**Versions (Jason, 2026-11-16):** 0.3.x is reserved for bug fixes. One exception he set the same day: T-078
+(lock-screen taps re-plan with the app closed, headless JS) is 0.3.x, after 0.3.0 ships, spike first. 0.4.0 is Home Assistant phase 1, T-042 to
 T-050 (mockups, the client_id page, sign-in, the WebSocket client, discovery, Gear, a probe per food, live
 probe temps), gated by mock approval (T-042), GitHub Pages (D-9) and Jason's device tests. 0.5.0 is fish
 (T-071), the receiver picks cookers (T-070) and the alarm log (T-068). T-051 to T-055 are 0.5.0 or later.

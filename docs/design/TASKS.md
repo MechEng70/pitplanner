@@ -3211,3 +3211,47 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Tests:** a 0.2.0 file with an oven hold of 130F imports as 140F with the notice; a stored 130F loads as
   140F; 140F and above are untouched and get no notice.
 - **Device testing (Jason):** none.
+
+### T-078 Lock-screen taps re-plan with the app closed (headless JS)
+- **Status:** todo. Version (Jason, 2026-11-16): 0.3.x, after 0.3.0 ships. Not started before then.
+- **Why:** a Done or +15 min tapped on the lock screen while the app's JS is not running is queued, and the
+  other alarms keep their old times until the app opens (T-076, closed-app limit). Jason rejected a native
+  re-plan in Kotlin.
+- **Goal:** the lock-screen action's receiver starts a React Native headless task that runs the same JS
+  path as the app (drain the queue, `applyActions`, save the cook, sync alarms) without opening the UI.
+- **First step when the work starts (Jason): a half-day spike on the emulator, on a throwaway branch in
+  its own worktree.** A task that only drains, logs and calls `replaceAll`, started from `ActionReceiver`;
+  a release APK on the API 34 and 36 emulators, app swiped away, screen locked, +15 tapped; measure
+  whether the start is allowed, tap to `replaceAll` time, memory (`dumpsys meminfo`); again with the app in
+  the background and while it comes to the front; again on the dev build with Metro on and off. Report
+  to Jason before building.
+- **From the costing report (2026-11-16, read-only, estimates not measured):** React Native's
+  `HeadlessJsTaskService` (supports the new architecture); the service in `modules/pit-alarms`, not
+  direct-boot-aware, never started before the first unlock (`UserManager.isUserUnlocked`);
+  `isAllowedInForeground = true` or opening the app during the task crashes; the root entry becomes an
+  `index.ts` that registers the task and then imports `expo-router/entry`; the running cook, save, sync and
+  drain move out of `StoreProvider` into a plain module (one instance per JS runtime) that the UI and the
+  task share. About 1,000 lines, 5 to 6 agent-days. Unknown: the dev build with Metro off (probably fails
+  silently, which is today's behaviour), so the device test uses a release APK.
+- **For Jason when it is built:** after a lock-screen tap the app would no longer jump to the Cook tab on
+  open unless a flag is stored to keep that.
+- **Depends on:** T-079 (the queue's read-then-acknowledge), T-076.
+- **Tests:** Robolectric (starts only when unlocked, survives a refused start, not direct-boot-aware); Jest
+  for the shared module (drain, apply, save, sync; a kill after the read applies once; UI and task
+  interleaved); a device test on a release APK with the app killed; `docs/alarm-testing.md` rows rewritten.
+- **Real phone:** yes, the OnePlus and a tester's Samsung.
+
+### T-079 A lock-screen tap is never lost from the queue
+- **Status:** todo. In 0.3.0 (Jason, 2026-11-16). App bug, found by reading 2026-11-16.
+- **Bug:** `drainActions` reads the queued taps and then writes the queue empty with no lock
+  (`AlarmStore.kt` about 109-113). The receivers queue on the main thread; the module function runs on
+  another. A tap queued between the read and the write is lost. Also, a tap drained and not yet saved is
+  lost if the app dies in between.
+- **Fix (Jason):** lock the queue; read, then acknowledge after the cook is saved; a JUnit test. Each action
+  gets an id so a tap read twice is applied once (+15 has no guard of its own).
+- **Files:** `modules/pit-alarms` (`AlarmStore.kt`, `PitAlarmsModule.kt`, tests), `src/platform` (the alarm
+  service and its fake), `src/lib/store.tsx` (`drainAlerts`), tests.
+- **Tests:** JUnit: concurrent queue and drain lose nothing; read without acknowledge keeps the taps;
+  acknowledge removes only what was read. Jest: taps are acknowledged after the save; a tap read twice is
+  applied once. Regression tests written failing first.
+- **Device testing (Jason):** none; device tests `alarm` and `cook` must still pass.
