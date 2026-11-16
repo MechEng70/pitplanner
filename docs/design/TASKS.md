@@ -1590,7 +1590,18 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Version (Jason, 2026-11-16, later the same day):** moved into 0.3.0, before the beta.1 build (it is the
   record the staged Saturday cook, T-037, is read from). Was 0.5.0. Failing tests first; JUnit/Robolectric
   for the store and its cap, Jest for the report.
-- **Status:** in progress on an agent branch (2026-11-16).
+- **Status:** merged onto `main` 2026-11-16 and gated (the Kotlin tests ran in Gradle at the merge). Needs
+  one ring on the real phone with the app closed (Friday).
+- **Built:** `RingLog.kt` (the record, the store, cap 500, one lock, `commit()`), logged from `Receivers.kt`
+  for the first ring, each repeat and the last one; `getRings` / `clearRings` in the module; `PhoneAlarms`
+  gains `rings()`; `src/lib/debugReport.ts` adds the `rings` section; the debug screen reads it when the
+  file is built. Tests: `RingLogTest.kt` (17), `debugReport.test.ts`, `fakes.test.ts`, `DebugScreen.test.tsx`.
+- **Choices made in the build (not decided by Jason):** the debug screen's line "Alarm rings: when each
+  alert was due and when it rang" (his wording wanted); ending or discarding a cook does not clear the log;
+  `clearRings` exists but nothing in the app calls it; for a repeat, planned is that repeat's own due time;
+  `snooze` marks any ring of a +15 alarm, `restore` only the first ring fired by the restore path; a field
+  `posted`; a repeat held back by Quiet is not logged; `idle` at the ring is weak evidence (the phone leaves
+  Doze just before an alarm-clock alarm).
 - **Why:** the app's event log (T-065) only has rings seen while the app is open, plus Done and +15 taps read
   afterwards. A missed or late alarm with the app closed is the case the debug file is most wanted for.
 - **Goal:** `pit-alarms` records each ring (step key, planned time, actual time, repeat number) in a small

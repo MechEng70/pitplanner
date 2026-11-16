@@ -490,3 +490,16 @@ behaviors they cover (e.g. Food details timing) are re-tested in Jest when each 
 | R-4 | Visual drift from the mockups in a new toolkit | Fidelity screenshots per tab at 115/130% against `docs/mockups/*.png`; Jason approves each tab. |
 | R-5 | The port rewrites the whole UI (about 7,500 lines of Preact) | Port tab by tab, reusing the pure `src/lib` helpers; no new features until parity; HA work starts after 0.3.0. |
 | R-6 | Losing the signing key | Two off-GitHub backups, checked each release. |
+
+### Ring log (T-068, section 6 addendum)
+
+`RingLog.kt` in `modules/pit-alarms` keeps one record per ring in device-protected prefs (`pit_alarm_rings`),
+the newest 500. Each record holds `alarmId`, `keys`, `plannedAt` (the step's `at`, or the repeat's own due
+time), `actualAt` (the clock when the receiver ran), `elapsedRealtime`, `repeat`, `last`, `source` (`alarm`,
+`restore`, `snooze`), `test`, `idle`, `interactive` and `posted`; no titles or body text. The clocks and
+PowerManager are read before the notification is posted; the record is written after the notification and
+the next repeat are in place, under one lock with `commit()`, inside a catch, so a failing log never stops
+an alert. `replaceAll`, End cook and restore leave it alone. The module adds `getRings` and `clearRings`;
+the app reads it through `PhoneAlarms.rings()` and `src/lib/debugReport.ts` adds `rings.records` (ms, ISO,
+`lateMs`) or `rings.error`. It is not in the backup rules. `idle` is weak evidence: an alarm-clock alarm
+takes the phone out of Doze shortly before it fires.
