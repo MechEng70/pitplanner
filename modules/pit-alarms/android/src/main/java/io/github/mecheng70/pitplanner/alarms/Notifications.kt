@@ -40,7 +40,8 @@ object Notifications {
         nm.createNotificationChannel(ch)
     }
 
-    fun show(ctx: Context, alarmId: String, keys: List<String>, title: String, body: String, critical: Boolean, repeat: Int) {
+    /** Post a step alert. True when the system took it without an error (the ring log keeps this, T-068). */
+    fun show(ctx: Context, alarmId: String, keys: List<String>, title: String, body: String, critical: Boolean, repeat: Int): Boolean {
         ensureChannel(ctx)
         val nagging = repeat in 1..AlarmScheduler.NAG_REPEATS
         val shownTitle = if (nagging) "Still waiting: $title" else title
@@ -84,7 +85,7 @@ object Notifications {
         // Overnight steps and critical ones take over the screen (sideloaded app; Play restricts this).
         if ((critical || overnight()) && canFullScreen(ctx)) b.setFullScreenIntent(open, true)
 
-        runCatching { NotificationManagerCompat.from(ctx).notify(alarmId.hashCode(), b.build()) }
+        return runCatching { NotificationManagerCompat.from(ctx).notify(alarmId.hashCode(), b.build()) }.isSuccess
     }
 
     fun cancel(ctx: Context, alarmId: String) = NotificationManagerCompat.from(ctx).cancel(alarmId.hashCode())

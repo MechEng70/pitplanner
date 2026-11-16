@@ -5,14 +5,16 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 
-/** What happens when a step's time comes: notify, tell the app if it is open, start repeating. */
+/** What happens when a step's time comes: notify, tell the app if it is open, start repeating, log the ring. */
 object Firing {
     fun fire(ctx: Context, alarm: Alarm, missed: Boolean = false) {
         val now = Clock.now()
+        val moment = RingLog.moment(ctx, now)
         val body = if (missed) "Missed while the phone was off. ${alarm.body}" else alarm.body
-        Notifications.show(ctx, alarm.id, alarm.keys, alarm.title, body, alarm.critical, repeat = 0)
+        val posted = Notifications.show(ctx, alarm.id, alarm.keys, alarm.title, body, alarm.critical, repeat = 0)
         PitAlarmsModule.emit(PitAlarmsModule.EVENT_FIRED, alarm.id, alarm.keys)
         if (!alarm.test) AlarmScheduler.startNag(ctx, alarm, now)
+        RingLog.record(ctx, moment, alarm.id, alarm.keys, alarm.at, 0, false, Ring.sourceOf(alarm.id, missed), alarm.test, posted)
     }
 }
 
@@ -37,17 +39,22 @@ class AlarmReceiver : BroadcastReceiver() {
                     AlarmScheduler.scheduleNag(ctx, held)
                     return
                 }
+                val moment = RingLog.moment(ctx, now)
                 val count = nag.count + 1
-                if (count <= AlarmScheduler.NAG_REPEATS) {
+                val last = count > AlarmScheduler.NAG_REPEATS
+                val posted: Boolean
+                if (!last) {
                     val next = nag.copy(count = count, nextAt = now + AlarmScheduler.NAG_EVERY_MS)
                     store.nags = store.nags.map { if (it.alarmId == id) next else it }
-                    Notifications.show(ctx, id, nag.keys, nag.title, nag.body, critical = true, repeat = count)
+                    posted = Notifications.show(ctx, id, nag.keys, nag.title, nag.body, critical = true, repeat = count)
                     AlarmScheduler.scheduleNag(ctx, next)
                 } else {
                     // Six repeats unanswered: one last alert, then stop. Live Cook keeps showing the step overdue.
                     store.nags = store.nags.filterNot { it.alarmId == id }
-                    Notifications.show(ctx, id, nag.keys, "Cook needs you", "${nag.title}: ${nag.body}", critical = true, repeat = count)
+                    posted = Notifications.show(ctx, id, nag.keys, "Cook needs you", "${nag.title}: ${nag.body}", critical = true, repeat = count)
                 }
+                // Due at the time this repeat was set for (nextAt), after Quiet or a reboot the time it was moved to.
+                RingLog.record(ctx, moment, id, nag.keys, nag.nextAt, count, last, Ring.sourceOf(id, false), false, posted)
             }
         }
     }

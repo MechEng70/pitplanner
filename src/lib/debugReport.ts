@@ -2,12 +2,13 @@
 // Pure builders: the time, the phone's facts, the alert permissions, the stored alarms and the app's data
 // are passed in. The file holds what SPEC lists and nothing else:
 //   app version and build, Android version, phone model, font size, time zone; the alert permissions as the
-//   phone reports them; the alarms the app has stored and their repeats; the app's data (cookers, plan,
-//   running cook, cook history, rates, settings and flags); the app's own log of recent events.
+//   phone reports them; the alarms the app has stored and their repeats; the phone's log of alarm rings
+//   (T-068: when each was due and when it rang, keys and times only); the app's data (cookers, plan, running
+//   cook, cook history, rates, settings and flags); the app's own log of recent events.
 // No location, no accounts, no contacts, nothing from other apps.
 
-import type { AlarmStatus, DeviceFacts, StoredNag } from '../platform/types.ts';
-import { EVENT_LOG_KEY, parseEventLog, type LogEvent } from './eventLog.ts';
+import type { AlarmRing, AlarmStatus, DeviceFacts, StoredNag } from '../platform/types.ts';
+import { errorText, EVENT_LOG_KEY, parseEventLog, type LogEvent } from './eventLog.ts';
 
 /** Where the tester sends the file. Shown on the debug screen and handed to the share sheet. */
 export const DEVELOPER_EMAIL = 'pitplanapp@gmail.com';
@@ -33,6 +34,30 @@ export interface ReportAlarm {
   test?: boolean;
 }
 
+/** The phone's ring log as read for the file, or why it could not be read. */
+export type RingsRead = { records: AlarmRing[] } | { error: string };
+
+/** One ring in the file: the phone's record, its times also as ISO (UTC), and how late it rang. */
+export interface ReportRing {
+  alarmId: string;
+  keys: string[];
+  source: string;
+  repeat: number;
+  last: boolean;
+  test: boolean;
+  /** Epoch ms; null when the phone's value is not a time. */
+  plannedAt: number | null;
+  plannedIso: string | null;
+  actualAt: number | null;
+  actualIso: string | null;
+  /** actualAt minus plannedAt: positive when it rang late, negative when early (the clock was changed). */
+  lateMs: number | null;
+  elapsedRealtime: number | null;
+  idle: boolean | null;
+  interactive: boolean | null;
+  posted: boolean;
+}
+
 export interface ReportInput {
   now: number;
   device: DeviceFacts;
@@ -40,6 +65,7 @@ export interface ReportInput {
   permissions: AlarmStatus | null;
   scheduled: { alarms: ReportAlarm[]; nags: StoredNag[] } | null;
   data: ReportData | null;
+  rings: RingsRead;
   /** What could not be read while gathering, in plain words. */
   problems: string[];
 }
@@ -60,6 +86,8 @@ export interface DebugReport {
   alarms: { alarms: ReportAlarm[]; repeats: StoredNag[] } | null;
   data: ReportData | null;
   log: LogEvent[];
+  /** Every ring the phone logged, oldest first; `error` names why the log could not be read. */
+  rings: { records: ReportRing[]; error: string | null };
   /** Tables, kv rows and fields that were kept out of the file, by name only. */
   leftOut: string[];
   problems: string[];
@@ -177,6 +205,45 @@ const pickNag = (n: StoredNag): StoredNag => ({
   nextAt: n.nextAt,
 });
 
+/** Read the phone's ring log for the file. Never rejects: a failure comes back as its error text. */
+export async function readRings(read: () => Promise<AlarmRing[]>): Promise<RingsRead> {
+  try {
+    return { records: await read() };
+  } catch (e) {
+    return { error: errorText(e) };
+  }
+}
+
+const time = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+const iso = (ms: number | null): string | null => {
+  if (ms === null) return null;
+  const d = new Date(ms);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+};
+const flag = (v: unknown): boolean | null => (typeof v === 'boolean' ? v : null);
+
+const pickRing = (r: AlarmRing): ReportRing => {
+  const plannedAt = time(r.plannedAt);
+  const actualAt = time(r.actualAt);
+  return {
+    alarmId: String(r.alarmId),
+    keys: Array.isArray(r.keys) ? r.keys.map(String) : [],
+    source: String(r.source),
+    repeat: time(r.repeat) ?? 0,
+    last: r.last === true,
+    test: r.test === true,
+    plannedAt,
+    plannedIso: iso(plannedAt),
+    actualAt,
+    actualIso: iso(actualAt),
+    lateMs: plannedAt !== null && actualAt !== null ? actualAt - plannedAt : null,
+    elapsedRealtime: time(r.elapsedRealtime),
+    idle: flag(r.idle),
+    interactive: flag(r.interactive),
+    posted: r.posted !== false,
+  };
+};
+
 /** The file's contents. Every field is copied by name, so nothing extra a caller passes can ride along. */
 export function buildDebugReport(input: ReportInput): DebugReport {
   const { device, permissions, scheduled } = input;
@@ -202,6 +269,10 @@ export function buildDebugReport(input: ReportInput): DebugReport {
     alarms: scheduled && { alarms: scheduled.alarms.map(pickAlarm), repeats: scheduled.nags.map(pickNag) },
     data: app ? app.data : null,
     log: app ? app.log : [],
+    rings:
+      'records' in input.rings
+        ? { records: input.rings.records.map(pickRing), error: null }
+        : { records: [], error: input.rings.error },
     leftOut: app ? app.leftOut : [],
     problems: [...input.problems],
   };
@@ -220,6 +291,7 @@ export const REPORT_HOLDS: readonly string[] = [
   'App version and build, Android version, phone model, font size and time zone',
   'Alert permissions as the phone reports them',
   'Alarms the app has stored and their repeats',
+  'Alarm rings: when each alert was due and when it rang',
   'Your cookers, plan, running cook, cook history, rates and settings',
   "The app's log of recent events: alarms set and fired, changes to a cook, errors",
 ];
