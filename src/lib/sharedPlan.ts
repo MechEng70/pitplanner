@@ -4,7 +4,14 @@
 
 import { buildPlan } from '../../engine/plan.ts';
 import type { Cookers, ItemInput, PlanInput, Warning } from '../../engine/types.ts';
-import { resolveMethod, type ResolvedMethod, type RuleFood, type Rules } from '../../engine/rules.ts';
+import {
+  firstDoableMethod,
+  missingCookers,
+  resolveMethod,
+  type ResolvedMethod,
+  type RuleFood,
+  type Rules,
+} from '../../engine/rules.ts';
 import { isSettable, settableTemps } from '../../engine/temps.ts';
 
 const MAX_ITEMS = 20;
@@ -113,8 +120,12 @@ export function parsePitPlan(rules: Rules, text: string, newId: (i: number) => s
 
 export interface CookerMove {
   foodName: string;
+  /** The cooker that is not set up. */
   from: string;
+  /** The cooker the food is cooked on now (its new method's own). */
   to: string;
+  /** What the food will do instead, after "will", from the new method (T-075: "be seared on the smoker"). */
+  how?: string;
 }
 export interface CookerGap {
   foodName: string;
@@ -122,8 +133,10 @@ export interface CookerGap {
 }
 
 /**
- * Put each food on a cooker the receiver has (failure mode 13): a griddle food moves to the smoker when there
- * is no griddle. Foods with no possible cooker stay as they are and are listed in gaps.
+ * Put each food on cookers the receiver has (failure mode 13). Every cooker a method's steps need is checked,
+ * not only its own (T-075): a griddle food moves to the smoker when there is no griddle, and a tri-tip with a
+ * griddle sear takes the first of its methods the receiver can fully do (the smoker sear). Foods with no
+ * method the receiver can do stay as they are and are listed in gaps, under the first cooker missing.
  */
 export function mapToCookers(
   rules: Rules,
@@ -135,13 +148,20 @@ export function mapToCookers(
   const out = items.map(it => {
     const food = foodOf(rules, it.foodId)!;
     const m = methodOf(food, it.methodId)!;
-    if (cookers[m.cooker]) return it;
-    const alt = food.methods.map(x => resolveMethod(food, x)).find(x => cookers[x.cooker]);
-    if (!alt) {
-      gaps.push({ foodName: food.name, cooker: m.cooker });
+    const missing = missingCookers(food, m, cookers);
+    if (!missing.length) return it;
+    const found = firstDoableMethod(food, cookers);
+    if (!found) {
+      gaps.push({ foodName: food.name, cooker: missing[0]! });
       return it;
     }
-    moves.push({ foodName: food.name, from: m.cooker, to: alt.cooker });
+    const alt = resolveMethod(food, found);
+    moves.push({
+      foodName: food.name,
+      from: missing[0]!,
+      to: alt.cooker,
+      ...(alt.importMove && alt.cooker === m.cooker ? { how: alt.importMove } : {}),
+    });
     return { ...it, methodId: alt.id, options: cleanOptions(alt, it.options), restMin: alt.restMin.default };
   });
   return { items: out, moves, gaps };

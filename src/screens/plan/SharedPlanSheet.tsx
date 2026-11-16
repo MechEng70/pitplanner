@@ -7,7 +7,15 @@ import type { CookerKind, ItemInput } from '../../../engine/types';
 import { Button, Card, Chips, Field, InfoBox, Num, SelectField, Sheet, Stack, Text, useSheet } from '@/components/kit';
 import { fmtDay, fmtTemp, fmtTime, fmtWeight, tx } from '@/lib/format';
 import { countText, food, rules } from '@/lib/rules';
-import { importPlan, serveMove, sharedLine, suggestServe, type ImportedPlan, type SharedPlan } from '@/lib/sharedPlan';
+import {
+  importPlan,
+  serveMove,
+  sharedLine,
+  suggestServe,
+  type CookerMove,
+  type ImportedPlan,
+  type SharedPlan,
+} from '@/lib/sharedPlan';
 import { useStore } from '@/lib/store';
 import type { PickDateTime } from '@/platform/types';
 
@@ -123,12 +131,14 @@ export function SharedPlanSheet({ shared, pickDateTime, now, onClose, onUse }: P
       {missing.map(k => {
         const moves = plan.moves.filter(m => m.from === k);
         const gaps = plan.gaps.filter(g => g.cooker === k);
+        // Foods doing the same thing go together: "Tri-tip will be seared on the smoker and Chicken breasts
+        // will move to the smoker, or add a griddle in Gear." (T-075).
+        const how = (m: CookerMove) => m.how ?? `move to the ${NAMES[m.to as CookerKind]}`;
+        const ways = [...new Set(moves.map(how))].map(w => `${names(moves.filter(m => how(m) === w))} will ${w}`);
         return (
           <InfoBox key={k} lead={`No ${NAMES[k]} set up.`}>
             {[
-              moves.length > 0
-                ? `${names(moves)} will move to the ${NAMES[moves[0]!.to as CookerKind]}, or add a ${NAMES[k]} in Gear.`
-                : '',
+              moves.length > 0 ? `${ways.join(' and ')}, or add a ${NAMES[k]} in Gear.` : '',
               gaps.length > 0
                 ? `${names(gaps)} ${gaps.length === 1 ? 'needs' : 'need'} a ${NAMES[k]}. Add one in Gear.`
                 : '',

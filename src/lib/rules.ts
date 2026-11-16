@@ -4,6 +4,7 @@
 import foodsJson from '../../data/foods.json';
 import type { CookerKind, Cookers, ItemInput } from '../../engine/types.ts';
 import {
+  firstDoableMethod,
   resolveMethod,
   type ResolvedMethod,
   type RuleChoice,
@@ -60,10 +61,13 @@ export function foodBlurb(f: FoodDef): string {
   return `${cap(kinds[0])}, by ${f.quantity.kind === 'weight' ? 'weight' : f.quantity.unit}`;
 }
 
-/** A new item with the rules defaults, on a cooker the user has when possible. */
+/**
+ * A new item with the rules defaults: the first method the user's cookers can do every step of (T-075:
+ * tri-tip with no griddle gets the smoker sear), else one on a cooker the user has, else the first.
+ */
 export function newItem(foodId: string, cookers: Cookers, id: string): ItemInput {
   const f = food(foodId);
-  const m = f.methods.find(x => hasCooker(cookers, x.cooker)) ?? f.methods[0];
+  const m = firstDoableMethod(f, cookers) ?? f.methods.find(x => hasCooker(cookers, x.cooker)) ?? f.methods[0];
   return {
     id,
     foodId,

@@ -2,7 +2,7 @@
 // food or a method needs no code change. New optional fields can be added here as the rules file grows.
 // Temperatures in F, quantities in lb or count, times in minutes unless the name says hours.
 
-import type { CookerKind } from './types.ts';
+import type { CookerKind, Cookers } from './types.ts';
 
 export interface PrepRule {
   leadMin: number; // minutes before the item's first phase
@@ -45,6 +45,8 @@ export interface RulePhase {
   label: string;
   short: string;
   temp: number | 'pit';
+  /** Used instead of `temp` when the smoker tops out below it (tri-tip sears at 450F on one that cannot reach 500F). */
+  fallbackTemp?: number;
   fraction?: number; // share of the scaled total
   fixedMin?: number;
   cooker?: CookerKind; // defaults to the method's cooker
@@ -84,19 +86,32 @@ export interface RuleMethod extends MethodShared {
   cooker: CookerKind;
   short?: string;
   note?: string;
+  /**
+   * Open shared plan: what a shared food moved onto this method will do, after "will", when its own cooker
+   * stays and only a step moves ("be seared on the smoker"). Without it the box says "move to the smoker".
+   */
+  importMove?: string;
   minPitTempF?: number; // lowest smoker set point for this method; below it the plan reports an issue
   /** By-weight foods: above this weight the plan adds an info line (never a block), `text` after the weight. */
   sizeNote?: { aboveLb: number; text: string };
 }
 
-/** What a source backs: the food-safety numbers (done temp, smoker temp floor, rate, size) and the rest time. */
-export type SourceTopic = 'doneTemp' | 'minPitTemp' | 'rate' | 'rest' | 'size';
+/**
+ * What a source backs: the food-safety numbers (done temp, smoker temp floor, rate, size), the rest time, the
+ * time a smoker takes to climb to a high temp (preheat) and a step at a fixed high temp, its temp and minutes
+ * (highHeat).
+ */
+export type SourceTopic = 'doneTemp' | 'minPitTemp' | 'rate' | 'rest' | 'size' | 'preheat' | 'highHeat';
 
-/** Where a food's numbers come from. `cite` names the source and who read it when; `says` is what it gives. */
+/**
+ * Where a food's numbers come from. `cite` names the source and who read it when; `says` is what it gives.
+ * `methods`: the methods it backs (T-075); without it, every method of the food.
+ */
 export interface RuleSource {
   cite: string;
   covers: SourceTopic[];
   says: string;
+  methods?: string[];
 }
 
 /** A method after merging the food's shared fields (resolveMethod). Required fields must be present by then. */
@@ -152,4 +167,23 @@ export function resolveMethod(food: RuleFood, method: RuleMethod): ResolvedMetho
     ...method,
     options: { ...(shared.options ?? {}), ...(method.options ?? {}) },
   } as ResolvedMethod;
+}
+
+/** Every cooker a method's steps use, the method's own cooker first (tri-tip's griddle sear: smoker, griddle). */
+export function methodCookers(food: RuleFood, method: RuleMethod): CookerKind[] {
+  const m = resolveMethod(food, method);
+  return [...new Set([m.cooker, ...m.phases.map(p => p.cooker ?? m.cooker)])];
+}
+
+/** The cookers a method needs that are not set up, the method's own cooker first. */
+export function missingCookers(food: RuleFood, method: RuleMethod, cookers: Cookers): CookerKind[] {
+  return methodCookers(food, method).filter(k => !cookers[k]);
+}
+
+/** The first of a food's methods the cookers can do every step of (T-075), if any. */
+export function firstDoableMethod<M extends RuleMethod>(
+  food: Omit<RuleFood, 'methods'> & { methods: M[] },
+  cookers: Cookers,
+): M | undefined {
+  return food.methods.find(m => missingCookers(food, m, cookers).length === 0);
 }

@@ -3,7 +3,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { resolveMethod, type RuleFood, type Rules } from './rules.ts';
+import {
+  firstDoableMethod,
+  methodCookers,
+  missingCookers,
+  resolveMethod,
+  type RuleFood,
+  type RuleSource,
+  type Rules,
+  type SourceTopic,
+} from './rules.ts';
+import type { Cookers } from './types.ts';
 
 const rules = JSON.parse(readFileSync(new URL('../data/foods.json', import.meta.url), 'utf8')) as Rules;
 const KINDS = ['perWeight', 'perWeightMinutes', 'fixedScaled', 'byOption', 'byOptionScaled', 'phases'];
@@ -79,20 +89,30 @@ test('rules: shared fields fill in a method, the method wins, options merge by k
 // list or a smoker temp floor; turkey must be one of them.
 const FSIS = 'USDA FSIS (fsis.usda.gov), read by Jason 2026-11-15';
 
-/** The food-safety numbers a food carries that no source covers. */
+/** A source backs the methods it names, or every method of its food when it names none (T-075). */
+const backs = (s: RuleSource, methodId: string) => !s.methods || s.methods.includes(methodId);
+
+/**
+ * The food-safety and cooking numbers a food carries that no source covers. A method is checked when a source
+ * backs it or it has a smoker temp floor; each of its numbers needs a source that backs that method.
+ */
 function unsourced(food: RuleFood): string[] {
-  const needs = new Set<string>();
+  const sources = (food.sources ?? []).filter(s => s.cite?.trim() && s.says?.trim());
+  const missing = new Set<string>();
   for (const raw of food.methods) {
     const m = resolveMethod(food, raw);
+    if (!(food.sources ?? []).some(s => backs(s, m.id)) && m.minPitTempF == null) continue;
+    const needs = new Set<SourceTopic>();
     if (m.pull?.tempF) needs.add('doneTemp');
     if (m.minPitTempF != null) needs.add('minPitTemp');
     if (m.sizeNote) needs.add('size');
     if (m.timing?.hrPerLbAt225 != null || m.timing?.minPerLbAt225 != null) needs.add('rate');
+    if (m.phases.some(p => p.setsPit)) needs.add('preheat');
+    if (m.phases.some(p => typeof p.temp === 'number')) needs.add('highHeat');
+    const covered = new Set(sources.filter(s => backs(s, m.id)).flatMap(s => s.covers ?? []));
+    for (const n of needs) if (!covered.has(n)) missing.add(n);
   }
-  const covered = new Set<string>(
-    (food.sources ?? []).filter(s => s.cite?.trim() && s.says?.trim()).flatMap(s => s.covers ?? []),
-  );
-  return [...needs].filter(n => !covered.has(n)).sort();
+  return [...missing].sort();
 }
 
 test('rules: the turkey size note (over 16 lb) has its own source, and fails the check without one', () => {
@@ -140,4 +160,94 @@ test('rules: the sources check fails when a number loses its source', () => {
   assert.deepEqual(unsourced({ ...turkey, sources: turkey.sources!.map(s => ({ ...s, cite: ' ' })) }), all);
   const noFloor = turkey.sources!.map(s => ({ ...s, covers: s.covers.filter(c => c !== 'minPitTemp') }));
   assert.deepEqual(unsourced({ ...turkey, sources: noFloor }), ['minPitTemp']);
+});
+
+// T-075 (Jason, 2026-11-16): tri-tip's third method, smoke then sear on the smoker. Its numbers each cite what
+// Jason gave; the sources back that method only, so the other two tri-tip methods are not claimed by them.
+const GIVEN = 'given by Jason, 2026-11-16';
+const LOUISIANA = `Louisiana Grills, reverse-seared tri-tip (https://louisiana-grills.com/blogs/pork/reverse-seared-tri-tip), ${GIVEN}`;
+const TRAEGER_ZA = `Traeger, smoked tri-tip (https://www.traeger.com/za/en/recipes/smoked-tri-tip), ${GIVEN}`;
+const TRAEGER_AU = `Traeger, smoked tri-tip (https://traeger.com/au/en/recipes/smoked-tri-tip), ${GIVEN}`;
+
+test('rules: tri-tip smoke then sear on the smoker: smoke as the reverse method, climb to 500F (450F), sear 8 min', () => {
+  const tritip = rules.foods.find(f => f.id === 'tritip')!;
+  assert.deepEqual(
+    tritip.methods.map(m => m.id),
+    ['reverse', 'smokerSear', 'brisketStyle'],
+    'second, so the first method a smoker alone can do is this one',
+  );
+  const m = resolveMethod(tritip, tritip.methods[1]);
+  const reverse = resolveMethod(tritip, tritip.methods[0]);
+  assert.equal(m.label, 'Smoke, then sear on the smoker');
+  assert.equal(m.cooker, 'smoker');
+  // Numbers Jason did not give are the reverse method's: the smoke time model, pull, slice, hold, prep, space.
+  assert.deepEqual(m.timing, reverse.timing);
+  assert.deepEqual(m.pull, reverse.pull);
+  for (const k of ['sliceMin', 'holdLimitMin', 'prep', 'footprintSqInPerUnit'] as const)
+    assert.deepEqual(m[k], reverse[k], k);
+  assert.deepEqual(m.phases[0], reverse.phases[0], "the smoke step is the reverse method's, to about 120F");
+  const [, ramp, sear] = m.phases;
+  assert.deepEqual(
+    [ramp.id, ramp.fixedMin, ramp.temp, ramp.fallbackTemp, ramp.setsPit, ramp.cooker],
+    ['ramp', 15, 500, 450, true, undefined],
+  );
+  assert.deepEqual(
+    [sear.id, sear.fixedMin, sear.temp, sear.fallbackTemp, sear.cooker],
+    ['sear', 8, 500, 450, undefined],
+  );
+  assert.match(sear.label, /4 min per side to 130-135F/);
+  assert.deepEqual(m.restMin, { default: 10, min: 10 });
+});
+
+test('rules: the smoker sear cites Louisiana Grills and two Traeger pages, and each one is needed', () => {
+  const tritip = rules.foods.find(f => f.id === 'tritip')!;
+  const cites = (tritip.sources ?? []).map(s => [s.cite, s.methods, [...s.covers].sort()]);
+  assert.deepEqual(cites, [
+    [LOUISIANA, ['smokerSear'], ['rate']],
+    [TRAEGER_ZA, ['smokerSear'], ['highHeat', 'preheat']],
+    [TRAEGER_AU, ['smokerSear'], ['doneTemp', 'highHeat', 'rest']],
+  ]);
+  assert.deepEqual(unsourced(tritip), []);
+  const without = (cite: string) => unsourced({ ...tritip, sources: tritip.sources!.filter(s => s.cite !== cite) });
+  assert.deepEqual(without(LOUISIANA), ['rate']);
+  assert.deepEqual(without(TRAEGER_ZA), ['preheat']);
+  assert.deepEqual(without(TRAEGER_AU), ['doneTemp']);
+  assert.deepEqual(unsourced({ ...tritip, sources: [] }), [], 'with no sources the method is not checked, as before');
+  // A source naming no method would back all three, and then the other two would need theirs too.
+  const forAll = tritip.sources!.map(({ methods: _m, ...s }) => s);
+  assert.deepEqual(unsourced({ ...tritip, sources: forAll }), []);
+  assert.deepEqual(unsourced({ ...tritip, sources: [{ ...forAll[0], covers: ['rate'] }] }), [
+    'doneTemp',
+    'highHeat',
+    'preheat',
+  ]);
+});
+
+test('rules: a fallback temp is a fixed temp below the step temp, and {temp} is only in a step with a fixed temp', () => {
+  for (const food of rules.foods)
+    for (const raw of food.methods)
+      for (const p of resolveMethod(food, raw).phases) {
+        const where = `${food.id}/${raw.id}/${p.id}`;
+        if (p.fallbackTemp != null) {
+          assert.equal(typeof p.temp, 'number', where);
+          assert.ok(p.fallbackTemp < (p.temp as number), where);
+        }
+        if (p.label.includes('{temp}')) assert.equal(typeof p.temp, 'number', where);
+      }
+});
+
+test("rules: the cookers a method needs are every step's, and the first method the cookers can fully do", () => {
+  const food = (id: string) => rules.foods.find(f => f.id === id)!;
+  const tritip = food('tritip');
+  const smoker = { id: 's' } as Cookers['smoker'];
+  const griddle = { id: 'g' } as Cookers['griddle'];
+  assert.deepEqual(methodCookers(tritip, tritip.methods[0]), ['smoker', 'griddle']);
+  assert.deepEqual(methodCookers(tritip, tritip.methods[1]), ['smoker']);
+  assert.deepEqual(missingCookers(tritip, tritip.methods[0], { smoker }), ['griddle']);
+  assert.deepEqual(missingCookers(tritip, tritip.methods[0], {}), ['smoker', 'griddle']);
+  assert.equal(firstDoableMethod(tritip, { smoker, griddle })?.id, 'reverse');
+  assert.equal(firstDoableMethod(tritip, { smoker })?.id, 'smokerSear');
+  assert.equal(firstDoableMethod(tritip, { griddle }), undefined);
+  assert.equal(firstDoableMethod(food('breasts'), { smoker })?.id, 'smoker');
+  assert.equal(firstDoableMethod(food('wings'), { griddle })?.id, 'griddle');
 });

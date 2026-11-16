@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { View, type HostInstance, type LayoutChangeEvent } from 'react-native';
 import { buildPlan, onHeatSpan, rateHintFor } from '../../../engine/plan';
 import type { CookerKind, ItemInput, PlanInput, TimingModel } from '../../../engine/types';
+import { missingCookers } from '../../../engine/rules';
 import { kgToLb, lbToKg } from '../../../engine/units';
 import {
   Button,
@@ -289,7 +290,11 @@ function Body({
               label="Method"
               value={m.id}
               onChange={pickMethod}
-              options={methodsHere.map(x => ({ id: x.id, label: tx(x.label, units) }))}
+              options={methodsHere.map(x => {
+                // A method with a step on a cooker that is not set up (tri-tip's griddle sear), as Cook on does it.
+                const off = missingCookers(f, x, cookers).length > 0;
+                return { id: x.id, label: tx(x.label, units), disabled: off, hint: off ? 'Add in Gear' : undefined };
+              })}
             />
           </Field>
         ) : null}
@@ -373,7 +378,7 @@ function Body({
                 ) : null}
               </Text>
               {itemWarnings.map(w => (
-                <Text key={w.code} variant="caption" tone={w.level === 'warn' ? 'warn' : 'secondary'}>
+                <Text key={`${w.code}:${w.message}`} variant="caption" tone={w.level === 'warn' ? 'warn' : 'secondary'}>
                   {tx(w.message, units)}
                 </Text>
               ))}

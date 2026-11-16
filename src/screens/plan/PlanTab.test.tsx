@@ -44,9 +44,9 @@ const tabProps = () => ({
 });
 const settle = () => act(() => jest.advanceTimersByTime(SHEET_OUT_MS));
 
-async function show(items: ItemInput[], share?: FakeShare) {
+async function show(items: ItemInput[], share?: FakeShare, cookers: Cookers = gear) {
   const r = testRepos();
-  r.repos.cookers.save(gear, NOW);
+  r.repos.cookers.save(cookers, NOW);
   r.repos.rates.setRate('brisket', 0.75, NOW);
   const draft: Draft = { mode: 'readyBy', at: saturday.at, pitTempF: 225, items };
   r.repos.settings.setDraft(draft, NOW);
@@ -122,6 +122,21 @@ describe('Add food', () => {
     const ids = saved(repos).items.map(i => i.id);
     expect(ids).toHaveLength(2);
     expect(new Set(ids).size).toBe(2);
+  });
+
+  // T-075 (Jason, 2026-11-16): the first tri-tip method the cookers can fully do.
+  test.each([
+    ['with a griddle', gear, 'Smoke, then griddle sear', 'reverse'],
+    ['with no griddle', { smoker: gear.smoker }, 'Smoke, then sear on the smoker', 'smokerSear'],
+  ])('tri-tip %s starts on the method the cookers can do', async (_, cookers, label, methodId) => {
+    const repos = await show([brisket], undefined, cookers);
+    await fireEvent.press(button('Add food'));
+    await fireEvent.press(button(/^Tri-tip/));
+    await settle();
+    expect(within(screen.getByLabelText('Method')).getByRole('radio', { name: label })).toBeChecked();
+    await fireEvent.press(button('Add to plan'));
+    await settle();
+    expect(saved(repos).items[1]).toMatchObject({ foodId: 'tritip', methodId, restMin: 10 });
   });
 });
 

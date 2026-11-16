@@ -2,6 +2,7 @@
 // bar, and the regression test for the 0.2.0 scroll bug (a value change scrolled the screen to the result).
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { AccessibilityInfo, ScrollView, TextInput, View } from 'react-native';
+import { NO_GRIDDLE_PICK_METHOD } from '../../../engine/plan';
 import type { ItemInput, PlanInput } from '../../../engine/types';
 import { SHEET_OUT_MS } from '@/components/kit/sheet';
 import { saturday } from '@/lib/fixtures/saturday';
@@ -228,6 +229,72 @@ describe('the rest of the form', () => {
     await open(brisket, { isNew: true });
     expect(button('Add to plan')).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: 'Remove' })).toBeNull();
+  });
+});
+
+// T-075 (Jason, 2026-11-16): a method whose steps need a cooker that is not set up is offered but off, with
+// Add in Gear, the way the Cook on chips do it. The Saturday cookers have no griddle.
+describe('tri-tip with and without a griddle (T-075)', () => {
+  const tritip = (methodId: string): ItemInput => ({ id: 't', foodId: 'tritip', methodId, quantity: 2.5, restMin: 10 });
+  const methods = () => within(screen.getByLabelText('Method'));
+
+  test('no griddle: the griddle sear is off with Add in Gear; the smoker sear and brisket-style are on', async () => {
+    await open(tritip('smokerSear'));
+    expect(labels(methods())).toEqual([
+      'Smoke, then griddle sear',
+      'Smoke, then sear on the smoker',
+      'Smoked brisket-style (200F)',
+    ]);
+    const griddle = methods().getByRole('radio', { name: 'Smoke, then griddle sear' });
+    expect(griddle).toBeDisabled();
+    expect(within(griddle).getByText('Add in Gear')).toBeOnTheScreen();
+    for (const name of ['Smoke, then sear on the smoker', 'Smoked brisket-style (200F)']) {
+      const chip = methods().getByRole('radio', { name });
+      expect(chip).toBeEnabled();
+      expect(within(chip).queryByText('Add in Gear')).toBeNull();
+    }
+    expect(methods().getByRole('radio', { name: 'Smoke, then sear on the smoker' })).toBeChecked();
+  });
+
+  test('with a griddle every method is on', async () => {
+    await open(tritip('reverse'), { base: base({ cookers: { ...saturday.cookers, griddle: defaultGriddle() } }) });
+    for (const r of methods().getAllByRole('radio')) expect(r).toBeEnabled();
+    expect(screen.queryByText('Add in Gear')).toBeNull();
+  });
+
+  test('a griddle sear already on the menu with no griddle says which method to pick (draft wording)', async () => {
+    await open(tritip('reverse'));
+    const draft = NO_GRIDDLE_PICK_METHOD.replace('{food}', 'Tri-tip')
+      .replace('{step}', 'sear')
+      .replace('{method}', 'Smoke, then sear on the smoker');
+    expect(screen.getByText(draft)).toBeOnTheScreen();
+    await fireEvent.press(methods().getByRole('radio', { name: 'Smoke, then sear on the smoker' }));
+    expect(screen.queryByText(draft)).toBeNull();
+  });
+});
+
+// Regression (T-075): with no smoker in Gear, brisket's result card said "needs a smoker" once per smoker
+// step and React reported two children with the same key. A food that conflicts with two others has two
+// warnings with one code: their keys must differ too.
+describe('regression: one line per warning and no duplicate React keys', () => {
+  let errors: jest.SpyInstance;
+  beforeEach(() => {
+    errors = jest.spyOn(console, 'error');
+  });
+  const keyErrors = () => errors.mock.calls.filter((c: unknown[]) => c.some(a => /same key/.test(String(a))));
+
+  test('no smoker: brisket says it needs one once', async () => {
+    await open(brisket, { base: base({ cookers: {} }) });
+    expect(screen.getAllByText('Brisket needs a smoker. Add one in Gear.')).toHaveLength(1);
+    expect(keyErrors()).toEqual([]);
+  });
+
+  test('two smoker conflicts for one food show as two lines', async () => {
+    const wings = (id: string, methodId: string): ItemInput => ({ id, foodId: 'wings', methodId, quantity: 2 });
+    const tri: ItemInput = { id: 't', foodId: 'tritip', methodId: 'smokerSear', quantity: 2.5, restMin: 10 };
+    await open(tri, { base: base({ items: [wings('w1', 'smokeCrisp'), wings('w2', 'hot')] }) });
+    expect(screen.getAllByText(/^Smoker conflict: tri-tip at /)).toHaveLength(2);
+    expect(keyErrors()).toEqual([]);
   });
 });
 
