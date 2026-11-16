@@ -1,0 +1,110 @@
+# T-037 staged cook: checklist (Saturday 2026-11-21, 0.3.0-beta.1)
+
+No food. The full-length real timeline on Jason's phone, to prove every alarm rings on time with the phone
+locked, unplugged and idle, through a reboot and every kind of change. It ends with Discard, so the cook
+rates are not touched. Pass: every ring within 1 minute of its planned time, nothing lost at the reboot,
+nothing twice.
+
+Fixture times below come from the engine on 2026-11-16 (`data/foods.json` at commit `fe5e384`, a 20 min
+smoker preheat, a 15 min griddle preheat). Your phone's plan is the truth: write its times in the blank
+column at Start cook, and after each change that moves serve.
+
+## The plan to load (Friday night)
+
+Ready by Saturday 5:00 PM. Smoker 225F.
+
+| Food | Settings |
+|---|---|
+| Brisket | 10 lb trimmed, butcher paper wrap, rest 60 min, saved rate 0.75 hr/lb (do not change the rate) |
+| Chicken wings | 2 lb, smoke then crisp, dry brine, rest 5 min |
+| Chicken breasts | 4, griddle, pounded, no brine, rest 8 min |
+
+The first ring is Fire the smoker at 7:50 AM. Nothing rings before 7:30 AM. Two reminders have no alarm
+(Prep the brisket 6:55 AM, Dry brine the wings 7:15 AM).
+
+## Friday: upgrade over 0.2.0 (T-038's phone check) and get ready
+
+Phone unlocked and plugged in, Jason present. Claude runs only the adb lines, each after Jason's yes.
+
+| # | Who | What | Done |
+|---|---|---|---|
+| 1 | Claude | `adb devices` (read only: the phone's serial) | |
+| 2 | Claude | `adb -s <phone> shell dumpsys package io.github.mecheng70.pitplanner` (read only: 0.2.0, its versionCode, exact alarms granted) | |
+| 3 | Jason | In the dev build ("Pit Planner dev"): no cook running | |
+| 4 | Jason | In 0.2.0: screenshots of Gear, Cook rates and Cook history | |
+| 5 | Jason | In 0.2.0: start a short cook with a step due in about 20 minutes | |
+| 6 | Claude | `adb -s <phone> install -r release/pitplanner-0.3.0-beta.1.apk` (installs over 0.2.0; nothing uninstalled, no data cleared) | |
+| 7 | Jason | Open the app. Read the import notice. Compare Gear, Cook rates and Cook history with the step 4 screenshots | |
+| 8 | Jason | Gear, Export my data, save to Drive | |
+| 9 | Claude | `adb -s <phone> shell dumpsys alarm` for the app and `dumpsys package` again (read only: each carried-over alarm once, exact alarms still granted) | |
+| 10 | Jason | Wait for the carried-over step to ring once, on time. Then open the cook, End cook, Discard | |
+| 11 | Claude | `adb -s <phone> shell dumpsys alarm` for the app (read only: nothing pending) | |
+| 12 | Jason | Settings: notifications on; battery not restricted; on the app's battery usage page, allow background activity | |
+| 13 | Jason | Gear, 5 taps on the version line: it reads 0.3.0-beta.1 | |
+| 14 | Jason | Load Saturday's plan (above). Start cook. Write the times in the table below. Unplug | |
+
+## Saturday
+
+Between steps: screen off, locked, unplugged, lying still (the phone only goes into deep idle when it is
+not moving). Answer each alert within a couple of minutes. Never open the dev build.
+
+| Fixture time | What rings | What you do | Your phone's time | Rang at | OK |
+|---|---|---|---|---|---|
+| 7:50 AM | Fire the smoker to 225F | **Done** on the lock screen | | | |
+| 8:10 AM | Brisket on the smoker | Unlock. **Done** in the app. Lock | | | |
+| 12:05 PM | nothing | **Reboot** the phone. Do not unlock it afterwards | | | |
+| 12:15 PM | Check the brisket (wrap) | It must ring while the phone is still locked after the reboot. Note the time. Unlock. Tap **Not yet**, keep serve | | | |
+| about 12:30 PM | Check the brisket again | **Done**. Then Cook options, **Undo** that Done | | | |
+| about 12:40 PM | Check the brisket a third time (10 min after the Undo) | **Done**. Lock | | | |
+| 1:30 PM | nothing | Cook options, **Pit went out**. Lock | | | |
+| 1:45 PM | nothing | **Back up to temp**, choose Move serve. Write the new serve time: ________. Every time below moves with it | | | |
+| 2:30 PM | nothing | **Adjust** on Next up: later by 10 min, Move serve. Write the new serve time: ________ | | | |
+| 3:15 PM + moves | Wings on the smoker | **Done** on the lock screen | | | |
+| 3:25 PM + moves | Oven to 170F for holding | **Done** on the lock screen | | | |
+| 3:40 PM + moves | Check tenderness (brisket pull) | **Done** on the lock screen | | | |
+| 4:05 PM + moves | Turn the smoker up to 400F | Unlock, **Done** in the app. Then swipe the app away from recent apps (app closed). Lock | | | |
+| 4:20 PM + moves | Wings crisp at 400F | **+15 min** on the lock screen. Do not open the app. See "The +15 tap" below | | | |
+| 4:25 PM + moves | Fire the griddle | **Done** on the lock screen. Still do not open the app | | | |
+| 15 min after the +15 tap | Wings crisp, again | Note the time. Now open the app. Read the notice and the new serve time: ________. **Done** on the wings crisp step | | | |
+| as the app shows | Chicken breasts on the griddle | **Done** on the lock screen | | | |
+| as the app shows | Slice or plate the brisket | **Done** on the lock screen | | | |
+| as the app shows | Pull chicken breasts | **Done** on the lock screen | | | |
+| as the app shows | Pull wings | **Done** on the lock screen | | | |
+| as the app shows | Time to serve | **Done**, then **Discard this cook** | | | |
+| after | | Gear, 5 taps on the version line, Send to developer. If you can, do not charge the phone to full before Sunday's readout | | | |
+
+### The +15 tap with the app closed: what 0.3.0 should do (the pass line)
+
+0.3.0 does not re-plan while the app is closed (that is T-078, for 0.3.x). So:
+
+1. The alert goes away, and the wings crisp step rings again 15 minutes after the tap (within a minute).
+2. No other alarm moves while the app stays closed. Fire the griddle still rings at the time it had before
+   the tap.
+3. When the app is next opened, it applies the tap: Live cook shows one notice, the wings step is 15
+   minutes later, and because the wings' hold cannot absorb 15 minutes, serve moves and the other foods move
+   with it ("Serve moved to {time}. The other foods moved with it."). The alarms are set again once, at the
+   new times.
+4. After that every remaining step rings once, at its new time. Nothing rings at both the old and the new
+   time.
+
+A fail is any of: no second ring for the wings step; another alarm moving before the app is opened; a step
+ringing twice; a step not ringing after the app re-planned.
+
+This expectation is from reading the code. It is checked on the emulator before Saturday; if the emulator
+shows something else, this section is corrected first.
+
+## Sunday readout (Claude, phone plugged in, each line read only and after Jason's yes)
+
+- The debug file from Send to developer: the alarm ring log (planned and actual time of every ring, T-068)
+  and the event log (each Done, Not yet, Undo, Pit went out, Adjust and +15).
+- `adb shell dumpsys deviceidle`: Doze state and settings.
+- `adb shell dumpsys batterystats --history`: when the phone went into and out of deep idle.
+- `adb shell dumpsys alarm` for the app: nothing pending after Discard.
+
+| Step | Planned | Rang | Delta | Deep idle before the ring | Source | Note |
+|---|---|---|---|---|---|---|
+| | | | | | | |
+
+"Planned" is the time in force when it rang (after Not yet, Pit went out, Adjust and +15 it is the
+re-planned time). Android wakes the phone out of deep idle just before an alarm-clock alarm, so the idle
+column says whether the phone was in deep idle in the stretch before the ring, not at the ring.

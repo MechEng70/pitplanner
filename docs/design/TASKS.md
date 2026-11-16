@@ -2395,6 +2395,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Real phone:** no (Jason, 2026-11-15: emulator only).
 
 ### T-037 Saturday cook on the Expo build (SPEC definition of done)
+- **Checklist:** `docs/t037-checklist.md` (the plan to load, Friday's upgrade over 0.2.0 with T-038's phone
+  check, Saturday's taps with fixture times, the +15 pass line, Sunday's readout). Brisket 10 lb so the
+  first ring is 7:50 AM (Jason: nothing before 7:30 AM).
 - **Plan change (Jason, 2026-11-16): Saturday is a staged cook, no food.** The full-length real timeline
   (brisket, wings, breasts) on his phone, on 0.3.0-beta.1; the phone locked, unplugged and idle between
   steps. Used on purpose during it: Adjust, Pit went out (and Back up to temp), Not yet, one Undo, and one
@@ -3572,12 +3575,20 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** a probe in hot water against the Chef iQ app's reading.
 
 ### T-081 Live cook: header line, wings pull wording, banner line break
-- **Status:** todo. In 0.3.0, before beta.1 (Jason, 2026-11-16, from the T-069 pictures). One task, failing
-  test first where testable. Starts after T-075 merges (both edit `data/foods.json`).
+- **Status:** in progress. In 0.3.0, before beta.1 (Jason, 2026-11-16, from the T-069 pictures). Split by
+  Jason: fixes 1 and 3 on one agent branch; fix 2 merged onto `main` and gated 2026-11-16 (engine 207, Jest
+  866).
 - **1. Header.** The subtitle ("Smoker 225F, serve 2:30 PM") goes on its own full-width line under the title
   row, so the status pill's width can never change its wrapping. Layout rule: a status change must not
   move the banners or Done. Test: the pill reading On plan, Ahead and Behind gives the same header height at
   115%.
+- **Fix 2 as built:** data only, the wings' shared pull label: the first sentence is the title, the rest is
+  the line under it. The alert body reads "Pull wings at 175-185F. 165F is the safe minimum. Hold uncovered,
+  sauce right before serving." No other food's pull title had a "(...F is the safe minimum)". **Open with
+  Jason:** wings have no `sources` entry, so there was no FSIS citation on their 165F to keep (he supplies
+  the source; adding it also makes the rules test check the wings' other numbers). Leftovers from 0.2.0,
+  not changed: "ACV" in the 2-2-1 and 3-2-1 rib wrap steps; a semicolon in the wings griddle step ("Turn
+  every 5 min; dome for the first 15.").
 - **2. Wings pull step.** Title "Pull wings at 175-185F in 8 min" (the countdown as today); subtitle "165F is
   the safe minimum. Hold uncovered, sauce right before serving." The FSIS citation on the 165F stays. Check
   `data/foods.json` for other all-caps words or semicolons carried over from 0.2.0 and list them for Jason;
