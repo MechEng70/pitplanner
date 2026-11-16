@@ -2186,7 +2186,47 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** approve the fidelity sheets.
 
 ### T-035 Security pass before release
-- **Status:** todo
+- **Status:** in progress. The review (2026-11-16, read-only, `docs/proposals/2026-11-16-security-pass.md`,
+  untracked) found 10 points; Jason approved fixes for 1 to 6, 8 and 10 the same day. The fixes are built on
+  an agent branch (2026-11-16), unit-tested where possible, **not gated** (`npm run check` not run). The
+  Kotlin tests (pit-share) compile outside Gradle but have **not been run**. The release build and the
+  device checks are left for the main session. Not done until those pass.
+- **Fixed (2026-11-16), by finding:**
+  - 1 (medium; before any beta): `tools/release.sh` runs the Gradle build with the same
+    `APP_VARIANT=production APP_VERSION=<version>` as the prebuild (expo-constants writes `assets/app.config`,
+    what `Constants.expoConfig` reads, during the Gradle build; 0.3.0-alpha.5 said 0.2.0, build 200999,
+    variant development). Its verify step and `--verify` check that app config: version, versionCode, app
+    ID, variant production (`tools/release-app-config.mjs`). `--verify` on the real alpha.5 APK now fails with
+    `WRONG APP CONFIG`. Tests: `tools/release.test.mjs` (dry-run Gradle step environment; expo-constants'
+    own `getAppConfig.js` run in that environment; `--verify` on zip fixtures), `tools/release-app-config.test.mjs`,
+    `src/platform/releaseVersion.test.ts` (a 0.3.0-beta.1 config reads 0.3.0-beta.1 / 300301 and is offered
+    the next beta). RELEASING.md and TECH-DESIGN section 12 updated.
+  - 2: backup stays on, with include-only rules (`plugins/backupRules.ts` + `withBackupRules.ts`,
+    `android:fullBackupContent` and `android:dataExtractionRules`): the database (`files/SQLite`) and the
+    0.2.0 data (`CapacitorStorage` prefs, `files/history.json`, their `.imported` copies). Everything else is
+    left out, including the device-protected alarm store and any future token store. TECH-DESIGN section 10
+    corrected (secure-store is not in the build); the HA token store requirement added there and to T-045.
+    Tests: `plugins/backupRules.test.ts`, `tools/manifest.test.mjs` (the app manifest through `expo config
+    --type introspect`), `app.config.test.ts`.
+  - 3: `OpenedPlan.ownStorage` refuses a `file://` into the app's own data folders (canonical path) or
+    `/proc`, and a `content://` of the app's own providers; same "Could not read that file.", logged
+    without the path. Tests: `OpenedPlanTest.kt` (unrun).
+  - 4: `suggestServe` is one computation (no loop over weeks); `parsePitPlan` refuses a serve date outside
+    2000-2099 as damaged and clamps the pit temp to 150-700F, rounded. Test: `src/lib/sharedPlanBounds.test.ts`.
+  - 5: the `PitShare` log line names exception classes with a fixed short reason (and an allow-listed errno
+    name), never the message text. Tests: `OpenedPlanTest.kt` (unrun).
+  - 6: `android.blockedPermissions`: `READ/WRITE_EXTERNAL_STORAGE` in both variants, `SYSTEM_ALERT_WINDOW`
+    in the release only (React Native's dev tools use it). Tests: `app.config.test.ts`, `tools/manifest.test.mjs`.
+  - 8: the update check opens only `https://github.com/MechEng70/pitplanner/releases/...` links
+    (`releaseLink`), also for 0.2.0's saved link. Tests: `src/lib/updateLink.test.ts`, `src/db/legacyImport.test.ts`.
+  - 10: SE-001 and SE-002 name `tools/snyk.sh`; TECH-DESIGN section 10 names `exp+pitplanner` and BROWSABLE.
+- **Left as they are (Jason, 2026-11-16):** finding 7 (dev leftovers in the release build: dev routes,
+  `exp+pitplanner`, `_sitemap`) and finding 9 (Send to developer free text, old cache copies).
+- **Still to do (main session):** apply the fixture patch for `engine/update.test.ts` and
+  `GearScreen.test.tsx` (their example.org APK links fail the pin of finding 8); run the pit-share Kotlin
+  tests; change the device test `shared` (it opens a file from the app's own cache, now refused by design);
+  `npm run check`; build `--version 0.3.0-beta.1` and check its version, update offer, backup rules and
+  permissions on the emulator; a `bmgr` backup/restore check of the rules.
 - **Goal:** the release build reviewed: exported components, backup rules (secure-store excluded),
   permissions, no debug flags, no secrets; Semgrep and Snyk clean.
 - **Files:** `plugins/*` as needed, `docs/design/SECURITY-EXCEPTIONS.md`.
