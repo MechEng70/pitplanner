@@ -3268,11 +3268,17 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   do", used by the import (`src/lib/sharedPlan.ts`), Add food (`src/lib/rules.ts` `newItem`) and Food
   details; `NO_GRIDDLE_PICK_METHOD` in `engine/plan.ts`; `NO_SMOKER` and `NO_GRIDDLE` once per food, and the
   warning list's React key is code plus message (regression tests, each shown to fail on the old code).
-- **Open with Jason (new cases from the too-cool smoker rule):** a griddle-sear tri-tip opened with no
-  griddle and a smoker under 450F goes brisket-style and the box reads "Tri-tip will move to the smoker, or
-  add a griddle in Gear." (odd for a food already on the smoker); a shared smoker-sear tri-tip opened on a
-  smoker under 450F becomes brisket-style with no line saying so; a plan that already holds a smoker-sear
-  tri-tip when the smoker is changed to a cooler one plans at 450F with no warning (only the chip says so).
+- **Follow-up cases (Jason, 2026-11-16), built, merged and gated:** (a) a griddle-sear tri-tip opened with no
+  griddle on a smoker under 450F goes brisket-style and the box reads "Tri-tip will cook brisket-style with
+  no sear, or add a griddle in Gear." (`importMove` on `brisketStyle` in `foods.json`). (b) A shared
+  smoker-sear tri-tip on such a smoker with no griddle: the same line; with a griddle it takes the griddle
+  sear and nothing new is shown (open with Jason: words for that, if any). (c) A plan holding a smoker-sear
+  tri-tip on a smoker under 450F: no method change; `SMOKER_TOO_COOL` once per food, "Tri-tip's sear needs
+  450F and this smoker tops out at {max}F. Pick another method in Food details."
+  (`SMOKER_TOO_COOL_PICK_METHOD`, 450 from the data; "232C" and "218C" for a 425F smoker in Celsius), in
+  Conflicts with Edit and in Food details' result card like every per-food warning; the plan is built at
+  450F. Tests in `engine/plan.test.ts`, `engine/share.test.ts`, `SharedPlanSheet.test.tsx`,
+  `IssuesSheet.test.tsx`. Device check (Jason): Conflicts with a 425F smoker in Celsius at 115%.
 - **Device checks (Jason):** Food details for tri-tip at 115% with no griddle (three method chips wrap, the
   griddle sear greyed with "Add in Gear"); the import box with no griddle; the Cook tab lane for a
   smoker-sear tri-tip (a dashed hold for the climb, then sear).

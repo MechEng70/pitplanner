@@ -6,9 +6,8 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
 ## Restart, twenty-second session (written Monday 2026-11-16, end of the twenty-first; read this first)
 
 `main` is committed and clean, **not pushed** (about 60 commits ahead of `origin/main`). The gate passed on
-the last code change (the FSIS sources, `268d679`: engine 210, gate self-tests 153, Jest 877, Kotlin 68 in
-Gradle; Snyk 26 projects, none skipped); a later commit that touches only this file is not gated. No agent is running. One agent branch may be left unmerged (section 3,
-T-075's three cases); otherwise no worktree and no branch but `main`. Emulator and Metro are stopped. The phone was not touched this session. `dashboard.html` (local,
+the last code change (T-075's three cases: engine 218, gate self-tests 153, Jest 882, Kotlin 68 in
+Gradle; Snyk 26 projects, none skipped); a later commit that touches only this file is not gated. No agent is running, no worktree, no branch but `main`. Emulator and Metro are stopped. The phone was not touched this session. `dashboard.html` (local,
 never committed) was restyled in the medtechcto.com palette: the keeper edits only its `D` data block.
 
 **Usage (Jason):** Fable at 94% on 2026-11-16 (93% in his restart prompt): every agent on Opus; at 95% the
@@ -55,18 +54,11 @@ the first device run must build (no `--no-build`).
 staged cook with no food (brisket 10 lb so the first ring is 7:50 AM, wrap check 12:15 PM, reboot 12:05 PM),
 Sunday the readout table. Every phone action is listed there and still needs his yes on the day.
 
-### 3. Waiting on Jason, and one parked item
+### 3. Waiting on Jason
 
-- **T-075, three cases from the too-cool smoker rule (decided by Jason, 2026-11-16; an Opus agent was
-  building them at the end of the session).** If branch `worktree-agent-aa9ca02baa3e666bd` (worktree under
-  `.claude/worktrees/`, based on `268d679`) exists and is not merged: read its last commit and its T-075
-  tests, merge it, run the gate, apply its SPEC and TASKS text (agents do not edit those), delete the
-  worktree and branch. If it has no commit, start the work again from his wording: (a) a griddle-sear
-  tri-tip opened with no griddle and a smoker under 450F: "Tri-tip will cook brisket-style with no sear, or
-  add a griddle in Gear."; (b) a shared smoker-sear tri-tip on a smoker under 450F: the same notice, never
-  silent; (c) a plan holding a smoker-sear tri-tip after the smoker changes to one under 450F: no automatic
-  method change, plan warning "Tri-tip's sear needs 450F and this smoker tops out at {max}F. Pick another
-  method in Food details." Failing tests first. Once merged, delete this item.
+- T-075's three too-cool smoker cases are merged and gated (`SMOKER_TOO_COOL`, the brisket-style import
+  line). Open with Jason: a shared smoker-sear tri-tip opened on a smoker under 450F by someone WITH a
+  griddle moves to the griddle sear and the sheet says nothing: words for that, or leave it.
 - T-081: the header is about 20 dp taller; his look after the re-shoot.
 - Mockup 16 on the live canvas artifact is not updated (only the repo's source and PNG are).
 - Still open from before: his look at the two-button alert on the phone; T-031 with two phones.
