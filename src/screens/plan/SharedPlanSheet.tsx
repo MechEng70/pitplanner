@@ -43,8 +43,11 @@ export function SharedPlanSheet({ shared, pickDateTime, now, onClose, onUse }: P
   const plan = useMemo(() => importPlan(rules, shared, gear), [shared, gear]);
   const picked = serveAt !== suggested;
 
+  // The dialog opens on the date that is set. One exception (Jason, 2026-11-16): a plan under an hour away
+  // was moved a week, and its note says "Pick a date to keep today", so there the dialog opens on the shared
+  // date, today, as long as the moved date is still the one set.
   const pick = async () => {
-    const at = await pickDateTime(serveAt);
+    const at = await pickDateTime(move === 'soon' && !picked ? shared.serveAt : serveAt);
     if (at != null) setServeAt(at);
   };
   const qty = (it: ItemInput) => {

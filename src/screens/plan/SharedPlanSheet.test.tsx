@@ -234,13 +234,24 @@ describe('Shared plan sheet', () => {
       const today = now + 20 * MIN; // 4:50 PM the same day, 20 min ahead
       const { pickDateTime, onUse } = await show(withGriddle, { now, picked: today });
       await fireEvent.press(chip('Pick a date'));
-      expect(pickDateTime).toHaveBeenCalledWith(SERVE + 7 * 86_400_000);
+      // Jason, 2026-11-16: under an hour away, the dialog opens on the shared date (today), not the moved one.
+      expect(pickDateTime).toHaveBeenCalledWith(SERVE);
       expect(chip(/^Sat, Nov 14, 4:50/)).toBeChecked();
       expect(chip('Sat, Nov 21')).not.toBeChecked();
       await fireEvent.press(button('Use this plan'));
       await settle();
       expect(onUse.mock.calls[0]![1]).toBe(today);
     });
+  });
+
+  test('Pick a date opens on the moved date when the time has passed, and on a date the user picked before', async () => {
+    const now = SERVE + 2 * 3_600_000; // two hours after the shared serve time: passed
+    const mine = SERVE + 3 * 86_400_000;
+    const { pickDateTime } = await show(withGriddle, { now, picked: mine });
+    await fireEvent.press(chip('Pick a date'));
+    expect(pickDateTime).toHaveBeenLastCalledWith(SERVE + 7 * 86_400_000);
+    await fireEvent.press(chip(/^Tue, Nov 17/));
+    expect(pickDateTime).toHaveBeenLastCalledWith(mine);
   });
 
   test('Use this plan closes the sheet, then hands over the menu on the receiver cookers', async () => {
