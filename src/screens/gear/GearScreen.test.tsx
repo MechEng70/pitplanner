@@ -252,14 +252,24 @@ describe('Alerts', () => {
 describe('Update available (the check is T-032)', () => {
   test('a newer release found by the last check is a link to its download', async () => {
     const { open } = await show({
-      seed: r => r.settings.setUpdate({ checkedAt: NOW, latest: 'v0.4.0', url: 'https://example.org/pit.apk' }, NOW),
+      seed: r =>
+        r.settings.setUpdate(
+          {
+            checkedAt: NOW,
+            latest: 'v0.4.0',
+            url: 'https://github.com/MechEng70/pitplanner/releases/download/v0.4.0/pitplanner.apk',
+          },
+          NOW,
+        ),
     });
     const link = screen.getByRole('link', { name: /Update available/ });
     expect(
       within(link).getByText('Version 0.4.0. Download it in your browser, then open it to install.'),
     ).toBeOnTheScreen();
     await fireEvent.press(link);
-    expect(open).toHaveBeenCalledWith('https://example.org/pit.apk');
+    expect(open).toHaveBeenCalledWith(
+      'https://github.com/MechEng70/pitplanner/releases/download/v0.4.0/pitplanner.apk',
+    );
   });
 
   test('the release this build is does not show the row', async () => {
@@ -356,12 +366,18 @@ describe('the update check (T-032)', () => {
 
   test('a network error keeps the update found before, and the time it was found', async () => {
     const http = fakeHttp(new TypeError('Network request failed'));
-    const found = { checkedAt: NOW - DAY, latest: 'v0.4.0', url: 'https://example.org/pit.apk' };
+    const found = {
+      checkedAt: NOW - DAY,
+      latest: 'v0.4.0',
+      url: 'https://github.com/MechEng70/pitplanner/releases/download/v0.4.0/pitplanner.apk',
+    };
     const { open, repos } = await show({ http, seed: r => r.settings.setUpdate(found, NOW) });
     expect(http.requests).toHaveLength(1);
     expect(repos.settings.update()).toEqual(found);
     await fireEvent.press(screen.getByRole('link', { name: /Update available/ }));
-    expect(open).toHaveBeenCalledWith('https://example.org/pit.apk');
+    expect(open).toHaveBeenCalledWith(
+      'https://github.com/MechEng70/pitplanner/releases/download/v0.4.0/pitplanner.apk',
+    );
   });
 
   test('one anonymous request at launch, then none on resume until a day has passed', async () => {

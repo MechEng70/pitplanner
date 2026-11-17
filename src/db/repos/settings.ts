@@ -4,7 +4,7 @@
 import { parseDraft, type Draft } from '../../lib/draft.ts';
 import type { Units } from '../../lib/format.ts';
 import { DEFAULT_UI, parseUiState, type UiState } from '../../lib/uiState.ts';
-import type { UpdateInfo } from '../../lib/update.ts';
+import { releaseLink, type UpdateInfo } from '../../lib/update.ts';
 import { isNum, isObj, isStr } from './json.ts';
 import type { KvRepo } from './kv.ts';
 
@@ -30,10 +30,14 @@ export function parseFlags(raw: unknown): Flags | null {
   return out;
 }
 
+/**
+ * The update link is checked on read by the same rule as on save (releaseLink, T-035): a link an alpha saved
+ * before that check reads as no link, like a missing one (Gear then opens the releases page).
+ */
 export function parseUpdate(raw: unknown): UpdateInfo | null {
   if (!isObj(raw) || !isNum(raw.checkedAt)) return null;
   const strOrNull = (v: unknown) => (isStr(v) ? v : null);
-  return { checkedAt: raw.checkedAt, latest: strOrNull(raw.latest), url: strOrNull(raw.url) };
+  return { checkedAt: raw.checkedAt, latest: strOrNull(raw.latest), url: releaseLink(raw.url) };
 }
 
 /** Every setter quarantines an unreadable stored value before replacing it (quarantine.ts). */

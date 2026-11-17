@@ -70,13 +70,14 @@ describe('settings (kv)', () => {
   test('units, flags, update and draft round-trip; a second save replaces the first', () => {
     r.settings.setUnits({ temp: 'C', weight: 'kg' }, NOW);
     r.settings.setFlags({ rateHintShown: true }, NOW);
-    r.settings.setUpdate({ checkedAt: NOW, latest: 'v0.3.0', url: 'https://example.com/r' }, NOW);
+    const url = 'https://github.com/MechEng70/pitplanner/releases/tag/v0.3.0';
+    r.settings.setUpdate({ checkedAt: NOW, latest: 'v0.3.0', url }, NOW);
     const draft: Draft = { mode: 'readyBy', at: saturday.at, pitTempF: 225, items: saturday.items };
     r.settings.setDraft(draft, NOW);
     r.settings.setDraft({ ...draft, pitTempF: 250 }, NOW + 1);
     expect(r.settings.units()).toEqual({ temp: 'C', weight: 'kg' });
     expect(r.settings.flags()).toEqual({ rateHintShown: true });
-    expect(r.settings.update()).toEqual({ checkedAt: NOW, latest: 'v0.3.0', url: 'https://example.com/r' });
+    expect(r.settings.update()).toEqual({ checkedAt: NOW, latest: 'v0.3.0', url });
     expect(r.settings.draft()).toEqual({ ...draft, pitTempF: 250 });
     expect(db.all('SELECT key FROM kv')).toHaveLength(4);
   });
@@ -93,6 +94,15 @@ describe('settings (kv)', () => {
     expect(r.settings.flags()).toEqual({});
     expect(r.settings.update()).toBeNull();
     expect(r.settings.draft()).toBeNull();
+  });
+
+  // T-035: a link saved before the save-time check (an alpha) is checked again on read, by the same rule.
+  test('a stored update link that is not a Pit Planner release link reads back as no link', () => {
+    const good = 'https://github.com/MechEng70/pitplanner/releases/download/v0.3.0/pitplanner.apk';
+    r.kv.set('update', { checkedAt: NOW, latest: 'v0.3.0', url: 'https://example.com/r' }, NOW);
+    expect(r.settings.update()).toEqual({ checkedAt: NOW, latest: 'v0.3.0', url: null });
+    r.kv.set('update', { checkedAt: NOW, latest: 'v0.3.0', url: good }, NOW + 1);
+    expect(r.settings.update()).toEqual({ checkedAt: NOW, latest: 'v0.3.0', url: good });
   });
 
   test('a draft with one bad item is dropped whole, not half-loaded', () => {
