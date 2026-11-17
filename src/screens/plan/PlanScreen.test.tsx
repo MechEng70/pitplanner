@@ -223,6 +223,19 @@ describe('plan (mockup 05)', () => {
     expect(screen.queryByText(/^(200|225|250|275|300)F$/, { exact: true })).toBe(within(field).getByText('225F'));
   });
 
+  // T-082: in Celsius a 5C step (stored 9F) shows the grid's exact C; a 5F smoker keeps the 2C rounding.
+  test.each([
+    [9, '85C'],
+    [5, '86C'],
+  ])('in Celsius the field reads 185F as the menu does: a %iF step shows %s', async (tempStepF, want) => {
+    const r = testRepos();
+    r.repos.cookers.save({ ...gear, smoker: { ...gear.smoker!, tempStepF } }, NOW);
+    r.repos.settings.setUnits({ temp: 'C', weight: 'kg' }, NOW);
+    r.repos.settings.setDraft({ mode: 'readyBy', at: saturday.at, pitTempF: 185, items: [brisket] }, NOW);
+    await render(<PlanScreen pickDateTime={jest.fn(async () => null)} />, { wrapper: storeWrapper(r.repos) });
+    expect(within(button('Smoker temp')).getByText(want)).toBeOnTheScreen();
+  });
+
   test('every control hands over to its handler', async () => {
     const { props } = await show([brisket]);
     await fireEvent.press(button('Brisket, edit'));

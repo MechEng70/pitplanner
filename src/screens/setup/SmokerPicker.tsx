@@ -1,9 +1,10 @@
 // Smoker picker (mockup 02; a port of legacy/src/screens/setup/SmokerPicker.tsx). A verified model fills its
 // specs from data/cookers.json. A model with no checked specs, or "Not listed?", opens the manual form with
 // every spec blank, for the user to copy from the manual (CLAUDE.md: no smoker specs without a source).
+// StepSheet is the form's step and dial fields alone, for Other on the temp step question (T-082).
 import { useState } from 'react';
 import type { SmokerProfile } from '../../../engine/types';
-import { cToF, kgToLb } from '../../../engine/units';
+import { kgToLb, type TempUnit } from '../../../engine/units';
 import {
   Button,
   Chips,
@@ -28,8 +29,14 @@ import {
   catalogSmokers,
   hasHopper,
   manualSmoker,
+  positiveNum,
   smokerFromCatalog,
   smokerTypes,
+  typedPresetsF,
+  typedStepF,
+  typedTempF,
+  typedTemps,
+  withTemps,
   type CatalogSmoker,
   type SmokerType,
 } from '@/lib/gear';
@@ -123,11 +130,6 @@ function PickerList({
 
 /* ---------- Manual entry ---------- */
 
-const numOrNull = (v: string) => {
-  const n = parseFloat(v.replace(',', '.'));
-  return Number.isFinite(n) && n > 0 ? n : null;
-};
-
 /**
  * Smoker specs typed by the user: every field starts blank. Temps and the hopper are typed in the user's
  * units and stored in F and lb. The sheet keeps its full height and the field that comes and goes (the dial
@@ -144,12 +146,8 @@ function SmokerForm({
   onSave: (s: SmokerProfile) => void;
   onClose: () => void;
 }) {
-  const C = units.temp === 'C';
+  const unitT = units.temp;
   const kg = units.weight === 'kg';
-  const toF = (v: string) => {
-    const n = numOrNull(v);
-    return n == null ? null : Math.round(C ? cToF(n) : n);
-  };
   const [name, setName] = useState(start.name ?? '');
   const [type, setType] = useState<SmokerType>(start.type);
   const [min, setMin] = useState('');
@@ -159,31 +157,24 @@ function SmokerForm({
   const [hopper, setHopper] = useState('');
   const [grate, setGrate] = useState('');
 
-  const minF = toF(min);
-  const maxF = toF(max);
-  const stepN = numOrNull(stepS);
-  const stepF = stepN == null ? null : Math.max(1, Math.round(C ? (stepN * 9) / 5 : stepN));
-  const presetsF = presets
-    .split(/[\s,;]+/)
-    .map(toF)
-    .filter((n): n is number => n != null)
-    .sort((a, b) => a - b);
-  const hopperN = numOrNull(hopper);
+  const minF = typedTempF(min, unitT);
+  const maxF = typedTempF(max, unitT);
+  const stepF = typedStepF(stepS, unitT);
+  const temps = typedTemps(stepF, typedPresetsF(presets, unitT));
+  const hopperN = positiveNum(hopper);
   const smoker =
-    name.trim() && minF != null && maxF != null && minF < maxF && (stepF != null || presetsF.length >= 2)
+    name.trim() && minF != null && maxF != null && minF < maxF && temps
       ? manualSmoker({
           id: start.id,
           name: name.trim(),
           type,
           minTempF: minF,
           maxTempF: maxF,
-          tempStepF: stepF,
-          tempPresetsF: presetsF,
+          ...temps,
           hopperLb: hopperN == null ? null : kg ? kgToLb(hopperN) : hopperN,
-          mainGrateSqIn: numOrNull(grate),
+          mainGrateSqIn: positiveNum(grate),
         })
       : null;
-  const unitT = units.temp;
 
   return (
     <Sheet
@@ -215,13 +206,7 @@ function SmokerForm({
             <InputField numeric label={`Highest temp (${unitT})`} value={max} onInput={setMax} />
           </Fill>
         </Row>
-        <InputField
-          numeric
-          label={`Temp step (${unitT})`}
-          value={stepS}
-          onInput={setStepS}
-          note="How far one press moves the setting. Leave blank if the dial has fixed settings."
-        />
+        <StepField unit={unitT} value={stepS} onInput={setStepS} />
         {/* The grate keeps its half of the row when the type has no hopper. */}
         <Row gap={12} align="start">
           <Fill>
@@ -233,20 +218,69 @@ function SmokerForm({
             ) : null}
           </Fill>
         </Row>
-        {stepF == null ? (
-          <InputField
-            label={`Dial settings (${unitT})`}
-            value={presets}
-            onInput={setPresets}
-            placeholder={C ? '80, 105, 120, 150' : '180, 225, 250, 300'}
-          />
-        ) : null}
+        {stepF == null ? <DialField unit={unitT} value={presets} onInput={setPresets} /> : null}
       </Stack>
     </Sheet>
   );
 }
 
-/** Closes the sheet, then hands the smoker over. Off until the name, the range and a step or settings are in. */
+/**
+ * Other on the temp step question (T-082): a picked smoker's step or dial settings only, with the manual form's
+ * two fields and parsing. Everything else (name, id, specs) stays. Both fields stay on screen so the short
+ * sheet never moves while typing; a step, when typed, wins over the settings, as in the manual form.
+ */
+export function StepSheet({
+  smoker,
+  units,
+  onSave,
+  onClose,
+}: {
+  smoker: SmokerProfile;
+  units: Units;
+  onSave: (s: SmokerProfile) => void;
+  onClose: () => void;
+}) {
+  const unitT = units.temp;
+  const [stepS, setStepS] = useState('');
+  const [presets, setPresets] = useState('');
+  const temps = typedTemps(typedStepF(stepS, unitT), typedPresetsF(presets, unitT));
+  return (
+    <Sheet
+      title={smoker.name}
+      onClose={onClose}
+      footer={<SaveButton smoker={temps ? withTemps(smoker, temps) : null} onSave={onSave} />}
+    >
+      <StepField unit={unitT} value={stepS} onInput={setStepS} />
+      <DialField unit={unitT} value={presets} onInput={setPresets} />
+    </Sheet>
+  );
+}
+
+function StepField({ unit, value, onInput }: { unit: TempUnit; value: string; onInput: (v: string) => void }) {
+  return (
+    <InputField
+      numeric
+      label={`Temp step (${unit})`}
+      value={value}
+      onInput={onInput}
+      note="How far one press moves the setting. Leave blank if the dial has fixed settings."
+    />
+  );
+}
+
+const DIAL_PLACEHOLDER: Record<TempUnit, string> = { F: '180, 225, 250, 300', C: '80, 105, 120, 150' };
+function DialField({ unit, value, onInput }: { unit: TempUnit; value: string; onInput: (v: string) => void }) {
+  return (
+    <InputField
+      label={`Dial settings (${unit})`}
+      value={value}
+      onInput={onInput}
+      placeholder={DIAL_PLACEHOLDER[unit]}
+    />
+  );
+}
+
+/** Closes the sheet, then hands the smoker over. Off until what the sheet needs is in. */
 function SaveButton({ smoker, onSave }: { smoker: SmokerProfile | null; onSave: (s: SmokerProfile) => void }) {
   const { close } = useSheet();
   return (

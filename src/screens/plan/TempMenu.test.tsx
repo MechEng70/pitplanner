@@ -114,6 +114,57 @@ describe('smoker temp menu (mockup 06)', () => {
     expect(onPick).toHaveBeenCalledWith(200);
   });
 
+  // T-082: the saved step drives the menu; the rows are the multiples of the step at or above the lowest temp.
+  describe('the saved step (T-082)', () => {
+    const withStep = (tempStepF: number, pitTempF = 225): PlanInput => ({
+      ...saturday,
+      pitTempF,
+      cookers: { ...saturday.cookers, smoker: { ...smoker, tempStepF } },
+    });
+
+    test('10F: 200 to 300 in 10s', async () => {
+      await show(withStep(10, 230));
+      expect(labels()).toEqual([
+        '200F',
+        '210F',
+        '220F',
+        '230F',
+        '240F',
+        '250F',
+        '260F',
+        '270F',
+        '280F',
+        '290F',
+        '300F',
+      ]);
+      expect(screen.getByText(/sets in 10F steps\./)).toBeOnTheScreen();
+    });
+
+    test('25F from 180F: 200, 225, 250 (not 205, 230)', async () => {
+      await show(withStep(25));
+      expect(labels()).toEqual(['200F', '225F', '250F', '275F', '300F']);
+      await fireEvent.press(screen.getByRole('button', { name: 'Show 200-500F' }));
+      expect(labels()[0]).toBe('200F');
+    });
+
+    test('5C (9F) in Celsius: exact C from 85C, and the intro says 5C', async () => {
+      const { onPick } = await show(withStep(9, 185), C);
+      expect(row('85C')).toBeSelected();
+      expect(screen.getByText(/^Pit Boss Sportsman 850 sets in 5C steps\./)).toBeOnTheScreen();
+      expect(within(screen.getByRole('button', { name: 'Smoker temp' })).getByText('85C')).toBeOnTheScreen();
+      expect(labels().slice(0, 5)).toEqual(['85C', '90C', '95C', '100C', '105C']);
+      expect(screen.queryByText(/\dF\b/)).toBeNull();
+      await fireEvent.press(row('90C'));
+      expect(onPick).toHaveBeenCalledWith(194);
+    });
+
+    test('the same 9F step in Fahrenheit is an F step from 180F', async () => {
+      await show(withStep(9, 225));
+      expect(labels().slice(0, 3)).toEqual(['207F', '216F', '225F']);
+      expect(screen.getByText(/sets in 9F steps\./)).toBeOnTheScreen();
+    });
+  });
+
   test('with nothing on the menu the rows carry no times', async () => {
     await show({ ...saturday, items: [] });
     expect(screen.queryByText(/fire /)).toBeNull();
