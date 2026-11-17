@@ -1,7 +1,7 @@
 // The Plan tab with what opens from it: the smoker temp menu, Add food and the Conflicts sheet (T-018) and
 // food details (T-019), Start cook with its alert check (T-021), the share icon (T-029) and a shared plan
 // opened from another app (T-030). Past plans (T-028) join with their task.
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { HostInstance } from 'react-native';
 import { buildPlan } from '../../../engine/plan';
 import type { ItemInput, Plan, PlanInput } from '../../../engine/types';
@@ -162,6 +162,13 @@ export function PlanTab({
   // moment the permissions are being read and the time until the store's new state is drawn.
   const starting = useRef(false);
   const cooking = state.cook != null;
+  // The guard is for one start only. It is cleared when no cook is running any more (the cook ended, was
+  // saved or discarded, or Start over): before this, it stayed set after the first start and Start cook did
+  // nothing for the rest of the app's run (found on the phone, 0.3.0-beta.1). While a start is under way
+  // `cooking` does not change, so the guard holds against a second tap.
+  useEffect(() => {
+    if (!cooking) starting.current = false;
+  }, [cooking]);
   const begin = (input: PlanInput, plan: Plan) => {
     if (cooking) return;
     starting.current = true;

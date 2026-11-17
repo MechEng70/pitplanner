@@ -1,9 +1,11 @@
 // Start cook from Plan (T-021): the alert check, one cook and one alarm set per tap, and a running cook that
 // is never replaced (T-064).
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
+import { Pressable, Text } from 'react-native';
 import { SHEET_OUT_MS } from '@/components/kit/sheet';
 import { fakeAlarms, fakeResume } from '@/platform/fakes';
 import { AT_1023, cookAt, cookGear, cookMenu } from '@/test/cook';
+import { useStore } from '@/lib/store';
 import { storeWrapper, testRepos } from '@/test/store';
 import { PlanTab } from './PlanTab';
 
@@ -27,16 +29,31 @@ async function show(opts: { cooking?: boolean } = {}) {
   const resume = fakeResume();
   const onCookStarted = jest.fn();
   await render(
-    <PlanTab
-      pickDateTime={jest.fn(async () => null)}
-      permissions={alarms}
-      onResume={resume.onResume}
-      onCookStarted={onCookStarted}
-      now={() => NOW}
-    />,
+    <>
+      <PlanTab
+        pickDateTime={jest.fn(async () => null)}
+        permissions={alarms}
+        onResume={resume.onResume}
+        onCookStarted={onCookStarted}
+        now={() => NOW}
+      />
+      <DropCook />
+    </>,
     { wrapper: storeWrapper(r.repos, () => NOW, alarms) },
   );
   return { repos: r.repos, alarms, resume, onCookStarted };
+}
+/**
+ * The cook ending from another screen while Plan stays mounted, as the tabs keep it: End cook then Save to
+ * history or Discard this cook, and Start over, all end in the store's setCook(null).
+ */
+function DropCook() {
+  const { setCook } = useStore();
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel="drop the cook (test)" onPress={() => setCook(null)}>
+      <Text>drop</Text>
+    </Pressable>
+  );
 }
 const button = (name: string | RegExp) => screen.getByRole('button', { name });
 const replaced = (calls: string[]) => calls.filter(c => c.startsWith('replaceAll')).length;
@@ -56,6 +73,42 @@ test('with every alert permission on, Start cook saves the cook, sets its alarms
   expect(screen.queryByLabelText('Alerts may not ring')).toBeNull();
   // The cook is running: Start cook is greyed out (T-064).
   expect(button('Start cook')).toBeDisabled();
+});
+
+// Regression (found by Jason on his phone, 0.3.0-beta.1, 2026-11-17): the guard against a double tap was
+// never cleared after a cook started, so once that cook had ended Start cook looked normal and did nothing
+// until the app was restarted.
+test('after a cook has ended, Start cook starts the next one without the app being restarted', async () => {
+  const { repos, alarms, onCookStarted } = await show();
+  await fireEvent.press(button('Start cook'));
+  await flush();
+  expect(repos.activeCook.load()).not.toBeNull();
+  expect(onCookStarted).toHaveBeenCalledTimes(1);
+
+  await fireEvent.press(button('drop the cook (test)'));
+  await flush();
+  expect(repos.activeCook.load()).toBeNull();
+  expect(button('Start cook')).toBeEnabled();
+  const before = replaced(alarms.calls);
+
+  await fireEvent.press(button('Start cook'));
+  await flush();
+  expect(repos.activeCook.load()).not.toBeNull();
+  expect(onCookStarted).toHaveBeenCalledTimes(2);
+  expect(replaced(alarms.calls)).toBe(before + 1);
+
+  // And a third time, with two quick taps: still one cook, one alarm set.
+  await fireEvent.press(button('drop the cook (test)'));
+  await flush();
+  const again = replaced(alarms.calls);
+  const start = button('Start cook');
+  await act(async () => {
+    fireEvent.press(start);
+    fireEvent.press(start);
+  });
+  await flush();
+  expect(onCookStarted).toHaveBeenCalledTimes(3);
+  expect(replaced(alarms.calls)).toBe(again + 1);
 });
 
 test('two quick taps start one cook and set the alarms once', async () => {
