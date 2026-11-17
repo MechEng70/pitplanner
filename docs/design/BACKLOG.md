@@ -30,6 +30,17 @@ decided until Jason triages it. New ideas that come up during the port are added
 | Dial smokers with fixed presets. Preset lists already work in the engine and in "Enter it yourself" (`tempPresetsF`); what is missing is preset lists in the picker's catalog, one list per controller version. PB820SC manual presets: 200, 225, 250, 300, 350, 400, 450, 475, plus Smoke and High; some later units list 180 (sources from Jason: the Pit Boss 820 owner's manual, manualslib 751551, and the PB820SC control board page). An upgraded controller changes the step (a replacement board can turn a dial 820 into 180 to 500F in 5F steps), so the picker may need "pick by controller". Smoke and High are not temps: how they show is open. First real case for "pick by controller": Jason's own smoker, a Pit Boss Sportsman 820 with Wi-Fi (PB0820SPW) with a newer controller card that sets in 5F steps and reports PB850SPW2; a "Pit Boss Sportsman 820" catalog entry comes with this item (849 sq in, 21 lb hopper, 180-500F on the Pit Boss product page; main and upper rack split not sourced yet) | none yet | Jason, 2026-11-17: after 0.3.0 |
 | Wings at 400F on a smoker that tops out lower: offer the method only when the smoker's max reaches its temp, greyed with the reason otherwise (as tri-tip's smoker sear does, T-075) | none yet | Jason, 2026-11-16: 0.3.x |
 
+## iOS
+
+Jason, 2026-11-17. Backlog only: no task yet, nothing scheduled. The Apple facts below are as he gave them;
+check them against Apple's own pages before relying on them.
+
+| Item | Task | State |
+|---|---|---|
+| iOS through a free Apple Personal Team: Xcode on Jason's MacBook, his own iPhone only. Limits of the free route: a build expires after 7 days, 3 apps per device, no paid capabilities. Friends' iPhones need the $99 developer program (TestFlight) | none yet | To confirm first: the MacBook's model and macOS version (which Xcode it can run) |
+| First step, before any port: a throwaway app on the free team that schedules one AlarmKit alarm (iOS 26 and later) and rings with the phone locked. If AlarmKit needs a paid capability, record that here and stop | none yet | Not started. Nothing else on iOS begins until this has an answer |
+| Native work for iOS, behind the existing TypeScript interfaces: `pit-alarms` (AlarmKit) and `pit-share`. `pit-legacy` is not needed (there is no 0.2.0 on iOS to import from) | none yet | After the first step. T-056 (iOS readiness, interfaces only) is the groundwork already listed above |
+
 ## Maintenance (has a date, not a version)
 
 | Item | Task | State |
