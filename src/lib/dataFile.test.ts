@@ -194,6 +194,37 @@ describe('refused files', () => {
     expect(read({ ...dump, schemaVersion: 1, tables: [] })).toEqual({ ok: false, problem: 'damaged' });
   });
 
+  // T-036 review: an exportedAt of 1e20 passed and the confirm sheet's date then threw "Invalid time value".
+  // When it is there it must be a date in the reader's range for cook dates (2000 to a year from now).
+  test.each<[string, unknown]>([
+    ['1e20', 1e20],
+    ['-1e20', -1e20],
+    ['just past the last valid date', 8.64e15 + 1],
+    ['the last valid date, far in the future', 8.64e15],
+    ['before 2000', Date.UTC(1999, 11, 31)],
+    ['more than a year ahead', NOW + 367 * DAY],
+    ['a string', '2026-11-12'],
+    ['null (what NaN becomes in JSON)', null],
+    ['an object', { at: NOW }],
+  ])('an exportedAt that is not a date (%s) is damaged', (_, exportedAt) => {
+    expect(read({ ...fileObj(), exportedAt })).toEqual({ ok: false, problem: 'damaged' });
+    const dump = { format: 'pitplanner-export', formatVersion: 1, schemaVersion: 1, exportedAt, tables: {} };
+    expect(read(dump)).toEqual({ ok: false, problem: 'damaged' });
+  });
+
+  test('an exportedAt too big for a number (Infinity once parsed) is damaged', () => {
+    const text = JSON.stringify(fileObj()).replace(`"exportedAt":${NOW}`, '"exportedAt":1e999');
+    expect(text).toContain('1e999');
+    expect(readDataFile(rules, text, NOW)).toEqual({ ok: false, problem: 'damaged' });
+  });
+
+  test('a normal exportedAt reads; a missing one is still allowed and reads as null', () => {
+    expect(okRead({ ...fileObj(), exportedAt: NOW - DAY }).exportedAt).toBe(NOW - DAY);
+    expect(okRead({ ...fileObj(), exportedAt: Date.UTC(2000, 0, 1) }).exportedAt).toBe(Date.UTC(2000, 0, 1));
+    const { exportedAt: _gone, ...noTime } = fileObj();
+    expect(okRead(noTime).exportedAt).toBeNull();
+  });
+
   test('a file with nothing to restore is refused, so it cannot wipe the phone', () => {
     const empty = fileObj({ gear: {}, rates: {}, totalHours: {}, rateLocks: {}, records: [] });
     expect(read(empty)).toEqual({ ok: false, problem: 'nothing to restore' });

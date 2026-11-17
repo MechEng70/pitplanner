@@ -176,6 +176,17 @@ describe('Restore from a file', () => {
       'This file is from a newer Pit Planner. Update the app to restore it. Nothing was changed.',
     ],
     ['a broken version', { text: fileText(many, { version: 0 }) }, 'This file is damaged. Nothing was changed.'],
+    // T-036 review: this date crashed the confirm sheet ("Invalid time value").
+    [
+      'a time out of range',
+      { text: fileText(many, { exportedAt: 1e20 }) },
+      'This file is damaged. Nothing was changed.',
+    ],
+    [
+      'a time that is text',
+      { text: fileText(many, { exportedAt: 'soon' }) },
+      'This file is damaged. Nothing was changed.',
+    ],
     ['a file that could not be read', { error: 'unreadable' }, 'This file is damaged. Nothing was changed.'],
     ['too big, by the picker size', { error: 'tooBig' }, 'This file is too big to restore. Nothing was changed.'],
     [

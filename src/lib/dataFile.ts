@@ -568,6 +568,10 @@ export function readDataFile(rules: Rules, text: string, now: number): DataCheck
   } else {
     return { ok: false, problem: 'not ours' };
   }
+  // When the file was made: may be missing (shown without a date), but when it is there it is a date in the
+  // range a cook's date may have. Anything else (1e20, text, null) means a damaged file, never a crash later.
+  const at = parsed.exportedAt;
+  if (at !== undefined && !(num(at) && inRange(at, EARLIEST, now + YEAR))) return { ok: false, problem: 'damaged' };
 
   const r = new Reader(rules, now);
   const data: RestoreData = {
@@ -585,7 +589,7 @@ export function readDataFile(rules: Rules, text: string, now: number): DataCheck
   return {
     ok: true,
     from,
-    exportedAt: num(parsed.exportedAt) ? parsed.exportedAt : null,
+    exportedAt: num(at) ? at : null,
     appVersion: shortStr(parsed.appVersion, 32) ? parsed.appVersion : '',
     data,
     counts,
