@@ -955,3 +955,21 @@ test('smoker under 450F: the warning is once per food, and only for a method who
   ];
   assert.deepEqual(tooCool(coolSear(425, others)), []);
 });
+
+// Jason, 2026-11-17: the slice step (and its alarm) lower-cased the whole name: "Slice or plate the st. louis
+// ribs." A food name keeps its own capitals mid-sentence (labels.ts inSentence); every other food is as it was.
+test('slice step: a food name keeps its own capitals; brisket, baby back ribs and tri-tip are unchanged', () => {
+  const slice = (foodId: string, methodId: string, quantity: number) =>
+    ev(
+      buildPlan(rules, saturday({ rateOverrides: {}, items: [{ id: 'x', foodId, methodId, quantity }] })),
+      'slice',
+      'x',
+    ).label;
+  assert.equal(slice('stlribs', '221', 3), 'Slice or plate the St. Louis ribs.');
+  assert.equal(slice('brisket', 'smoked', 12), 'Slice or plate the brisket.');
+  assert.equal(slice('bbribs', 'wrap', 2), 'Slice or plate the baby back ribs.');
+  assert.equal(slice('tritip', 'reverse', 2.5), 'Slice or plate the tri-tip.');
+  // Wings and breasts are not sliced: no such step.
+  const p = buildPlan(rules, saturday());
+  assert.ok(!p.events.some(e => e.kind === 'slice' && (e.itemId === 'w' || e.itemId === 'c')));
+});

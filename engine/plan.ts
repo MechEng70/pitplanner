@@ -684,7 +684,7 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
       add({
         at: serveAt - it.sliceMin * MIN,
         kind: 'slice',
-        label: `Slice or plate the ${it.name.toLowerCase()}.`,
+        label: `Slice or plate the ${inSentence(it.name)}.`,
         itemId: it.input.id,
         alarm: true,
       });

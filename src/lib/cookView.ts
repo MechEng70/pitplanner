@@ -189,7 +189,7 @@ export function overlapNote(plan: Plan, now: number, u: Units): OverlapNote | nu
   if (clash) {
     const foods = clash.foods.map(f => {
       const it = plan.items.find(i => i.input.id === f.itemId);
-      return `${it ? shortName(it.name).toLowerCase() : 'food'} at ${fmtTemp(f.tempF, u, true)}`;
+      return `${it ? inSentence(shortName(it.name)) : 'food'} at ${fmtTemp(f.tempF, u, true)}`;
     });
     return {
       band: { start: clash.start, end: clash.end, laneIds: clash.foods.map(f => f.itemId).sort() },
@@ -200,7 +200,7 @@ export function overlapNote(plan: Plan, now: number, u: Units): OverlapNote | nu
   const o = smokerOverlaps(plan).find(x => x.end > now);
   if (!o) return null;
   const items = plan.items.filter(i => o.itemIds.includes(i.input.id));
-  const names = items.map(i => shortName(i.name).toLowerCase());
+  const names = items.map(i => inSentence(shortName(i.name)));
   const temp = Math.min(...o.tempsF);
   const lead = `${span(o.start, o.end)}: ${list(names)} share the smoker at ${fmtTemp(temp, u, true)}.`;
   // One food comes off where the stretch ends, and another later needs the pit hotter.

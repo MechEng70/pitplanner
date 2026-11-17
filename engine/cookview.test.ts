@@ -178,6 +178,18 @@ test('overlap note: a food name keeps its own capitals at the start of the sente
   });
   const n = overlapNote(ribs, at(10), units)!;
   assert.match(n.rest, /^St\. Louis ribs comes off before the pit climbs to 400F\.$/);
+  // Mid-sentence too: "St. Louis ribs and wings share the smoker", never "st. louis ribs" (Jason, 2026-11-17).
+  assert.match(n.lead, /^\d+:\d\d to \d+:\d\d.PM: St\. Louis ribs and wings share the smoker at 225F\.$/);
+});
+
+test('overlap note: a conflict names a food with its own capitals mid-sentence', () => {
+  const ribs = buildPlan(rules, {
+    ...input,
+    items: [{ id: 'r', foodId: 'stlribs', methodId: '221', quantity: 3 }, input.items[1]],
+  });
+  // Running behind, the ribs are still on when the smoker climbs.
+  const late = overlapNote(shiftRemaining(rules, input, ribs, at(10), 30, true, 'r'), at(10), units)!;
+  assert.match(late.lead, /^\d+:\d\d to \d+:\d\d.PM: smoker conflict, St\. Louis ribs at 225F and wings at 400F\.$/);
 });
 
 test('hold impact: keep serve changes the hold, move serve says the new time', () => {
