@@ -26,6 +26,22 @@ The first ring is Fire the smoker at 7:50 AM. Nothing rings before 7:30 AM. Two 
 
 Phone unlocked and plugged in, Jason present. Claude runs only the adb lines, each after Jason's yes.
 
+**Done early, Tuesday 2026-11-17 (Jason wanted beta.1 on the phone to look for layout bugs; each adb line
+after his yes):** steps 1, 2, 6 and 7. Before: 0.2.0, versionCode 200, the same signing key as beta.1
+(`dumpsys package` shows signature id `d3c9ed0e` for both). `adb install -r` of
+`release/pitplanner-0.3.0-beta.1.apk` (SHA-256 `68b9e64a...bc5bf7`): Success, 11:30 AM. The app opened with
+"Pit Planner has a new look. Your smokers, cook rates, plan and history came over." After: 0.3.0-beta.1,
+versionCode 300301. Step 7's comparison was against the 2026-11-15 copy of the phone's 0.2.0 storage
+(`tools/device/out/t064-2026-11-15/`), not screenshots (step 4 skipped, his choice): smoker Pit Boss
+Sportsman 850, griddle 22 in with 2 burners, oven at 170F, brisket 0.65 and tri-tip 0.9 hr/lb, one past cook
+(Sat Nov 14, served 5:17 PM, 18 min late), the plan for Sat Nov 21 5:00 PM at 250F with five foods: "everything
+looks good" (Jason). Step 5 (a short 0.2.0 cook carried across) was skipped, his choice; the emulator upgrade
+test covers the import (PASS on beta.1 the same morning). **But a running cook did come across:** the copy
+holds a 0.2.0 cook started Sun Nov 15 10:49 AM, serve Sat Nov 21 5:00 PM, 28 steps, none done; its alarms
+start Saturday 5:35 AM. Jason ends or discards it before the staged cook. Still to do on Friday: steps 3 and
+8 to 14 (9 to 11 can use that carried-over cook before it is discarded). The emulator was first: the upgrade
+test and locked-reboot both pass on beta.1.
+
 | # | Who | What | Done |
 |---|---|---|---|
 | 1 | Claude | `adb devices` (read only: the phone's serial) | |
