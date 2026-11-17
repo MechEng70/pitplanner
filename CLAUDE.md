@@ -30,6 +30,8 @@
 - Run independent tasks in parallel, each in its own worktree off local `main`: no emulator, no gate in the
   worktree, stop with a report.
 - Never run two agents that edit the same file; sequence those.
+- Before starting an agent, check its files against every running agent and the main session's files. Start it
+  if there is no overlap and put the list in the report; if there is overlap, sequence it and say so.
 - Device work is serial, one emulator job at a time. The main session owns the emulators and the phone.
 - Merge one branch at a time, run the gate after each merge, then delete the worktree and branch.
 - At most 5 agents at once. Stack UI reviews for Jason into one list.

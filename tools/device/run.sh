@@ -1833,7 +1833,7 @@ test_shared_soon() {
 hdr_at() {
   local sb bt
   sb=$(grep -oE 'text="Smoker [0-9]+[FC], serve [0-9:]+ [AP]M"[^>]*bounds="\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]"' "$1.txt" | head -n 1 | grep -oE '[0-9]+\]"$' | tr -d ']"')
-  bt=$(grep -oE '="(Alerts are off|Smoker conflict:)[^"]*"[^>]*bounds="\[[0-9]+,[0-9]+\]' "$1.txt" | head -n 1 | grep -oE '[0-9]+$')
+  bt=$(grep -oE '="(Alerts are off|Smoker conflict:)[^"]*"[^>]*bounds="\[[0-9]+,[0-9]+\]' "$1.txt" | head -n 1 | grep -oE '[0-9]+\]$' | tr -d ']')
   [ -n "$sb" ] && [ -n "$bt" ] && echo "$sb $bt"
 }
 test_live_warnings() {
@@ -1867,8 +1867,12 @@ test_live_warnings() {
   says "$dir/live-conflict.xml" 'text="On plan"' && onp=$(hdr_at "$dir/live-conflict.xml")
   says "$dir/live-warned.xml" 'text="Ahead"' && ahd=$(hdr_at "$dir/live-warned.xml")
   open_route "dev/plan?seed=conflict"
-  sleep 240 # its next step (about 3 min out) is overdue by then: Behind
-  look "$dir/live-behind.xml" && says "$dir/live-behind.xml" 'text="Behind"' && bhd=$(hdr_at "$dir/live-behind.xml")
+  # Its next step is 2 to 6 min out (the seed's times sit on the clock's 5 min marks); once overdue: Behind.
+  local n
+  for n in $(seq 1 16); do
+    sleep 30
+    look "$dir/live-behind.xml" && says "$dir/live-behind.xml" 'text="Behind"' && { bhd=$(hdr_at "$dir/live-behind.xml"); break; }
+  done
   log "    header end, first banner top (px): On plan $onp, Ahead $ahd, Behind $bhd"
   if [ -n "$onp" ] && [ "$onp" = "$ahd" ] && [ "$onp" = "$bhd" ]; then log "    a status change moves nothing"
   else plan_miss "the same header end and first banner top for On plan, Ahead and Behind"; fi

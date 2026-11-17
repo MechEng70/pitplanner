@@ -2968,7 +2968,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 ## Maintenance
 
 ### T-057 Clear the build-tool Snyk findings (SE-001)
-- **Status:** todo, deadline 2027-02-01
+- **Status:** todo, deadline 2027-02-01. Held until after 0.3.0 ships (Jason, 2026-11-17).
 - **Goal:** `snyk test --all-projects` with all Gradle configurations passes, so the scope limit can go.
 - **Files:** `app.config.ts` / `expo-build-properties` (AGP and Gradle within what Expo SDK 58 supports),
   `tools/check.sh`, `docs/design/SECURITY-EXCEPTIONS.md`.
@@ -3272,7 +3272,9 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   griddle on a smoker under 450F goes brisket-style and the box reads "Tri-tip will cook brisket-style with
   no sear, or add a griddle in Gear." (`importMove` on `brisketStyle` in `foods.json`). (b) A shared
   smoker-sear tri-tip on such a smoker with no griddle: the same line; with a griddle it takes the griddle
-  sear and nothing new is shown (open with Jason: words for that, if any). (c) A plan holding a smoker-sear
+  sear and the sheet says "Tri-tip will be seared on the griddle." in a box with no heading and no Gear tail
+  (nothing is missing; `importMove` on `reverse` in `foods.json`; a move with no `from` in `mapToCookers`;
+  several such foods joined; Jason, 2026-11-17; built failing test first, merged 2026-11-17). (c) A plan holding a smoker-sear
   tri-tip on a smoker under 450F: no method change; `SMOKER_TOO_COOL` once per food, "Tri-tip's sear needs
   450F and this smoker tops out at {max}F. Pick another method in Food details."
   (`SMOKER_TOO_COOL_PICK_METHOD`, 450 from the data; "232C" and "218C" for a 425F smoker in Celsius), in
