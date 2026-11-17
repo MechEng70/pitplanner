@@ -50,6 +50,18 @@ describe('smoker temp menu (mockup 06)', () => {
     expect(screen.getByText(/^Dial smoker has fixed settings\./)).toBeOnTheScreen();
   });
 
+  // Jason, 2026-11-17: a dial's settings are real marks, so in Celsius they read to the whole degree, as on the
+  // Setup card and in Gear (105C, not the 2C rounding's 106C).
+  test('a dial at 80, 105, 120C reads those marks in Celsius, rows and field', async () => {
+    const dial = { ...smoker, name: 'Dial smoker', minTempF: 176, tempStepF: null, tempPresetsF: [176, 221, 248] };
+    await show({ ...saturday, pitTempF: 221, cookers: { smoker: dial } }, C);
+    expect(labels()).toEqual(['105C', '120C']);
+    expect(row('105C')).toBeSelected();
+    expect(within(screen.getByRole('button', { name: 'Smoker temp' })).getByText('105C')).toBeOnTheScreen();
+    await fireEvent.press(screen.getByRole('button', { name: 'Show 80-120C' }));
+    expect(labels()).toEqual(['80C', '105C', '120C']);
+  });
+
   test('each row says when to fire at that temp; the current temp is selected', async () => {
     await show();
     expect(row('225F')).toBeSelected();

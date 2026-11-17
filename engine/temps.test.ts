@@ -268,8 +268,11 @@ test('showSetPoint: a Celsius step shows exact C; other steps keep the 2C roundi
   // A 5F smoker in Celsius: exactly showTemp(setPoint).
   for (let f = 180; f <= 500; f += 5) assert.equal(showSetPoint(f, 'C', 5), showTemp(f, 'C', true));
   assert.equal(showSetPoint(185, 'C', 5), '86C');
-  // Fixed settings, no step: the 2C rule too.
-  assert.equal(showSetPoint(185, 'C', null), '86C');
+  // Fixed settings (no step): the dial marks to the whole degree, not the 2C rule (Jason, 2026-11-17), so a
+  // dial typed as 105C (221F) reads 105C, not 106C.
+  assert.equal(showSetPoint(221, 'C', null), '105C');
+  assert.equal(showSetPoint(185, 'C', null), '85C');
+  assert.equal(showSetPoint(221, 'F', null), '221F');
   // Fahrenheit is as stored whatever the step.
   assert.equal(showSetPoint(185, 'F', 9), '185F');
   assert.equal(showSetPoint(225, 'F', 25), '225F');

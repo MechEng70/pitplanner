@@ -40,11 +40,13 @@ export function showStep(stepF: number, unit: TempUnit): string {
 }
 
 /**
- * A smoker set point in the display unit. With a Celsius step it reads as the grid's exact C (85C, 90C, 95C),
- * whole degrees off the grid; any other smoker keeps showTemp's 2C set point rounding.
+ * A smoker set point in the display unit, given the smoker's step (null: it has fixed settings). With a Celsius
+ * step it reads as the grid's exact C (85C, 90C, 95C), whole degrees off the grid. A dial smoker's settings are
+ * real marks, so they read to the whole degree too (105C, not 106C; Jason, 2026-11-17). Any other smoker keeps
+ * showTemp's 2C set point rounding.
  */
 export function showSetPoint(f: number, unit: TempUnit, stepF: number | null | undefined): string {
-  return isCelsiusStep(stepF, unit) ? showTemp(f, unit) : showTemp(f, unit, true);
+  return !stepF || isCelsiusStep(stepF, unit) ? showTemp(f, unit) : showTemp(f, unit, true);
 }
 
 export function showWeight(lb: number, unit: WeightUnit): string {

@@ -236,6 +236,16 @@ describe('plan (mockup 05)', () => {
     expect(within(button('Smoker temp')).getByText(want)).toBeOnTheScreen();
   });
 
+  // Jason, 2026-11-17: a dial smoker's marks read to the whole degree, as on the Setup card and in the menu.
+  test('in Celsius a dial smoker at its 105C mark reads 105C, not 106C', async () => {
+    const r = testRepos();
+    r.repos.cookers.save({ ...gear, smoker: { ...gear.smoker!, tempStepF: null, tempPresetsF: [176, 221, 248] } }, NOW);
+    r.repos.settings.setUnits({ temp: 'C', weight: 'kg' }, NOW);
+    r.repos.settings.setDraft({ mode: 'readyBy', at: saturday.at, pitTempF: 221, items: [brisket] }, NOW);
+    await render(<PlanScreen pickDateTime={jest.fn(async () => null)} />, { wrapper: storeWrapper(r.repos) });
+    expect(within(button('Smoker temp')).getByText('105C')).toBeOnTheScreen();
+  });
+
   test('every control hands over to its handler', async () => {
     const { props } = await show([brisket]);
     await fireEvent.press(button('Brisket, edit'));
