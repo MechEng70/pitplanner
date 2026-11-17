@@ -140,17 +140,39 @@ export function withTemps(s: SmokerProfile, t: SmokerTemps): SmokerProfile {
 export const STEP_CHOICES = [5, 10, 15, 25] as const;
 export const stepChoiceF = (n: number, unit: TempUnit) => (unit === 'C' ? (n * 9) / 5 : n);
 
+/** The step the catalog gives this model, or null (a smoker of the user's own, or a model with no checked step). */
+const catalogStepF = (s: SmokerProfile) => catalog.smokers.find(e => e.id === s.id && e.verified)?.tempStepF ?? null;
+
 /**
- * Which choice the saved step shows: "5" to "25"; "other" for dial settings, or in Fahrenheit for a step that
- * is none of the four; in Celsius "" (none) for any step that is not 5C to 25C, which is an F step there
- * (a 5F catalog smoker, answer 3A) and stays as it is.
+ * Which choice the saved step shows: "5" to "25"; "other" for dial settings and for a step that is none of
+ * the four. One case shows "" (none): in Celsius, the catalog's own step when it is none of 5C to 25C (a 5F
+ * catalog smoker, answer 3A), which stays as it is. A step the user typed in Celsius is Other with its line,
+ * as in Fahrenheit (Jason, 2026-11-17, the branch read).
  */
 export function stepChoice(s: SmokerProfile, unit: TempUnit): string {
   const step = s.tempStepF;
   if (!step) return 'other';
   const hit = STEP_CHOICES.find(n => stepChoiceF(n, unit) === step);
   if (hit != null) return String(hit);
-  return unit === 'F' ? 'other' : '';
+  return unit === 'C' && step === catalogStepF(s) ? '' : 'other';
+}
+
+/** Dial settings as typed text in the display unit, ascending, whole degrees: "180, 225, 250". */
+const presetsText = (s: SmokerProfile, unit: TempUnit) =>
+  [...(s.tempPresetsF ?? [])]
+    .sort((a, b) => a - b)
+    .map(f => showTemp(f, unit).slice(0, -1))
+    .join(', ');
+
+/**
+ * What the Other sheet's two fields open with (Jason, 2026-11-17, the branch read): the saved step or the
+ * saved dial settings, as text in the display unit, when Other is what is saved. Blank when one of the four
+ * choices (or none, in Celsius) is saved, as mocked (proposal picture 01b).
+ */
+export function stepSheetStart(s: SmokerProfile, unit: TempUnit): { step: string; presets: string } {
+  if (stepChoice(s, unit) !== 'other') return { step: '', presets: '' };
+  if (s.tempStepF) return { step: showStep(s.tempStepF, unit).slice(0, -1), presets: '' };
+  return { step: '', presets: presetsText(s, unit) };
 }
 
 /**
@@ -161,9 +183,8 @@ export function stepChoice(s: SmokerProfile, unit: TempUnit): string {
 export function stepNote(s: SmokerProfile, unit: TempUnit): string | null {
   if (stepChoice(s, unit) !== 'other') return null;
   if (s.tempStepF) return `Sets in ${showStep(s.tempStepF, unit)} steps.`;
-  const presets = [...(s.tempPresetsF ?? [])].sort((a, b) => a - b);
-  if (presets.length === 0) return null;
-  return `Has fixed settings: ${presets.map(f => showTemp(f, unit).slice(0, -1)).join(', ')}${unit}.`;
+  const presets = presetsText(s, unit);
+  return presets ? `Has fixed settings: ${presets}${unit}.` : null;
 }
 
 /** What the user typed in "Enter it yourself" (or to finish an unverified model). Stored units: F, lb. */

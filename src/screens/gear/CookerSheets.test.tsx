@@ -502,6 +502,18 @@ describe('Smoker sheet: the model and the temp step', () => {
     await fireEvent.press(row(/^Pit Boss Sportsman 850/));
     expect(selected()).toEqual(['Other']);
     expect(sheet('Smoker').getByText('Sets in 20F steps.')).toBeOnTheScreen();
+    // The Other sheet opens with it (Jason, 2026-11-17, the branch read).
+    await choose('Other');
+    expect(sheet('Pit Boss Sportsman 850').getByLabelText('Temp step (F)').props.value).toBe('20');
+  });
+
+  // Jason, 2026-11-17 (the branch read): a step typed in Celsius that is none of the four is Other with its
+  // line, as in Fahrenheit (20C is stored as 36F).
+  test('Celsius: a typed 20C step shows Other and says what is saved', async () => {
+    await show({ gear: withStep(36), units: METRIC });
+    await fireEvent.press(row(/^Pit Boss Sportsman 850/));
+    expect(selected()).toEqual(['Other']);
+    expect(sheet('Smoker').getByText('Sets in 20C steps.')).toBeOnTheScreen();
   });
 
   test('Celsius: a stored 9F shows 5C', async () => {

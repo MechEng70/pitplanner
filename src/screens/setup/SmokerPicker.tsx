@@ -32,6 +32,7 @@ import {
   positiveNum,
   smokerFromCatalog,
   smokerTypes,
+  stepSheetStart,
   typedPresetsF,
   typedStepF,
   typedTempF,
@@ -227,7 +228,8 @@ function SmokerForm({
 /**
  * Other on the temp step question (T-082): a picked smoker's step or dial settings only, with the manual form's
  * two fields and parsing. Everything else (name, id, specs) stays. Both fields stay on screen so the short
- * sheet never moves while typing; a step, when typed, wins over the settings, as in the manual form.
+ * sheet never moves while typing; a step, when typed, wins over the settings, as in the manual form. It opens
+ * with the saved step or dial settings when Other is what is saved (stepSheetStart), blank otherwise.
  */
 export function StepSheet({
   smoker,
@@ -241,8 +243,9 @@ export function StepSheet({
   onClose: () => void;
 }) {
   const unitT = units.temp;
-  const [stepS, setStepS] = useState('');
-  const [presets, setPresets] = useState('');
+  const [start] = useState(() => stepSheetStart(smoker, unitT));
+  const [stepS, setStepS] = useState(start.step);
+  const [presets, setPresets] = useState(start.presets);
   const temps = typedTemps(typedStepF(stepS, unitT), typedPresetsF(presets, unitT));
   return (
     <Sheet

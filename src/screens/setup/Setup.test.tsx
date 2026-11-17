@@ -421,8 +421,9 @@ describe('the temp step question on the smoker card', () => {
   });
 
   // Jason, 2026-11-17: the display unit decides. In Celsius only 5C to 25C (9, 18, 27, 45F) are C steps; any
-  // other step typed there is stored as whole F and read as an F step, like the 5F catalog step: none selected.
-  test('in Celsius the Other sheet takes C: 5C selects 5C, 20C selects none, dial settings read in C', async () => {
+  // other step typed there is stored as whole F and its grid is an F grid. It still shows as Other with its
+  // line, as in Fahrenheit (Jason, the branch read): only the catalog's own 5F step shows none.
+  test('in Celsius the Other sheet takes C: 5C selects 5C, 20C shows Other with its line, dial settings read in C', async () => {
     const repos = await toCard('C');
     await choose('Other');
     await fireEvent.changeText(sheet(MODEL).getByLabelText('Temp step (C)'), '5');
@@ -433,10 +434,12 @@ describe('the temp step question on the smoker card', () => {
     await fireEvent.changeText(sheet(MODEL).getByLabelText('Temp step (C)'), '20');
     await fireEvent.press(sheet(MODEL).getByRole('button', { name: 'Save smoker' }));
     await settle();
-    expect(selected()).toEqual([]);
-    expect(screen.queryByText(/^Sets in/)).toBeNull();
+    expect(selected()).toEqual(['Other']);
+    expect(screen.getByText('Sets in 20C steps.')).toBeOnTheScreen();
     await choose('Other');
+    expect(sheet(MODEL).getByLabelText('Temp step (C)').props.value).toBe('20');
     expect(sheet(MODEL).getByLabelText('Dial settings (C)').props.placeholder).toBe('80, 105, 120, 150');
+    await fireEvent.changeText(sheet(MODEL).getByLabelText('Temp step (C)'), '');
     await fireEvent.changeText(sheet(MODEL).getByLabelText('Dial settings (C)'), '80, 105, 120');
     await fireEvent.press(sheet(MODEL).getByRole('button', { name: 'Save smoker' }));
     await settle();
@@ -445,6 +448,33 @@ describe('the temp step question on the smoker card', () => {
     expect(screen.getByText('Has fixed settings: 80, 105, 120C.')).toBeOnTheScreen();
     await press('Continue');
     expect(repos.cookers.load().smoker).toMatchObject({ tempStepF: null, tempPresetsF: [176, 221, 248] });
+  });
+
+  // Jason, 2026-11-17 (the branch read): the Other sheet opens with the saved step or dial settings.
+  test('the Other sheet opens with what is saved: a typed step, then dial settings; blank after one of the four', async () => {
+    await toCard();
+    await choose('Other');
+    await fireEvent.changeText(sheet(MODEL).getByLabelText('Temp step (F)'), '20');
+    await fireEvent.press(sheet(MODEL).getByRole('button', { name: 'Save smoker' }));
+    await settle();
+    await choose('Other');
+    expect(sheet(MODEL).getByLabelText('Temp step (F)').props.value).toBe('20');
+    expect(sheet(MODEL).getByLabelText('Dial settings (F)').props.value).toBe('');
+    expect(sheet(MODEL).getByRole('button', { name: 'Save smoker' })).toBeEnabled();
+    await fireEvent.changeText(sheet(MODEL).getByLabelText('Temp step (F)'), '');
+    await fireEvent.changeText(sheet(MODEL).getByLabelText('Dial settings (F)'), '250, 180 225');
+    await fireEvent.press(sheet(MODEL).getByRole('button', { name: 'Save smoker' }));
+    await settle();
+    await choose('Other');
+    expect(sheet(MODEL).getByLabelText('Temp step (F)').props.value).toBe('');
+    expect(sheet(MODEL).getByLabelText('Dial settings (F)').props.value).toBe('180, 225, 250');
+    await fireEvent.press(sheet(MODEL).getByRole('button', { name: 'Close' }));
+    await settle();
+    await choose('10F');
+    await choose('Other');
+    expect(sheet(MODEL).getByLabelText('Temp step (F)').props.value).toBe('');
+    expect(sheet(MODEL).getByLabelText('Dial settings (F)').props.value).toBe('');
+    expect(sheet(MODEL).getByRole('button', { name: 'Save smoker' })).toBeDisabled();
   });
 
   test('shows for a model that is not verified, from what the user typed (5A)', async () => {
