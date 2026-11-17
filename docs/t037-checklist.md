@@ -52,12 +52,13 @@ test and locked-reboot both pass on beta.1.
 | 6 | Claude | `adb -s <phone> install -r release/pitplanner-0.3.0-beta.1.apk` (installs over 0.2.0; nothing uninstalled, no data cleared) | |
 | 7 | Jason | Open the app. Read the import notice. Compare Gear, Cook rates and Cook history with the step 4 screenshots | |
 | 8 | Jason | Gear, Export my data, save to Drive | |
-| 9 | Claude | `adb -s <phone> shell dumpsys alarm` for the app and `dumpsys package` again (read only: each carried-over alarm once, exact alarms still granted) | |
-| 10 | Jason | Wait for the carried-over step to ring once, on time. Then open the cook, End cook, Discard | |
-| 11 | Claude | `adb -s <phone> shell dumpsys alarm` for the app (read only: nothing pending) | |
+| 9 | Claude | `adb -s <phone> shell dumpsys alarm` for the app and `dumpsys package` again (read only: each alarm of the carried-over cook once, exact alarms still granted). The carried-over cook is the 0.2.0 cook that came across on 2026-11-17 (serve Sat Nov 21 5:00 PM, 250F, five foods); Jason keeps it until this step | |
+| 10 | Jason | Open the carried-over cook, End cook, Discard. This is the last step before Saturday's plan is loaded. (Its first alarm is Saturday 6:30 AM, so no ring is waited for on Friday; a carried-over step ringing once is covered by the emulator upgrade test) | |
+| 11 | Claude | `adb -s <phone> shell dumpsys alarm` for the app (read only: nothing pending, so none of the carried-over cook's Saturday alarms from 5:35 AM on is left) | |
 | 12 | Jason | Settings: notifications on; battery not restricted; on the app's battery usage page, allow background activity | |
 | 13 | Jason | Gear, 5 taps on the version line: it reads 0.3.0-beta.1 | |
-| 14 | Jason | Load Saturday's plan (above). Start cook. Write the times in the table below. Unplug | |
+| 14 | Jason | Load Saturday's plan (above). Start cook. Write the times in the table below | |
+| 15 | Claude | `adb -s <phone> shell dumpsys alarm` for the app (read only): no Pit Planner alarm before 7:30 AM Saturday; the first is Fire the smoker at 7:50 AM. If any alarm is earlier, stop and tell Jason before he unplugs. Then unplug | |
 
 ## Saturday
 
