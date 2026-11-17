@@ -5,6 +5,22 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
 
 ## Restart, twenty-second session (written Monday 2026-11-16, end of the twenty-first; read this first)
 
+**Running notes, twenty-second session (Tuesday 2026-11-17; rewritten into a new Restart section at the end):**
+- **Kotlin floor is 117** (Jason): pit-alarms 68, pit-share 40, pit-legacy 9. The "Kotlin 68" below was
+  pit-alarms alone. `tools/test-android.sh` now prints the count per module from Gradle's result files and
+  whether each "ran" or is "up-to-date (results from <time>)". Report that line with every gate; it must
+  not drop below 117.
+- **Before the 0.3.0-beta.1 build:** one gate with the Android tests forced to run,
+  `ANDROID_TESTS_FORCE=1 npm run check` (adds `--rerun` to the test tasks only), so the release is backed by
+  a fresh run. The line must read "ran" for all three modules.
+- **Beta.1 freeze (Jason):** once 0.3.0-beta.1 is built, nothing merges to `main` until Sunday's readout
+  except fixes for problems that block the test, each with his yes. Everything below merges first.
+- **Agents (Jason's rules, in `CLAUDE.md` and here):** check an agent's files against running work before
+  starting it and put the list in the report; fix agents run only their own test files, the full gate runs
+  on `main` alone; one gate rerun is allowed only if every failure is a timeout, and both runs are reported.
+- **Fable is at 0%** (Jason, 2026-11-17): the Opus-only rule for agents is off; `CLAUDE.md`'s model rule holds.
+- T-057 is held until after 0.3.0. Review finding 6 is approved as built (SPEC, with a pinning test).
+
 `main` is committed and clean, **the last few commits not pushed** (Jason pushed during the session; check `git log origin/main..main`). The gate passed on
 the last code change (T-075's three cases: engine 218, gate self-tests 153, Jest 882, Kotlin 68 in
 Gradle; Snyk 26 projects, none skipped); a later commit that touches only this file is not gated. No agent is running, no worktree, no branch but `main`. Emulator and Metro are stopped. The phone was not touched this session. `dashboard.html` (local,
