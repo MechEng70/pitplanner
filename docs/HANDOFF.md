@@ -21,30 +21,39 @@ Friday's step 14 and Saturday's staged cook, so it is the first thing to do**, a
 the freeze with his yes (it needs a new build, beta.2: never rebuild beta.1 under the same name; then the
 forced gate, the upgrade test, locked-reboot, and the phone install again).
 
-**Not known yet (ask him first; one line each):** is Start cook greyed out or does it look normal; does the
-Cook tab say "No cook running" with a Go to Plan button, or is it blank; does Plan show the five foods and
-fire time; what font size is the phone on.
+**His answers (2026-11-17, before he restarted):** (1) Start cook looks normal, not greyed out. (2) The Cook
+tab says "No cook running" with the Go to Plan button. (3) Plan shows his five foods and a fire time. (4)
+Font size: he does not know.
 
-**What the code says (read, not run):**
-- Start cook is disabled when there is no plan or a cook is running:
-  `disabled={!plan || state.cook != null}` (`src/screens/plan/PlanScreen.tsx:220`). A disabled button "does
-  nothing".
-- The Cook tab shows Live cook when a cook exists, else "No cook running" (`src/screens/cook/CookScreen.tsx:97`).
-- His phone's 0.2.0 data held a **running cook** (started Sun Nov 15 10:49 AM, serve Sat Nov 21 5:00 PM,
-  250F, five foods, 28 steps, none done; `tools/device/out/t064-2026-11-15/CapacitorStorage.xml`, key
-  `activeCook`). The import keeps a running cook (`src/db/legacyImport.ts:208-214`). He was told that morning
-  that with it running Start cook would be greyed out, and that he keeps it until Friday's step 10.
+**What that rules in and out (code read, nothing run):**
+- Start cook is enabled, so a plan exists and no cook is in the app's state
+  (`disabled={!plan || state.cook != null}`, `src/screens/plan/PlanScreen.tsx:220`). The old leads "a cook is
+  running, so the button is off" and "the plan cannot be built" are out.
+- **Lead A (strongest): the start throws and nothing catches it, and the button then stays dead.**
+  `PlanTab.tsx:171-180`: `startCook` sets `starting.current = true`, awaits `permissions.status()`, then
+  calls `begin`, which runs `setCook(newCook(input, plan, now()))` and `onCookStarted()`. The call site is
+  `onStartCook={plan => void startCook(plan)}` (line 229), so an error thrown in `newCook`, in the store's
+  `saveCook` (`store.tsx:192-198`: `logEvent(describeCookChange(...))`, `repos.activeCook.save`, `commit`,
+  `sync`) or in `onCookStarted` is an unhandled promise rejection: nothing is shown, no cook is saved, the
+  Cook tab keeps saying "No cook running". And `starting.current` is never set back, so every later tap
+  returns at the first line. That is a defect whatever the first cause is: a failed start must reset, and
+  say so.
+- **Lead B:** `permissions.status()` never settles on his OnePlus (a rejection is handled and opens the
+  "Alerts may not ring" sheet; a promise that hangs is not), with the same dead button.
+- **Lead C, the likely first cause to check under A:** his 0.2.0 data held a **running cook** (started Sun
+  Nov 15 10:49 AM, serve Sat Nov 21 5:00 PM, 250F, five foods, 28 steps, none done;
+  `tools/device/out/t064-2026-11-15/CapacitorStorage.xml`, key `activeCook`), and the import keeps a running
+  cook (`src/db/legacyImport.ts:208-214`). Yet the Cook tab says no cook is running. So either the import
+  did not keep it, or it is stored and `activeCook.load` returns null for it (`src/db/repos/activeCook.ts:22-30`:
+  `looksLikeCook`, `normalize`, then `withSafeOvenHold`, added 2026-11-17). A stored row the app cannot read
+  may then be in the way of saving a new cook (the repo quarantines an unreadable row before replacing it:
+  check that path with his data). I told him that morning the carried-over cook was there and that Start
+  cook would be greyed out; neither was checked on the phone, and both were wrong.
 
-**Leads, none confirmed:**
-1. The carried-over cook is running, so Start cook is disabled by design, but Live cook shows nothing for
-   that cook (blank instead of Next up). Then the bug is in showing an imported 0.2.0 cook: its saved shape
-   lacks fields added since (the import normalizes it), or the new re-derive of a running cook's oven on
-   load (`withSafeOvenHold`, merged 2026-11-17, review finding 7) or a T-076 field breaks it.
-2. No cook is kept and the plan cannot be built from the imported draft (five foods at 250F, tri-tip on the
-   griddle sear, 22 in griddle with 2 burners), so `plan` is null and Start cook is disabled, with nothing on
-   screen saying why.
-3. Start cook is enabled and the start fails without a message (alarms could not be set, or the "Alerts may
-   not ring" sheet: its Start cook button is the off-screen one, but the sheet itself would show).
+**Fastest evidence, each needs his yes (read-only):** with the phone plugged in, `adb logcat` filtered to the
+app while he taps Start cook once (a release build logs JS errors under `ReactNativeJS`); and
+`adb shell dumpsys alarm` for the app (are any alarms set). The app's own storage cannot be read from a
+release build. Ask him not to end, discard or reinstall anything first: the state is the evidence.
 
 **Why the day's tests did not catch it:** every emulator test of beta.1 started from clean or scripted data
 (locked-reboot starts a cook on beta.1 and passes; the upgrade test's 0.2.0 data had `runningCook: false`).
