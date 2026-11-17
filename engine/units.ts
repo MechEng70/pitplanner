@@ -21,6 +21,27 @@ export function showTemp(f: number, unit: TempUnit, setPoint = false): string {
   return `${setPoint ? Math.round(c / SET_POINT_STEP_C) * SET_POINT_STEP_C : Math.round(c)}C`;
 }
 
+/**
+ * A Celsius step (T-082): a stored F step that is a whole number of 5C, so 9F (5C), 18F (10C), 27F (15C),
+ * 45F (25C) and so on. Its grid counts in C from 0C (engine/temps.ts) and its set points read as exact C.
+ * Storage is F only, so a 45F step typed by a Fahrenheit user reads as 25C too; no F controller is known to
+ * step by a multiple of 9F.
+ */
+export const isCelsiusStep = (stepF: number | null | undefined): boolean => !!stepF && stepF % 9 === 0;
+
+/** A step in the display unit: "5F", "5C" for 9F. A step is a difference, so C is step * 5/9 with no offset. */
+export function showStep(stepF: number, unit: TempUnit): string {
+  return unit === 'F' ? `${stepF}F` : `${+((stepF * 5) / 9).toFixed(1)}C`;
+}
+
+/**
+ * A smoker set point in the display unit. With a Celsius step it reads as the grid's exact C (85C, 90C, 95C),
+ * whole degrees off the grid; any other smoker keeps showTemp's 2C set point rounding.
+ */
+export function showSetPoint(f: number, unit: TempUnit, stepF: number | null | undefined): string {
+  return unit === 'C' && isCelsiusStep(stepF) ? showTemp(f, unit) : showTemp(f, unit, true);
+}
+
 export function showWeight(lb: number, unit: WeightUnit): string {
   return unit === 'lb' ? `${+lb.toFixed(2)} lb` : `${+lbToKg(lb).toFixed(2)} kg`;
 }
