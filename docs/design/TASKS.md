@@ -6,7 +6,8 @@
 - **0.3.x:** reserved for bug fixes.
 - **0.4.0:** Home Assistant phase 1, T-042 to T-050 (mockups, the client_id page, sign-in, the WebSocket
   client, discovery, Gear, a probe per food, live probe temps).
-- **0.5.0:** fish (T-071), the receiver picks cookers (T-070), the alarm log on the Android side (T-068).
+- **0.5.0:** fish (T-071), the receiver picks cookers (T-070). The alarm log on the Android side (T-068) was
+  moved into 0.3.0 and is done (merged 2026-11-16).
 - **0.5.0 or later:** T-051 to T-055 (Home Assistant phases 2 to 4).
 - Nothing from 0.4.0 or later is started before 0.3.0 ships.
 
@@ -1614,6 +1615,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Real phone:** yes, one ring with the app closed.
 
 ### T-066 User README with screenshots
+- **Jason (2026-11-17):** 0.3.0. The text is merged (`docs/USER-GUIDE.md`, 22 screenshot slots). The
+  screenshots come from the fidelity PNGs after the device checks; if they are not ready for Monday's
+  release (2026-11-23) they go to 0.3.1.
 - **Status:** todo; after the screens are built (Jason, 2026-11-15: "we're definitely going to have to
   create a README once we get done with everything and create screenshots for everything").
 - **Goal:** how to use the app, screen by screen, with screenshots (status bar cropped), including where the
@@ -3689,4 +3693,22 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   as two `test.failing` cases in `src/screens/setup/SmokerPicker.test.tsx`. First real case for a C grid: the Z Grills
   Australia wireless controller (450A, 7002B, 700E) sets in 1C increments
   (https://help.zgrills.com.au/?p=3624).
+- **C-step detection in T-082 (Jason, 2026-11-17):** the display unit decides, no new field. In Fahrenheit
+  display every step is an F step on the F grid. In Celsius display a stored 9, 18, 27 or 45F is read as 5,
+  10, 15, 25C on the C grid. Test: an F user with a 45F step sees an F grid starting at the first multiple
+  of 45 at or above the lowest temp. The grid rule (first multiple of the step at or above the lowest temp)
+  applies in F too: 25F from 180F gives 200, 225, 250; 5F, 10F and 15F from 180F are unchanged.
+- **His answers on the mockups (2026-11-17):** pictures 01, 01b, 01c, 01d and 16 approved. A saved step
+  that is none of the four, or a dial: Other selected with the value on a line under the control. Other
+  closed without saving: the control goes back. Celsius with none selected: Continue is allowed and the
+  catalog step stays. The two-field sheet accepts any C step for now (the known bug stays until 0.3.x). The
+  question shows on not-verified models too and is hidden for smokers with no step. "Smoker", "Save smoker"
+  and the hint "How far one press moves the setting. Leave blank if the dial has fixed settings." approved.
+  Gear's sheet has no Hopper or Main grate. A plan temp off the new grid keeps the existing warning, no
+  snapping. Emulator Setup and Gear at 115% and 130% (Other has about 2 points to spare at 130%), then his
+  look.
+- **0.3.x Celsius item (not T-082; Jason, 2026-11-17):** store the step's unit so a units switch cannot
+  change its meaning; a real C grid in the engine; the manual-form fix above. With the C grid, Celsius gets
+  its own choices, proposed 1C / 2C / 5C / 10C / Other (1C: Z Grills Australia, sourced; the others to be
+  sourced), mockup first. Fahrenheit choices stay 5 / 10 / 15 / 25 / Other.
 

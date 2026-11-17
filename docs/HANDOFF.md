@@ -89,6 +89,10 @@ Sunday the readout table. Every phone action is listed there and still needs his
 Jason answered the questions page on 2026-11-17: `docs/proposals/2026-11-17-waiting-on-jason.md`, every item
 has an "Answer (2026-11-17)" line. What is still open:
 
+- **Disk cleanup after Sunday's readout** (Jason, 2026-11-17): he approves the inventory list, then delete.
+  Keep: anything tracked in git, the keystore, the latest signed APK, the 0.2.0 APK, the `pitplanner-lock`
+  emulator. Delete `tools/device/out/t064-2026-11-15/` (his phone's data capture) once the readout no longer
+  needs it. The inventory with sizes was given to him on 2026-11-17; measure again before deleting.
 - **One stacked look review after the re-shoots** (Jason, 2026-11-17): every look owed is in it, including
   T-081's header and the line break (`rn-12-live-warned.png` and `rn-12-live-conflict.png` were re-shot on
   2026-11-17, `live-warnings` passes at 115%) and the two-button lock-screen alert on the phone against

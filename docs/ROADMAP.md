@@ -10,6 +10,9 @@ Each item: task ID (or "no task"), what, why, blocked on.
 
 Bug fixes, plus the two exceptions Jason set (T-078 and the Celsius work).
 
+Not on this page: T-066 (the user guide) is 0.3.0 (Jason, 2026-11-17). Its text is merged; the screenshots come
+from the fidelity PNGs after the device checks. If they are not ready for Monday's release they go to 0.3.1.
+
 - **No task.** Celsius step: store the smoker temp step's unit so a units switch cannot change its meaning,
   and give the engine a real Celsius grid.
   Why: a step set in C must stay a C step. Blocked on: nothing for the engine; see the next item.
@@ -26,7 +29,7 @@ Bug fixes, plus the two exceptions Jason set (T-078 and the Celsius work).
   reaches its temp, greyed with the reason otherwise, as tri-tip's smoker sear does (T-075).
   Why: today the plan can ask for 400F on a smoker that cannot reach it.
   Blocked on: Jason's wording for the grey reason (T-075's "Needs {sear}F" is the model). Source: BACKLOG,
-  Jason 2026-11-16. This is not the item Jason named on 2026-11-17 (see Untriaged).
+  Jason 2026-11-16. This is the wings item Jason named on 2026-11-17.
 - **T-078** Lock-screen taps re-plan with the app closed (headless JS).
   Why: other alarms keep old times until the app opens (T-076 limit).
   Blocked on: a half-day spike on the emulator, then a report to Jason before any build. Also his answer on
@@ -94,18 +97,11 @@ No version yet, or "0.5.0 or later".
   (he said "maybe a future update").
 - **T-056** Keep native access behind the interfaces (iOS readiness). Why: lets iOS be added later. Blocked
   on: T-015, T-030 (done) and T-045 (0.4.0).
-- **T-066** User README with screenshots. Why: Jason wants a guide once the screens are done. Blocked on: the
-  0.3.0 screens and T-065 (done).
 
 ## Untriaged
 
 No task, no version. Nothing here is scheduled.
 
-- **No task.** Wings at 400F when the smoker is held lower for another food (brisket at 225F): the plan
-  needs a better answer for wings than a conflict. Why: wings want 400F, so today it is PIT_CONFLICT. Blocked
-  on: Jason saying what the answer is (his words 2026-11-17: he has it listed for 0.3.x). Found in: named by
-  Jason 2026-11-17, not found in TASKS or BACKLOG under this meaning (SPEC's clear-pit rule and conflict rule
-  are the current behavior).
 - **No task.** Dial smokers with fixed presets and "pick by controller". Why: presets work in the engine but
   not in the picker's catalog. First case is Jason's own Pit Boss Sportsman 820 with Wi-Fi (PB0820SPW) with a
   newer card (5F steps, reports PB850SPW2); a "Pit Boss Sportsman 820" catalog entry comes with it. Blocked
@@ -123,13 +119,9 @@ No task, no version. Nothing here is scheduled.
 
 Sources that disagree:
 
-- BACKLOG lacks the wings item as Jason described it (better answer than a conflict when the smoker is held
-  lower). Its only wings row, listed under 0.3.x, is about a smoker that cannot reach 400F. Jason believes it
-  is listed for 0.3.x, so one of the two needs adding or the BACKLOG row needs rewording.
-
-- T-068 (alarm ring log). The TASKS Versions section, WBS (Versions paragraph) and BACKLOG ("Planned before,
-  not in 0.3.0") put it in 0.5.0 or later. Its own TASKS entry says Jason moved it into 0.3.0 on 2026-11-16,
-  and it is merged. It is not listed above. The Versions section, BACKLOG row and WBS text need updating.
+- T-068 (alarm ring log). Its TASKS entry says Jason moved it into 0.3.0 on 2026-11-16, and it is merged.
+  The TASKS Versions section was fixed on 2026-11-17. WBS (Versions paragraph) and the BACKLOG row ("Planned
+  before, not in 0.3.0") still put it in 0.5.0 or later and need updating. It is not listed above.
 - T-039. WBS puts it in phase 10 (0.3.0). Its entry says one week after 0.3.0 ships. Listed under Later.
 - T-060 and T-062. TASKS and BACKLOG say "next version"; WBS says "after the beta" (phase 11). None names
   0.3.x, 0.4.0 or 0.5.0.
@@ -138,7 +130,7 @@ Sources that disagree:
 
 No version at all:
 
-- T-036 (Setup restore), T-022 (note), T-040, T-041, T-056, T-066, T-057 (a date only), the dial smokers item,
+- T-036 (Setup restore), T-022 (note), T-040, T-041, T-056, T-057 (a date only), the dial smokers item,
   the timeline item, more than one cooker, the unverified specs.
 
 Dependency points at a later version:

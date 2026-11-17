@@ -56,3 +56,14 @@ Order (Jason, 2026-11-17, second answer): Sunday 2026-11-22 the readout passes; 
 checklist; Monday 2026-11-23 the 0.3.0 release (T-038). The release waits for this checklist: T-038 depends on
 T-033, and SPEC's definition of done includes the share round trip. T-031 and T-033 are not done until it is
 ticked. If the readout does not pass, none of this runs.
+
+## Disk cleanup after the readout
+
+Jason approves the list first (the inventory of 2026-11-17 is in the HANDOFF's running notes), then Claude
+deletes. Nothing is deleted before his yes.
+
+- Keep: anything tracked in git, the keystore and `keystore.properties`, the latest signed APK, the 0.2.0 APK,
+  the `pitplanner-lock` emulator.
+- Delete once the readout no longer needs it: the 2026-11-15 phone data capture
+  (`tools/device/out/t064-2026-11-15/`).
+

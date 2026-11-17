@@ -1439,9 +1439,17 @@ test_gear() {
   tap "Gear" 1 | tee -a "$REPORT"
   if look "$dir/gear.xml" && on_tab "$dir/gear.xml" "Gear"; then
     for want in "Cookers" "Pit Boss Sportsman 850" "Pellet smoker, 21 lb hopper" "Griddle" "36 in, 4 burners" "Oven" "Holding at 170F" \
-      "Your numbers" "Cook rates" "App" "Alerts" "Units" "Fahrenheit, pounds"; do
+      "Your numbers" "Cook rates" "Export my data" "Restore from a file" "App" "Alerts"; do
       says "$dir/gear.xml" "$want" || plan_miss "$want (Gear)"
     done
+    # Since T-036's two rows, Units is below the first screen at 115%: scroll to it for its own check.
+    on_screen "Units"
+    if look "$dir/gear-low.xml"; then
+      for want in "Units" "Fahrenheit, pounds"; do
+        says "$dir/gear-low.xml" "$want" || plan_miss "$want (Gear, scrolled to Units)"
+      done
+    else plan_miss "Gear scrolled to Units"; fi
+    on_screen "Cookers" UP
     says "$dir/gear.xml" "Add a cooker" && plan_miss "no Add a cooker row with all three cookers"
     log "    Gear: cook rates \"$(grep -oE 'text="[^"]*hr/lb[^"]*"' "$dir/gear.xml.txt" | head -n 1 | sed -E 's/^text="|"$//g')\", alerts \"$(grep -oE 'text="(All set|Needs a fix|Checking)[^"]*"' "$dir/gear.xml.txt" | head -n 1 | sed -E 's/^text="|"$//g')\""
     shot "$dir/gear.png"
@@ -1537,6 +1545,7 @@ test_gear() {
     tap "Close" 1 | tee -a "$REPORT"
   else plan_miss "the Alerts sheet"; fi
 
+  on_screen "Units"
   tap "Units" 1 | tee -a "$REPORT"
   sleep 1
   if look "$dir/gear-units.xml" && says "$dir/gear-units.xml" "Temperature" && says "$dir/gear-units.xml" "Kilograms"; then
@@ -1545,8 +1554,10 @@ test_gear() {
     tap "Kilograms" 1 | tee -a "$REPORT"
     tap "Close" 1 | tee -a "$REPORT"
     sleep 1
+    on_screen "Units"
+    look "$dir/gear-metric-units.xml" && says "$dir/gear-metric-units.xml" "Celsius, kilograms" || plan_miss "Celsius, kilograms on the Units row"
     on_screen "Pit Boss Sportsman 850" UP
-    if look "$dir/gear-metric.xml" && says "$dir/gear-metric.xml" "Celsius, kilograms" && says "$dir/gear-metric.xml" "Holding at 76C" &&
+    if look "$dir/gear-metric.xml" && says "$dir/gear-metric.xml" "Holding at 76C" &&
       says "$dir/gear-metric.xml" "Pellet smoker, 9.5 kg hopper"; then
       log "    Units: in Celsius and kilograms the rows read Holding at 76C and 9.5 kg hopper"
     else plan_miss "Celsius, kilograms; Holding at 76C; 9.5 kg hopper on Gear"; fi
@@ -1564,7 +1575,7 @@ test_gear() {
   if look "$dir/gear-history.xml" && says "$dir/gear-history.xml" "Cook history"; then
     A shell input keyevent KEYCODE_BACK
     sleep 1
-    if look "$dir/gear-history-back.xml" && says "$dir/gear-history-back.xml" "Your numbers" && says "$dir/gear-history-back.xml" "Fahrenheit, pounds"; then
+    if look "$dir/gear-history-back.xml" && says "$dir/gear-history-back.xml" "Your numbers" && says "$dir/gear-history-back.xml" "Cook rates"; then
       log "    Cook rates opens Cook history; the phone's back button returns to Gear"
     else plan_miss "Gear after back from Cook history"; fi
   else plan_miss "Cook history from Cook rates"; fi
