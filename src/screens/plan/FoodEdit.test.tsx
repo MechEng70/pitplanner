@@ -88,7 +88,7 @@ describe('Timing', () => {
     await open(brisket);
     expect(stepper('Hours per pound').getByText('1.25')).toBeOnTheScreen();
     expect(screen.getByText('At 225F: published estimate.')).toBeOnTheScreen();
-    expect(check(/Use for future brisket on Pit Boss 820/)).toBeOnTheScreen();
+    expect(check(/Use for future brisket on Pit Boss Sportsman 850/)).toBeOnTheScreen();
   });
 
   test('a saved 0.75 hr/lb plans 9 hr, fires at 6:20 AM for a 5:00 PM serve, and the card names the rate', async () => {

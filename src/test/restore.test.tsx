@@ -24,7 +24,7 @@ const record: CookRecord = {
       log: {
         foodId: 'brisket',
         methodId: 'smoked',
-        smokerId: 'pb820',
+        smokerId: 'pitboss-sportsman-850',
         quantity: 12,
         pitTempF: 225,
         minutesOnHeat: 550,
@@ -75,7 +75,7 @@ test('a restore on a fresh install ends the first run and shows the restored dat
     records: [record],
     history: [record.items[0]!.log],
   });
-  expect(s.gear.smoker?.id).toBe('pb820');
+  expect(s.gear.smoker?.id).toBe('pitboss-sportsman-850');
   // The same as a fresh start would load.
   const { draft: _d, ...shown } = s;
   const { draft: _r, ...reloaded } = loadState(repos, NOW);

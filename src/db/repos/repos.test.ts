@@ -454,7 +454,7 @@ describe('quarantine: an unreadable value is copied aside before a write replace
     r.cookers.save(gear, NOW);
     corrupt("UPDATE cookers SET profile = '{oops' WHERE kind = 'smoker'");
     r.cookers.save({ ...r.cookers.load(), smoker: gear.smoker }, NOW + 1);
-    expect(r.quarantined().map(q => [q.origin, q.raw])).toEqual([['cookers:smoker:pb820', '{oops']]);
+    expect(r.quarantined().map(q => [q.origin, q.raw])).toEqual([['cookers:smoker:pitboss-sportsman-850', '{oops']]);
     expect(r.cookers.load()).toEqual(gear);
   });
 

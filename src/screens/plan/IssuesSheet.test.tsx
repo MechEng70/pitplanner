@@ -99,7 +99,7 @@ describe('Conflicts sheet', () => {
   test('Change smoker temp closes the sheet, then opens the temp menu', async () => {
     const { plan, props } = await show({ pitTempF: 227 });
     expect(plan.warnings.map(w => w.code)).toEqual(['TEMP_NOT_SETTABLE']);
-    expect(screen.getByText('Pit Boss 820 cannot be set to 227F.')).toBeOnTheScreen();
+    expect(screen.getByText('Pit Boss Sportsman 850 cannot be set to 227F.')).toBeOnTheScreen();
     await fireEvent.press(button('Change smoker temp'));
     expect(props.onChangeTemp).not.toHaveBeenCalled();
     await settle();
@@ -237,6 +237,6 @@ describe('Conflicts sheet', () => {
   test('messages read in the user units', async () => {
     await show({ pitTempF: 227 }, { temp: 'C', weight: 'kg' });
     expect(screen.queryByText(/227F/)).toBeNull();
-    expect(screen.getByText(/^Pit Boss 820 cannot be set to \d+C\.$/)).toBeOnTheScreen();
+    expect(screen.getByText(/^Pit Boss Sportsman 850 cannot be set to \d+C\.$/)).toBeOnTheScreen();
   });
 });

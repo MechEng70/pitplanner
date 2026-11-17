@@ -67,7 +67,7 @@ describe('smoker temp menu (mockup 06)', () => {
 
   test('the intro names the smoker, its steps and the food the times are for', async () => {
     await show();
-    expect(screen.getByText('Pit Boss 820 sets in 5F steps. Times for 12 lb brisket.')).toBeOnTheScreen();
+    expect(screen.getByText('Pit Boss Sportsman 850 sets in 5F steps. Times for 12 lb brisket.')).toBeOnTheScreen();
   });
 
   test('the opened field shows the current temp and closes the menu', async () => {
@@ -117,6 +117,6 @@ describe('smoker temp menu (mockup 06)', () => {
   test('with nothing on the menu the rows carry no times', async () => {
     await show({ ...saturday, items: [] });
     expect(screen.queryByText(/fire /)).toBeNull();
-    expect(screen.getByText('Pit Boss 820 sets in 5F steps.')).toBeOnTheScreen();
+    expect(screen.getByText('Pit Boss Sportsman 850 sets in 5F steps.')).toBeOnTheScreen();
   });
 });

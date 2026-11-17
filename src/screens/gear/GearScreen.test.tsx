@@ -90,7 +90,7 @@ describe('rows (mockup 16)', () => {
     for (const h of ['Cookers', 'Your numbers', 'App'])
       expect(screen.getByRole('heading', { name: h })).toBeOnTheScreen();
 
-    expect(within(row(/^Pit Boss 820/)).getByText(text('Pellet smoker, 21 lb hopper'))).toBeOnTheScreen();
+    expect(within(row(/^Pit Boss Sportsman 850/)).getByText(text('Pellet smoker, 21 lb hopper'))).toBeOnTheScreen();
     expect(within(row(/^Griddle/)).getByText(text('36 in, 4 burners'))).toBeOnTheScreen();
     expect(within(row(/^Oven/)).getByText(text('Holding at 170F'))).toBeOnTheScreen();
     expect(within(row(/Cook rates/)).getByText(text('Brisket 0.75 hr/lb, your setting'))).toBeOnTheScreen();
@@ -105,7 +105,7 @@ describe('rows (mockup 16)', () => {
 
   test('a cooker row opens its sheet and Cook rates opens history (handlers of T-027 and T-028)', async () => {
     const { onCooker, onHistory } = await show();
-    await fireEvent.press(row(/^Pit Boss 820/));
+    await fireEvent.press(row(/^Pit Boss Sportsman 850/));
     await fireEvent.press(row(/^Griddle/));
     await fireEvent.press(row(/^Oven/));
     expect(onCooker.mock.calls).toEqual([['smoker'], ['griddle'], ['oven']]);
@@ -115,7 +115,7 @@ describe('rows (mockup 16)', () => {
 
   test('as the route shows it today, those rows do nothing and nothing is saved', async () => {
     const { repos } = await show({ handlers: false });
-    for (const name of [/^Pit Boss 820/, /^Griddle/, /^Oven/, /Cook rates/]) await fireEvent.press(row(name));
+    for (const name of [/^Pit Boss Sportsman 850/, /^Griddle/, /^Oven/, /Cook rates/]) await fireEvent.press(row(name));
     expect(repos.cookers.load()).toEqual(cookGear);
     expect(screen.queryByRole('dialog')).toBeNull();
   });
