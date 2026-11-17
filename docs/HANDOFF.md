@@ -34,6 +34,16 @@ holds beta.1 only. **Jason runs the build himself** in a plain terminal after cl
 `npm run release -- --version 0.3.0-beta.2` (about 20 minutes). It must end `cert ok` and
 `app config ok: version 0.3.0-beta.2, versionCode 300302, io.github.mecheng70.pitplanner, variant production`.
 
+**His first try (3:17 PM) failed in the gate, before any Gradle work; fixed in `1cecd97`.** Four gate
+self-tests in `tools/release.test.mjs` failed, only in a terminal: there `node --test` sets `FORCE_COLOR`
+for its test files, `console.log` colours a number, and `release.sh` got its versionCode wrapped in colour
+codes. Every earlier release run was started by a session, without a terminal. `release.sh` now prints the
+versionCode as a string; regression test first. Tooling only, no app code. The whole gate was then run under
+a pseudo-terminal (as his terminal runs it): engine 229, gate self-tests 154, Jest 914, Kotlin 117
+(68 / 9 / 40, all "ran"), Snyk 26 projects, none skipped. To run anything "as in a terminal" from a session:
+`python3 -c "import pty,os,sys; sys.exit(os.waitstatus_to_exitcode(pty.spawn(['npm','run','check'])))"`
+(`script` is not installed). The build is his to run again, same command.
+
 **When he says it is built, in this order:**
 1. `npm run release -- --verify release/pitplanner-0.3.0-beta.2.apk --version 0.3.0-beta.2`; record the
    SHA-256; `aapt2 dump badging` (version, no banned permissions) as for beta.1.
