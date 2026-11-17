@@ -4,7 +4,7 @@
 // The old files are retired only when everything came along; otherwise they stay where they are.
 
 import type { Cookers } from '../../engine/types.ts';
-import { normalize } from '../lib/cook.ts';
+import { normalize, withSafeOvenHold } from '../lib/cook.ts';
 import { parseDraft } from '../lib/draft.ts';
 import { fmtTemp, type Units } from '../lib/format.ts';
 import { OVEN_HOLD_MIN_F, withSafeHold } from '../lib/gear.ts';
@@ -207,7 +207,10 @@ export function importLegacy(db: Db, legacy: LegacyStore, now: number): ImportRe
       // A cook still running is kept only if its serve time is ahead; a finished one is simply over.
       const cook = read('activeCook', 'running cook', json => (looksLikeCook(json) ? normalize(json) : null));
       if (cook && cook.plan.serveAt > now) {
-        r.activeCook.save(cook, now);
+        // Its own copy of the oven is raised like Gear's (T-077), under the same one line in the notice.
+        const safe = withSafeOvenHold(cook);
+        if (safe !== cook) report.ovenRaised = true;
+        r.activeCook.save(safe, now);
         report.runningCook = true;
       }
 

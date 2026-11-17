@@ -3,11 +3,13 @@
 
 import { markStepDone, shiftRemaining, pitOutage, markPullDone, postponeStep, holdsCover } from '../../engine/live.ts';
 import { alarmsFromPlan, keyedEvents, type KeyedEvent } from '../../engine/alarms.ts';
+import { derive } from '../../engine/plan.ts';
 import type { Plan, PlanInput } from '../../engine/types.ts';
 import { rememberDone, ringTimes, undoDone, type DoneUndo } from '../../engine/undo.ts';
 import { rules } from './rules.ts';
 import type { AlarmService, NotificationAction } from '../platform/types.ts';
 import { fmtTime, tx, type Units } from './format.ts';
+import { withSafeHold } from './gear.ts';
 
 const MIN = 60_000;
 export const QUIET_MIN = 30;
@@ -67,6 +69,19 @@ export function newCook(input: PlanInput, plan: Plan, now: number): ActiveCook {
 export function normalize(raw: Partial<ActiveCook> | null): ActiveCook | null {
   if (!raw?.plan || !raw?.input) return null;
   return { ...newCook(raw.input, raw.plan, raw.startedAt ?? Date.now()), ...raw, original: raw.original ?? raw.plan };
+}
+
+/**
+ * The cook with its own copy of the oven's hold raised to the 140F floor (T-077), and its plan (and the plan a
+ * taken-back Done would restore) re-derived so the oven step and its alert say so. Times do not change. The
+ * same object when nothing was raised. `original` stays as started.
+ */
+export function withSafeOvenHold(c: ActiveCook): ActiveCook {
+  const oven = c.input.cookers.oven;
+  if (!oven || withSafeHold(oven) === oven) return c;
+  const input = { ...c.input, cookers: { ...c.input.cookers, oven: withSafeHold(oven) } };
+  const again = (p: Plan) => derive(rules, input, p.items, p.serveAt);
+  return { ...c, input, plan: again(c.plan), undo: c.undo ? { ...c.undo, plan: again(c.undo.plan) } : c.undo };
 }
 
 export const steps = (c: ActiveCook): KeyedEvent[] => keyedEvents(c.plan).filter(k => k.event.alarm);

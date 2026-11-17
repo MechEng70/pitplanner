@@ -1,4 +1,9 @@
+import { buildPlan } from '../../engine/plan';
+import { newCook, type ActiveCook } from '../lib/cook';
+import { saturday } from '../lib/fixtures/saturday';
 import type { Units } from '../lib/format';
+import { defaultOven } from '../lib/gear';
+import { rules } from '../lib/rules';
 import type { LegacyStore } from '../platform/types';
 import type { Db } from './db';
 import {
@@ -153,6 +158,49 @@ describe('an oven hold below 140F', () => {
     expect(r.cookers.load().oven?.lowestTempF).toBe(lowestTempF);
     expect(importNotice(report, F)?.body).toBe(NOTICE_BODY.done);
     expect(importNotice(report, C)?.body).toBe(NOTICE_BODY.done);
+  });
+
+  // A running 0.2.0 cook keeps its own copy of the cookers: that copy is raised too, and its plan re-derived.
+  const runningCook = (lowestTempF: number) => {
+    const input = { ...saturday, cookers: { ...saturday.cookers, oven: { ...defaultOven(), lowestTempF } } };
+    const { ringAgain: _r, undo: _u, warningsSeen: _w, ...cook } = newCook(input, buildPlan(rules, input), STARTED);
+    return cook;
+  };
+  const storedCook = () => {
+    const row = db.get<{ data: string }>('SELECT data FROM active_cook WHERE id = 1');
+    return JSON.parse(row!.data) as ActiveCook;
+  };
+  const ovenStep = (cook: ActiveCook) => cook.plan.events.filter(e => e.kind === 'ovenOn').map(e => e.label);
+
+  test('a running cook with its oven at 120F comes over at 140F, its oven step says 140F, one line in the notice', () => {
+    expect(ovenStep(runningCook(120) as ActiveCook)).toEqual(['Oven to 120F for holding.']);
+    const report = importLegacy(db, withPref('activeCook', JSON.stringify(runningCook(120))).store, NOW);
+    expect(report).toMatchObject({ status: 'done', runningCook: true, ovenRaised: true });
+    // Raised in what the import wrote, not only when read back.
+    const saved = storedCook();
+    expect(saved.input.cookers.oven?.lowestTempF).toBe(140);
+    expect(ovenStep(saved)).toEqual(['Oven to 140F for holding.']);
+    expect(JSON.stringify(saved.plan)).not.toMatch(/120F/);
+    expect(r.activeCook.load()?.input.cookers.oven?.lowestTempF).toBe(140);
+    expect(importNotice(report, F)?.body).toBe(`${NOTICE_BODY.done}\nOven hold raised to 140F, the safe minimum.`);
+  });
+
+  test("Gear's oven and the running cook's copy both raised: the notice has the line once", () => {
+    const prefs = legacyPrefs(STARTED);
+    prefs.gear = JSON.stringify({ ...legacyGear, oven: { ...legacyGear.oven, lowestTempF: 120 } });
+    prefs.activeCook = JSON.stringify(runningCook(120));
+    const report = importLegacy(db, fakeLegacy(prefs, legacyHistoryJson()).store, NOW);
+    expect(report).toMatchObject({ status: 'done', ovenRaised: true });
+    expect(importNotice(report, F)?.body.match(/Oven hold raised/g)).toHaveLength(1);
+  });
+
+  test('a running cook with its oven at 150F comes over as it is, with no line in the notice', () => {
+    const cook = runningCook(150);
+    const report = importLegacy(db, withPref('activeCook', JSON.stringify(cook)).store, NOW);
+    expect(report).toMatchObject({ status: 'done', runningCook: true, ovenRaised: false });
+    expect(storedCook().input).toEqual(cook.input);
+    expect(storedCook().plan).toEqual(cook.plan);
+    expect(importNotice(report, F)?.body).toBe(NOTICE_BODY.done);
   });
 
   test('a report saved before T-077 reads as not raised', () => {

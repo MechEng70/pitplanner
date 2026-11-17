@@ -1,6 +1,6 @@
 import { buildPlan } from '../../../engine/plan';
 import type { Cookers } from '../../../engine/types';
-import { newCook } from '../../lib/cook';
+import { doneStep, newCook, steps, undoStep } from '../../lib/cook';
 import type { Draft } from '../../lib/draft';
 import { saturday } from '../../lib/fixtures/saturday';
 import { defaultGriddle, defaultOven } from '../../lib/gear';
@@ -217,6 +217,33 @@ describe('active cook', () => {
     r.activeCook.save(cook, NOW);
     corrupt('UPDATE active_cook SET data = ?', [JSON.stringify({ input: saturday, plan })]);
     expect(r.activeCook.load()).toEqual(cook);
+  });
+
+  // T-077: a running cook keeps its own copy of the cookers; a hold below 140F in it loads as 140F, with the
+  // plan re-derived so the oven step and its alert say 140F.
+  test('a stored running cook with its oven at 120F loads at 140F, and its oven step says 140F', () => {
+    const withOven = (lowestTempF: number) => {
+      const input = { ...saturday, cookers: { ...saturday.cookers, oven: { ...defaultOven(), lowestTempF } } };
+      return newCook(input, buildPlan(rules, input), NOW);
+    };
+    const ovenStep = (c: ReturnType<typeof newCook>) =>
+      c.plan.events.filter(e => e.kind === 'ovenOn').map(e => e.label);
+    r.activeCook.save(withOven(120), NOW);
+    const loaded = r.activeCook.load()!;
+    expect(loaded.input.cookers.oven?.lowestTempF).toBe(140);
+    expect(ovenStep(loaded)).toEqual(['Oven to 140F for holding.']);
+    expect(JSON.stringify(loaded.plan)).not.toMatch(/120F/);
+    // Nothing else about the cook changes: the plan is the one a 140F cook would have.
+    expect(loaded).toEqual({ ...withOven(140), original: withOven(120).original });
+    // Taking back the last Done does not bring the 120F step back.
+    const fire = steps(withOven(120)).find(k => k.event.kind === 'fire')!;
+    r.activeCook.save(doneStep(withOven(120), fire.key, fire.event.at).cook, NOW);
+    expect(ovenStep(undoStep(r.activeCook.load()!, fire.event.at + 60_000))).toEqual(['Oven to 140F for holding.']);
+    // 140F and above load as stored.
+    for (const t of [140, 150]) {
+      r.activeCook.save(withOven(t), NOW);
+      expect(r.activeCook.load()).toEqual(withOven(t));
+    }
   });
 
   test.each([

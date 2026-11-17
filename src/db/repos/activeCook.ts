@@ -1,6 +1,6 @@
 // active_cook: the one running cook, rewritten on every change. A row that cannot be read is no cook.
 
-import { normalize, type ActiveCook } from '../../lib/cook.ts';
+import { normalize, withSafeOvenHold, type ActiveCook } from '../../lib/cook.ts';
 import type { Db } from '../db.ts';
 import { isNum, isObj, parseJson } from './json.ts';
 import { quarantine } from './quarantine.ts';
@@ -24,7 +24,9 @@ export function activeCookRepo(db: Db) {
       if (!row) return null;
       const raw = parseJson(row.data);
       if (!looksLikeCook(raw)) return null;
-      return normalize({ ...raw, startedAt: isNum(raw.startedAt) ? raw.startedAt : row.started_at });
+      const cook = normalize({ ...raw, startedAt: isNum(raw.startedAt) ? raw.startedAt : row.started_at });
+      // The cook's own oven copy below 140F reads as 140F (T-077); the row is rewritten at the next save.
+      return cook && withSafeOvenHold(cook);
     },
     save(cook: ActiveCook, now: number): void {
       db.transaction(() => {
