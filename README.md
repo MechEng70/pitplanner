@@ -28,18 +28,18 @@ Android only for now. Steps are in [docs/INSTALL.md](docs/INSTALL.md), and the f
 
 ## What's in 0.3.0
 
-- A new look. The same three tabs (Plan, Cook, Gear), with every screen rebuilt. Text follows your phone's font
-  size, and times and temperatures are never cut off.
-- Your data comes over from 0.2.0 the first time you open it: smokers and other cookers, cook rates, the plan
-  you were working on, and cook history.
-- Two of the same food are told apart, as "11.5 lb brisket" and "6 lb brisket".
-- Only Start cook on Plan starts a cook, so a running cook is never replaced by accident.
-- Next up reads as one sentence with the time left, for example "Check the brisket in 1 hr 12 min".
-- Quiet alerts for 30 min also holds back the repeat alerts.
-- A cook in progress survives a font size change and the phone closing the app in the background.
-- "Send a test alert in 10 sec" in Gear lets you check alerts any time.
-- Cook history: a past cook can be edited or removed, and left out of your cook rates.
-- Smoker temps can be set in steps of your own, with "Not listed? Enter it yourself".
+- A rebuilt app on the same three tabs, with text that follows your font size
+- Your 0.2.0 smokers, rates, plan, history and a running cook come across
+- Open a plan someone shared with you, and see what changes if you don't have one of their cookers
+- Export my data and Restore from a file, in Gear
+- Whole turkey, and tri-tip smoked then seared on the smoker when you have no griddle
+- Undo for a step you marked Done by mistake
+- Warnings during a cook when the smoker is asked for two temps at once or food will hold too long
+- When serve moves for one food, the others move with it
+- Done and +15 min right on the lock-screen alert, and alarms that come back after the phone restarts
+- The app checks GitHub for a newer version
+
+The full notes are in [docs/release-notes/0.3.0.md](docs/release-notes/0.3.0.md).
 
 ## Coming next
 
@@ -60,5 +60,6 @@ Safe temperatures come from the USDA FSIS
 
 There is no account and no server. Your cookers, plans, cook rates and history stay on your phone. The app asks
 GitHub for the latest release to see if an update is out. A plan or your data leaves the phone only when you send
-a file yourself. Android's own backup can include the app's database, so your history may follow you to a new
-phone.
+a file yourself. If Android backup is on, your Pit Planner data can come back when you set up a new phone.
+
+Building it yourself: see [docs/DEVELOPING.md](docs/DEVELOPING.md).
