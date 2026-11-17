@@ -37,6 +37,14 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
   Why: today the plan can ask for 400F on a smoker that cannot reach it.
   Blocked on: Jason's wording for the grey reason (T-075's "Needs {sear}F" is the model). Source: BACKLOG,
   Jason 2026-11-16. This is the wings item Jason named on 2026-11-17.
+- **No task.** Smaller APK: per-ABI APKs instead of one fat APK (proposal, Jason 2026-11-17). 0.3.0-beta.1 is
+  101.2 MB: x86 25.7, x86_64 25.0, arm64-v8a 24.4, armeabi-v7a 16.9, the JS bundle 3.6, dex 2.6. An arm64
+  APK for phones is about 34 MB; an x86_64 APK from the same build is kept for the test rig (the upgrade and
+  locked-reboot tests install the release APK on x86_64 emulators). The release script, its verify step, the
+  update check's download link (it takes the first `.apk` asset today) and INSTALL.md change together.
+  Dropping x86 is safe; dropping 32-bit ARM waits on his testers' phone models. R8 minify is on; resource
+  shrinking is off and worth under 1 MB. Why: download size. Blocked on: the testers' phone models; nothing
+  before the freeze.
 - **T-078** Lock-screen taps re-plan with the app closed (headless JS).
   Why: other alarms keep old times until the app opens (T-076 limit).
   Blocked on: a half-day spike on the emulator, then a report to Jason before any build. Also his answer on
