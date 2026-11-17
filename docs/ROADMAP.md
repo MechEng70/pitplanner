@@ -55,6 +55,9 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
   footer row shares the row, fixed once in `src/components/ui/button.tsx`; the three local fixes of 0.3.0
   ("Replace your data?", "Start over?", "Alerts may not ring") then use it. Why: one rule instead of three
   copies. Blocked on: nothing.
+  With it (Jason, 2026-11-17): the kit's stepper lower-cases its whole label for the screen-reader labels
+  "Less ..." and "More ..." (`src/components/kit/controls.tsx:251`), so a screen reader says "Less st. louis
+  ribs count" in Cook history's edit sheet; keep a food name's own capitals there too. Not shown on screen.
 - **T-078** Lock-screen taps re-plan with the app closed (headless JS).
   Why: other alarms keep old times until the app opens (T-076 limit).
   Blocked on: a half-day spike on the emulator, then a report to Jason before any build. Also his answer on
