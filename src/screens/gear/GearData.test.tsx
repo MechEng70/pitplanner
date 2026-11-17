@@ -234,6 +234,21 @@ describe('Restore from a file', () => {
     expect(sheet.getByRole('button', { name: 'Cancel' })).toBeOnTheScreen();
   });
 
+  test('a file with no export time: the sheet opens with no date and no crash', async () => {
+    const text = fileText(many, { exportedAt: undefined });
+    expect(JSON.parse(text)).not.toHaveProperty('exportedAt');
+    await show({ picked: { text } });
+    await restore();
+    const sheet = confirmSheet();
+    expect(
+      sheet.getByText(
+        'This file has 2 cookers, 3 cook rates and 30 cooks. They replace what is on this phone. Your plan stays.',
+      ),
+    ).toBeOnTheScreen();
+    expect(sheet.queryByText(/, from /)).toBeNull();
+    expect(sheet.getByRole('button', { name: 'Replace' })).toBeOnTheScreen();
+  });
+
   test('one of each reads as one; one part left out', async () => {
     const text = fileText(one, { rates: { brisket: 0.8, lamb: 1 } });
     await show({ picked: { text } });
