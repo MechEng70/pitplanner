@@ -212,7 +212,7 @@ export function overlapNote(plan: Plan, now: number, u: Units): OverlapNote | nu
     .sort((x, y) => x.start - y.start)[0];
   const rest =
     leaving && climbing
-      ? `${cap(leaving.name.toLowerCase())} comes off before the pit climbs to ${fmtTemp(climbing.tempF, u, true)}.`
+      ? `${cap(leaving.name)} comes off before the pit climbs to ${fmtTemp(climbing.tempF, u, true)}.`
       : '';
   return { band: { start: o.start, end: o.end, laneIds: o.itemIds }, lead, rest };
 }

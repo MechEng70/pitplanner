@@ -169,6 +169,17 @@ test('overlap note: brisket and wings share the pit, brisket off before it climb
   assert.equal(overlapNote(plan, SERVE, units), null);
 });
 
+// Jason, 2026-11-17: "St. louis ribs comes off" lost the food's own capitals at the start of the sentence.
+// Only the name is pinned here; the verb waits for the plural flag on the planned item (0.3.1).
+test('overlap note: a food name keeps its own capitals at the start of the sentence', () => {
+  const ribs = buildPlan(rules, {
+    ...input,
+    items: [{ id: 'r', foodId: 'stlribs', methodId: '221', quantity: 3 }, input.items[1]],
+  });
+  const n = overlapNote(ribs, at(10), units)!;
+  assert.match(n.rest, /^St\. Louis ribs comes off before the pit climbs to 400F\.$/);
+});
+
 test('hold impact: keep serve changes the hold, move serve says the new time', () => {
   const now = at(10);
   const keep = shiftRemaining(rules, input, plan, now, 20, true);
