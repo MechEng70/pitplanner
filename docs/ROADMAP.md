@@ -1,0 +1,156 @@
+# Pit Planner: roadmap after 0.3.0
+
+One page of what comes after 0.3.0, for Jason to triage after Sunday's readout. Written 2026-11-17.
+`docs/design/TASKS.md` stays the source of truth: if this page and TASKS disagree, TASKS wins. No task numbers
+were created for this page.
+
+Each item: task ID (or "no task"), what, why, blocked on.
+
+## 0.3.x
+
+Bug fixes, plus the two exceptions Jason set (T-078 and the Celsius work).
+
+- **No task.** Celsius step: store the smoker temp step's unit so a units switch cannot change its meaning,
+  and give the engine a real Celsius grid.
+  Why: a step set in C must stay a C step. Blocked on: nothing for the engine; see the next item.
+  Source: Jason, 2026-11-17 (T-082 entry in TASKS).
+- **No task.** Celsius step choices: 1C / 2C / 5C / 10C / Other. Fahrenheit stays 5 / 10 / 15 / 25 / Other.
+  Why: Celsius grills set in other steps than Fahrenheit ones. Blocked on: a mockup first, and sources for the
+  steps (1C is sourced: Z Grills Australia wireless controller, https://help.zgrills.com.au/?p=3624; the
+  others are not). Depends on the item above.
+- **No task.** The 1C to 4C manual-form bug: the manual smoker form stores a Celsius step as a whole number of
+  F, so 1C to 4C steps drift off the grid (1C as 2F, 2C as 4F).
+  Why: wrong steps on a Celsius smoker. No tester uses Celsius. Blocked on: nothing. Two `test.failing` cases
+  are in `src/screens/setup/SmokerPicker.test.tsx` and should pass after the fix.
+- **No task.** Wings at 400F on a smoker that tops out lower: offer the method only when the smoker's max
+  reaches its temp, greyed with the reason otherwise, as tri-tip's smoker sear does (T-075).
+  Why: today the plan can ask for 400F on a smoker that cannot reach it.
+  Blocked on: Jason's wording for the grey reason (T-075's "Needs {sear}F" is the model). Source: BACKLOG,
+  Jason 2026-11-16. This is not the item Jason named on 2026-11-17 (see Untriaged).
+- **T-078** Lock-screen taps re-plan with the app closed (headless JS).
+  Why: other alarms keep old times until the app opens (T-076 limit).
+  Blocked on: a half-day spike on the emulator, then a report to Jason before any build. Also his answer on
+  whether the app still jumps to the Cook tab after a tap.
+- **T-082** (if it slips) Temp step question on Setup's smoker card and in Gear.
+  Why: nothing lets the user change a catalog smoker's step.
+  Blocked on: Jason's OK on the PNGs, then the merge after Sunday's readout. Planned for 0.3.0 on Monday
+  2026-11-23. If it slips it ships as 0.3.1.
+
+## 0.4.0
+
+Home Assistant phase 1: read-only, a pasted token. Nothing here starts before 0.3.0 ships.
+
+- **T-042** Mock the six Home Assistant screens. Why: new UI needs an approved look. Blocked on: Jason's OK on
+  the mockups.
+- **T-044** Home Assistant auth logic (pure). Why: the sign-in rests on it. Blocked on: the token call checks
+  in `docs/ha-entities.md`.
+- **T-045** Sign-in on the phone with a pasted token. Why: connects the app to his Home Assistant. Blocked on:
+  T-042, T-044 (its entry also lists T-043, which is dropped).
+- **T-046** Home Assistant WebSocket client. Why: live data. Blocked on: T-044.
+- **T-047** Discovery and add a sensor. Why: finds his smoker and probes. Blocked on: T-045, T-046.
+- **T-048** Gear: Home Assistant connected. Why: shows and manages the link. Blocked on: T-047.
+- **T-049** A probe per food at Start cook. Why: each food needs its probe. Blocked on: T-047.
+- **T-050** `engine/probe.ts` and live temps on Live cook. Why: the point of the phase. Blocked on: T-046,
+  T-049, T-020 (done). Jason's device tests.
+
+## 0.5.0
+
+- **T-070** Open shared plan: the receiver picks their cookers.
+  Why: parity D1 as 0.2.0 offered it; 0.3.0 handles it in Food details after import.
+  Blocked on: Jason's OK on the design (new UI).
+- **T-071** Fish: salmon, sea bass, catfish.
+  Why: asked by Jason 2026-11-15; his answers of 2026-11-16 are in the entry.
+  Blocked on: a thickness input proposed to him first, and the recipe sources he will keep for times.
+- **T-080** Chef iQ probes direct over Bluetooth, no Home Assistant.
+  Why: probe temps without Home Assistant. Blocked on: an approved mockup (the scan permission row in Setup
+  alerts), T-050, T-049, and a real probe.
+
+## Later
+
+No version yet, or "0.5.0 or later".
+
+- **T-057** Clear the build-tool Snyk findings (SE-001). Why: the Snyk scope limit must go. Blocked on:
+  nothing, but held until 0.3.0 ships (Jason, 2026-11-17). Deadline 2027-02-01 (SE-001 agrees).
+- **T-039** Remove `legacy/`. Why: dead reference code. Blocked on: T-038 plus one week with no rollback.
+- **T-051** Publish `sensor.pit_planner_cook` (HA phase 2). Why: automations outside the app. Blocked on: T-050.
+- **T-052** Home Assistant blueprint. Why: ready-made notification. Blocked on: T-051.
+- **T-053** Probe suggestions and pit-drop prompt (HA phase 3). Why: Next up offers Done, never automatic.
+  Blocked on: T-050.
+- **T-054** Probe times feed rate learning. Why: better rates. Blocked on: T-053.
+- **T-055** Confirmed set-temp button (HA phase 4, optional). Why: the most grill control the app will ever
+  have. Blocked on: Jason opting in, T-053.
+- **T-060** Low and slow for tough cuts (brisket heated faster than the plan). Why: Jason's cook of
+  2026-11-14. Blocked on: Jason choosing one of four candidates, sourced numbers, and two facts only he has
+  (what the smoker went back up to 250F for; which Pit Boss probe pairs with which Chef iQ probe).
+- **T-062** A name of the user's own for a food. Why: Jason wants "Dad's brisket". Blocked on: a mockup.
+- **T-040** Lane chart full screen. Why: Jason's idea, landscape view. Blocked on: a mockup, then his OK.
+- **T-041** Oven warming drawer: use it or drop it. Why: a stored field nothing uses. Blocked on: Jason's
+  decision (offer it as a hold place at or above 140F, or remove it).
+- **T-036** (Setup part) Restore from a file on a new phone's first screen. Why: a new phone has no data.
+  Blocked on: Jason's decision on a version. 0.3.0 has it in Gear only. Source: BACKLOG, TASKS T-036,
+  Jason 2026-11-16.
+- **T-022** (note) Running behind, Keep serve: name every food that would come off after serve and select
+  Move serve then. Why: today only the most-changed hold is named, as in 0.2.0. Blocked on: Jason's call
+  (he said "maybe a future update").
+- **T-056** Keep native access behind the interfaces (iOS readiness). Why: lets iOS be added later. Blocked
+  on: T-015, T-030 (done) and T-045 (0.4.0).
+- **T-066** User README with screenshots. Why: Jason wants a guide once the screens are done. Blocked on: the
+  0.3.0 screens and T-065 (done).
+
+## Untriaged
+
+No task, no version. Nothing here is scheduled.
+
+- **No task.** Wings at 400F when the smoker is held lower for another food (brisket at 225F): the plan
+  needs a better answer for wings than a conflict. Why: wings want 400F, so today it is PIT_CONFLICT. Blocked
+  on: Jason saying what the answer is (his words 2026-11-17: he has it listed for 0.3.x). Found in: named by
+  Jason 2026-11-17, not found in TASKS or BACKLOG under this meaning (SPEC's clear-pit rule and conflict rule
+  are the current behavior).
+- **No task.** Dial smokers with fixed presets and "pick by controller". Why: presets work in the engine but
+  not in the picker's catalog. First case is Jason's own Pit Boss Sportsman 820 with Wi-Fi (PB0820SPW) with a
+  newer card (5F steps, reports PB850SPW2); a "Pit Boss Sportsman 820" catalog entry comes with it. Blocked
+  on: Jason's triage, sources for the presets and the 820 main and upper rack split, and how Smoke and High
+  show. Found in: BACKLOG, Jason 2026-11-17, "after 0.3.0".
+- **No task.** Go back on the full timeline to set what was missed: tap a step, adjust it. Why: cook of
+  2026-11-14. Blocked on: a mockup. Found in: BACKLOG, "next version".
+- **No task.** More than one smoker or griddle. Why: someone may own two. Touches Setup, Gear, the plan's
+  cooker choice and rates per cooker. Blocked on: a mockup. Found in: BACKLOG, "next version".
+- **No task.** Sources for the smoker specs still marked `verified: false` (sixteen picker entries). Why:
+  left blank without a source. Blocked on: sources from Jason. Found in: the waiting-on-Jason page, SPEC
+  section 12.
+
+## Flags
+
+Sources that disagree:
+
+- BACKLOG lacks the wings item as Jason described it (better answer than a conflict when the smoker is held
+  lower). Its only wings row, listed under 0.3.x, is about a smoker that cannot reach 400F. Jason believes it
+  is listed for 0.3.x, so one of the two needs adding or the BACKLOG row needs rewording.
+
+- T-068 (alarm ring log). The TASKS Versions section, WBS (Versions paragraph) and BACKLOG ("Planned before,
+  not in 0.3.0") put it in 0.5.0 or later. Its own TASKS entry says Jason moved it into 0.3.0 on 2026-11-16,
+  and it is merged. It is not listed above. The Versions section, BACKLOG row and WBS text need updating.
+- T-039. WBS puts it in phase 10 (0.3.0). Its entry says one week after 0.3.0 ships. Listed under Later.
+- T-060 and T-062. TASKS and BACKLOG say "next version"; WBS says "after the beta" (phase 11). None names
+  0.3.x, 0.4.0 or 0.5.0.
+- "0.3.x is reserved for bug fixes" (TASKS, WBS). The 0.3.x list above holds a feature (T-078), new Celsius
+  choices needing a mockup, and the wings gating. Jason set T-078 as an exception; the others are new.
+
+No version at all:
+
+- T-036 (Setup restore), T-022 (note), T-040, T-041, T-056, T-066, T-057 (a date only), the dial smokers item,
+  the timeline item, more than one cooker, the unverified specs.
+
+Dependency points at a later version:
+
+- T-056 (no version) depends on T-045 (0.4.0).
+- T-060 candidate 4 (re-time from probes) depends on T-050 (0.4.0) and T-054 (0.5.0 or later).
+- T-045 (0.4.0) lists T-043 as a dependency. T-043 is dropped, so the dependency should go.
+
+Looks dropped but still open:
+
+- T-043 (GitHub Pages `client_id` page) is dropped by Jason but its status is still `todo`. D-9 is dropped with
+  it.
+- The T-022 note (Keep serve naming every food) and T-041 were parked as "maybe" and still read `todo`.
+- T-070 was dropped from 0.3.0 and moved to 0.5.0; its status line still says `todo` with no version
+  mention (the version line above it has it).
