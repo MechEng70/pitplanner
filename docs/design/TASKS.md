@@ -3761,8 +3761,26 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   the 2C rounding, since they are real dial marks. (4) A Celsius step typed under Other that is not one of
   the choices, and (5) the Cook screen, shared plan sheet and Cook history still rounding to 2C for a C-step
   smoker: both left for the 0.3.x Celsius item.
+- **The main session's read of the branch (2026-11-17, head `86f3063`, 5 commits) and Jason's four
+  decisions on it:** the branch matches the decisions and the approved strings; it merges clean with `main`,
+  with the sheet-buttons branch and with the plural branch (`git merge-tree`; four files are shared with
+  the plural branch, on different lines). (1) A step typed in Celsius that is none of 5C to 25C showed no
+  choice and no line: fixed on the branch, it is Other with "Sets in 20C steps." as in Fahrenheit; only the
+  catalog's own step (5F) shows none in Celsius, as in picture 01c. (2) The comment in `engine/plan.ts` now
+  says the off-both-grids warning is decided. (3) `src/lib/sharedPlan.ts:242` (a shared plan's temp snapped
+  to the nearest setting) and `src/screens/gear/HistoryScreen.tsx:536` (the temps offered when a past cook
+  is edited) read the grid in F only: left for 0.3.1, in the Celsius item below. (4) The Other sheet opens
+  with the saved step or dial settings when Other is what is saved, and blank after one of the four choices
+  (picture 01b). Fixes in `5334d83` (6 commits on the branch now), tests first, 6 seen failing. The
+  branch's own runs at `5334d83`: engine 241, Jest 952 (86 suites); at `86f3063` they were 241 and 949. No
+  gate in the worktree. Known and left: a Celsius step that is not a multiple of 5C reads back converted
+  from whole F ("Sets in 2.2C steps." for a typed 2C), the manual-form bug above. **For the next build
+  (Jason): screen tests are written first too, not only engine tests.** Still owed at merge: SPEC "Units",
+  the emulator Setup and Gear runs at 115% and 130%, his look.
 - **0.3.x Celsius item (not T-082; Jason, 2026-11-17):** store the step's unit so a units switch cannot
-  change its meaning; a real C grid in the engine; the manual-form fix above. With the C grid, Celsius gets
+  change its meaning; a real C grid in the engine; the manual-form fix above; and the two places that still
+  read the grid in F only for a C-step smoker, `src/lib/sharedPlan.ts:242` and
+  `src/screens/gear/HistoryScreen.tsx:536` (Jason, 2026-11-17: 0.3.1). With the C grid, Celsius gets
   its own choices, proposed 1C / 2C / 5C / 10C / Other (1C: Z Grills Australia, sourced; the others to be
   sourced), mockup first. Fahrenheit choices stay 5 / 10 / 15 / 25 / Other.
 
