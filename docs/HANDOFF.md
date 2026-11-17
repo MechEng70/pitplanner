@@ -1,9 +1,141 @@
-# Handoff (2026-11-17, end of the twenty-second session: 0.3.0-beta.1 built, tested on the emulators and on Jason's phone; the freeze is on until Sunday's readout)
+# Handoff (2026-11-17: 0.3.0-beta.1 built and on Jason's phone; freeze until Sunday's readout; fourteen branches parked)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## Restart, twenty-third session (written Tuesday 2026-11-17, end of the twenty-second; read this first)
+## Restart, twenty-fourth session (written Tuesday 2026-11-17, afternoon; read this first)
+
+One long working day (sessions twenty-two and twenty-three ran together). `main` is committed and clean;
+the commits after Jason's last push are docs only (check `git log origin/main..main`). The last gate on code
+was the forced one (`ANDROID_TESTS_FORCE=1 npm run check`) on `ab7c9fd`: engine 229, gate self-tests 153,
+Jest 913, Kotlin 117 (pit-alarms 68, pit-legacy 9, pit-share 40, all "ran"), Snyk 26 projects, none skipped.
+Emulators and Metro are stopped. No agent is running. Fourteen agent branches are parked, none merged; their
+worktrees are under `.claude/worktrees/`. `dashboard.html` is current.
+
+### 1. The freeze and the dates
+
+- **0.3.0-beta.1 is built** (`release/pitplanner-0.3.0-beta.1.apk`, SHA-256
+  `68b9e64a412caf12f69e902b3ff6d3fd5e62eb608b0850bb441a965900bc5bf7`) and **on Jason's phone** over 0.2.0
+  since 2026-11-17 11:30 (import matched the 2026-11-15 copy of his 0.2.0 storage). Never rebuild beta.1
+  under the same name.
+- **Freeze (Jason):** nothing merges to `main` before Sunday's readout except a fix for a problem that blocks
+  the test, with his yes. Docs he asks for are committed. After the readout and before Monday only 0.3.0
+  fixes merge. One at a time, the gate after each (alone: no agent, no emulator), counts reported, Kotlin
+  never under 117.
+- **Friday 2026-11-20:** `docs/t037-checklist.md`, Friday table, steps 3 and 8 to 15 (1, 2, 6, 7 done). The
+  carried-over 0.2.0 cook (serve Sat Nov 21 5:00 PM; first alarm 6:30 AM) is used for steps 9 to 11 and
+  discarded at step 10. Step 14: if "Alerts may not ring" shows, Start anyway and note it. Step 15: no Pit
+  Planner alarm before 7:30 AM Saturday. Every adb line needs his yes at the time.
+- **Saturday 2026-11-21:** the staged cook (same file). 12:00 PM: plug in, save
+  `adb shell dumpsys batterystats --history` to a file, unplug; 12:05 PM reboot.
+- **Sunday 2026-11-22:** the readout; then `docs/after-readout-checklist.md` (wife's phone, two-phone share,
+  and the list of fixes and checks); the 0.3.0 merges below; emulator looks; disk cleanup after his approval;
+  ROADMAP triage.
+- **Monday 2026-11-23:** release 0.3.0 (T-038, still depends on T-033).
+
+### 2. Parked branches (worktree `.claude/worktrees/agent-<id>`, branch `worktree-agent-<id>`)
+
+**For 0.3.0, merge after the readout, in this order:**
+
+| # | Branch id | Head | Holds |
+|---|---|---|---|
+| 1 | `a0ce7915c8c901c69` | `86f3063` (5 commits over main: `9ccece5`, `ccded9e`, `e13e171`, `eaa7a6d`, `86f3063`) | **T-082** temp step question on Setup's smoker card and in Gear; grid rule; the display unit decides a C step; dial marks to the whole degree. Its own runs: engine 241, Jest 945. Read the diff first (not yet read by the main session). Merge the approved mockups with it: branch `a1211e2e2ed4313e1`, head `dc515fa` (`docs/proposals/2026-11-17-temp-step/`). Ships Monday or goes to 0.3.1 |
+| 2 | `a8c0f87e3e0ab96ed` | `0e96853` (`0497830`, `48e1a4d`, `0e96853`) | **Sheet buttons:** "Replace your data?", "Start over?", "Alerts may not ring": the second button was pushed off the right edge at 115%. Must be in 0.3.0 |
+| 3 | `a162a9d40e02d7402` | `8d4cfe1` (7 commits) | **Plural food names and "St. Louis ribs" capitals** (plan and shared-plan warnings, "are behind", eight places with `inSentence`). Engine 241, Jest 923 in its own runs |
+| 4 | `a9b7f7e3f7806b35c` | head after `59394c7` (2 commits) | **Release notes 0.3.0** brought up to date (draft mark stays until the release is cut) |
+| 5 | `a6d5ad9a3b663d00e` | `7022bde` (2 commits) | **README** for the public page. At merge: create `docs/DEVELOPING.md` from the developer content the old README held (stack, Capacitor history, "What's here", the Develop section, links to RELEASING and the mockups page); the README's last line links it |
+| 6 | `af96b15db6f617be3` | `25a2820` | **User guide pictures:** 5 of 22 slots filled. Add the 17 new pictures and the README's 4 before merging |
+
+Known conflicts: `src/screens/plan/TempMenu.tsx` (T-082 and the capitals fix, different lines),
+`src/screens/gear/CookerSheets.test.tsx` (T-082 and the plural fix: pattern on lines 154 and 161),
+`src/lib/gear.test.ts` (T-082; the catalog branch avoided it), `SPEC.md`/TASKS text is applied by the main
+session from the reports. After each merge: the device checks named in `docs/after-readout-checklist.md`
+(the pair rule: both buttons inside the screen AND each at least a quarter of the screen wide; Android
+clamps off-screen bounds, so "inside" alone passes a 24 px sliver), Setup and Gear at 115% and 130% for T-082.
+
+**For 0.3.1:**
+
+| Branch id | Head | Holds |
+|---|---|---|
+| `a5e4bcdedac780e57` | `71f1271` (7 commits) | **Per-ABI APKs:** plugin, release script (verify each APK, `--published v<version>` refuses anything but one `-arm64-v8a.apk`), update check (exactly one `.apk` links directly), RELEASING and INSTALL. **Nothing was built: unverified.** Verify with the eight commands in its RELEASING.md when memory is free |
+| `a161bd82cecaed287` | `645cddf` | **Smoker catalog sourcing**, partial: three entries partly filled from pages read, none verified, new data tests. The makers' sites rate-limited twice (HTTP 429): retry. Ten version-ambiguous entries are left out (Jason sends testers' models later) |
+
+**For 0.4.0 and later (proposals and early work, his review after 0.3.0):**
+
+| Branch id | Head | Holds |
+|---|---|---|
+| `a4d0fb0875a099229` | `a0244b6` | **T-044** HA auth logic, pure (`src/lib/ha/`, 111 tests); seven open decisions; step 0 open |
+| `a9241eb3e2b1eb08c` | `f0c1b98` | **T-042** HA mockups (proposal, 20 pictures, 15 questions). Jason's first reaction: likes it, especially the connect flow; not an approval |
+| `a18cf3154316a2542` | `68eff4b` | **Fish** thickness mockups (proposal; T-071, 0.5.0) |
+| `a06dd404e2acfae2a` | `a654dd4` | **Fish** candidate sources. First question at review: sources Q5 (no source times a smoker or griddle by thickness) |
+| `a00d9697f70d1c24c` | `9829fc2` | **Wings** on a smoker under 400F: options (proposal, 0.3.x). Found: no warning today; wings' 175-185F pull line has no source of its own |
+
+### 3. Still owed
+
+- **17 user guide pictures, the README's 4, and a new `docs/fidelity/rn-debug-send.png`** (the old one shows
+  Jason's old email address; replace it, no history rewrite): emulator at 115%, seeded test data only, check
+  each for personal data before committing. The list of 17 is in the guide agent's report in TASKS T-066
+  notes and `docs/after-readout-checklist.md`.
+- **Catalog retry** (above). **T-057** (Snyk build-tool findings): not started; needs Gradle and Snyk, so run
+  it with nothing else on the machine; Jason listed it for 0.3.1.
+- **HA step 0 (T-044):** the six calls of `docs/HA-INTEGRATION.md` 8.1 with a long-lived token created as the
+  `pitplanner` user. Jason keeps the token in `~/keys`: read it from there into a variable, never echo it,
+  never write it to a file, a log or the repo. Record pass or fail in `docs/ha-entities.md`.
+- **Disk cleanup** after the readout, after his approval of the inventory (measure again first).
+- **`.gitignore`:** add `.claude/worktrees/` and `.claude/settings.local.json` with the first merge after the
+  readout; confirm `git status` no longer shows them (`.claude/` holds only `worktrees/` today).
+- **`CLAUDE.md`, Models and agents:** add "an agent that needs a file outside its list stops and asks first"
+  (he said yes, after the freeze).
+- **Rig, after the freeze:** every tapped button inside the screen and at least a quarter of the screen wide.
+- **T-031 and T-033** on Sunday afternoon; three "to confirm" steps in the after-readout checklist (3, 12, 20).
+
+### 4. Decisions waiting on Jason (one line each)
+
+- T-044: seven choices (scheme when none typed, http to a remote host, port 8123, what counts as home
+  network, IPv6, timeout, a refused token staying refused).
+- T-042: the 15 questions in its README, after step 0.
+- Fish: sources Q5 first (thickness as a timer, or an estimate with a 145F probe check); then the 12 mockup
+  questions.
+- Wings: which option (grey and warn, lower crisp, griddle finish), how to gate, the sentences, and whether
+  the 175-185F pull line gets a source.
+- Per-ABI: none open (arm64 only attached; no ABI detection; names as proposed).
+- Catalog: testers' exact smoker models; versions for the ten ambiguous entries if he wants them filled.
+- Release notes: nothing open (no line for the capitals; the lane bar label is 0.3.1 in ROADMAP; chicken
+  breasts reading "griddle" with no griddle is correct while Conflicts flags it). The rest of "Check before
+  release" stays for release day.
+- The Samsung tester's answer on the locked-reboot check.
+- Two T-060 facts (what the smoker went back up to 250F for on 2026-11-14; which probe pairs with which).
+- Layout problems he finds on beta.1 on his phone (one list, after Sunday).
+
+### 5. The full device pass (T-034), 115% and 130%, started 2026-11-17 12:00
+
+Running since 12:00; results to follow in this session. One test after another (`DEVICE_SCALES="1.15 1.3"
+tools/device/run.sh --no-build --only <test>`), logs in the session scratchpad `full/<test>.log`, pictures in
+`tools/device/out/1.15/` and `tools/device/out/1.3/`. At 12:22: smoke and sheet-keyboard pass at both sizes,
+stable-controls in progress, no failure so far.
+
+### 6. Rules and traps (kept from the twenty-second session, plus today's)
+
+- Kotlin floor 117; `tools/test-android.sh` prints the count per module and "ran" or "up-to-date"; one
+  forced gate (`ANDROID_TESTS_FORCE=1`) before a release build.
+- Agents: check files against running work before a start and report the list; own test files only; the
+  full gate on `main` alone; one rerun only if every failure is a timeout; a file outside the list means
+  stop and ask; an agent with its own wait timers can loop on its report: tell it not to start any, and stop
+  it with TaskStop if it does. Max 5.
+- Memory: a release build needs it. Stop the emulator and `./gradlew --stop`, look at `free -m`; start a
+  long build detached (`setsid nohup`) and watch it in the foreground, stopping under 4 GB available.
+- A device test that taps by label passes on a button that is a sliver at the screen edge: look at bounds.
+- Dev build: with its process dead a ringing alarm brings up the dev launcher's error screen; use a release
+  build for closed-app behavior. A release build refuses `pitplanner://debug` (5 taps on Gear's version line).
+- `upgrade020.sh setup` needs the release app gone from the test emulator: that uninstall needs his yes each
+  time. `bmgr backupnow` refuses a force-stopped app: open it once first; put the transport back after.
+- Reading 0.2.0's storage off the phone needs a debuggable 0.2.0 build from `legacy/`: not built without
+  his yes (he said no on 2026-11-17). Going back from beta.1 means uninstalling it, which wipes its data.
+- The safety check blocks `rm -rf` on variable paths and `bash -c` scripts that contain `rm`: remove single
+  files with a plain `rm <path>`.
+- Usage: Fable at 3% used on 2026-11-17. `~/.claude/settings.json` has `cleanupPeriodDays: 365`.
+
+## Restart, twenty-third session (written Tuesday 2026-11-17, end of the twenty-second)
 
 `main` is committed and clean. The commits after Jason's push of 2026-11-17 are docs only and **not
 pushed** (check `git log origin/main..main`). The last gate on code was the forced one
