@@ -425,6 +425,23 @@ test('live warnings: several long holds are one sentence, each hold note inside 
   );
 });
 
+// Jason, 2026-11-17: Done on a pull takes the tap time; a hold a fraction of a minute past its limit rounds up.
+test('live warnings: a hold a fraction of a minute past the limit rounds up, alone and with others', () => {
+  // The wings off at 4:29:42 PM, serve 5:00 PM: a 30.3 min hold, limit 30.
+  const wingsOnly = markPullDone(rules, input, plan, 'w', at(16, 29) + 42_000);
+  assert.equal(
+    liveWarnings(wingsOnly, plan, [], at(16, 30), units)!.text,
+    'Long hold: chicken wings 31 min, limit 30 min.',
+  );
+  const two = markPullDone(rules, input, pulledEarly, 'w', at(16, 29) + 42_000);
+  assert.equal(
+    liveWarnings(two, plan, [], at(16, 30), units)!.text,
+    'Long hold: brisket 5 hr 10 min (limit 4 hr, keep above 140F), chicken wings 31 min (limit 30).',
+  );
+  // Exactly 30 min: no warning.
+  assert.equal(liveWarnings(markPullDone(rules, input, plan, 'w', at(16, 30)), plan, [], at(16, 30), units), null);
+});
+
 test("live warnings: Jason's example, brisket 5 hr 10 min and wings 35 min, the note in the brisket's brackets", () => {
   // The brisket off at 11:30 AM and the wings off at 4:25 PM, serve 5:00 PM.
   const two = markPullDone(rules, input, pulledEarly, 'w', at(16, 25));

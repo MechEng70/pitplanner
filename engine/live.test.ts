@@ -199,6 +199,17 @@ test('long hold on Plan: one warning per food; a food that holds poorly keeps it
   );
 });
 
+// Jason, 2026-11-17: Done on a pull takes the tap time, so a hold can be a fraction of a minute past its
+// limit. The minutes round up, so the sentence never reads as if the hold were at the limit.
+test('long hold on Plan: a hold a fraction of a minute past the limit rounds up', () => {
+  const holds = (p: Plan) => p.warnings.filter(w => w.code === 'HOLD_TOO_LONG').map(w => w.message);
+  // Wings off at 4:29:42 PM, serve 5:00 PM: a 30.3 min hold, limit 30.
+  const over = markPullDone(rules, input, plan, 'w', local(16, 29) + 42_000);
+  assert.deepEqual(holds(over), ['Long hold: chicken wings 31 min, limit 30 min.']);
+  // Exactly 30 min is not past the limit.
+  assert.deepEqual(holds(markPullDone(rules, input, plan, 'w', local(16, 30))), []);
+});
+
 test('long hold on Plan: two of a food read by their labels', () => {
   const p = buildPlan(
     rules,

@@ -56,14 +56,18 @@ export interface HeldFood {
  * is written in that one unit; otherwise it keeps it: "chicken wings 1 hr 5 min (limit 30 min)", "brisket
  * 6 hr 10 min (limit 4 hr)". A food's hold note goes inside its own brackets after the limit: "brisket 5 hr
  * 10 min (limit 4 hr, keep above 140F), chicken wings 35 min (limit 30)."
+ *
+ * The hold rounds up to the minute (Jason, 2026-11-17): Done on a pull takes the tap time, so a hold 30.3 min
+ * past a 30 min limit reads "31 min", never as if it were at the limit. Only the hold; the limit is whole.
  */
 export function longHold(foods: HeldFood[]): string {
+  const held = (f: HeldFood) => durationText(Math.ceil(f.holdMin));
   if (foods.length === 1) {
     const f = foods[0];
-    return `Long hold: ${f.name} ${durationText(f.holdMin)}, limit ${durationText(f.limitMin)}.`;
+    return `Long hold: ${f.name} ${held(f)}, limit ${durationText(f.limitMin)}.`;
   }
   const parts = foods.map(f => {
-    const hold = durationText(f.holdMin),
+    const hold = held(f),
       limit = durationText(f.limitMin);
     const h = hold.split(' '),
       l = limit.split(' ');

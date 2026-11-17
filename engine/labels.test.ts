@@ -167,6 +167,21 @@ test('long hold, one food: the hold, then ", limit" with its unit', () => {
   );
 });
 
+// Jason, 2026-11-17: a hold a fraction of a minute past its limit reads past it.
+test('long hold: the hold rounds up to the minute, alone and with others', () => {
+  assert.equal(
+    longHold([{ name: 'chicken wings', holdMin: 30.3, limitMin: 30 }]),
+    'Long hold: chicken wings 31 min, limit 30 min.',
+  );
+  assert.equal(
+    longHold([
+      { name: 'brisket', holdMin: 300.2, limitMin: 240 },
+      { name: 'chicken wings', holdMin: 30.3, limitMin: 30 },
+    ]),
+    'Long hold: brisket 5 hr 1 min (limit 4 hr), chicken wings 31 min (limit 30).',
+  );
+});
+
 test('long hold, several foods: one line, each limit in brackets', () => {
   // Both written in min: the limit drops its unit.
   assert.equal(

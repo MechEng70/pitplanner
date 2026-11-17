@@ -277,7 +277,8 @@ function holdsSentence(plan: Plan, itemIds: string[]): string {
   const items = itemIds.flatMap(id => plan.items.filter(i => i.input.id === id));
   const foods: HeldFood[] = items.map(it => ({
     name: it.label ?? inSentence(it.name),
-    holdMin: holdMin(plan, it.input.id),
+    // Unrounded: the sentence rounds the hold up itself.
+    holdMin: (plan.serveAt - it.sliceMin * MIN - it.finish) / MIN,
     limitMin: it.holdLimitMin,
     holdNoteInline: it.holdNoteInline,
   }));
