@@ -151,14 +151,14 @@ describe('Griddle (mockup 18)', () => {
 
   test('Remove griddle takes it out of cookers, and the plan then says a griddle is missing', async () => {
     const { repos } = await show();
-    expect(plan.warnings.some(w => /needs a griddle/.test(w.message))).toBe(false);
+    expect(plan.warnings.some(w => /needs? a griddle/.test(w.message))).toBe(false);
     await fireEvent.press(row(/^Griddle/));
     await press('Griddle', 'button', 'Remove griddle');
     await settle();
     expect(repos.cookers.load()).toEqual({ smoker: cookGear.smoker, oven: cookGear.oven });
     expect(screen.queryByRole('button', { name: /^Griddle/ })).toBeNull();
     expect(row(/^Add a cooker$/)).toBeOnTheScreen();
-    expect(plan.warnings.some(w => /needs a griddle/.test(w.message))).toBe(true);
+    expect(plan.warnings.some(w => /needs? a griddle/.test(w.message))).toBe(true);
   });
 
   test('no Remove when the griddle is the only cooker that can cook', async () => {
