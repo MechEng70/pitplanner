@@ -58,7 +58,7 @@ test and locked-reboot both pass on beta.1.
 | 11 | Claude | `adb -s <phone> shell dumpsys alarm` for the app (read only: nothing pending, so none of the carried-over cook's Saturday alarms is left: the first was Fire the smoker at 6:30 AM; its 5:35 AM prep step is a reminder with no alarm) | |
 | 12 | Jason | Settings: notifications on; battery not restricted; on the app's battery usage page, allow background activity | |
 | 13 | Jason | Gear, 5 taps on the version line: it reads 0.3.0-beta.1 | |
-| 14 | Jason | Load Saturday's plan (above). Start cook. If a sheet "Alerts may not ring" shows, tap **Start anyway** and note it here: ____ (in beta.1 its second button, Start cook, is pushed off the right edge at larger font sizes; known, fixed after the readout; it should not show if step 12's settings are on). Write the times in the table below | |
+| 14 | Jason | **First swipe the app away and open it again** (in beta.1 Start cook does nothing once a cook has been started and ended in the same run of the app; found 2026-11-17, fix after the readout). Load Saturday's plan (above). Start cook. If a sheet "Alerts may not ring" shows, tap **Start anyway** and note it here: ____ (in beta.1 its second button, Start cook, is pushed off the right edge at larger font sizes; known, fixed after the readout; it should not show if step 12's settings are on). Write the times in the table below | |
 | 15 | Claude | `adb -s <phone> shell dumpsys alarm` for the app (read only): no Pit Planner alarm before 7:30 AM Saturday; the first is Fire the smoker at 7:50 AM. If any alarm is earlier, stop and tell Jason before he unplugs. Then unplug | |
 
 ## Saturday

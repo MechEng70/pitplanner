@@ -91,6 +91,10 @@ Branches only until the readout passes; then merge one at a time, the gate after
 - [ ] **`.gitignore`:** add `.claude/worktrees/` and `.claude/settings.local.json` with the first merge after
       the readout; confirm `git status` no longer shows them. (Checked 2026-11-17: `.claude/` holds only
       `worktrees/`; nothing else is there to ignore or track.)
+- [ ] **Start cook dead after one cook (found by Jason on his phone, 2026-11-17; must be in 0.3.0).** The
+      double-tap guard in `src/screens/plan/PlanTab.tsx` is never cleared after a cook starts, so Start cook
+      does nothing after that cook ends until the app is restarted. Failing Jest test first (start, end,
+      start again, mounted throughout), the fix, a device check that starts two cooks in one app launch.
 - [ ] **Sheet buttons in "Start over?" and "Alerts may not ring"** (same bug as Replace: the second button a
       24 px sliver at the right edge at 115%). Fixed on the Replace branch, each with a failing test first;
       all three merge together and must be in 0.3.0 on Monday. Device checks at merge (115% and 130%): in
