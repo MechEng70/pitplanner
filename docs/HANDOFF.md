@@ -1,4 +1,4 @@
-# Handoff (2026-11-17: 0.3.0-beta.1 built and on Jason's phone; freeze until Sunday's readout; fourteen branches parked)
+# Handoff (2026-11-17: BLOCKER first: Start cook does nothing on Jason's phone with beta.1; freeze until Sunday's readout; fourteen branches parked)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
@@ -11,6 +11,53 @@ was the forced one (`ANDROID_TESTS_FORCE=1 npm run check`) on `ab7c9fd`: engine 
 Jest 913, Kotlin 117 (pit-alarms 68, pit-legacy 9, pit-share 40, all "ran"), Snyk 26 projects, none skipped.
 Emulators and Metro are stopped. No agent is running. Fourteen agent branches are parked, none merged; their
 worktrees are under `.claude/worktrees/`. `dashboard.html` is current.
+
+### 0. BLOCKER, reported by Jason at the end of the session (2026-11-17, about 2:50 PM): Start cook does nothing on his phone
+
+**His words:** "the version that you put on my phone DOES NOT start cook. when you click it, it does
+nothing. cook tab is empty." That is 0.3.0-beta.1 on his phone, installed over 0.2.0 at 11:30 AM. Nothing
+was looked at on the phone after he said it (no phone action without a list and his yes). **This blocks
+Friday's step 14 and Saturday's staged cook, so it is the first thing to do**, and a fix is allowed under
+the freeze with his yes (it needs a new build, beta.2: never rebuild beta.1 under the same name; then the
+forced gate, the upgrade test, locked-reboot, and the phone install again).
+
+**Not known yet (ask him first; one line each):** is Start cook greyed out or does it look normal; does the
+Cook tab say "No cook running" with a Go to Plan button, or is it blank; does Plan show the five foods and
+fire time; what font size is the phone on.
+
+**What the code says (read, not run):**
+- Start cook is disabled when there is no plan or a cook is running:
+  `disabled={!plan || state.cook != null}` (`src/screens/plan/PlanScreen.tsx:220`). A disabled button "does
+  nothing".
+- The Cook tab shows Live cook when a cook exists, else "No cook running" (`src/screens/cook/CookScreen.tsx:97`).
+- His phone's 0.2.0 data held a **running cook** (started Sun Nov 15 10:49 AM, serve Sat Nov 21 5:00 PM,
+  250F, five foods, 28 steps, none done; `tools/device/out/t064-2026-11-15/CapacitorStorage.xml`, key
+  `activeCook`). The import keeps a running cook (`src/db/legacyImport.ts:208-214`). He was told that morning
+  that with it running Start cook would be greyed out, and that he keeps it until Friday's step 10.
+
+**Leads, none confirmed:**
+1. The carried-over cook is running, so Start cook is disabled by design, but Live cook shows nothing for
+   that cook (blank instead of Next up). Then the bug is in showing an imported 0.2.0 cook: its saved shape
+   lacks fields added since (the import normalizes it), or the new re-derive of a running cook's oven on
+   load (`withSafeOvenHold`, merged 2026-11-17, review finding 7) or a T-076 field breaks it.
+2. No cook is kept and the plan cannot be built from the imported draft (five foods at 250F, tri-tip on the
+   griddle sear, 22 in griddle with 2 burners), so `plan` is null and Start cook is disabled, with nothing on
+   screen saying why.
+3. Start cook is enabled and the start fails without a message (alarms could not be set, or the "Alerts may
+   not ring" sheet: its Start cook button is the off-screen one, but the sheet itself would show).
+
+**Why the day's tests did not catch it:** every emulator test of beta.1 started from clean or scripted data
+(locked-reboot starts a cook on beta.1 and passes; the upgrade test's 0.2.0 data had `runningCook: false`).
+The one device test that imports a running cook (`legacy-import`) failed that day on its dated fixture and
+only looks at the alarm count. No test opened Live cook on an imported running cook with steps still ahead.
+
+**Reproduce without the phone (first step next session, emulator only, memory free first):** install the
+real 0.2.0 APK on the test emulator (the release app there must be uninstalled first: Jason's yes each
+time), put the 2026-11-15 copy of his phone's 0.2.0 storage in place as root (`CapacitorStorage.xml` into
+`shared_prefs/`, `history.json` into `files/`, owned by the app; the copy is git-ignored and stays local),
+install `release/pitplanner-0.3.0-beta.1.apk` over it, open it: Plan, Start cook, the Cook tab; read
+`logcat` for a JS error. Then a failing test first (a Jest test that loads that cook shape into Live cook
+and Plan, with the copy's structure but no personal data), the fix, the gate, and beta.2.
 
 ### 1. The freeze and the dates
 
