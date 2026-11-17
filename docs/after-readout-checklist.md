@@ -67,3 +67,29 @@ deletes. Nothing is deleted before his yes.
 - Delete once the readout no longer needs it: the 2026-11-15 phone data capture
   (`tools/device/out/t064-2026-11-15/`).
 
+## Fixes and checks after the readout (from Jason's stacked look, 2026-11-17)
+
+Branches only until the readout passes; then merge one at a time, the gate after each.
+
+- [ ] **Replace button off-screen (real bug, must be in 0.3.0 on Monday).** In Gear, Restore from a file,
+      "Replace your data?" at 115%: Replace is pushed off the right edge, only a sliver shows
+      (`tools/device/out/checks-2026-11-17/t036-restore-confirm.png`). Opus agent, failing test first, on a
+      branch. At merge: add a device check to the `gear` test (Replace's bounds fully inside the screen and
+      clear of Cancel), run `gear` at 115% and 130%, Jason's look.
+- [ ] **Plural food names.** "Chicken breasts needs a griddle." must read "need", and "it" must read "them";
+      every sentence with a food as its subject. Opus agent, failing test first, on a branch. At merge: SPEC
+      and the device test lines that quote the old words.
+- [ ] **Lane chart, for his decision (report only, nothing fixed):** the tri-tip's short smoke bar shows only
+      "s" (the label does not fit). The picture `t075-lanes-climb.png` was taken after the finding-3 fix; it
+      shows the 2:50 to 3:15 PM share note because that is the next stretch at the start of the cook, and
+      that plan has no clash during the climb (the brisket is off at 3:40 PM, before the climb). A picture
+      of the climb clash note itself needs a cook where the brisket runs late: take one on the emulator.
+- [ ] **Cook finished at 115%:** checked on the emulator on 2026-11-17: the rate card scrolls fully into
+      view above the buttons (card text ends at 889 px, the notes field follows, Save to history starts at
+      1430 px; picture `cook-finished-scrolled.png`). As opened, its last lines sit under the fade over the
+      pinned buttons. Nothing to fix unless Jason wants the card whole without scrolling.
+- [ ] **`.gitignore`:** add `.claude/worktrees/` and `.claude/settings.local.json` with the first merge after
+      the readout; confirm `git status` no longer shows them. (Checked 2026-11-17: `.claude/` holds only
+      `worktrees/`; nothing else is there to ignore or track.)
+- [ ] **`CLAUDE.md`, Models and agents:** an agent that needs a file outside its list stops and asks first.
+
