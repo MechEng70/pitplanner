@@ -326,6 +326,20 @@ test('share: a tri-tip with no smoker never falls to the griddle sear: it needs 
   }
 });
 
+// Jason, 2026-11-17: one food with a plural name is "need", not "needs" ("St. Louis ribs need a smoker"). A
+// gap says so from the food's flag; a singular food's gap is as it was.
+test('share: a gap for a food with a plural name is marked plural; a singular one is unchanged', () => {
+  const ribs = file({ items: [{ foodId: 'stlribs', methodId: '221', quantity: 3 }] });
+  const r = importPlan(rules, opened(parsePitPlan(rules, ribs, id)), { griddle });
+  assert.deepEqual(r.gaps, [{ foodName: 'St. Louis ribs', cooker: 'smoker', plural: true }]);
+  const none = mapToCookers(rules, opened(parsePitPlan(rules, file(), id)).items, {});
+  assert.deepEqual(none.gaps, [
+    { foodName: 'Brisket', cooker: 'smoker' },
+    { foodName: 'Chicken wings', cooker: 'smoker', plural: true },
+    { foodName: 'Chicken breasts', cooker: 'griddle', plural: true },
+  ]);
+});
+
 test('share: a brisket-style tri-tip stays as sent and says nothing, with or without a griddle', () => {
   for (const cookers of [{ smoker: upTo(425) }, { smoker: upTo(425), griddle }, { smoker: traeger, griddle }]) {
     const r = importPlan(rules, opened(parsePitPlan(rules, tritipFile('brisketStyle'), id)), cookers);

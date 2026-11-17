@@ -235,6 +235,20 @@ describe('Shared plan sheet', () => {
     expect(screen.queryByText('Cook the smoker items on')).toBeNull();
   });
 
+  // Jason, 2026-11-17: one food with a plural name agrees as a plural: "need", not "needs".
+  test('one food with a plural name and no cooker to move to: "need a smoker"', async () => {
+    const ribs = { id: 'r', foodId: 'stlribs', methodId: '221', quantity: 3 };
+    await show({ griddle: defaultGriddle() }, { shared: sharedOf(fileText({ items: [ribs] })) });
+    expect(screen.getByText('No smoker set up.')).toBeOnTheScreen();
+    expect(screen.getByText('St. Louis ribs need a smoker. Add one in Gear.')).toBeOnTheScreen();
+  });
+
+  test('two foods with no cooker to move to: "need a smoker", as before', async () => {
+    const ribs = { id: 'r', foodId: 'stlribs', methodId: '221', quantity: 3 };
+    await show({ griddle: defaultGriddle() }, { shared: sharedOf(fileText({ items: [MENU[0], ribs] })) });
+    expect(screen.getByText('Brisket and St. Louis ribs need a smoker. Add one in Gear.')).toBeOnTheScreen();
+  });
+
   test("the smoker items go on the receiver's smoker", async () => {
     await show(noGriddle);
     expect(screen.getByText('Cook the smoker items on')).toBeOnTheScreen();
@@ -498,7 +512,9 @@ describe('Plan tab with an opened file', () => {
     await settle();
     expect(sheet('Conflicts')).toBeOnTheScreen();
     expect(
-      screen.getByText(/^Long hold: chicken breasts .*, limit 20 min\. Move it to the griddle or start it later\.$/),
+      screen.getByText(
+        /^Long hold: chicken breasts .*, limit 20 min\. Move them to the griddle or start them later\.$/,
+      ),
     ).toBeOnTheScreen();
   });
 
