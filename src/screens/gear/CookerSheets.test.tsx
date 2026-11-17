@@ -24,7 +24,7 @@ const settle = () => act(() => jest.advanceTimersByTime(SHEET_OUT_MS));
 
 const METRIC: Units = { temp: 'C', weight: 'kg' };
 const unverified = cookers.smokers.find(s => !s.verified)!;
-const verified = cookers.smokers.find(s => s.verified && s.id !== 'pitboss-820')!;
+const verified = cookers.smokers.find(s => s.id === 'pitboss-sportsman-850')!;
 const nameOf = (s: { brand: string; model: string }) => `${s.brand} ${s.model}`.trim();
 
 /** The plan the store's gear gives for the Saturday menu (brisket, wings, breasts): what Plan would build. */
