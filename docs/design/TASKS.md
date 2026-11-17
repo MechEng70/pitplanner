@@ -3659,3 +3659,34 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Not changed (Jason):** the status pill stays as it is while a conflict shows.
 - **Files:** `src/screens/cook/CookScreen.tsx`, `src/lib/cookView.ts`, `data/foods.json`, tests.
 - **Device testing:** re-shoot `docs/fidelity/rn-12-live-warned.png` and `rn-12-live-conflict.png` at 115%.
+
+### T-082 Temp step question on Setup's smoker card and in Gear
+- **Status:** mockups first (a proposal in `docs/proposals/2026-11-17-temp-step/`, Fable agent, 2026-11-17);
+  no code before Jason's OK on the PNGs. Built on a branch, merged only after Sunday's readout (the beta.1
+  freeze holds), then the emulator Setup run at 115% and his look. Ships in 0.3.0 on Monday 2026-11-23; if
+  anything slips it goes to 0.3.1 and the release-note line covers beta.1.
+- **Why:** a verified catalog pick fixes the temp step (5F for the Sportsman 850) and nothing lets the user
+  change it: Setup's card edits hopper and grate only (`Setup.tsx:228-249`), Gear's smoker row only opens
+  the picker (`CookerSheets.tsx:32`), and the one "Temp step" field is in the manual form
+  (`SmokerPicker.tsx:219-222`). Pit Boss steps vary by controller board and firmware.
+- **Jason's decisions (2026-11-17):** under the picked model, the question "What steps does your smoker set
+  in?" with a Segmented: 5 / 10 / 15 / 25 / Other, in the user's display unit (5F, 10F, 15F, 25F or 5C, 10C,
+  15C, 25C; in Celsius display no F anywhere). Stored as F: 5C = 9F, 10C = 18F, 15C = 27F, 25C = 45F, exact
+  under today's storage; no engine storage change. Prefilled from the catalog's step; in Celsius the
+  matching C choice is selected only if exact, otherwise none. Other opens a two-field sheet (Temp step,
+  Dial settings), not the full manual form: the card keeps the catalog model's name and specs, only the
+  step changes. In Gear the smoker row opens a small Smoker sheet (the model and the question), like
+  Griddle and Oven; no inline version. Existing kit parts only.
+- **Celsius display (Jason, 2026-11-17; into SPEC "Units" at build):** when the saved step is a C step the
+  temp menu shows the grid's exact C values (85, 90, 95); otherwise his 2C rounding rule stays.
+- **Engine, with the build:** for a C step the grid starts at the first multiple of the step at or above the
+  lowest temp in C (82.2C with a 5C step starts at 85). Failing test first.
+- **Tests:** prefill, each choice, Other opens the form, the saved step drives TempMenu, the Celsius display.
+- **For 0.3.0-beta.1:** the user guide and release notes say: If your smoker's temps go up in different
+  steps than the app shows, pick "Not listed? Enter it yourself" and set your own step.
+- **Known bug, not fixed in 0.3.0 (no tester uses Celsius; fix in 0.3.x):** the manual form stores a Celsius
+  step as a whole number of F, so 1C to 4C steps drift off the smoker's grid (1C as 2F, 2C as 4F). Recorded
+  as two `test.failing` cases in `src/screens/setup/SmokerPicker.test.tsx`. First real case for a C grid: the Z Grills
+  Australia wireless controller (450A, 7002B, 700E) sets in 1C increments
+  (https://help.zgrills.com.au/?p=3624).
+

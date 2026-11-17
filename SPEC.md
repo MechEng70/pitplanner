@@ -24,7 +24,7 @@ Reference implementation of the scheduling rules: `reference/cook-day-planner.ht
 | Scheduling | Plan to finish on time (no deliberate early cushion). The rest/hold is the only buffer. |
 | Timing model | Per food, three choices: Hours per pound (default for by-weight foods), Total hours (any food: the user's time on heat, used as-is) and Size-adjusted (time ~ weight^0.67, open from the first cook). The rate or total can apply to one cook or be saved for future cooks (Gear, Cook rates). New users start on published rates with a one-time hint that most pellet smokers run faster. |
 | Units | Fahrenheit and Celsius, pounds and kilograms. Stored as F and lb; converted at display. Smoker and oven set points show in 5F steps (the cooker's own) or, in Celsius, in 2C increments. |
-| Smoker temp | Dropdown in the cooker's own steps (5F on Jason's Pit Boss Sportsman 850), not three fixed buttons. Each option shows its fire time. |
+| Smoker temp | Dropdown in the cooker's own steps (5F on Jason's smoker, a Pit Boss Sportsman 820 with a newer controller card, saved as the Sportsman 850 entry), not three fixed buttons. Each option shows its fire time. |
 | Pause | No "pause". Instead: Running behind/ahead, Quiet alerts, Pit went out, Start over, End cook. |
 
 ## 2. Architecture
@@ -185,7 +185,7 @@ A change that makes a smoker conflict the plan did not have at Start cook, or a 
 ## 12. Open items
 
 - Confirm the GitHub repo name. Assumed: github.com/MechEng70/pitplanner (update check reads its latest release).
-- Verified specs (hopper, grate, temp step or presets, range) for every picker entry except the Pit Boss Sportsman 850 and 820 (the 820's 5F step is not confirmed). Until verified, fields stay blank for the user to fill in.
+- Verified specs (hopper, grate, temp step or presets, range) for every picker entry except the Pit Boss Sportsman 850, the one verified entry. The Pit Boss 820 is not verified since 2026-11-17: its size, hopper and range are sourced, but its temp setting depends on the controller (a dial with presets on the PB820SC board, 180-500F on the PB820D3), so the user fills in a step or dial settings. Until verified, fields stay blank for the user to fill in. A verified pick's temp step cannot be changed on the entry in 0.3.0-beta.1: the user picks "Not listed? Enter it yourself" and sets their own step (T-082 adds the question to Setup and Gear).
 - App icon.
 - Pellet burn rates (1.5 and 3 lb/hr) are estimates; learn them from logged refills.
 

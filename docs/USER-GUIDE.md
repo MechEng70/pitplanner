@@ -46,6 +46,9 @@ In the smoker picker, search by brand or model, or use the chips (All, Pellet, K
 Electric). If your smoker is not in the list, tap Not listed? Enter it yourself and fill in its details. When
 the app knows your model, it fills in the hopper size and the grate area for you. You can edit both.
 
+If your smoker's temps go up in different steps than the app shows, pick "Not listed? Enter it yourself" and
+set your own step.
+
 <!-- SCREENSHOT: setup-alerts | Setup step 3, Make sure alerts get through, three rows and the test button, status bar cropped -->
 
 **Make sure alerts get through.** A 6 AM "wrap the brisket" alert has to ring with the phone asleep. Android

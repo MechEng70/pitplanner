@@ -1,6 +1,8 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import cookers from '../../../data/cookers.json';
+import { settableTemps } from '../../../engine/temps';
 import type { SmokerProfile } from '../../../engine/types';
+import { fToC } from '../../../engine/units';
 import { SHEET_OUT_MS } from '@/components/kit/sheet';
 import type { Units } from '@/lib/format';
 import { SmokerPicker } from './SmokerPicker';
@@ -213,6 +215,29 @@ describe('Smoker picker (mockup 02)', () => {
     const s = onPick.mock.calls[0]![0];
     expect(s).toMatchObject({ minTempF: 176, maxTempF: 500, tempStepF: 9 });
     expect(s.hopperLb).toBeCloseTo(19.84, 2);
+  });
+
+  // Known bug (found 2026-11-17, not fixed before 0.3.0-beta.1; T-082 decides how): the form stores a
+  // Celsius step as a whole number of F (1C as 2F, 2C as 4F), so the temps the menu offers drift off the
+  // smoker's Celsius grid. Only steps that are multiples of 5C (9F each) are stored exactly. These two tests
+  // say what must hold and are marked failing until the engine can hold a Celsius step.
+  test.failing.each([
+    [1, [80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90]],
+    [2, [80, 82, 84, 86, 88, 90, 92, 94, 96, 98, 100]],
+  ])('metric: a %iC step offers every step on the Celsius grid', async (stepC, wantC) => {
+    const { onPick } = await show(METRIC);
+    await fireEvent.press(screen.getByRole('button', { name: 'Not listed? Enter it yourself' }));
+    await type('Name', 'Mine');
+    await type('Lowest temp (C)', '80');
+    await type('Highest temp (C)', '260');
+    await type('Temp step (C)', String(stepC));
+    await fireEvent.press(save());
+    await settle();
+    const s = onPick.mock.calls[0]![0];
+    const offeredC = settableTemps(s)
+      .slice(0, wantC.length)
+      .map(f => Math.round(fToC(f)));
+    expect(offeredC).toEqual(wantC);
   });
 
   test('Close on the form ends the flow without a smoker', async () => {
