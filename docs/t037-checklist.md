@@ -52,6 +52,7 @@ not moving). Answer each alert within a couple of minutes. Never open the dev bu
 |---|---|---|---|---|---|
 | 7:50 AM | Fire the smoker to 225F | **Done** on the lock screen | | | |
 | 8:10 AM | Brisket on the smoker | Unlock. **Done** in the app. Lock | | | |
+| 12:00 PM | nothing | Plug the phone in. Claude saves the battery history to a file on the computer: `adb shell dumpsys batterystats --history` (read-only, after Jason's yes). Unplug. Plugging in ends deep idle for that moment, by design: a reboot can drop the newest history entries (seen on the emulator, 2026-11-17), and this keeps the morning's | | | |
 | 12:05 PM | nothing | **Reboot** the phone. Do not unlock it afterwards | | | |
 | 12:15 PM | Check the brisket (wrap) | It must ring while the phone is still locked after the reboot. Note the time. Unlock. Tap **Not yet**, keep serve | | | |
 | about 12:30 PM | Check the brisket again | **Done**. Then Cook options, **Undo** that Done | | | |

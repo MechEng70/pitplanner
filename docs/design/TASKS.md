@@ -3707,6 +3707,18 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   Gear's sheet has no Hopper or Main grate. A plan temp off the new grid keeps the existing warning, no
   snapping. Emulator Setup and Gear at 115% and 130% (Other has about 2 points to spare at 130%), then his
   look.
+- **Built on a branch (2026-11-17, Opus agent):** `worktree-agent-a0ce7915c8c901c69`, commits `9ccece5`
+  (grid rule), `ccded9e` (the display unit decides), `e13e171` (screens). Its own runs: engine 241, Jest
+  945. Not merged: the beta.1 freeze holds until Sunday's readout. Screen tests were written after the
+  screens (checked against the old screens); the engine tests failed first.
+- **His decisions on the build (2026-11-17):** (1) the plan's "cannot be set to" warning stays as built for
+  0.3.0: for a 9, 18, 27 or 45F step it fires only when the temp is off both grids (a stored step unit in
+  0.3.x is the real fix). (2) The two-line edit to `src/screens/plan/PlanScreen.tsx` stays; a file outside
+  an agent's list means stop and ask first, every time. (3) "Sets in 20F steps." and "Has fixed settings:
+  180, 225, 250F." approved; dial settings show the typed values exactly (converted, whole degrees), not
+  the 2C rounding, since they are real dial marks. (4) A Celsius step typed under Other that is not one of
+  the choices, and (5) the Cook screen, shared plan sheet and Cook history still rounding to 2C for a C-step
+  smoker: both left for the 0.3.x Celsius item.
 - **0.3.x Celsius item (not T-082; Jason, 2026-11-17):** store the step's unit so a units switch cannot
   change its meaning; a real C grid in the engine; the manual-form fix above. With the C grid, Celsius gets
   its own choices, proposed 1C / 2C / 5C / 10C / Other (1C: Z Grills Australia, sourced; the others to be

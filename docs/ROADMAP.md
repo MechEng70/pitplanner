@@ -15,6 +15,10 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
 
 - **No task.** Celsius step: store the smoker temp step's unit so a units switch cannot change its meaning,
   and give the engine a real Celsius grid.
+  With it (Jason, 2026-11-17, left out of T-082): a Celsius user who types a step such as 20C under Other
+  sees it on the card ("Sets in 20C steps."; today it is stored as 36F on the F grid and the card shows
+  nothing selected and no line); and the Cook screen, the shared plan sheet and Cook history show a C-step
+  smoker's exact C values instead of the 2C rounding (today they can read 86C where the temp menu reads 85C).
   Why: a step set in C must stay a C step. Blocked on: nothing for the engine; see the next item.
   Source: Jason, 2026-11-17 (T-082 entry in TASKS).
 - **No task.** Celsius step choices: 1C / 2C / 5C / 10C / Other. Fahrenheit stays 5 / 10 / 15 / 25 / Other.
