@@ -397,7 +397,7 @@ function alertsSubtitle(s: AlarmStatus | null): string {
 
 /**
  * "Replace your data?" (Jason, 2026-11-16): what the file holds and when it was made, and a line when parts
- * of it were left out. Laid out as Start over? in Cook options: the text, then Cancel and Replace.
+ * of it were left out. Laid out as Start over? in Cook options: the text, then Cancel and Replace side by side.
  */
 function ReplaceSheet({ check, onReplace, onClose }: { check: Checked; onReplace: () => void; onClose: () => void }) {
   const date = check.exportedAt == null ? null : fmtMonthDay(check.exportedAt);
@@ -416,14 +416,21 @@ function ReplaceSheet({ check, onReplace, onClose }: { check: Checked; onReplace
   );
 }
 
+/**
+ * The sheet footer is a row, and `block` alone is `w-full` with React Native's flexShrink 0: two of them are
+ * each as wide as the row and the second starts off screen (T-036, emulator at 115%). As ui.css
+ * `.sheet-foot .btn.block`, the two share the row: width auto, flex 1, free to shrink below their text.
+ */
+const SHARE_ROW = 'w-auto min-w-0 flex-1';
+
 function ReplaceButtons({ onReplace }: { onReplace: () => void }) {
   const sheet = useSheet();
   return (
     <>
-      <Button kind="text" block onPress={() => sheet.close()}>
+      <Button kind="text" block className={SHARE_ROW} onPress={() => sheet.close()}>
         <Text>Cancel</Text>
       </Button>
-      <Button block onPress={() => sheet.close(onReplace)}>
+      <Button block className={SHARE_ROW} onPress={() => sheet.close(onReplace)}>
         <Text>Replace</Text>
       </Button>
     </>
