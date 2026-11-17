@@ -77,7 +77,11 @@ not moving). Answer each alert within a couple of minutes. Never open the dev bu
 
 0.3.0 does not re-plan while the app is closed (that is T-078, for 0.3.x). So:
 
-1. The alert goes away, and the wings crisp step rings again 15 minutes after the tap (within a minute).
+1. The alert goes away, and the wings crisp step rings again about 15 minutes later, once. With the app
+   still closed it rings 15 minutes after the tap, to the second. Once the app has been opened and has
+   re-planned (step 3), it rings 15 minutes after the step's planned time instead, so tap within a minute
+   of the ring and the two agree within a minute. (Seen on the emulator, 2026-11-17: ring 9:35:00, tap
+   9:35:59, app opened 9:42, second ring 9:50:00, nothing at 9:51.)
 2. No other alarm moves while the app stays closed. Fire the griddle still rings at the time it had before
    the tap.
 3. When the app is opened (after Fire the griddle rings), it applies the tap: Live cook shows one notice, the wings step is 15
@@ -95,6 +99,13 @@ holds can absorb it and moves serve later when they cannot; the wings hold 5 min
 SPEC section 5 says the same. (SPEC's "the lock screen always keeps serve" is about a step marked Done
 early, which never moves serve earlier.) This expectation is from reading the code. It is checked on the emulator before Saturday; if the emulator
 shows something else, this section is corrected first.
+
+Checked on the emulator on 2026-11-17 (dev build, the app's process killed): points 1 to 3 hold; the notice
+read "Wings crisp at 400F: moved 15 min from the alert. Serve moved to 10:30 AM. The other foods moved with
+it."; the alarms were set once at the new times. A second +15 with the app kept closed rang 15 minutes after
+the tap and is in the ring log with source `snooze`. Not checked there: Done on Fire the griddle from the
+lock screen before opening the app. With two alerts waiting, Android may group them and hide Done and
++15 min until the alert is pulled open.
 
 ## Sunday readout (Claude, phone plugged in, each line read only and after Jason's yes)
 
