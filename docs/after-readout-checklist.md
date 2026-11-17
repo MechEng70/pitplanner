@@ -115,6 +115,12 @@ Branches only until the readout passes; then merge one at a time, the gate after
       release APK over a running cook and read `dumpsys alarm` without opening the app: every alarm still to
       come is registered again. `pit-alarms` does this in `RestoreReceiver` on `MY_PACKAGE_REPLACED`
       (`Receivers.kt:107`), proven by Robolectric tests and once by hand on his phone (beta.1 to beta.2).
+      **Also the 0.2.0 window, on beta.2 (Jason, 2026-11-17):** install beta.2 over a running 0.2.0 cook and
+      do not open the app; a step must ring before the first open (0.2.0's alarms are dropped by the update
+      and put back from 0.2.0's own stored set, same receiver names, actions and store). Registration in that
+      window was shown on alpha.3 (`docs/alarm-testing.md`, "Upgrade with a live cook"); a ring before the
+      first open has never been run, and `upgrade020.sh check` opens the app at once, so it needs its own
+      step. Not run on 2026-11-17 (his order).
 - [ ] **A start that fails shows nothing** (`newCook`, the store's save or the alarm sync throwing is an
       unhandled rejection). Whether it gets a message is Jason's call, after Sunday; new UI needs his words.
 - [ ] **Device rig fixes from the full pass of 2026-11-17** (HANDOFF section 5): date the legacy-import

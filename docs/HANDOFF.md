@@ -1,9 +1,91 @@
-# Handoff (2026-11-17: first, finish beta.2: the Start cook fix is committed and gated, Jason runs the build; freeze until Sunday's readout; fourteen branches parked)
+# Handoff (2026-11-17 evening: 0.3.0-beta.2 is verified and on Jason's phone; freeze until Sunday's readout; next is Friday's checklist; fourteen branches parked)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## Restart, twenty-fourth session (written Tuesday 2026-11-17, afternoon; read this first)
+## Restart, twenty-fifth session (written Tuesday 2026-11-17, evening; read this first)
+
+**State.** `main` is committed and clean (only `.claude/` untracked). The commits not pushed yet are listed by
+`git log origin/main..main`: one tooling fix (`1cecd97`) and docs. Jason pushes or asks for the push. The last
+gate on code was on `1cecd97`, run under a pseudo-terminal: engine 229, gate self-tests 154, Jest 914, Kotlin
+117 (pit-alarms 68, pit-legacy 9, pit-share 40, all "ran"), Snyk 26 projects, none skipped. Everything after
+it on `main` is docs. Emulators and Metro are stopped, the Gradle daemons are stopped, no agent is running.
+Fourteen agent branches are parked, none merged. `dashboard.html` is current.
+
+**Nothing is owed today. The freeze holds until Sunday's readout. Next: Friday 2026-11-20,
+`docs/t037-checklist.md`, steps 3 and 8 to 15, on Jason's phone, every adb line after his yes.**
+
+The sections of the twenty-fourth session below still hold (1 the freeze and the dates, 2 parked branches,
+3 owed, 4 decisions waiting on Jason, 5 the device pass, 6 rules and traps), with what follows.
+
+### A. What changed on 2026-11-17 (session twenty-four)
+
+- **0.3.0-beta.2 is built, verified and on Jason's phone** (`release/pitplanner-0.3.0-beta.2.apk`, SHA-256
+  `e27ea9b350ee9ddb04cd876acdcde6fe1c0fce31170de072df83df6f0958b242`, 300302; on the phone since 4:10 PM).
+  Saturday runs on beta.2. beta.1's APK stays on disk until he approves the cleanup list. All checks pass:
+  verify, upgrade from 0.2.0, start-end-start on the release build, locked-reboot 6 of 6, and a running 0.2.0
+  cook with steps ahead carried over with its first step ringing on time (details: section 0 below and TASKS
+  T-038).
+- **The cook on his phone is a beta.1 cook**, started Tue 2:53 PM: serve Sat Nov 21 5:00 PM, 250F, five foods,
+  18 alarms, the first Fire the smoker at Saturday 8:55 AM. No 0.2.0 cook came across (it had been ended in
+  0.2.0). Friday's steps 9 to 11 use this cook; step 10 holds the phone's start, end, start check; step 14
+  needs no swipe-away. He does no start, end, start on the phone before step 10.
+- **The 8:55 AM question is closed: not a blocker, no code change** (section 0 below has the proof chain).
+- **His wife's phone:** beta.2 on Sunday is the approved plan; nothing goes on it before he says so.
+- **T-082 branch** (`worktree-agent-a0ce7915c8c901c69`): read by the main session, his four decisions applied
+  on the branch, head `5334d83`, 6 commits; its own runs engine 241, Jest 952; merges clean with `main`, the
+  sheet-buttons branch and the plural branch. Not merged. At merge: SPEC "Units", emulator Setup and Gear at
+  115% and 130%, his look. Two choices of mine inside his decisions that he has not answered (TASKS T-082):
+  a step counts as the catalog's own in Celsius only when it equals the catalog step for that model; the
+  Other sheet is prefilled only when Other is what is saved.
+- **New backlog, docs only:** T-083 bacon and baked potato on the smoker at 350F (after 0.3.0, decide with
+  the wings proposal); iOS through a free Apple Personal Team (`docs/design/BACKLOG.md`, no task yet).
+- **New items in `docs/after-readout-checklist.md`:** the locked-reboot rig's 20 minute guard; a device test
+  for updating the release app with a cook running, including the 0.2.0 window on beta.2 with a step ringing
+  before the first open (not run, his order); whether a failed start gets a message (after Sunday).
+- **For 0.3.1, in the Celsius item (TASKS T-082):** `src/lib/sharedPlan.ts:242` and
+  `src/screens/gear/HistoryScreen.tsx:536` read the grid in F only.
+
+### B. Waiting on Jason, added today (one line each)
+
+- T-083: bacon regular or thick cut; potato size, foil or bare; the quantity unit for each; where a potato
+  sits in Add food (a new group is new UI).
+- iOS: the MacBook's model and macOS version.
+- T-082: the two choices above, if he wants either changed.
+- A start that fails shows nothing: does it get a message (after Sunday; new UI needs his words).
+
+### C. Rules and traps added today
+
+- **A terminal is not a session.** `node --test` on a terminal sets `FORCE_COLOR` for its test files; Jason's
+  first release run failed in the gate for that reason only. To run anything as his terminal does:
+  `python3 -c "import pty,os,sys; sys.exit(os.waitstatus_to_exitcode(pty.spawn(['npm','run','check'])))"`
+  (`script` is not installed). A shell capture of a number from `node -e` prints it as a string.
+- **His phone stays attached while the emulator runs:** every adb line names its serial
+  (`adb -s emulator-5554 ...`); in zsh a command kept in a variable is not split into words, so use a function.
+  `"${BRANCH}:path"` with braces for `git show` (zsh reads `$B:s...` as a modifier).
+- **Never say what is on the phone from a copy.** The morning's "a 0.2.0 cook came across" was read from
+  Sunday's copy and was wrong. The debug file (Gear, 5 taps on the version line, Send to developer) shows the
+  truth: the import report, the stored cook and plan, the rates, the event log. Item ids tell the maker:
+  UUIDs are made by 0.2.0 only, ids starting with "i" by 0.3.0. His files (`~/Downloads/PitPlanner`, and
+  `tools/device/out/t064-2026-11-15/`) are his data: read in place, never copied into the repo; a local test
+  that reads them lives in the session scratchpad, not in `src/`.
+- **`upgrade020.sh check` force-stops the app,** and Android drops a force-stopped app's alarms: open the app
+  once more before reading `alarms`. `setup` needs the release app gone from the test emulator, and that
+  uninstall needs his yes each time (given twice on 2026-11-17, once per run).
+- **`locked-reboot.sh` stops at its 20 minute guard on about 3 starts in 10.** Until the rig fix, start it at
+  a quarter past a minute ending in 4 or 9 (for example 3:49:15): the first alarm is then about 18 minutes out.
+- **A freeze exception for tooling** that blocks a build he asked for is allowed (his words, on `1cecd97`);
+  say so at once. Docs he asks for are committed. Code for a parked branch goes on that branch in its own
+  worktree, its own tests only, no gate there; a shell that `cd`s into a worktree stays there, so go back.
+- **Screen tests are written first too,** not only engine tests (Jason, on the T-082 branch).
+- **Phone actions:** the approved list is the whole list. A read I offered and he did not answer was not run.
+
+### D. To start the next session
+
+Jason clears the conversation and says: "Read CLAUDE.md, then docs/HANDOFF.md and follow its top section,
+'Restart, twenty-fifth session'." On Friday he adds: "Start the Friday table of docs/t037-checklist.md."
+
+## Restart, twenty-fourth session (written Tuesday 2026-11-17, afternoon)
 
 One long working day (sessions twenty-two and twenty-three ran together). `main` is committed and clean;
 the commits after Jason's last push are docs plus the Start cook fix `d2fdccc` (check
@@ -12,7 +94,7 @@ on `d2fdccc`: engine 229, gate self-tests 153, Jest 914, Kotlin 117 (pit-alarms 
 Emulators and Metro are stopped. No agent is running. Fourteen agent branches are parked, none merged; their
 worktrees are under `.claude/worktrees/`. `dashboard.html` is current.
 
-### 0. First thing: finish beta.2 (the Start cook fix is committed and gated; the build is Jason's to run)
+### 0. Done on 2026-11-17, kept for the record: beta.2 (the Start cook fix, the build, the checks, the phone)
 
 **The bug (found by Jason on his phone with 0.3.0-beta.1, 2026-11-17):** in one run of the app the first
 Start cook works; after that cook ends (End cook then Save or Discard, or Start over) Start cook looks
