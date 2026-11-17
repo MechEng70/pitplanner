@@ -113,6 +113,13 @@ describe('Timing', () => {
     expect(onSave.mock.calls[0][0].hrPerLb).toBeUndefined();
   });
 
+  // Jason, 2026-11-17: "Use for future st. louis ribs" lost the food's own capitals.
+  test('Use for future names the food with its own capitals', async () => {
+    const { timing } = await open(ribs);
+    await fireEvent.press(timing.getByRole('radio', { name: 'Total hours' }));
+    expect(check(/^Use for future St\. Louis ribs on Pit Boss Sportsman 850/)).toBeOnTheScreen();
+  });
+
   test('total hours are used as-is and can be saved for future cooks', async () => {
     const { timing, repos } = await open(brisket, { base: base(saved) });
     await fireEvent.press(timing.getByRole('radio', { name: 'Total hours' }));

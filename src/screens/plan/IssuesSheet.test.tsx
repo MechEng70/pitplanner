@@ -74,6 +74,18 @@ describe('Conflicts sheet', () => {
     expect(button('Edit brisket')).toBeOnTheScreen();
   });
 
+  // Jason, 2026-11-17: "Edit st. louis ribs" lost the food's own capitals.
+  test('a fix button names the food with its own capitals; brisket and wings are as before', async () => {
+    const ribs = { id: 'r', foodId: 'stlribs', methodId: '221', quantity: 3 };
+    await show({ items: [brisket, ribs, wings('w', 'smokeCrisp')] }, F, [
+      { code: 'REST_SHORT', level: 'warn', message: 'Short rest.', itemIds: ['r', 'b', 'w'] },
+    ]);
+    expect(button('Edit St. Louis ribs')).toBeOnTheScreen();
+    expect(button('Edit brisket')).toBeOnTheScreen();
+    expect(button('Edit chicken wings')).toBeOnTheScreen();
+    expect(button('Move chicken wings to the griddle')).toBeOnTheScreen();
+  });
+
   test('a food already on the griddle is not offered it again', async () => {
     const item = wings('w', 'griddle');
     await show({ items: [brisket, item] }, F, [
