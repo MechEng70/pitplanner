@@ -2118,10 +2118,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   Files app. A release build (0.3.0-alpha.4) opens the file from Files on a cold start: the failure is a
   limitation of dev builds, recorded in `docs/alarm-testing.md`, not an app bug (Jason's rule, 2026-11-16).
   The real two-phone test is still open.
-- **Jason (2026-11-17):** done together with T-033, after Sunday's readout (2026-11-22): INSTALL.md with
-  0.3.0-beta.1 on his wife's phone, then the two-phone share test, Gmail and Drive. One list:
-  `docs/after-readout-checklist.md`. Where the sources are silent it says "to confirm with Jason" (the way
-  the beta.1 file reaches her phone; whether her phone to his is part of the test).
+- **Jason (2026-11-17):** done together with T-033 on Sunday afternoon 2026-11-22, after the readout passes
+  and before the Monday 2026-11-23 release: INSTALL.md with 0.3.0-beta.1 on his wife's phone, then the
+  two-phone share test, Gmail and Drive. One list: `docs/after-readout-checklist.md`. Where the sources are
+  silent it says "to confirm with Jason" (the way the beta.1 file reaches her phone; whether her phone to his
+  is part of the test).
 - **Status:** todo (Jason, hands-on), rescheduled to after Sunday's readout. Remains: the checklist ticked.
 - **Goal:** SPEC definition of done: a plan round-trips between two phones through Gmail and through Drive.
 - **Files:** fixes only if a route fails; `docs/HANDOFF.md`.
@@ -2177,8 +2178,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   says). 0.2.0 is only on Google Drive: GitHub has one tag and no release with an APK, and he has not made a
   GitHub release before, so the first one is done with him, step by step, from RELEASING.md. Left: INSTALL.md
   followed once on his wife's phone; update the docs where these answers change them (the contact line, betas).
-- **Jason (2026-11-17):** INSTALL.md is followed on his wife's phone after Sunday's readout, together with
-  T-031: 0.3.0-beta.1 as an upgrade over her 0.2.0, with his yes. Part 1 of `docs/after-readout-checklist.md`.
+- **Jason (2026-11-17):** INSTALL.md is followed on his wife's phone on Sunday afternoon 2026-11-22, after the
+  readout passes, together with T-031: 0.3.0-beta.1 as an upgrade over her 0.2.0, with his yes. Part 1 of
+  `docs/after-readout-checklist.md`. T-038 (the release, Monday 2026-11-23) waits for it.
 - **Status:** written, merged onto `main` and gate-complete 2026-11-15. Not done until INSTALL.md has been
   followed once on his wife's phone (after Sunday's readout; the review and the six questions are answered).
 - **Goal:** friends can install or upgrade; Claude can release by checklist.
@@ -2460,10 +2462,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** the cook.
 
 ### T-038 Upgrade test and cut 0.3.0
-- **Jason (2026-11-17):** release on the day the readout passes (option A on the questions page). T-033 and
-  T-031 are done together after Sunday's readout (`docs/after-readout-checklist.md`); T-038 lists T-033 as a
-  dependency, so whether the release waits for that checklist is to confirm with Jason. If the Samsung
-  tester declines the locked-reboot check, the release notes say so (draft "if declined" line in
+- **Jason (2026-11-17, second answer; replaces "release on the day the readout passes"):** the release
+  waits. Order: Sunday 2026-11-22 the readout passes; Sunday afternoon T-033 and T-031 on his wife's phone
+  (`docs/after-readout-checklist.md`); Monday 2026-11-23 the 0.3.0 release. T-038 keeps depending on T-033. If
+  the Samsung tester declines the locked-reboot check, the release notes say so (draft "if declined" line in
   `docs/release-notes/0.3.0.md`).
 - **Status:** todo
 - **Goal:** 0.3.0 on GitHub Releases; Jason's 0.2.0 install upgraded in place with its data imported.

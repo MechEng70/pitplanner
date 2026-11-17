@@ -21,9 +21,19 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
 - **Fable is at 0%** (Jason, 2026-11-17): the Opus-only rule for agents is off; `CLAUDE.md`'s model rule holds.
 - T-057 is held until after 0.3.0. Review finding 6 is approved as built (SPEC, with a pinning test).
 - **Jason's answers of 2026-11-17** (`docs/proposals/2026-11-17-waiting-on-jason.md`, each with an Answer
-  line): release on the day the readout passes; T-033 and T-031 are done together after Sunday's readout on his
-  wife's phone (`docs/after-readout-checklist.md`); the Samsung tester is asked by him; looks are one stacked
+  line): T-033 and T-031 are done together on Sunday afternoon after the readout, on his wife's phone
+  (`docs/after-readout-checklist.md`); the release WAITS for them and is Monday 2026-11-23 (second answer,
+  replaces "release the day the readout passes"); the Samsung tester is asked by him; looks are one stacked
   review; mockup 16 closed (B); backlog after 0.3.0; icon and two T-060 facts still open.
+- **Pit Boss 820 (Jason, 2026-11-17, option A for 0.3.0):** the 820 entry becomes not verified with its step
+  blanked; the Saturday fixture moves to `pitboss-sportsman-850`, the entry his Gear uses; the engine tests'
+  private copies and the mockups stay; the blank "Pit Boss 850" entry stays. His body may be an 820 with a
+  replacement board that reports PB850SPW2 (180 to 500F, 5F steps); unconfirmed until he reads the data plate;
+  it does not block beta.1 (same size and hopper numbers). An Opus agent is building it. "Dial smokers with
+  fixed presets" is in `docs/design/BACKLOG.md`.
+- **Cook-finished device test fails 3 lines on a test rig fault:** the dev seed serves on any minute, so the
+  planned minutes vary with the clock. Jason's decision: seed with a fixed serve time on the 5 minute grid so
+  the expected minutes are constant. The main session is fixing it.
 
 `main` is committed and clean, **the last few commits not pushed** (Jason pushed during the session; check `git log origin/main..main`). The gate passed on
 the last code change (T-075's three cases: engine 218, gate self-tests 153, Jest 882, Kotlin 68 in
@@ -83,9 +93,10 @@ has an "Answer (2026-11-17)" line. What is still open:
   T-081's header and the line break (`rn-12-live-warned.png` and `rn-12-live-conflict.png` were re-shot on
   2026-11-17, `live-warnings` passes at 115%) and the two-button lock-screen alert on the phone against
   mockup 14.
-- **T-031 and T-033 together, after Sunday's readout:** INSTALL.md with 0.3.0-beta.1 on his wife's phone (an
-  upgrade over her 0.2.0, with his yes), then the two-phone share test through Gmail and Drive. One list:
-  `docs/after-readout-checklist.md` (four places say "to confirm with Jason").
+- **T-031 and T-033 together, Sunday afternoon 2026-11-22 after the readout; the release is Monday
+  2026-11-23 and waits for them:** INSTALL.md with 0.3.0-beta.1 on his wife's phone (an upgrade over her
+  0.2.0, with his yes), then the two-phone share test through Gmail and Drive. One list:
+  `docs/after-readout-checklist.md` (three places say "to confirm with Jason").
 - **The Samsung locked reboot (P4, T-072):** he asks the tester (a draft request is on the questions page). If
   the tester declines, the release notes say it was not tested (draft line in
   `docs/release-notes/0.3.0.md`).
@@ -95,11 +106,11 @@ has an "Answer (2026-11-17)" line. What is still open:
 
 Closed on 2026-11-17: mockup 16 (B, the repo copy is the source); T-036's four strings (A, as built); T-022's
 stepper; T-064 (the menu stays on Plan); T-081's wings source; T-023's rate card wording; the GitHub repo
-name; T-075's Plan warning sentence; parity D2, D9, D10, D11; T-038 (release on the day the readout passes).
+name; T-075's Plan warning sentence; parity D2, D9, D10, D11; T-038's timing (the release waits, Monday 2026-11-23).
 The backlog triage and every "later versions" item wait until 0.3.0 has shipped. The griddle sub-case (a
 shared smoker-sear tri-tip with a griddle) is built and merged: "Tri-tip will be seared on the griddle." in
 the same box style (SPEC). His smoker is the Pit Boss Sportsman 850 (PB850SPW2); the check of
-`data/cookers.json` and SPEC against it is with the main session.
+`data/cookers.json` and SPEC against it is with the main session (see the Pit Boss 820 note above).
 
 - Push state: `origin/main` moved to `5c3576b` at 2:16 PM on 2026-11-16 by a push from this working copy.
   The main session ran no `git push` and no agent transcript holds one, so it was Jason's own. Checked

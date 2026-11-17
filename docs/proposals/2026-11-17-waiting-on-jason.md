@@ -18,6 +18,9 @@ Still open:
 - The Samsung tester's reply (the request to send is under the locked-reboot item).
 - Phone yeses, on the day, action by action.
 
+Order of the days (second answer, 2026-11-17): Saturday 2026-11-21 the staged cook; Sunday 2026-11-22 the
+readout, then in the afternoon T-033 and T-031 on his wife's phone; Monday 2026-11-23 the 0.3.0 release.
+
 ## Blocks 0.3.0
 
 - [source: t037-checklist.md, CLAUDE.md, TASKS T-037] A yes for every phone action, on the day: Friday the
@@ -26,7 +29,9 @@ Still open:
   Answer (2026-11-17): unchanged. A standing rule, not a question: yes is given on the day, action by action.
 - [source: TASKS T-038, docs/RELEASING.md] His yes to push, tag and publish v0.3.0 on GitHub Releases, and to be
   walked through the first release step by step. Options: A on the day the readout passes / B later.
-  Answer (2026-11-17): A, release on the day the readout passes.
+  Answer (2026-11-17): first A, release on the day the readout passes; replaced the same day by a second
+  answer: the release WAITS. Sunday 2026-11-22 the readout passes; Sunday afternoon T-033 and T-031;
+  Monday 2026-11-23 the 0.3.0 release. T-038 keeps depending on T-033.
 - [source: TASKS T-031, SPEC section 13] The real two-phone share test (Gmail and Drive) is still open. It is
   in SPEC's definition of done. Options: A run it with a second phone before 0.3.0 / B accept the single-phone
   stand-in of 2026-11-16 (a plan emailed to himself opened on the dev build) and write that down.
@@ -127,7 +132,14 @@ Still open:
   source (CLAUDE.md). Not needed for 0.3.0.
   Answer (2026-11-17): his smoker is the Pit Boss Sportsman 850 (PB850SPW2), 180 to 500F in 5F steps, source
   the pitboss-grills.com product page. The check of `data/cookers.json` and SPEC against it is with the main
-  session, not this page.
+  session, not this page. Second answer (2026-11-17), the Pit Boss 820: decided A for 0.3.0. The 820 entry
+  becomes not verified and its step is blanked (the user fills in a step or presets). The Saturday test
+  fixture moves to the `pitboss-sportsman-850` catalog entry, the one his Gear uses. The engine tests' private
+  copies and the mockups stay; the blank "Pit Boss 850" entry stays. His grill may be an 820 body with a
+  replacement control board that reports PB850SPW2 and sets 180 to 500F in 5F steps; the body stays
+  unconfirmed until he reads the data plate. That does not block beta.1: the 820 and Sportsman 850 entries
+  carry the same size and hopper numbers. An Opus agent is building it. Dial smokers with fixed presets is
+  now in the backlog (after 0.3.0).
 
 ## Probably closed, confirm
 

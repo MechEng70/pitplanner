@@ -25,6 +25,7 @@ decided until Jason triages it. New ideas that come up during the port are added
 | iOS readiness (interfaces only, no Xcode work) | T-056 | Depends on T-015, T-030, T-045 |
 | Setup offers "Restore from a file" on a new phone's first screen | T-036 | Jason, 2026-11-16: not in 0.3.0 (a restore is reached from Gear after Setup) |
 | Lock-screen taps re-plan with the app closed (headless JS), spike first | T-078 | Jason, 2026-11-16: 0.3.x, after 0.3.0 ships |
+| Dial smokers with fixed presets. Preset lists already work in the engine and in "Enter it yourself" (`tempPresetsF`); what is missing is preset lists in the picker's catalog, one list per controller version. PB820SC manual presets: 200, 225, 250, 300, 350, 400, 450, 475, plus Smoke and High; some later units list 180 (sources from Jason: the Pit Boss 820 owner's manual, manualslib 751551, and the PB820SC control board page). An upgraded controller changes the step (a replacement board can turn a dial 820 into 180 to 500F in 5F steps), so the picker may need "pick by controller". Smoke and High are not temps: how they show is open | none yet | Jason, 2026-11-17: after 0.3.0 |
 | Wings at 400F on a smoker that tops out lower: offer the method only when the smoker's max reaches its temp, greyed with the reason otherwise (as tri-tip's smoker sear does, T-075) | none yet | Jason, 2026-11-16: 0.3.x |
 
 ## Maintenance (has a date, not a version)

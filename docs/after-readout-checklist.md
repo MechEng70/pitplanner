@@ -1,6 +1,7 @@
 # After Sunday's readout: INSTALL.md on his wife's phone (T-033), then the two-phone share test (T-031)
 
-Done together, once the readout of 2026-11-22 has passed. Jason decided this on 2026-11-17. Her phone has
+Done together on Sunday afternoon, 2026-11-22, once the readout has passed; the release is Monday
+2026-11-23. Jason decided this on 2026-11-17. Her phone has
 0.2.0 now. It gets 0.3.0-beta.1 as an upgrade over it, by following `docs/INSTALL.md` exactly as written.
 
 Built only from `docs/INSTALL.md`, the T-031 and T-033 entries in `docs/design/TASKS.md` and SPEC's Share and
@@ -51,6 +52,7 @@ Part 1. A plan on his phone that has at least two foods.
 ## When both parts pass
 
 Tick them off on the page, then Claude updates T-031 and T-033 in `docs/design/TASKS.md` and the HANDOFF.
-T-038 (the release on GitHub, option A: the day the readout passes) lists T-033 as a dependency, and SPEC's
-definition of done includes the share round trip. To confirm with Jason: whether the release waits for this
-checklist or this checklist runs the same day. T-031 and T-033 are not done until it is ticked.
+Order (Jason, 2026-11-17, second answer): Sunday 2026-11-22 the readout passes; Sunday afternoon this
+checklist; Monday 2026-11-23 the 0.3.0 release (T-038). The release waits for this checklist: T-038 depends on
+T-033, and SPEC's definition of done includes the share round trip. T-031 and T-033 are not done until it is
+ticked. If the readout does not pass, none of this runs.
