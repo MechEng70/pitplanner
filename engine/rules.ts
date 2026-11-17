@@ -142,6 +142,8 @@ export interface RuleFood {
   group: string;
   blurb?: string;
   holdsPoorly?: boolean;
+  /** The name is plural ("Chicken breasts"): a sentence with the food as subject agrees (labels.ts `agree`). */
+  plural?: boolean;
   sources?: RuleSource[]; // required for a food with a smoker temp floor (rules.test.ts)
   rateHint?: [number, number]; // this food's own usual range, hr/lb at 225F; default learning.rateHint
   quantity: {

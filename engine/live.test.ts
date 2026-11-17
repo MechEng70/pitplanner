@@ -195,7 +195,7 @@ test('long hold on Plan: one warning per food; a food that holds poorly keeps it
   );
   assert.match(
     holds[0].message,
-    /^Long hold: chicken breasts (\d+ hr)?( ?\d+ min)?, limit 20 min\. Move it to the griddle or start it later\.$/,
+    /^Long hold: chicken breasts (\d+ hr)?( ?\d+ min)?, limit 20 min\. Move them to the griddle or start them later\.$/,
   );
 });
 

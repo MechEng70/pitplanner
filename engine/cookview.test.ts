@@ -330,7 +330,7 @@ test('live warnings: a food with no hold note stops at the limit, and never says
   };
   const started = buildPlan(rules, smoked);
   const held = started.warnings.find(x => x.code === 'HOLD_TOO_LONG')!;
-  assert.match(held.message, /Move it to the griddle or start it later\.$/);
+  assert.match(held.message, /Move them to the griddle or start them later\.$/);
   // Had the cook started without it, the banner would say only this.
   const before = { ...started, warnings: [] };
   const w = liveWarnings(started, before, [], started.serveAt - 3 * 60 * MIN, units)!;
