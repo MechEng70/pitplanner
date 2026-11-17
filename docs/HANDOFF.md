@@ -44,6 +44,41 @@ a pseudo-terminal (as his terminal runs it): engine 229, gate self-tests 154, Je
 `python3 -c "import pty,os,sys; sys.exit(os.waitstatus_to_exitcode(pty.spawn(['npm','run','check'])))"`
 (`script` is not installed). The build is his to run again, same command.
 
+**State at 4:45 PM, 2026-11-17 (beta.2 built by Jason 3:36 PM, SHA-256 `e27ea9b3...8b242`):** steps 1 to 5
+below are done. 1 PASS (cert ok, 300302, production, permissions as beta.1). 2 PASS (upgrade from 0.2.0; the
+beta.1 release app was uninstalled from the test emulator with his yes). 3 PASS (start, end with Discard,
+start; end with Save, start; one process). 4 PASS 6 of 6 on the second run; the first stopped at the rig's
+"next step is more than 20 minutes away" guard (the plan's first alarm is 45 min before serve, the guard is
+20 min, about 3 in 10 starts miss it; the comment assumes the 60 min prep step rings: fix after the freeze).
+5: the phone reads 0.3.0-beta.2 / 300302 (`install -r` 4:10 PM); 16 s later, app not opened, 18 Pit Planner
+alarms were registered (`RestoreReceiver` on `MY_PACKAGE_REPLACED`, `Receivers.kt:107`; a device test for
+"update with a cook running" is owed after the freeze). Jason: the cook is there, Start cook greyed.
+**Step 6 and the uncommitted `docs/t037-checklist.md` edits (steps 10 and 14) are on hold, his order.**
+
+**Open, suspected 0.3.0 blocker (his words), not confirmed and not cleared: the phone's cook fires the smoker
+at 8:55 AM Sat Nov 21, not 6:30 AM as Sunday's copy of his 0.2.0 data says.** Only the two briskets moved
+(8:55, 9:15, 12:45, 2:00, 2:55 instead of 6:30, 6:50, 11:40, 1:20, 2:35); the other 13 alarm times are the
+same. That is both briskets at the saved 0.65 hr/lb instead of their own 0.9. The Cook tab says 8:55 too.
+Jason: nothing changed that he knows of. No code change without his yes. Found so far, in a local test that
+is not committed (Sunday's copy through the real `importLegacy`, `loadState`, `planInput`, `buildPlan`):
+- The import is clean: the running cook comes over with fire at 6:30 AM and both briskets' `hrPerLb: 0.9`;
+  Start cook from the imported Plan gives 6:30 AM too.
+- The phone's 18 times come out exactly when the same menu is planned without the foods' own rates. Two
+  ways give that set: a Share plan file opened on the phone with Use this plan (own rates and total hours
+  are left out by design, `src/lib/pitPlanFile.ts:17`), or both briskets' own rate removed in Food details
+  (`src/screens/plan/FoodEdit.tsx:102-104` removes it only together with saving that rate for future).
+  Cook again from history does not match (tri-tip and rest change too).
+- Nothing found that re-plans a running cook by itself: opening Cook does not, `d2fdccc` only clears a ref,
+  and rate learning (`src/lib/finish.ts:96`) works on a copy at Save to history.
+- The cook on the phone is most likely not the 0.2.0 cook: at the blocker report (2:50 PM) the Cook tab said
+  "No cook running" with Start cook enabled, and the Start cook bug needs a cook started and ended in that
+  run. So today's cook was probably started on beta.1 from Plan after the restart. Not proven.
+- The 11-17 "import matched Sunday's copy" check compared what Jason saw (smoker, griddle, oven, the two
+  saved rates, one past cook, the plan's date, temp and five foods) with a list read from the copy. It did
+  not compare any food's own rate, any fire or step time, the running cook or the alarms.
+- What would settle it: the debug file from the phone (Gear, 5 taps on the version line, Send to developer):
+  the stored cook with its start time and items, the Plan's items, the rates and the event log.
+
 **When he says it is built, in this order:**
 1. `npm run release -- --verify release/pitplanner-0.3.0-beta.2.apk --version 0.3.0-beta.2`; record the
    SHA-256; `aapt2 dump badging` (version, no banned permissions) as for beta.1.
