@@ -37,8 +37,9 @@ Sportsman 850, griddle 22 in with 2 burners, oven at 170F, brisket 0.65 and tri-
 (Sat Nov 14, served 5:17 PM, 18 min late), the plan for Sat Nov 21 5:00 PM at 250F with five foods: "everything
 looks good" (Jason). Step 5 (a short 0.2.0 cook carried across) was skipped, his choice; the emulator upgrade
 test covers the import (PASS on beta.1 the same morning). **But a running cook did come across:** the copy
-holds a 0.2.0 cook started Sun Nov 15 10:49 AM, serve Sat Nov 21 5:00 PM, 28 steps, none done; its alarms
-start Saturday 5:35 AM. Jason ends or discards it before the staged cook. Still to do on Friday: steps 3 and
+holds a 0.2.0 cook started Sun Nov 15 10:49 AM, serve Sat Nov 21 5:00 PM, 28 steps, none done. Its first step, a
+prep reminder at Saturday 5:35 AM, has no alarm; its first alarm is Fire the smoker at 6:30 AM (from the
+copy's plan: `alarm` is false on prep steps). Jason ends or discards it before the staged cook. Still to do on Friday: steps 3 and
 8 to 14 (9 to 11 can use that carried-over cook before it is discarded). The emulator was first: the upgrade
 test and locked-reboot both pass on beta.1.
 
@@ -54,7 +55,7 @@ test and locked-reboot both pass on beta.1.
 | 8 | Jason | Gear, Export my data, save to Drive | |
 | 9 | Claude | `adb -s <phone> shell dumpsys alarm` for the app and `dumpsys package` again (read only: each alarm of the carried-over cook once, exact alarms still granted). The carried-over cook is the 0.2.0 cook that came across on 2026-11-17 (serve Sat Nov 21 5:00 PM, 250F, five foods); Jason keeps it until this step | |
 | 10 | Jason | Open the carried-over cook, End cook, Discard. This is the last step before Saturday's plan is loaded. (Its first alarm is Saturday 6:30 AM, so no ring is waited for on Friday; a carried-over step ringing once is covered by the emulator upgrade test) | |
-| 11 | Claude | `adb -s <phone> shell dumpsys alarm` for the app (read only: nothing pending, so none of the carried-over cook's Saturday alarms from 5:35 AM on is left) | |
+| 11 | Claude | `adb -s <phone> shell dumpsys alarm` for the app (read only: nothing pending, so none of the carried-over cook's Saturday alarms is left: the first was Fire the smoker at 6:30 AM; its 5:35 AM prep step is a reminder with no alarm) | |
 | 12 | Jason | Settings: notifications on; battery not restricted; on the app's battery usage page, allow background activity | |
 | 13 | Jason | Gear, 5 taps on the version line: it reads 0.3.0-beta.1 | |
 | 14 | Jason | Load Saturday's plan (above). Start cook. Write the times in the table below | |
