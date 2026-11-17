@@ -2505,9 +2505,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   normal user path, not a defect (Jason's rule for it, 2026-11-17); no code change. The 11-17 check against
   the copy compared the smoker, griddle, oven, the two saved rates, the past cook and the plan's date, temp
   and foods as Jason saw them; it did not compare any food's own rate, any fire or step time, the running
-  cook or the alarms. So the import of a running 0.2.0 cook is not proven on his phone: an emulator check
-  with steps still ahead (`tools/device/upgrade020.sh live`, then `check` with beta.2) is owed (Jason: yes).
-  Friday's steps 9 to 11 use the cook now running.
+  cook or the alarms. So the import of a running 0.2.0 cook is not proven on his phone; it is proven on the
+  emulator (2026-11-17, `tools/device/upgrade020.sh setup`, `live`, `check`, `alarms`, PASS): a 0.2.0 cook left running with steps still ahead (2 lb of wings, six alarms from 4:45 PM) was upgraded to beta.2 on the test emulator: the import kept it (running cook: yes, nothing lost), the app set its six alarms (its log: "set 6, exact"), Cook showed it with Start cook greyed, AlarmManager held each of the six once at 0.2.0's times, and the first carried-over step rang on time (4:45:00 PM, "Fire the smoker to 225F." posted, its repeat set for 4:55 PM, no crash). One limit of the rig: `check` force-stops the app after
+  the notice, which makes Android drop its alarms, so the app was opened once more, as a user would, before
+  the alarms were read; the alarms set at the import itself were seen in the app's log only. Friday's steps
+  9 to 11 use the cook now running.
 - **Jason (2026-11-17, second answer; replaces "release on the day the readout passes"):** the release
   waits. Order: Sunday 2026-11-22 the readout passes; Sunday afternoon T-033 and T-031 on his wife's phone
   (`docs/after-readout-checklist.md`); Monday 2026-11-23 the 0.3.0 release. T-038 keeps depending on T-033. If

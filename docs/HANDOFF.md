@@ -56,10 +56,14 @@ alarms were registered (`RestoreReceiver` on `MY_PACKAGE_REPLACED`, `Receivers.k
 Step 6 is done too (TASKS T-037 and T-038, `docs/t037-checklist.md`, the release notes' check list,
 `docs/after-readout-checklist.md`, the dashboard); RELEASING names beta.1 only as a numbering example.
 
-**Still owed from this block:** the emulator check of a running 0.2.0 cook with steps still ahead
-(`tools/device/upgrade020.sh setup`, `live`, then `check release/pitplanner-0.3.0-beta.2.apk` and `alarms`;
-Jason said yes to the check). `setup` needs the release app (beta.2, test data, a test cook running) gone
-from the test emulator `pitplanner` first: **that uninstall needs his plain yes again** (asked 2026-11-17).
+**The beta.2 block is finished; nothing is owed from it.** Last piece, 2026-11-17 4:33 to 4:46 PM, with his
+yes to the uninstall on the test emulator: a running 0.2.0 cook with steps still ahead, upgraded to beta.2
+(`tools/device/upgrade020.sh setup`, `live`, `check`, `alarms`): PASS. The import kept the cook, its six
+alarms were set, the first carried-over step rang on time at 4:45:00 PM with its repeat set, no crash. The
+rig's `check` force-stops the app, which drops its alarms, so open the app once more before reading them.
+The test emulator `pitplanner` holds beta.2 with that test cook; the emulator is stopped. Jason's wife's
+phone gets beta.2 on Sunday as planned, and nothing goes on it before he says so. The T-082 branch was read
+and fixed the same afternoon (section 2, row 1).
 
 **Closed 2026-11-17, not a blocker, no code change (Jason's rule: a normal user path is not a defect).** The
 debug file from his phone settled it: (1) the import's report reads running cook: no, so no 0.2.0 cook came
