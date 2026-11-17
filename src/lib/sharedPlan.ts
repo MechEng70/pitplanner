@@ -120,18 +120,26 @@ export function parsePitPlan(rules: Rules, text: string, newId: (i: number) => s
   return { serveAt, pitTempF, items, dropped };
 }
 
-export interface CookerMove {
+interface MoveBase {
   foodName: string;
-  /** The cooker that is not set up. */
-  from: string;
   /** The cooker the food is cooked on now (its new method's own). */
   to: string;
-  /**
-   * What the food will do instead, after "will", from the new method's `importMove` (T-075: "be seared on the
-   * smoker", "cook brisket-style with no sear").
-   */
-  how?: string;
 }
+/**
+ * A food put on another method. Under a cooker that is not set up (`from`), or, with no cooker missing (the
+ * smoker is too cool and no cooker would help), only with what it will do (`how`).
+ */
+export type CookerMove =
+  | (MoveBase & {
+      /** The cooker that is not set up. */
+      from: string;
+      /**
+       * What the food will do instead, after "will", from the new method's `importMove` (T-075: "be seared on
+       * the smoker", "cook brisket-style with no sear", "be seared on the griddle").
+       */
+      how?: string;
+    })
+  | (MoveBase & { from?: undefined; how: string });
 export interface CookerGap {
   foodName: string;
   cooker: string;
@@ -144,10 +152,11 @@ export interface CookerGap {
  * method the receiver can do stay as they are and are listed in gaps, under the first cooker missing. A
  * method the receiver's smoker cannot get hot enough for (the smoker sear on one that tops out under 450F)
  * also takes the first method they can do, and counts as moved for the import's conflicts. It gets a box
- * line only when it stays on its own cooker, its new method has words for that (`importMove`: "cook
- * brisket-style with no sear") and a method ahead of it needs only a cooker that is not set up: the line goes
- * under that cooker ("or add a griddle in Gear"). With every cooker set up (a griddle: the smoker sear falls
- * to the griddle sear) nothing is said (Jason, 2026-11-16: no words for it yet).
+ * line only when it stays on its own cooker and its new method has words for that (`importMove`). When a
+ * method ahead of it needs only a cooker that is not set up, the line goes under that cooker ("cook
+ * brisket-style with no sear, or add a griddle in Gear"). When no cooker would help (a griddle is set up: the
+ * smoker sear falls to the griddle sear), the move has no `from` and the line is the words alone ("be seared
+ * on the griddle", Jason, 2026-11-17).
  */
 export function mapToCookers(
   rules: Rules,
@@ -173,10 +182,10 @@ export function mapToCookers(
       // The smoker is too cool (T-075 follow-up). The cooker that would give a method ahead of the new one.
       const ahead = food.methods.slice(0, food.methods.indexOf(found));
       const want = ahead.find(x => !smokerTooCool(food, x, cookers) && missingCookers(food, x, cookers).length);
-      if (stays && want)
+      if (stays)
         moves.push({
           foodName: food.name,
-          from: missingCookers(food, want, cookers)[0]!,
+          ...(want ? { from: missingCookers(food, want, cookers)[0]! } : {}),
           to: alt.cooker,
           how: alt.importMove!,
         });

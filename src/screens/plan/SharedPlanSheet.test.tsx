@@ -130,6 +130,7 @@ describe('Shared plan sheet', () => {
   test('a tri-tip with a griddle sear and a griddle set up stays as sent', async () => {
     const { onUse } = await show(withGriddle, { shared: sharedOf(fileText({ items: [TRITIP] })) });
     expect(screen.queryByText(/set up\./)).toBeNull();
+    expect(screen.queryByText(/will be seared/)).toBeNull();
     await fireEvent.press(button('Use this plan'));
     await settle();
     expect(onUse.mock.calls[0]![0].items[0]!.methodId).toBe('reverse');
@@ -189,19 +190,35 @@ describe('Shared plan sheet', () => {
     expect(plan.movedIds).toEqual(['n0']);
   });
 
-  test('a shared smoker sear on a 425F smoker with a griddle: the griddle sear, and no box', async () => {
+  // Jason, 2026-11-17: the griddle sear is said in the same box, the sentence alone: nothing is missing.
+  const GRIDDLE_SEAR = 'Tri-tip will be seared on the griddle.';
+
+  test('a shared smoker sear on a 425F smoker with a griddle: the griddle sear, and the box says so', async () => {
     const sent = { ...TRITIP, methodId: 'smokerSear' };
     const gear = { ...upTo(425), griddle: defaultGriddle() };
     const { onUse } = await show(gear, { shared: sharedOf(fileText({ items: [sent] })) });
-    // Every cooker is set up, and the brisket-style sentence would be untrue: nothing new is shown.
+    expect(screen.getByText(GRIDDLE_SEAR)).toHaveTextContent(GRIDDLE_SEAR, { exact: true });
+    // No heading (no cooker is missing), no Gear tail, and not the brisket-style sentence.
+    expect(screen.queryByText('No griddle set up.')).toBeNull();
+    expect(screen.queryByText('No smoker set up.')).toBeNull();
     expect(screen.queryByText(/set up\./)).toBeNull();
+    expect(screen.queryByText(/in Gear/)).toBeNull();
     expect(screen.queryByText(BRISKET_STYLE)).toBeNull();
     await fireEvent.press(button('Use this plan'));
     await settle();
     const [plan] = onUse.mock.calls[0]!;
     expect(plan.items.map(i => [i.methodId, i.restMin])).toEqual([['reverse', 10]]);
-    expect(plan.moves).toEqual([]);
+    expect(plan.moves).toEqual([{ foodName: 'Tri-tip', to: 'smoker', how: 'be seared on the griddle' }]);
     expect(plan.movedIds).toEqual(['n0']);
+  });
+
+  test('two shared smoker sears on a 425F smoker with a griddle: one box, the foods joined', async () => {
+    const sent = { ...TRITIP, methodId: 'smokerSear' };
+    const gear = { ...upTo(425), griddle: defaultGriddle() };
+    await show(gear, { shared: sharedOf(fileText({ items: [sent, { ...sent, id: 'u', quantity: 3 }] })) });
+    expect(screen.getAllByText(/will be seared on the griddle/)).toHaveLength(1);
+    expect(screen.getByText('Tri-tip and Tri-tip will be seared on the griddle.')).toBeOnTheScreen();
+    expect(screen.queryByText(/set up\.|in Gear/)).toBeNull();
   });
 
   test('a tri-tip with no smoker can be cooked no way: it needs a smoker', async () => {

@@ -22,6 +22,14 @@ import type { PickDateTime } from '@/platform/types';
 const weekdayFmt = new Intl.DateTimeFormat('en-US', { weekday: 'long' });
 const NAMES: Record<CookerKind, string> = { smoker: 'smoker', griddle: 'griddle', oven: 'oven' };
 const names = (xs: { foodName: string }[]) => xs.map(x => x.foodName).join(' and ');
+/**
+ * What the moved foods will do, foods doing the same thing together: "Tri-tip will be seared on the smoker
+ * and Chicken breasts will move to the smoker" (T-075).
+ */
+function willDo(moves: CookerMove[]): string {
+  const how = (m: CookerMove) => m.how ?? `move to the ${NAMES[m.to as CookerKind]}`;
+  return [...new Set(moves.map(how))].map(w => `${names(moves.filter(m => how(m) === w))} will ${w}`).join(' and ');
+}
 
 /** What the sheet says for a file that could not be opened (`error` of an opened file, src/platform/share.ts). */
 export const OPEN_ERRORS: Record<string, string> = {
@@ -63,7 +71,11 @@ export function SharedPlanSheet({ shared, pickDateTime, now, onClose, onUse }: P
     return f.quantity.kind === 'weight' ? fmtWeight(it.quantity, units) : countText(f, it.quantity);
   };
   // Moves and gaps grouped by the missing cooker: "No griddle set up." Breasts will move to the smoker...
-  const missing = [...new Set([...plan.moves.map(m => m.from), ...plan.gaps.map(g => g.cooker)])] as CookerKind[];
+  const missing = [
+    ...new Set([...plan.moves.flatMap(m => (m.from != null ? [m.from] : [])), ...plan.gaps.map(g => g.cooker)]),
+  ] as CookerKind[];
+  // Moves with nothing missing (the smoker is too cool, a griddle is set up): the sentence alone.
+  const unforced = plan.moves.filter(m => m.from == null);
 
   return (
     <Sheet title="Open shared plan" onClose={onClose} footer={<UseButton onUse={() => onUse(plan, serveAt)} />}>
@@ -131,14 +143,10 @@ export function SharedPlanSheet({ shared, pickDateTime, now, onClose, onUse }: P
       {missing.map(k => {
         const moves = plan.moves.filter(m => m.from === k);
         const gaps = plan.gaps.filter(g => g.cooker === k);
-        // Foods doing the same thing go together: "Tri-tip will be seared on the smoker and Chicken breasts
-        // will move to the smoker, or add a griddle in Gear." (T-075).
-        const how = (m: CookerMove) => m.how ?? `move to the ${NAMES[m.to as CookerKind]}`;
-        const ways = [...new Set(moves.map(how))].map(w => `${names(moves.filter(m => how(m) === w))} will ${w}`);
         return (
           <InfoBox key={k} lead={`No ${NAMES[k]} set up.`}>
             {[
-              moves.length > 0 ? `${ways.join(' and ')}, or add a ${NAMES[k]} in Gear.` : '',
+              moves.length > 0 ? `${willDo(moves)}, or add a ${NAMES[k]} in Gear.` : '',
               gaps.length > 0
                 ? `${names(gaps)} ${gaps.length === 1 ? 'needs' : 'need'} a ${NAMES[k]}. Add one in Gear.`
                 : '',
@@ -148,6 +156,7 @@ export function SharedPlanSheet({ shared, pickDateTime, now, onClose, onUse }: P
           </InfoBox>
         );
       })}
+      {unforced.length > 0 ? <InfoBox>{`${willDo(unforced)}.`}</InfoBox> : null}
 
       {state.draft.items.length > 0 ? (
         <Text variant="label" tone="secondary">

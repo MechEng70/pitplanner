@@ -277,17 +277,60 @@ test('share: a smoker-sear tri-tip on a 425F smoker with no griddle: brisket-sty
   assert.deepEqual(r.movedIds, ['n0']);
 });
 
-test('share: a smoker-sear tri-tip on a 425F smoker with a griddle: the griddle sear, with no box line', () => {
+test('share: the griddle sear says what the tri-tip will do, in the data (be seared on the griddle)', () => {
+  assert.equal(methodOf('reverse').importMove, 'be seared on the griddle');
+});
+
+// Jason, 2026-11-17: a smoker-sear tri-tip that falls to the griddle sear is said, with no cooker missing.
+test('share: a smoker-sear tri-tip on a 425F smoker with a griddle: the griddle sear, "be seared on the griddle"', () => {
   const shared = opened(parsePitPlan(rules, tritipFile('smokerSear'), id));
   const r = importPlan(rules, shared, { smoker: upTo(425), griddle });
   assert.deepEqual(
     r.items.map(i => [i.methodId, i.restMin]),
     [['reverse', 10]],
   );
-  // Every cooker is set up and "cook brisket-style with no sear" would be untrue: nothing is said.
-  assert.deepEqual(r.moves, []);
+  // Every cooker is set up: the move has no missing cooker (no `from`), only what the tri-tip will do.
+  assert.deepEqual(r.moves, [{ foodName: 'Tri-tip', to: 'smoker', how: 'be seared on the griddle' }]);
   assert.deepEqual(r.gaps, []);
   assert.deepEqual(r.movedIds, ['n0']);
+});
+
+test('share: two smoker-sear tri-tips on a 425F smoker with a griddle: a move each, neither under a cooker', () => {
+  const two = file({
+    items: [
+      { foodId: 'tritip', methodId: 'smokerSear', quantity: 2.5 },
+      { foodId: 'tritip', methodId: 'smokerSear', quantity: 3 },
+    ],
+  });
+  const r = importPlan(rules, opened(parsePitPlan(rules, two, id)), { smoker: upTo(425), griddle });
+  assert.deepEqual(r.moves, [
+    { foodName: 'Tri-tip', to: 'smoker', how: 'be seared on the griddle' },
+    { foodName: 'Tri-tip', to: 'smoker', how: 'be seared on the griddle' },
+  ]);
+  assert.deepEqual(r.movedIds, ['n0', 'n1']);
+});
+
+// The griddle sear's importMove must not reach any other path (T-075 follow-up, 2026-11-17).
+test('share: a griddle-sear tri-tip with a griddle stays as sent and says nothing, at any smoker temp', () => {
+  for (const max of [425, 450, 500]) {
+    const r = importPlan(rules, opened(parsePitPlan(rules, tritipFile('reverse'), id)), { smoker: upTo(max), griddle });
+    assert.deepEqual([r.items[0].methodId, r.moves, r.gaps, r.movedIds], ['reverse', [], [], []], `${max}F`);
+  }
+});
+
+test('share: a tri-tip with no smoker never falls to the griddle sear: it needs a smoker', () => {
+  for (const sent of ['reverse', 'smokerSear', 'brisketStyle']) {
+    const r = importPlan(rules, opened(parsePitPlan(rules, tritipFile(sent), id)), { griddle });
+    assert.deepEqual([r.items[0].methodId, r.moves, r.movedIds], [sent, [], []], sent);
+    assert.deepEqual(r.gaps, [{ foodName: 'Tri-tip', cooker: 'smoker' }], sent);
+  }
+});
+
+test('share: a brisket-style tri-tip stays as sent and says nothing, with or without a griddle', () => {
+  for (const cookers of [{ smoker: upTo(425) }, { smoker: upTo(425), griddle }, { smoker: traeger, griddle }]) {
+    const r = importPlan(rules, opened(parsePitPlan(rules, tritipFile('brisketStyle'), id)), cookers);
+    assert.deepEqual([r.items[0].methodId, r.moves, r.gaps, r.movedIds], ['brisketStyle', [], [], []]);
+  }
 });
 
 test('share: regression: a smoker that reaches 450F still sears on the smoker; breasts still move', () => {
