@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { buildPlan } from './plan.ts';
-import { extendCook, markPullDone, markStepDone, shiftRemaining, smokerConflicts } from './live.ts';
+import { extendCook, markPullDone, markStepDone, shiftRemaining, smokerConflicts, smokerOverlaps } from './live.ts';
 import type { ItemInput, Plan, PlanInput, SmokerProfile } from './types.ts';
 
 const rules = JSON.parse(readFileSync(new URL('../data/foods.json', import.meta.url), 'utf8'));
@@ -160,6 +160,25 @@ test('smokerConflicts: the stretch where the temps are more than 25F apart, with
   assert.deepEqual(
     smokerConflicts(later).map(c => [c.start, c.end]),
     [[local(16, 5), local(16, 40)]],
+  );
+});
+
+test('smokerOverlaps: the tri-tip climb takes no smoker space, but counts with withClimb (T-069 x T-075)', () => {
+  // Serve 10 PM: tri-tip smokes 7:50 to 9:20 PM, climbs off the heat 9:20 to 9:35. The brisket pull, Not yet
+  // at 8:45 PM for 45 min, keeps it on at 225F until 9:30.
+  const both = menu([brisket, { id: 't', foodId: 'tritip', methodId: 'smokerSear', quantity: 2.5 }], {
+    at: local(22),
+  });
+  const notYet = extendCook(rules, both, buildPlan(rules, both), 'b', local(20, 45), 45, true);
+  const spans = (o: ReturnType<typeof smokerOverlaps>) => o.map(x => [x.start, x.end, x.itemIds, x.tempsF]);
+  assert.deepEqual(spans(smokerOverlaps(notYet)), [[local(19, 50), local(21, 20), ['b', 't'], [225]]]);
+  assert.deepEqual(spans(smokerOverlaps(notYet, { withClimb: true })), [
+    [local(19, 50), local(21, 30), ['b', 't'], [225, 500]],
+  ]);
+  // The clash itself is the climb against the brisket.
+  assert.deepEqual(
+    smokerConflicts(notYet).map(c => [c.start, c.end]),
+    [[local(21, 20), local(21, 30)]],
   );
 });
 

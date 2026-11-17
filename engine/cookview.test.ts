@@ -16,7 +16,7 @@ import {
   overlapNote,
   shiftImpact,
 } from '../src/lib/cookView.ts';
-import { extendCook, markPullDone, shiftRemaining } from './live.ts';
+import { extendCook, markPullDone, postponeStep, shiftRemaining } from './live.ts';
 import { summarize, toRecord } from '../src/lib/finish.ts';
 import type { ActiveCook } from '../src/lib/cook.ts';
 
@@ -262,6 +262,40 @@ test('overlap note: a stretch that is a conflict says so, with its own times and
 test('overlap note: a stretch that is not a conflict reads as before', () => {
   const n = overlapNote(shiftRemaining(rules, input, plan, at(10), 20, true, 'b'), at(10), units)!;
   assert.equal(n.lead, '3:15 to 4:00 PM: brisket and wings share the smoker at 225F.');
+});
+
+// T-069 x T-075 (Jason, 2026-11-17): the tri-tip's climb to 500F (off the heat, no grate space) is a smoker
+// clash with a food still on at 225F, and the note says so in the conflict words, no new wording.
+test('overlap note: a smoker-sear tri-tip climbing while the brisket is still on is a smoker conflict', () => {
+  const both: PlanInput = {
+    ...input,
+    at: at(22),
+    items: [input.items[0], { id: 't', foodId: 'tritip', methodId: 'smokerSear', quantity: 2.5 }],
+  };
+  const built = buildPlan(rules, both);
+  // Not yet on the brisket pull at 8:45 PM, +45 min, Keep serve: on at 225F until 9:30, the climb runs 9:20 to 9:35.
+  const notYet = postponeStep(rules, both, built, 'pull:b:', at(20, 45), 45, true).plan;
+  assert.ok(
+    notYet.warnings.some(w => w.message === 'Smoker conflict: brisket at 225F and tri-tip at 500F at the same time.'),
+  );
+  const CLASH = '9:20 to 9:30 PM: smoker conflict, brisket at 225F and tri-tip at 500F.';
+  for (const now of [at(20, 45), at(21, 25)]) {
+    const n = overlapNote(notYet, now, units)!;
+    assert.equal(n?.lead, CLASH);
+    assert.equal(n.rest, '');
+    assert.deepEqual(n.band, { start: at(21, 20), end: at(21, 30), laneIds: ['b', 't'] });
+  }
+  assert.equal(overlapNote(notYet, at(21, 30), units), null);
+  // The notes that had nothing to do with a climb read as they did.
+  assert.deepEqual(overlapNote(plan, at(10), units), {
+    band: { start: at(15, 15), end: at(15, 40), laneIds: ['b', 'w'] },
+    lead: '3:15 to 3:40 PM: brisket and wings share the smoker at 225F.',
+    rest: 'Brisket comes off before the pit climbs to 400F.',
+  });
+  assert.equal(
+    overlapNote(behind, at(10), units)!.lead,
+    '4:05 to 4:10 PM: smoker conflict, brisket at 225F and wings at 400F.',
+  );
 });
 
 test('live warnings: nothing for a plan that is as it started', () => {

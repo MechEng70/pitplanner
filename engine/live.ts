@@ -369,12 +369,16 @@ export function postponeStep(
 
 /**
  * Time ranges where two or more foods are on the smoker at once (lane chart highlight, shared-pit note). A
- * food off the heat while the smoker climbs (T-075) is not on it.
+ * food off the heat while the smoker climbs (T-075) is not on it, unless `withClimb`: the climb still sets the
+ * smoker's temp, so it counts when looking for the stretch a smoker conflict belongs to (T-069).
  */
-export function smokerOverlaps(plan: Plan): { start: number; end: number; itemIds: string[]; tempsF: number[] }[] {
+export function smokerOverlaps(
+  plan: Plan,
+  { withClimb = false }: { withClimb?: boolean } = {},
+): { start: number; end: number; itemIds: string[]; tempsF: number[] }[] {
   const spans = plan.items.flatMap(it =>
     it.phases
-      .filter(p => p.cooker === 'smoker' && !p.offHeat)
+      .filter(p => p.cooker === 'smoker' && (withClimb || !p.offHeat))
       .map(p => ({ id: it.input.id, start: p.start, end: p.end, tempF: p.tempF })),
   );
   const cuts = [...new Set(spans.flatMap(s => [s.start, s.end]))].sort((a, b) => a - b);

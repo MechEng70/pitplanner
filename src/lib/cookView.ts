@@ -172,16 +172,20 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
  * When the foods in that stretch need temps too far apart (a smoker conflict, T-069) the note is about the
  * conflict instead, with its own times and band: "3:15 to 3:40 PM: smoker conflict, brisket at 225F and
  * wings at 400F." (Jason, 2026-11-16).
+ *
+ * A food off the heat while the smoker climbs (T-075) shares no smoker space, but the climb is a clash with a
+ * food still on at a lower temp (Jason, 2026-11-17), so the climb counts when finding the stretch a conflict
+ * is in: the stretch where the tri-tip smokes beside the brisket and then climbs while it is still on reads
+ * as the conflict, like wings.
  */
 export function overlapNote(plan: Plan, now: number, u: Units): OverlapNote | null {
-  const o = smokerOverlaps(plan).find(x => x.end > now);
-  if (!o) return null;
+  const near = smokerOverlaps(plan, { withClimb: true }).find(x => x.end > now);
+  const clash = near && smokerConflicts(plan).find(c => c.end > now && c.start < near.end && c.end > near.start);
   const span = (start: number, end: number) => {
     const a = fmtTime(start),
       b = fmtTime(end);
     return `${a.slice(-2) === b.slice(-2) ? a.slice(0, -3) : a} to ${b}`;
   };
-  const clash = smokerConflicts(plan).find(c => c.end > now && c.start < o.end && c.end > o.start);
   if (clash) {
     const foods = clash.foods.map(f => {
       const it = plan.items.find(i => i.input.id === f.itemId);
@@ -193,6 +197,8 @@ export function overlapNote(plan: Plan, now: number, u: Units): OverlapNote | nu
       rest: '',
     };
   }
+  const o = smokerOverlaps(plan).find(x => x.end > now);
+  if (!o) return null;
   const items = plan.items.filter(i => o.itemIds.includes(i.input.id));
   const names = items.map(i => shortName(i.name).toLowerCase());
   const temp = Math.min(...o.tempsF);
