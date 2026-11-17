@@ -53,10 +53,24 @@ start; end with Save, start; one process). 4 PASS 6 of 6 on the second run; the 
 5: the phone reads 0.3.0-beta.2 / 300302 (`install -r` 4:10 PM); 16 s later, app not opened, 18 Pit Planner
 alarms were registered (`RestoreReceiver` on `MY_PACKAGE_REPLACED`, `Receivers.kt:107`; a device test for
 "update with a cook running" is owed after the freeze). Jason: the cook is there, Start cook greyed.
-**Step 6 and the uncommitted `docs/t037-checklist.md` edits (steps 10 and 14) are on hold, his order.**
+Step 6 is done too (TASKS T-037 and T-038, `docs/t037-checklist.md`, the release notes' check list,
+`docs/after-readout-checklist.md`, the dashboard); RELEASING names beta.1 only as a numbering example.
 
-**Open, suspected 0.3.0 blocker (his words), not confirmed and not cleared: the phone's cook fires the smoker
-at 8:55 AM Sat Nov 21, not 6:30 AM as Sunday's copy of his 0.2.0 data says.** Only the two briskets moved
+**Still owed from this block:** the emulator check of a running 0.2.0 cook with steps still ahead
+(`tools/device/upgrade020.sh setup`, `live`, then `check release/pitplanner-0.3.0-beta.2.apk` and `alarms`;
+Jason said yes to the check). `setup` needs the release app (beta.2, test data, a test cook running) gone
+from the test emulator `pitplanner` first: **that uninstall needs his plain yes again** (asked 2026-11-17).
+
+**Closed 2026-11-17, not a blocker, no code change (Jason's rule: a normal user path is not a defect).** The
+debug file from his phone settled it: (1) the import's report reads running cook: no, so no 0.2.0 cook came
+across; (2) the Plan's five foods have ids only 0.2.0 makes (`crypto.randomUUID()`; 0.3.0's start with "i")
+and they differ from Sunday's copy, so the menu was made again in 0.2.0 after the copy, and food added
+fresh has no rate of its own; (3) the saved rates were not touched after the import. So the briskets' own
+0.9 was gone before beta.1 was installed, and the cook now running (started on beta.1, Tue 2:53 PM) plans
+them at the saved 0.65: fire at 8:55 AM. Friday's steps 9 to 11 use this cook. His files are in
+`~/Downloads/PitPlanner` (his data: never copied into the repo). The first notes, kept for the record:
+the phone's cook fires the smoker
+at 8:55 AM Sat Nov 21, not 6:30 AM as Sunday's copy of his 0.2.0 data says. Only the two briskets moved
 (8:55, 9:15, 12:45, 2:00, 2:55 instead of 6:30, 6:50, 11:40, 1:20, 2:35); the other 13 alarm times are the
 same. That is both briskets at the saved 0.65 hr/lb instead of their own 0.9. The Cook tab says 8:55 too.
 Jason: nothing changed that he knows of. No code change without his yes. Found so far, in a local test that

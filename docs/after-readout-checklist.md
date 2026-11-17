@@ -2,7 +2,7 @@
 
 Done together on Sunday afternoon, 2026-11-22, once the readout has passed; the release is Monday
 2026-11-23. Jason decided this on 2026-11-17. Her phone has
-0.2.0 now. It gets 0.3.0-beta.1 as an upgrade over it, by following `docs/INSTALL.md` exactly as written.
+0.2.0 now. It gets 0.3.0-beta.2 as an upgrade over it, by following `docs/INSTALL.md` exactly as written.
 
 Built only from `docs/INSTALL.md`, the T-031 and T-033 entries in `docs/design/TASKS.md` and SPEC's Share and
 Open shared plan lines. Where those are silent, the step says "to confirm with Jason". Every action on a
@@ -18,13 +18,13 @@ Jason present, her phone in his hands or hers, on wifi.
 |---|---|---|---|---|
 | 1 | On her phone, open the Gear screen of 0.2.0 and read the version line at the bottom | It reads 0.2.0 | yes | |
 | 2 | Screenshot her 0.2.0 Gear, Cook rates and Cook history (to compare later) | Three pictures, status bar cropped off | yes | |
-| 3 | Get the 0.3.0-beta.1 file onto her phone. INSTALL.md step 1 points at the GitHub releases page, which has no beta.1 until the release | To confirm with Jason: how the beta.1 file reaches her phone | yes | |
+| 3 | Get the 0.3.0-beta.2 file onto her phone. INSTALL.md step 1 points at the GitHub releases page, which has no beta.2 until the release | To confirm with Jason: how the beta.2 file reaches her phone | yes | |
 | 4 | INSTALL.md "Install" step 3: tap "Open" on the finished download | Android shows the install screen | yes | |
 | 5 | INSTALL.md "Install" step 4: if asked, Settings, "Allow from this source", go back | The install screen comes back | yes | |
 | 6 | INSTALL.md "Install" step 5: tap "Install", then "Open". Do not uninstall 0.2.0 first | It installs over 0.2.0, no "App not installed" | yes | |
 | 7 | Read the "Pit Planner has a new look" notice, tap OK | One of the three lines in INSTALL.md "Pit Planner has a new look" | yes | |
 | 8 | Compare Gear, Cook rates and Cook history with the step 2 pictures | Her smokers, rates, plan and history are as before | yes | |
-| 9 | Gear, 5 taps on the version line | It reads 0.3.0-beta.1 | yes | |
+| 9 | Gear, 5 taps on the version line | It reads 0.3.0-beta.2 | yes | |
 | 10 | Allow the alerts, if the app asks (INSTALL.md "Allow the alerts"): Notifications, Alarms and reminders, No battery limits, and Full-screen alerts if shown | Each row shows as on | yes | |
 | 11 | Tap "Send a test alert in 10 sec" and lock the phone | It rings | yes | |
 | 12 | Write down every place in INSTALL.md she hesitated, or where the wording of her phone differed | Notes here: ____________. What to do with them: to confirm with Jason | no | |
@@ -34,7 +34,7 @@ version and what the phone said.
 
 ## Part 2: two-phone share (T-031)
 
-Jason's phone with 0.3.0-beta.1 (the release build, not the dev build) and her phone with 0.3.0-beta.1 from
+Jason's phone with 0.3.0-beta.2 (the release build, not the dev build) and her phone with 0.3.0-beta.2 from
 Part 1. A plan on his phone that has at least two foods.
 
 | # | What to do | What must be seen | Needs yes | Done |
@@ -92,7 +92,8 @@ Branches only until the readout passes; then merge one at a time, the gate after
       the readout; confirm `git status` no longer shows them. (Checked 2026-11-17: `.claude/` holds only
       `worktrees/`; nothing else is there to ignore or track.)
 - [x] **Start cook dead after one cook (found by Jason on his phone, 2026-11-17): fixed on `main`, `d2fdccc`,
-      gated; goes out in 0.3.0-beta.2 (HANDOFF section 0). Left: a device check that starts two cooks in one
+      gated; it is in 0.3.0-beta.2, on his phone since 2026-11-17 and proven on the emulator's release build
+      (start, end, start after Discard and after Save). Left: a device check that starts two cooks in one
       app launch, and whether a start that fails gets a message.** The original item: The
       double-tap guard in `src/screens/plan/PlanTab.tsx` is never cleared after a cook starts, so Start cook
       does nothing after that cook ends until the app is restarted. Failing Jest test first (start, end,
@@ -105,6 +106,17 @@ Branches only until the readout passes; then merge one at a time, the gate after
       quarter of the screen wide (Android clamps off-screen bounds to the edge, so "inside the screen" alone
       passes a 24 px sliver). Use it for the three sheets at merge, then for every tapped button in every
       device test.
+- [ ] **Rig: the locked-reboot test's 20 minute guard (2026-11-17).** `tools/device/locked-reboot.sh` stops
+      with "the next step is more than 20 minutes away" on about 3 starts in 10. Its plan's first alarm is 45
+      minutes before serve, serve is 63 to 68 minutes out, so that alarm is 16.5 to 21.5 minutes from the
+      start of the cook. The comment above the plan assumes the prep step 60 minutes before serve rings; prep
+      steps have no alarm. Fix: bring serve nearer or move the guard to 22 minutes, and correct the comment.
+- [ ] **New device test: update the release app with a cook running (Jason, 2026-11-17).** Install a newer
+      release APK over a running cook and read `dumpsys alarm` without opening the app: every alarm still to
+      come is registered again. `pit-alarms` does this in `RestoreReceiver` on `MY_PACKAGE_REPLACED`
+      (`Receivers.kt:107`), proven by Robolectric tests and once by hand on his phone (beta.1 to beta.2).
+- [ ] **A start that fails shows nothing** (`newCook`, the store's save or the alarm sync throwing is an
+      unhandled rejection). Whether it gets a message is Jason's call, after Sunday; new UI needs his words.
 - [ ] **Device rig fixes from the full pass of 2026-11-17** (HANDOFF section 5): date the legacy-import
       fixture's running cook from the clock; wait for the MediaStore row before opening a pushed plan file
       (`shared`, `shared-soon`); scroll to Alerts in `gear` at 130%; scroll a button clear of the pinned footer

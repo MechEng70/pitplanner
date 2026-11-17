@@ -1,4 +1,4 @@
-# T-037 staged cook: checklist (Saturday 2026-11-21, 0.3.0-beta.1)
+# T-037 staged cook: checklist (Saturday 2026-11-21, 0.3.0-beta.2)
 
 No food. The full-length real timeline on Jason's phone, to prove every alarm rings on time with the phone
 locked, unplugged and idle, through a reboot and every kind of change. It ends with Discard, so the cook
@@ -36,12 +36,27 @@ versionCode 300301. Step 7's comparison was against the 2026-11-15 copy of the p
 Sportsman 850, griddle 22 in with 2 burners, oven at 170F, brisket 0.65 and tri-tip 0.9 hr/lb, one past cook
 (Sat Nov 14, served 5:17 PM, 18 min late), the plan for Sat Nov 21 5:00 PM at 250F with five foods: "everything
 looks good" (Jason). Step 5 (a short 0.2.0 cook carried across) was skipped, his choice; the emulator upgrade
-test covers the import (PASS on beta.1 the same morning). **But a running cook did come across:** the copy
+test covers the import (PASS on beta.1 the same morning). **Sunday's copy held a running cook, but it was not on the phone any more on Tuesday (see the update below):** the copy
 holds a 0.2.0 cook started Sun Nov 15 10:49 AM, serve Sat Nov 21 5:00 PM, 28 steps, none done. Its first step, a
 prep reminder at Saturday 5:35 AM, has no alarm; its first alarm is Fire the smoker at 6:30 AM (from the
-copy's plan: `alarm` is false on prep steps). Jason ends or discards it before the staged cook. Still to do on Friday: steps 3 and
-8 to 15 (9 to 11 can use that carried-over cook before it is discarded). The emulator was first: the upgrade
+copy's plan: `alarm` is false on prep steps). Still to do on Friday: steps 3 and
+8 to 15 (9 to 11 use the cook now running, see the update below). The emulator was first: the upgrade
 test and locked-reboot both pass on beta.1.
+
+**Update, Tuesday 2026-11-17 afternoon: beta.2 is on the phone, and the running cook is a beta.1 cook.**
+beta.1 had a bug Jason found the same day (Start cook did nothing after a cook had ended, until the app was
+reopened). The fix is in 0.3.0-beta.2 (`release/pitplanner-0.3.0-beta.2.apk`, SHA-256 `e27ea9b3...8b242`),
+installed over beta.1 at 4:10 PM with `adb install -r`, each line after his yes: 0.3.0-beta.1 / 300301
+before, 0.3.0-beta.2 / 300302 after, no data cleared. 16 seconds after the install, before the app was
+opened, `dumpsys alarm` showed the running cook's 18 alarms registered again. Then Jason opened the app: the
+cook was there, Start cook greyed, Fire the smoker at 8:55 AM.
+**No 0.2.0 cook came across.** The debug file from the phone (2026-11-17 4:24 PM) says so: the import's own
+report reads running cook: no. The cook in Sunday's copy had been ended in 0.2.0 before the upgrade. The
+cook running now was started on beta.1 on Tuesday at 2:53 PM from Plan: serve Sat Nov 21 5:00 PM, 250F, the
+same five foods, 18 alarms, the first Fire the smoker at Saturday 8:55 AM (the copy's 6:30 AM was planned at
+each brisket's own 0.9 hr/lb; the menu on the phone was made again in 0.2.0 after Sunday's copy, so its
+briskets have no rate of their own and plan at the saved 0.65). Steps 9 to 11 use this cook. The import of a
+running 0.2.0 cook is therefore not proven on the phone; it is covered on the emulator only.
 
 | # | Who | What | Done |
 |---|---|---|---|
@@ -50,15 +65,15 @@ test and locked-reboot both pass on beta.1.
 | 3 | Jason | In the dev build ("Pit Planner dev"): no cook running | |
 | 4 | Jason | In 0.2.0: screenshots of Gear, Cook rates and Cook history | |
 | 5 | Jason | In 0.2.0: start a short cook with a step due in about 20 minutes | |
-| 6 | Claude | `adb -s <phone> install -r release/pitplanner-0.3.0-beta.1.apk` (installs over 0.2.0; nothing uninstalled, no data cleared) | |
+| 6 | Claude | `adb -s <phone> install -r release/pitplanner-0.3.0-beta.1.apk` (installs over 0.2.0; nothing uninstalled, no data cleared). Done 2026-11-17; beta.2 went over beta.1 the same afternoon | |
 | 7 | Jason | Open the app. Read the import notice. Compare Gear, Cook rates and Cook history with the step 4 screenshots | |
 | 8 | Jason | Gear, Export my data, save to Drive | |
-| 9 | Claude | `adb -s <phone> shell dumpsys alarm` for the app and `dumpsys package` again (read only: each alarm of the carried-over cook once, exact alarms still granted). The carried-over cook is the 0.2.0 cook that came across on 2026-11-17 (serve Sat Nov 21 5:00 PM, 250F, five foods); Jason keeps it until this step | |
-| 10 | Jason | Open the carried-over cook, End cook, Discard. This is the last step before Saturday's plan is loaded. (Its first alarm is Saturday 6:30 AM, so no ring is waited for on Friday; a carried-over step ringing once is covered by the emulator upgrade test) | |
-| 11 | Claude | `adb -s <phone> shell dumpsys alarm` for the app (read only: nothing pending, so none of the carried-over cook's Saturday alarms is left: the first was Fire the smoker at 6:30 AM; its 5:35 AM prep step is a reminder with no alarm) | |
+| 9 | Claude | `adb -s <phone> shell dumpsys alarm` for the app and `dumpsys package` again (read only: each alarm of the running cook once, 18 of them, the first Fire the smoker at Saturday 8:55 AM; exact alarms still granted). The running cook is the one started on beta.1 on 2026-11-17 at 2:53 PM (serve Sat Nov 21 5:00 PM, 250F, five foods), not a 0.2.0 cook; Jason keeps it until this step | |
+| 10 | Jason | Open the running cook, End cook, Discard. (Its first alarm is Saturday 8:55 AM, so no ring is waited for on Friday.) **Then the beta.2 check on the phone, not before this step** (Jason, 2026-11-17: no start, end, start on the phone while that cook runs): without closing the app, Start cook, End cook, Discard, then Start cook again: the second start must work (in beta.1 it did nothing until the app was restarted). End cook and Discard once more, so nothing is pending for step 11. This is the last step before Saturday's plan is loaded | |
+| 11 | Claude | `adb -s <phone> shell dumpsys alarm` for the app (read only: nothing pending, so none of that cook's Saturday alarms is left: the first was Fire the smoker at 8:55 AM) | |
 | 12 | Jason | Settings: notifications on; battery not restricted; on the app's battery usage page, allow background activity | |
-| 13 | Jason | Gear, 5 taps on the version line: it reads 0.3.0-beta.1 | |
-| 14 | Jason | **First swipe the app away and open it again** (in beta.1 Start cook does nothing once a cook has been started and ended in the same run of the app; found 2026-11-17, fix after the readout). Load Saturday's plan (above). Start cook. If a sheet "Alerts may not ring" shows, tap **Start anyway** and note it here: ____ (in beta.1 its second button, Start cook, is pushed off the right edge at larger font sizes; known, fixed after the readout; it should not show if step 12's settings are on). Write the times in the table below | |
+| 13 | Jason | Gear, 5 taps on the version line: it reads 0.3.0-beta.2 | |
+| 14 | Jason | Load Saturday's plan (above). Start cook. (No need to swipe the app away first on beta.2: Start cook after an ended cook is fixed, `d2fdccc`. Only beta.1 needed it.) If a sheet "Alerts may not ring" shows, tap **Start anyway** and note it here: ____ (in beta.1 and beta.2 its second button, Start cook, is pushed off the right edge at larger font sizes; known, fixed after the readout; it should not show if step 12's settings are on). Write the times in the table below | |
 | 15 | Claude | `adb -s <phone> shell dumpsys alarm` for the app (read only): no Pit Planner alarm before 7:30 AM Saturday; the first is Fire the smoker at 7:50 AM. If any alarm is earlier, stop and tell Jason before he unplugs. Then unplug | |
 
 ## Saturday

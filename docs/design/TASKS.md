@@ -2434,7 +2434,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   check, Saturday's taps with fixture times, the +15 pass line, Sunday's readout). Brisket 10 lb so the
   first ring is 7:50 AM (Jason: nothing before 7:30 AM).
 - **Plan change (Jason, 2026-11-16): Saturday is a staged cook, no food.** The full-length real timeline
-  (brisket, wings, breasts) on his phone, on 0.3.0-beta.1; the phone locked, unplugged and idle between
+  (brisket, wings, breasts) on his phone, on 0.3.0-beta.2 (beta.1 until 2026-11-17; beta.2 has the Start
+  cook fix); the phone locked, unplugged and idle between
   steps. Used on purpose during it: Adjust, Pit went out (and Back up to temp), Not yet, one Undo, and one
   reboot mid-cook. It ends with Discard, so the cook rates are not touched. This replaces "a real cook with
   food" as the 0.3.0 gate; the acceptance below (each alarm within 1 min of plan, none lost on the reboot,
@@ -2480,6 +2481,33 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   proven by the unit tests only); the debug screen opens with 5 taps on the version line and a
   `pitplanner://debug` link is refused in the release build. Not read: the Send to developer file itself
   (the share sheet is never captured); it takes its version from the same source as Gear's line.
+- **beta.2 (2026-11-17, afternoon):** beta.1 had a bug Jason found on his phone: Start cook did nothing
+  after a cook had ended, until the app was reopened (fixed in `d2fdccc`, regression test
+  `src/screens/plan/StartCook.test.tsx`). 0.3.0-beta.2 built by Jason (300302, SHA-256
+  `e27ea9b350ee9ddb04cd876acdcde6fe1c0fce31170de072df83df6f0958b242`). His first try stopped in the gate, in a
+  terminal only: forced colour ended up in the release script's versionCode (fixed in `1cecd97`, tooling
+  only, a freeze exception he approved). On the emulator, all PASS: verify (cert, 300302, production; the
+  permissions are beta.1's, no storage permissions, no SYSTEM_ALERT_WINDOW); upgrade from the real 0.2.0;
+  start, end, start on the release build after Discard and after Save to history, in one app process;
+  locked-reboot 6 of 6 (second run; the first stopped at the rig's 20 minute guard, a rig timing fault
+  listed in `docs/after-readout-checklist.md`). On his phone, each adb line after his yes: beta.2 over
+  beta.1 (300301 to 300302); 16 seconds later, the app not opened, the running cook's 18 alarms were
+  registered again (`RestoreReceiver` on `MY_PACKAGE_REPLACED`); he then saw the cook with Start cook greyed.
+- **Correction to the bullet above (debug file from his phone, 2026-11-17 4:24 PM):** no 0.2.0 cook came
+  across. The import's report on the phone reads running cook: no; the cook in Sunday's copy had been ended
+  in 0.2.0 before the upgrade. The cook on the phone was started on beta.1 at 2:53 PM that day and fires the
+  smoker at 8:55 AM Saturday, not the copy's 6:30 AM: the Plan's five foods carry ids only 0.2.0 makes
+  (`crypto.randomUUID()`; 0.3.0 ids start with "i", `src/lib/itemId.ts`) and differ from the copy's, so the
+  menu was made again in 0.2.0 after Sunday's copy (Add food, Cook again or Open shared plan), and food
+  added that way has no rate of its own: the briskets plan at the saved 0.65 hr/lb, not the 0.9 each had in
+  the copy. The saved rates were not touched after the import. Sunday's copy through the real import and
+  plan path (a local test, not committed) gives 6:30 AM, so the import does not lose a food's own rate. A
+  normal user path, not a defect (Jason's rule for it, 2026-11-17); no code change. The 11-17 check against
+  the copy compared the smoker, griddle, oven, the two saved rates, the past cook and the plan's date, temp
+  and foods as Jason saw them; it did not compare any food's own rate, any fire or step time, the running
+  cook or the alarms. So the import of a running 0.2.0 cook is not proven on his phone: an emulator check
+  with steps still ahead (`tools/device/upgrade020.sh live`, then `check` with beta.2) is owed (Jason: yes).
+  Friday's steps 9 to 11 use the cook now running.
 - **Jason (2026-11-17, second answer; replaces "release on the day the readout passes"):** the release
   waits. Order: Sunday 2026-11-22 the readout passes; Sunday afternoon T-033 and T-031 on his wife's phone
   (`docs/after-readout-checklist.md`); Monday 2026-11-23 the 0.3.0 release. T-038 keeps depending on T-033. If
