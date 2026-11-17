@@ -91,5 +91,21 @@ Branches only until the readout passes; then merge one at a time, the gate after
 - [ ] **`.gitignore`:** add `.claude/worktrees/` and `.claude/settings.local.json` with the first merge after
       the readout; confirm `git status` no longer shows them. (Checked 2026-11-17: `.claude/` holds only
       `worktrees/`; nothing else is there to ignore or track.)
+- [ ] **Sheet buttons in "Start over?" and "Alerts may not ring"** (same bug as Replace: the second button a
+      24 px sliver at the right edge at 115%). Fixed on the Replace branch, each with a failing test first;
+      all three merge together and must be in 0.3.0 on Monday. Device checks at merge (115% and 130%): in
+      `cook-options` for Start over, in `cook` for the alert sheet, in `gear` for Replace.
+- [ ] **Rig rule (Jason, 2026-11-17):** a button a device test taps must be inside the screen AND at least a
+      quarter of the screen wide (Android clamps off-screen bounds to the edge, so "inside the screen" alone
+      passes a 24 px sliver). Use it for the three sheets at merge, then for every tapped button in every
+      device test.
+- [ ] **User guide pictures (T-066):** 5 of 22 slots are filled on a branch; shoot the other 17 on the
+      emulator at 115% from seeded test data only, check each for personal data before committing. Replace
+      `docs/fidelity/rn-debug-send.png` with a picture showing the app's address (the old one shows Jason's
+      old email address; no history rewrite, his decision).
+- [ ] **Smoker catalog:** retry the rate-limited makers' sites; the ten entries whose name covers several
+      versions are left out of this pass (Big Green Egg, Weber WSM, Pit Barrel, Masterbuilt electric,
+      Z Grills 700, recteq Bullseye, Weber Searwood, Oklahoma Joe's Highland, Old Country Brazos, Pit Boss
+      850); Jason sends his testers' exact models later.
 - [ ] **`CLAUDE.md`, Models and agents:** an agent that needs a file outside its list stops and asks first.
 

@@ -45,6 +45,16 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
   Dropping x86 is safe; dropping 32-bit ARM waits on his testers' phone models. R8 minify is on; resource
   shrinking is off and worth under 1 MB. Why: download size. Blocked on: the testers' phone models; nothing
   before the freeze.
+- **No task.** Plural food names, the rest (Jason, 2026-11-17; 0.3.1): a plural flag on the planned item so
+  the lane and hold notes agree ("Chicken wings hold 20 min", "Chicken wings come off before the pit climbs");
+  it changes what a running cook saves, so cooks saved before keep the old wording. With it: singular forms
+  for a count of 1 ("1 chicken breast needs a griddle"), and "their" where the hold note says "its" if that
+  could not be done in 0.3.0. The plan and shared-plan warnings and the Cook screen's "are behind" are fixed
+  for 0.3.0 on a branch. Why: grammar. Blocked on: nothing.
+- **No task.** Sheet footer buttons in the kit (Jason, 2026-11-17; 0.3.1): a block button inside a sheet
+  footer row shares the row, fixed once in `src/components/ui/button.tsx`; the three local fixes of 0.3.0
+  ("Replace your data?", "Start over?", "Alerts may not ring") then use it. Why: one rule instead of three
+  copies. Blocked on: nothing.
 - **T-078** Lock-screen taps re-plan with the app closed (headless JS).
   Why: other alarms keep old times until the app opens (T-076 limit).
   Blocked on: a half-day spike on the emulator, then a report to Jason before any build. Also his answer on
