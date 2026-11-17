@@ -737,6 +737,23 @@ test("no griddle: tri-tip names the method that needs none (Jason's words); othe
   assert.ok(!buildPlan(rules, tritipSear({ cookers: smokerOnly })).warnings.some(w => w.code.startsWith('NO_')));
 });
 
+// Jason, 2026-11-17: the sentence as it is, pinned. A griddle-sear tri-tip, no griddle, a smoker that tops out at
+// 425F: the smoker sear needs 450F, so the method named is the brisket-style one.
+test('no griddle, smoker under 450F: a griddle-sear tri-tip names the brisket-style method', () => {
+  const tri = { id: 't', foodId: 'tritip', methodId: 'reverse', quantity: 2.5 };
+  const p = buildPlan(rules, saturday({ cookers: { smoker: { ...pitBoss, maxTempF: 425 } }, items: [tri] }));
+  const label = (rules as Rules).foods.find(f => f.id === 'tritip')!.methods.find(m => m.id === 'brisketStyle')!.label;
+  const line = NO_GRIDDLE_PICK_METHOD.replace('{food}', 'Tri-tip').replace('{step}', 'sear').replace('{method}', label);
+  assert.deepEqual(
+    p.warnings.filter(w => w.code === 'NO_GRIDDLE').map(w => [w.message, w.itemIds]),
+    [[line, ['t']]],
+  );
+  assert.equal(
+    line,
+    'Tri-tip\'s sear needs a griddle. Add one in Gear, or pick "Smoked brisket-style (200F)" in Food details.',
+  );
+});
+
 // T-075 follow-up (Jason, 2026-11-16): a plan that holds a smoker-sear tri-tip when the smoker in Gear is changed
 // to one that tops out under the method's lowest sear temp. The method is not changed for the user; the plan
 // says so once per food and still builds (at the 450F fallback).
