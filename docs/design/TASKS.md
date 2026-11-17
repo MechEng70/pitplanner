@@ -1469,7 +1469,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - Debug switch and send to developer: in 0.3.0, since he will hand 0.3.0 to a tester (T-065).
   - The Cook tab no longer starts a cook: "you actually have to physically hit start cook", then the app
     jumps to the Cook tab; ending the cook there erases it and goes back to Plan (SPEC "Cook tab", T-021).
-    Taken to mean the cook is erased and the menu stays on Plan, as in 0.2.0; ask if he meant the menu too.
+    Taken to mean the cook is erased and the menu stays on Plan, as in 0.2.0.
+  - **Jason (2026-11-17):** ending a cook leaves the menu on Plan, as built. Closed.
   - Checked on the phone after his End cook, Discard (2026-11-15, read-only `dumpsys alarm`): 0.2.0 has no
     alarms pending.
 - **Tests:** regression tests, written failing first: Start cook with a cook running does not replace it;
@@ -1621,6 +1622,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 
 ### T-022 Cook options (13) and keep or move serve
 - **Jason (2026-11-15, 5:05 PM):** the 15 min stepper stays as built ("I've already approved that one"). Closed.
+- **Jason (2026-11-17):** the built stepper is kept (option A on the questions page). Closed; mockup 13's two
+  buttons are not built. The line under "Jason's answers (2026-11-15)" saying the question was asked again is
+  answered by this.
 - **Status:** built 2026-11-15, unit-tested (Prettier, ESLint, typecheck, Jest and the engine tests pass in
   the task's worktree). `npm run check` and the device run were NOT run (another session had the emulator):
   run `npm run check`, then look at Cook options on the device and save fidelity PNG 13
@@ -1747,6 +1751,9 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   left out of rates (`toRecord(..., keepRate)`). No change: "Brisket finished on time" / "Your rate stays
   0.75 hr/lb." A saved rate still held reads "Your brisket rate stays". Built to his words; he has not seen
   the screen yet.
+- **Jason (2026-11-17):** the Cook finished rate card wording was approved on 2026-11-15 (confirmed). His look
+  at the screen itself is part of the one stacked review after the re-shoots. The "Questions for Jason" list
+  above is answered by the lines below it.
 
 ### T-024 Setup steps and smoker picker
 - **Status:** built 2026-11-15 on branch `t024`, unit-tested (Jest). NOT run on a device or emulator, and
@@ -2111,7 +2118,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   Files app. A release build (0.3.0-alpha.4) opens the file from Files on a cold start: the failure is a
   limitation of dev builds, recorded in `docs/alarm-testing.md`, not an app bug (Jason's rule, 2026-11-16).
   The real two-phone test is still open.
-- **Status:** todo (Jason, hands-on)
+- **Jason (2026-11-17):** done together with T-033, after Sunday's readout (2026-11-22): INSTALL.md with
+  0.3.0-beta.1 on his wife's phone, then the two-phone share test, Gmail and Drive. One list:
+  `docs/after-readout-checklist.md`. Where the sources are silent it says "to confirm with Jason" (the way
+  the beta.1 file reaches her phone; whether her phone to his is part of the test).
+- **Status:** todo (Jason, hands-on), rescheduled to after Sunday's readout. Remains: the checklist ticked.
 - **Goal:** SPEC definition of done: a plan round-trips between two phones through Gmail and through Drive.
 - **Files:** fixes only if a route fails; `docs/HANDOFF.md`.
 - **Depends on:** T-030.
@@ -2166,8 +2177,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   says). 0.2.0 is only on Google Drive: GitHub has one tag and no release with an APK, and he has not made a
   GitHub release before, so the first one is done with him, step by step, from RELEASING.md. Left: INSTALL.md
   followed once on his wife's phone; update the docs where these answers change them (the contact line, betas).
-- **Status:** written, merged onto `main` and gate-complete 2026-11-15. Not done until Jason has reviewed the
-  four files, answered the six questions (HANDOFF) and followed INSTALL.md once on his wife's phone.
+- **Jason (2026-11-17):** INSTALL.md is followed on his wife's phone after Sunday's readout, together with
+  T-031: 0.3.0-beta.1 as an upgrade over her 0.2.0, with his yes. Part 1 of `docs/after-readout-checklist.md`.
+- **Status:** written, merged onto `main` and gate-complete 2026-11-15. Not done until INSTALL.md has been
+  followed once on his wife's phone (after Sunday's readout; the review and the six questions are answered).
 - **Goal:** friends can install or upgrade; Claude can release by checklist.
 - **Files:** `docs/RELEASING.md`, `docs/INSTALL.md`, `docs/release-notes/0.3.0.md`, `README.md`.
 - **Depends on:** T-007.
@@ -2295,13 +2308,17 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   mockup). A history food the app does not know is kept; a known food with an unknown method is still left
   out. Tests: `dataFile.test.ts` 21, `GearData.test.tsx` 19, `restoreText.test.ts` 11, `pickFile.test.ts` 6,
   `shareFile.test.ts` +1. Not seen on a device.
-- **Choices made in the build (not decided by Jason):** no cook rates and no cooks are said ("This file has 2 cookers, no
-  cook rates and no cooks, from Nov 16."; Jason, 2026-11-16, since a restore empties them), no cookers is left
-  out (the phone keeps its own), and the Restored line uses the same list; refusals and the Restored line show in the existing notice sheet titled
-  "Restore from a file" with OK; a running cook is refused when the row is tapped, before the picker; the
-  date reads "Nov 16" (`fmtMonthDay`, local time, no year); a file over 1000 cooks counts as 1 part left
-  out; the picker offers any file type; one new string, shown only if the database write fails and is
-  undone: "The restore did not work. Nothing was changed."
+- **Choices made in the build:** no cook rates and no cooks are said ("This file has 2 cookers, no cook rates
+  and no cooks, from Nov 16."; Jason, 2026-11-16, since a restore empties them), no cookers is left out (the
+  phone keeps its own), and the Restored line uses the same list; a running cook is refused when the row is
+  tapped, before the picker; a file over 1000 cooks counts as 1 part left out; the picker offers any file
+  type.
+- **Jason (2026-11-17):** the four strings are approved as built (option A). Closed: refusals and the Restored
+  line show in the existing notice sheet titled "Restore from a file" with OK; the date reads "Nov 16"
+  (`fmtMonthDay`, local time, no year); a file with no cook rates and no cooks says so in the list; one new
+  string, shown only if the database write fails and is undone: "The restore did not work. Nothing was
+  changed." Mockup 16 on the live canvas: the repo copy is the source (option B), closed. His look at the two
+  rows on a device is part of the one stacked review.
 - **Device testing (Jason):** export on the dev build, restore on a fresh install, rates and history match;
   a cancelled picker; a refusal.
 - **Status:** logic built 2026-11-16 on the T-036 agent branch, unit-tested, not gated (`npm run check` not
@@ -2443,6 +2460,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** the cook.
 
 ### T-038 Upgrade test and cut 0.3.0
+- **Jason (2026-11-17):** release on the day the readout passes (option A on the questions page). T-033 and
+  T-031 are done together after Sunday's readout (`docs/after-readout-checklist.md`); T-038 lists T-033 as a
+  dependency, so whether the release waits for that checklist is to confirm with Jason. If the Samsung
+  tester declines the locked-reboot check, the release notes say so (draft "if declined" line in
+  `docs/release-notes/0.3.0.md`).
 - **Status:** todo
 - **Goal:** 0.3.0 on GitHub Releases; Jason's 0.2.0 install upgraded in place with its data imported.
 - **Files:** `package.json` (0.3.0), `docs/release-notes/0.3.0.md`, `docs/HANDOFF.md`.
@@ -3166,6 +3188,9 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   unlock and a step that comes due rings on the lock screen, on the dev build and on a release build.
 - **Tests:** the device test; JUnit or Robolectric for whatever decides "locked, skip setup".
 - **Real phone:** the check again on the OnePlus after the fix; once on the tester's Samsung at T-037 (P4).
+- **Jason (2026-11-17):** he will ask the Samsung tester (a draft request is on the questions page). If the
+  tester declines: skip it for 0.3.0 and say so in the release notes (option B). Status unchanged: done as
+  test only; the Samsung check remains.
 
 ### T-073 Open shared plan: say when the serve date was moved
 - **Merged and changed, 2026-11-16 (main session):** fast-forwarded onto `main`. Jason then asked for one
@@ -3601,6 +3626,9 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   the sources check (`engine/rules.test.ts`) holds those foods to the topics the source covers, not to every
   number, and still fails when the citation is blank. Wording: "apple cider vinegar" in both rib wrap
   steps; "Turn every 5 min. Dome for the first 15."
+- **Jason (2026-11-17):** the wings source question is closed (FSIS cited, he confirmed the page).
+  `rn-12-live-warned.png` and `rn-12-live-conflict.png` were re-shot on 2026-11-17 and `live-warnings` passes
+  at 115%. His look at the header and the line break is part of the one stacked review after the re-shoots.
 - **Status:** in progress. In 0.3.0, before beta.1 (Jason, 2026-11-16, from the T-069 pictures). Split by
   Jason: fixes 1 and 3 on one agent branch; fix 2 merged onto `main` and gated 2026-11-16 (engine 207, Jest
   866).
@@ -3616,11 +3644,10 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   text, one alert, one OK. Still owed: the device run and the two pictures.
 - **Fix 2 as built:** data only, the wings' shared pull label: the first sentence is the title, the rest is
   the line under it. The alert body reads "Pull wings at 175-185F. 165F is the safe minimum. Hold uncovered,
-  sauce right before serving." No other food's pull title had a "(...F is the safe minimum)". **Open with
-  Jason:** wings have no `sources` entry, so there was no FSIS citation on their 165F to keep (he supplies
-  the source; adding it also makes the rules test check the wings' other numbers). Leftovers from 0.2.0,
-  not changed: "ACV" in the 2-2-1 and 3-2-1 rib wrap steps; a semicolon in the wings griddle step ("Turn
-  every 5 min; dome for the first 15.").
+  sauce right before serving." No other food's pull title had a "(...F is the safe minimum)". The wings
+  source question is closed: the FSIS chart is cited for the wings' 165F (see "Sources" above) and Jason
+  confirmed the page. The 0.2.0 leftovers ("ACV" in the rib wrap steps, the semicolon in the wings griddle
+  step) were changed later (see "Sources").
 - **2. Wings pull step.** Title "Pull wings at 175-185F in 8 min" (the countdown as today); subtitle "165F is
   the safe minimum. Hold uncovered, sauce right before serving." The FSIS citation on the 165F stays. Check
   `data/foods.json` for other all-caps words or semicolons carried over from 0.2.0 and list them for Jason;

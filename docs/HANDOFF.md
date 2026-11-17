@@ -20,6 +20,10 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
   on `main` alone; one gate rerun is allowed only if every failure is a timeout, and both runs are reported.
 - **Fable is at 0%** (Jason, 2026-11-17): the Opus-only rule for agents is off; `CLAUDE.md`'s model rule holds.
 - T-057 is held until after 0.3.0. Review finding 6 is approved as built (SPEC, with a pinning test).
+- **Jason's answers of 2026-11-17** (`docs/proposals/2026-11-17-waiting-on-jason.md`, each with an Answer
+  line): release on the day the readout passes; T-033 and T-031 are done together after Sunday's readout on his
+  wife's phone (`docs/after-readout-checklist.md`); the Samsung tester is asked by him; looks are one stacked
+  review; mockup 16 closed (B); backlog after 0.3.0; icon and two T-060 facts still open.
 
 `main` is committed and clean, **the last few commits not pushed** (Jason pushed during the session; check `git log origin/main..main`). The gate passed on
 the last code change (T-075's three cases: engine 218, gate self-tests 153, Jest 882, Kotlin 68 in
@@ -72,27 +76,35 @@ Sunday the readout table. Every phone action is listed there and still needs his
 
 ### 3. Waiting on Jason
 
-- T-075's three too-cool smoker cases are merged and gated (`SMOKER_TOO_COOL`, the brisket-style import
-  line).
-- **Parked, to build (Jason, 2026-11-16), failing test first:** a shared smoker-sear tri-tip opened on a
-  smoker under 450F by a receiver WITH a griddle moves to the griddle sear and the sheet says nothing today.
-  It must say: "Tri-tip will be seared on the griddle." The phrase goes in `data/foods.json` like the
-  others (an `importMove` on the `reverse` method, "be seared on the griddle"). Not built because it is
-  not a one-line change: `mapToCookers` (`src/lib/sharedPlan.ts`) only reports a move under a MISSING
-  cooker, and the sheet groups its lines in boxes titled "No griddle set up." / "No smoker set up."
-  (`SharedPlanSheet.tsx` about lines 65 and 132, each line ending ", or add a griddle in Gear."). Here
-  nothing is missing, so the line needs a home with no such title and no "or add" tail. Ask Jason where it
-  shows (suggestion: the same box style with the sentence alone, no heading) before building; then the
-  move type needs a case without `from`, plus tests in `engine/share.test.ts` and
-  `SharedPlanSheet.test.tsx` (the two "with a griddle ... no box" tests there pin today's silence and
-  change).
+Jason answered the questions page on 2026-11-17: `docs/proposals/2026-11-17-waiting-on-jason.md`, every item
+has an "Answer (2026-11-17)" line. What is still open:
+
+- **One stacked look review after the re-shoots** (Jason, 2026-11-17): every look owed is in it, including
+  T-081's header and the line break (`rn-12-live-warned.png` and `rn-12-live-conflict.png` were re-shot on
+  2026-11-17, `live-warnings` passes at 115%) and the two-button lock-screen alert on the phone against
+  mockup 14.
+- **T-031 and T-033 together, after Sunday's readout:** INSTALL.md with 0.3.0-beta.1 on his wife's phone (an
+  upgrade over her 0.2.0, with his yes), then the two-phone share test through Gmail and Drive. One list:
+  `docs/after-readout-checklist.md` (four places say "to confirm with Jason").
+- **The Samsung locked reboot (P4, T-072):** he asks the tester (a draft request is on the questions page). If
+  the tester declines, the release notes say it was not tested (draft line in
+  `docs/release-notes/0.3.0.md`).
+- **App icon:** not answered. A close / B he will check it. Also open: what the smoker went back up to 250F for
+  at the end of the 2026-11-14 cook, and which Pit Boss probe pairs with which Chef iQ probe (T-060).
+- Phone yeses are given on the day, action by action.
+
+Closed on 2026-11-17: mockup 16 (B, the repo copy is the source); T-036's four strings (A, as built); T-022's
+stepper; T-064 (the menu stays on Plan); T-081's wings source; T-023's rate card wording; the GitHub repo
+name; T-075's Plan warning sentence; parity D2, D9, D10, D11; T-038 (release on the day the readout passes).
+The backlog triage and every "later versions" item wait until 0.3.0 has shipped. The griddle sub-case (a
+shared smoker-sear tri-tip with a griddle) is built and merged: "Tri-tip will be seared on the griddle." in
+the same box style (SPEC). His smoker is the Pit Boss Sportsman 850 (PB850SPW2); the check of
+`data/cookers.json` and SPEC against it is with the main session.
+
 - Push state: `origin/main` moved to `5c3576b` at 2:16 PM on 2026-11-16 by a push from this working copy.
   The main session ran no `git push` and no agent transcript holds one, so it was Jason's own. Checked
   then: `git log origin/main --all -- keystore.properties dashboard.html` is empty (neither file is in any
   pushed commit; both are ignored).
-- T-081: the header is about 20 dp taller; his look after the re-shoot.
-- Mockup 16 on the live canvas artifact is not updated (only the repo's source and PNG are).
-- Still open from before: his look at the two-button alert on the phone; T-031 with two phones.
 - Done since this section was first written: the FSIS chart is cited for wings, breasts, brisket and
   tri-tip's other two methods (he confirmed the page in his browser; the sources check is scoped to the
   topics such a source covers, `scope: 'covers'`); the debug screen's "Alarm rings" line is approved as

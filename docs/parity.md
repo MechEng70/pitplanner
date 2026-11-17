@@ -65,7 +65,7 @@ Everything that is not OK. T-034 is done when each row is fixed or accepted by J
 | P1 | Failure mode 6: reboot with the phone locked, on the Expo build | **Failed on the dev build, OnePlus, 2026-11-16**: the app crashes at start while the phone is locked, so alarms come back only after unlock (`docs/alarm-testing.md`). Must-fix for 0.3.0 (Jason): T-072. A release build on the PIN emulator keeps its alarms (2026-11-16), so the crash is dev-build code. Jason, 2026-11-16: test only, no start-up guard; the locked-reboot device test is required before every release |
 | P2 | Failure mode 1: repeats in Doze; six repeats then "Cook needs you" | One repeat proven on the phone in forced Doze (2026-11-16); the six-repeat count and "Cook needs you" proven in Robolectric. Accepted for 0.3.0 (Jason, 2026-11-16) |
 | P3 | Failure mode 9: a permission taken away during a cook | Run on the phone, 2026-11-16: the Cook tab banner shows and goes, the alarms stay (`docs/alarm-testing.md`) |
-| P4 | Failure mode 10: a Samsung | Not run; one tester has one. At T-037: the locked-reboot check once on the tester's Samsung, after the T-072 fix (Jason, 2026-11-16) |
+| P4 | Failure mode 10: a Samsung | Not run; one tester has one. At T-037: the locked-reboot check once on the tester's Samsung, after the T-072 fix (Jason, 2026-11-16). Jason, 2026-11-17: he will ask that tester; if the tester declines, skip it for 0.3.0 and say so in the release notes |
 | P5 | Reboot, app update, time zone change | Run by hand on the emulator (`docs/alarm-testing.md`); no device test function |
 
 ### 1c. Mockups with no fidelity sheet in `docs/fidelity`
@@ -86,8 +86,9 @@ All other mockups (01-07, 11-13, 15-20) have an `rn-NN-*.png` sheet there.
 - `tools/device/README.md` has no row for the `cook-options` device test. It covers Pit went out, Back up to
   temp and Start over; Running behind, Quiet alerts, Not yet and Try again have no device test.
 - `GearScreen.tsx:3-4` and its test's "those rows do nothing" comment are out of date: the route passes the handlers now.
-- Two questions to Jason are still open in TASKS (T-022): the look of the -15/+15 control, and Keep staying
-  selected in Running behind when a food would go under its minimum rest (backlog).
+- T-022's question about the -15/+15 control is closed: Jason keeps the built stepper (2026-11-15, confirmed
+  2026-11-17). One question stays in the backlog: Keep staying selected in Running behind when a food would go
+  under its minimum rest (waits until after 0.3.0).
 
 ## 2. SPEC section 3: screens
 
@@ -206,8 +207,8 @@ Rows that are OK, with their proof. Open rows are in section 1 by number.
 
 ## 5. Still to do in T-034
 
-- Jason's decision on the rows still "open" in 1a: D2 ("Show 180-500F"), D9 (hold
-  limit during a cook), D10 (cooler hold), D11 (imported temp).
+- D2 ("Show 180-500F"), D9 (hold limit during a cook), D10 (cooler hold) and D11 (imported temp): decided
+  2026-11-16 and confirmed by Jason on 2026-11-17 as recorded in the 1a table. Closed.
 - T-069 (conflict banner on Live cook) and T-070 (the receiver picks cookers): both new UI, approved first.
 - 1b rows T6 to T19: which get a test before 0.3.0.
 - Fidelity sheets for mockups 08, 09, 10 (1c); 14 with the phone.
