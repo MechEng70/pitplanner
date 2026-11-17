@@ -40,7 +40,7 @@ test covers the import (PASS on beta.1 the same morning). **But a running cook d
 holds a 0.2.0 cook started Sun Nov 15 10:49 AM, serve Sat Nov 21 5:00 PM, 28 steps, none done. Its first step, a
 prep reminder at Saturday 5:35 AM, has no alarm; its first alarm is Fire the smoker at 6:30 AM (from the
 copy's plan: `alarm` is false on prep steps). Jason ends or discards it before the staged cook. Still to do on Friday: steps 3 and
-8 to 14 (9 to 11 can use that carried-over cook before it is discarded). The emulator was first: the upgrade
+8 to 15 (9 to 11 can use that carried-over cook before it is discarded). The emulator was first: the upgrade
 test and locked-reboot both pass on beta.1.
 
 | # | Who | What | Done |

@@ -2471,10 +2471,14 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   notice showed; he checked Gear, Cook rates, Cook history and Plan against the 2026-11-15 copy of his 0.2.0
   storage: all as expected, the smoker as Pit Boss Sportsman 850. A running 0.2.0 cook (serve Sat Nov 21)
   came across; he discards it before the staged cook. Left for Friday: `docs/t037-checklist.md` steps 3 and
-  8 to 14. On the emulator the same day, on beta.1: built and verified (0.3.0-beta.1, 300301, production; no
+  8 to 15. On the emulator the same day, on beta.1: built and verified (0.3.0-beta.1, 300301, production; no
   banned permissions; backup attributes), upgrade from the real 0.2.0 PASS, locked-reboot PASS (6 of 6),
-  Gear reads "Pit Planner 0.3.0-beta.1". Left on the emulator: the Send to developer file's version, the
-  update check offering betas, the `bmgr` backup and restore.
+  Gear reads "Pit Planner 0.3.0-beta.1". Also on the emulator (2026-11-17): a `bmgr` backup and restore on the lock emulator brings the database
+  back (cookers, the `legacy_import` marker and the other kv rows) and leaves the alarm store out, as the
+  rules say; the update check ran (`checkedAt` set, nothing newer on GitHub to offer, so "offers betas" is
+  proven by the unit tests only); the debug screen opens with 5 taps on the version line and a
+  `pitplanner://debug` link is refused in the release build. Not read: the Send to developer file itself
+  (the share sheet is never captured); it takes its version from the same source as Gear's line.
 - **Jason (2026-11-17, second answer; replaces "release on the day the readout passes"):** the release
   waits. Order: Sunday 2026-11-22 the readout passes; Sunday afternoon T-033 and T-031 on his wife's phone
   (`docs/after-readout-checklist.md`); Monday 2026-11-23 the 0.3.0 release. T-038 keeps depending on T-033. If

@@ -1,9 +1,120 @@
-# Handoff (2026-11-16, end of the twenty-first session: twelve tasks merged, beta.1 not yet built; the emulator block is next, all before Friday)
+# Handoff (2026-11-17, end of the twenty-second session: 0.3.0-beta.1 built, tested on the emulators and on Jason's phone; the freeze is on until Sunday's readout)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## Restart, twenty-second session (written Monday 2026-11-16, end of the twenty-first; read this first)
+## Restart, twenty-third session (written Tuesday 2026-11-17, end of the twenty-second; read this first)
+
+`main` is committed and clean. The commits after Jason's push of 2026-11-17 are docs only and **not
+pushed** (check `git log origin/main..main`). The last gate on code was the forced one
+(`ANDROID_TESTS_FORCE=1 npm run check`) on `ab7c9fd`: engine 229, gate self-tests 153, Jest 913, Kotlin 117
+(pit-alarms 68, pit-legacy 9, pit-share 40, all "ran"), Snyk 26 projects, none skipped; the release script's
+own gate passed again inside the build. Emulators and Metro are stopped. One agent branch is waiting (T-082,
+below); its worktree is under `.claude/worktrees/`. `dashboard.html` is current (a Sonnet keeper; its
+`agents` list shows only agents running right now).
+
+**The beta.1 freeze is on (Jason):** `release/pitplanner-0.3.0-beta.1.apk` is built (SHA-256
+`68b9e64a412caf12f69e902b3ff6d3fd5e62eb608b0850bb441a965900bc5bf7`; cert ok; 0.3.0-beta.1, versionCode 300301,
+production). Nothing merges to `main` until Sunday's readout (2026-11-22) except fixes for problems that
+block the test, each with his yes. Docs he asks for are committed. Never rebuild beta.1 under the same name.
+
+**beta.1 is on Jason's phone** (2026-11-17 11:30, over 0.2.0, each adb line after his yes): the full-import
+notice; Gear, Cook rates, Cook history and Plan matched the 2026-11-15 copy of his 0.2.0 storage
+(`tools/device/out/t064-2026-11-15/`); the smoker is Pit Boss Sportsman 850. A running 0.2.0 cook (serve
+Sat Nov 21 5:00 PM, 250F, five foods; first alarm Fire the smoker 6:30 AM, its 5:35 AM prep step has no
+alarm) came across: he keeps it for Friday's steps 9 to 11 and discards it at step 10. He is looking for
+layout problems; they go on one list for after Sunday. Going back from beta.1 means uninstalling it, which
+wipes its data; Sunday's copy is the only copy of his 0.2.0 data.
+
+### 1. The dates
+
+- **Friday 2026-11-20:** `docs/t037-checklist.md`, Friday table, steps 3 and 8 to 15 (1, 2, 6, 7 are done).
+  Every adb line is listed there and still needs his yes. Step 15 checks no Pit Planner alarm is due before
+  7:30 AM Saturday.
+- **Saturday 2026-11-21:** the staged cook with no food (same file). New at 12:00 PM, before the 12:05
+  reboot: plug in, save `adb shell dumpsys batterystats --history` to a file, unplug (a reboot can drop the
+  newest history entries: seen on the emulator; with the stats written first they stay).
+- **Sunday 2026-11-22:** the readout; then, in the afternoon, `docs/after-readout-checklist.md` (INSTALL.md
+  on his wife's phone with beta.1 over her 0.2.0, then the two-phone share; three "to confirm" steps: 3, 12,
+  20); then T-082's merge and emulator look; the disk cleanup after his approval; the ROADMAP triage.
+- **Monday 2026-11-23:** the 0.3.0 release (T-038, which still depends on T-033).
+
+### 2. Waiting to merge after Sunday's readout: T-082 (temp step question)
+
+Branch `worktree-agent-a0ce7915c8c901c69`, six commits (`9ccece5` grid rule, `ccded9e` the display unit
+decides, `e13e171` screens, `eaa7a6d` dial settings show the typed values, `86f3063` dial marks to the whole
+degree in the temp menu and on Plan). Its own runs: engine 241, Jest 945. Approved mockups are on branch
+`worktree-agent-a1211e2e2ed4313e1` (`docs/proposals/2026-11-17-temp-step/`, commit `dc515fa`): merge them
+with it. Read the diff before merging (the main session has not). Then: gate; SPEC text from its report
+(TASKS T-082 holds the decisions); the rig lines in `tools/device/run.sh` for Setup's card and Gear's smoker
+row (the row now opens a Smoker sheet); emulator Setup and Gear at 115% and 130% ("Other" has about 2 points
+to spare at 130%); Jason's look. Ships in 0.3.0 on Monday, else 0.3.1. Known gap, his decision: for a 9, 18,
+27 or 45F step the "cannot be set to" warning fires only when the temp is off both grids.
+
+### 3. Waiting on Jason
+
+- One stacked look: 12 pictures in `tools/device/out/checks-2026-11-17/` (the table is in the T-038 and
+  session notes: T-075 x5, T-036 x4, T-077, Cook finished's header), `docs/fidelity/rn-12-live-warned.png`
+  and `rn-12-live-conflict.png` (T-081's taller header), the app icon, the two-button alert on his phone.
+- Layout problems he finds on beta.1 on his phone.
+- The Samsung tester's answer on the locked-reboot check (draft request in
+  `docs/proposals/2026-11-17-waiting-on-jason.md`).
+- Two facts for T-060 (what the smoker went back up to 250F for on 2026-11-14; which probe pairs with
+  which).
+- After the freeze: add to `CLAUDE.md` under "Models and agents": an agent that needs a file outside its
+  list stops and asks first, every time (he said yes).
+- Two things seen on the emulator, his call: the tri-tip's short smoke bar shows only "s"; a seeded chicken
+  breasts item still reads "griddle" on Plan after the griddle is removed (Conflicts says it needs one).
+
+### 4. Done in the twenty-second session (all on `main` unless said, each code change through the gate)
+
+- The emulator block: live-warnings with the T-081 checks and two re-shot pictures; battery history across a
+  reboot; the +15 pass line (holds; checklist corrected; the ring log has a closed-app second ring with
+  source `snooze`); finding 1 seen on alpha.5 ("Pit Planner 0.2.0" in Gear) and gone on beta.1.
+- Device tests at 115%, all pass: live-warnings, cook-finished, setup, gear, plan-sheets, history, followups;
+  on beta.1: upgrade from the real 0.2.0, locked-reboot (6 of 6), a `bmgr` backup and restore (the database
+  comes back, the alarm store stays out). Every failure on the way was a test rig fault, fixed in
+  `tools/device/run.sh` (banner position pattern; the wait for Behind; the finished seeds now serve on a
+  5 minute mark; Units sits below the first screen since T-036).
+- The griddle line ("Tri-tip will be seared on the griddle."); seven fixes from an independent review of the
+  2026-11-16 merges, each with a failing test first (a restore file with a bad date; a big restore file; the
+  lane note for a clash during the tri-tip climb; long-hold minutes round up; "The other foods moved with
+  it." only when one moved; a running cook's oven raised to 140F; a saved update link checked on read);
+  finding 6 approved as built and pinned.
+- Smoker data: the Pit Boss 820 entry is not verified (its step had no source); the Saturday fixture is the
+  `pitboss-sportsman-850` entry; Jason's smoker is a Pit Boss Sportsman 820 with Wi-Fi (PB0820SPW) with a
+  newer controller card (5F steps, reports PB850SPW2), saved as the Sportsman 850 entry (same numbers).
+- Docs: `docs/USER-GUIDE.md` (T-066 text, 22 screenshot slots; T-066 is 0.3.0), the questions page with his
+  answers, `docs/after-readout-checklist.md`, `docs/ROADMAP.md`, T-082 in TASKS, BACKLOG's preset dials.
+- One known bug left on purpose (no tester uses Celsius): the manual smoker form stores a 1C to 4C step off
+  the Celsius grid; two `test.failing` cases in `src/screens/setup/SmokerPicker.test.tsx`; fix in 0.3.x.
+
+### 5. Rules and traps added in the twenty-second session
+
+- **Kotlin floor is 117.** `tools/test-android.sh` prints the count per module and "ran" or "up-to-date
+  (results from <time>)"; report that line with every gate. Before a release build: one gate with
+  `ANDROID_TESTS_FORCE=1`.
+- **Agents:** check an agent's files against running work before starting it and put the list in the report
+  (`CLAUDE.md`); fix agents run only their own test files; the full gate runs on `main` alone, with no agent
+  or emulator running; one rerun only if every failure is a timeout, both runs reported; a file outside an
+  agent's list means stop and ask first.
+- **Memory:** a release build needs it. Before one: stop the emulator and `./gradlew --stop`, look at
+  `free -m`; the first beta.1 build was stopped at 24 of 30 GB in use (FreeCAD and Teams were open). A
+  background task of the session can be stopped under memory pressure: start a long build detached
+  (`setsid nohup`) and watch it in the foreground, stopping it under 4 GB available.
+- **Dev build limits:** with its process dead, a ringing alarm brings up the dev launcher's "There was a
+  problem loading the project." Use a release build for closed-app behavior. A release build refuses
+  `pitplanner://debug`; the debug screen opens with 5 taps on Gear's version line.
+- **Emulators:** `tools/device/upgrade020.sh setup` needs the release app gone from the test emulator; that
+  uninstall needs Jason's yes each time. `bmgr backupnow` says "Backup is not allowed" for a force-stopped
+  app: open the app once first. Put the transport back and disable the backup manager after.
+- With two Pit Planner alerts waiting, Android groups them and hides Done and +15 min until the alert is
+  pulled open (emulator, Android 16).
+- Reading 0.2.0's storage off the phone needs a debuggable 0.2.0 build from `legacy/`, which is not on disk
+  and is not built without his yes (he said no on 2026-11-17).
+- Usage: Fable was at 3% used on 2026-11-17. `~/.claude/settings.json` has `cleanupPeriodDays: 365`.
+
+## Restart, twenty-second session (written Monday 2026-11-16, end of the twenty-first)
 
 **Running notes, twenty-second session (Tuesday 2026-11-17; rewritten into a new Restart section at the end):**
 - **Kotlin floor is 117** (Jason): pit-alarms 68, pit-share 40, pit-legacy 9. The "Kotlin 68" below was
