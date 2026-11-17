@@ -414,6 +414,121 @@ describe('trimmed with a reason', () => {
     ]);
   });
 
+  // T-036 review: the dump's items were scanned once per cook, so a 2 MB dump of minimal rows took seconds.
+  const dumpOf = (cooks: unknown[], items: unknown[]) =>
+    JSON.stringify({
+      format: 'pitplanner-export',
+      formatVersion: 1,
+      schemaVersion: 1,
+      exportedAt: NOW,
+      tables: { cook_history: cooks, cook_history_items: items },
+    });
+
+  test('the dump items are matched to their cooks in one pass: the work does not grow with cooks x items', () => {
+    const minimal = (n: number) =>
+      dumpOf(
+        Array.from({ length: n }, (_, i) => ({ id: `c${i}` })),
+        Array.from({ length: n }, (_, i) => ({ cook_id: `x${i}` })),
+      );
+    const filters = jest.spyOn(Array.prototype, 'filter');
+    const count = (text: string) => {
+      filters.mockClear();
+      readDataFile(rules, text, NOW);
+      return filters.mock.calls.length;
+    };
+    try {
+      // One scan per cook would add 990 calls here.
+      expect(count(minimal(1000)) - count(minimal(10))).toBeLessThan(10);
+    } finally {
+      filters.mockRestore();
+    }
+  });
+
+  test('a dump at the size cap, full of minimal cook and item rows, reads well under a second', () => {
+    const cooks: { id: string }[] = [];
+    const items: { cook_id: string }[] = [];
+    const pairs = Math.floor(MAX_CHARS / (JSON.stringify({ id: 'c00000' }).length + 25));
+    for (let i = 0; i < pairs; i++) {
+      cooks.push({ id: `c${i}` });
+      items.push({ cook_id: `x${i}` });
+    }
+    const text = dumpOf(cooks, items);
+    expect(text.length).toBeLessThanOrEqual(MAX_CHARS);
+    expect(text.length).toBeGreaterThan(MAX_CHARS * 0.9);
+    const t0 = performance.now();
+    expect(readDataFile(rules, text, NOW)).toEqual({ ok: false, problem: 'nothing to restore' });
+    // About 4 s with one scan of the items per cook; well under 0.2 s in one pass.
+    expect(performance.now() - t0).toBeLessThan(1000);
+  });
+
+  test('a dump with several cooks and their items interleaved reads each cook with its own items, in position order', () => {
+    const item = (cook: string, position: number, name: string, minutes: number) => ({
+      cook_id: cook,
+      position,
+      name,
+      food_id: 'brisket',
+      method_id: 'smoked',
+      smoker_id: 'pb820',
+      quantity: 12,
+      pit_temp_f: 225,
+      minutes_on_heat: minutes,
+      planned_min: minutes,
+      actual_min: minutes,
+      options: null,
+      discarded: 0,
+    });
+    const cookRow = (id: string, days: number) => ({
+      id,
+      served_at: NOW - days * DAY,
+      pit_temp_f: 225,
+      late_min: 5,
+      ended_early: 0,
+      notes: id,
+    });
+    const text = dumpOf(
+      [cookRow('a', 3), cookRow('b', 2), cookRow('c', 1)],
+      [
+        item('b', 1, 'B2', 120),
+        item('a', 2, 'A3', 130),
+        item('c', 0, 'C1', 140),
+        item('a', 0, 'A1', 150),
+        item('b', 0, 'B1', 160),
+        item('a', 1, 'A2', 170),
+        item('gone', 0, 'G', 180),
+      ],
+    );
+    const r = readDataFile(rules, text, NOW);
+    if (!r.ok) throw new Error(r.problem);
+    const log = (minutes: number) => ({
+      foodId: 'brisket',
+      methodId: 'smoked',
+      smokerId: 'pb820',
+      quantity: 12,
+      pitTempF: 225,
+      minutesOnHeat: minutes,
+    });
+    const it = (name: string, minutes: number) => ({
+      name,
+      plannedMin: minutes,
+      actualMin: minutes,
+      log: log(minutes),
+    });
+    const rec = (id: string, days: number, items: unknown[]) => ({
+      id,
+      date: NOW - days * DAY,
+      notes: id,
+      pitTempF: 225,
+      lateMin: 5,
+      items,
+    });
+    expect(r.data.history).toEqual([
+      rec('a', 3, [it('A1', 150), it('A2', 170), it('A3', 130)]),
+      rec('b', 2, [it('B1', 160), it('B2', 120)]),
+      rec('c', 1, [it('C1', 140)]),
+    ]);
+    expect(r.dropped).toEqual([]);
+  });
+
   test('a dump with odd rows is read row by row and never throws', () => {
     const dump = {
       format: 'pitplanner-export',

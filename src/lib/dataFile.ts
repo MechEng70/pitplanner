@@ -503,28 +503,33 @@ function fromDump(tables: Obj): Obj {
     if (row.locked === 1) rateLocks.push([row.food_id, true]);
   }
 
+  // Items grouped by cook in one pass (in position order), not scanned again for every cook.
+  const itemsOf = new Map<unknown, Obj[]>();
   const items = rowsOf(tables, 'cook_history_items').sort((a, b) => Number(a.position) - Number(b.position));
+  for (const i of items) {
+    const list = itemsOf.get(i.cook_id);
+    if (list) list.push(i);
+    else itemsOf.set(i.cook_id, [i]);
+  }
   const history = rowsOf(tables, 'cook_history').map(c => {
     const record: Obj = { id: c.id, date: c.served_at, pitTempF: c.pit_temp_f, notes: c.notes };
     if (c.ended_early === 1) record.lateMin = null;
     else if (c.late_min != null) record.lateMin = c.late_min;
-    record.items = items
-      .filter(i => i.cook_id === c.id)
-      .map(i => {
-        const log: Obj = {
-          foodId: i.food_id,
-          methodId: i.method_id,
-          smokerId: i.smoker_id,
-          quantity: i.quantity,
-          pitTempF: i.pit_temp_f,
-          minutesOnHeat: i.minutes_on_heat,
-        };
-        // As the app reads them: options that are not a map of strings are none.
-        const options = json(i.options);
-        if (isObj(options) && Object.values(options).every(isStr)) log.options = options;
-        if (i.discarded === 1) log.discarded = true;
-        return { name: i.name, plannedMin: i.planned_min, actualMin: i.actual_min, log };
-      });
+    record.items = (itemsOf.get(c.id) ?? []).map(i => {
+      const log: Obj = {
+        foodId: i.food_id,
+        methodId: i.method_id,
+        smokerId: i.smoker_id,
+        quantity: i.quantity,
+        pitTempF: i.pit_temp_f,
+        minutesOnHeat: i.minutes_on_heat,
+      };
+      // As the app reads them: options that are not a map of strings are none.
+      const options = json(i.options);
+      if (isObj(options) && Object.values(options).every(isStr)) log.options = options;
+      if (i.discarded === 1) log.discarded = true;
+      return { name: i.name, plannedMin: i.planned_min, actualMin: i.actual_min, log };
+    });
     return record;
   });
 
