@@ -6,8 +6,9 @@
 - **0.3.x:** reserved for bug fixes.
 - **0.4.0:** Home Assistant phase 1, T-042 to T-050 (mockups, the client_id page, sign-in, the WebSocket
   client, discovery, Gear, a probe per food, live probe temps).
-- **0.5.0:** fish (T-071), the receiver picks cookers (T-070). The alarm log on the Android side (T-068) was
-  moved into 0.3.0 and is done (merged 2026-11-16).
+- **0.5.0:** fish (T-071), the receiver picks cookers (T-070), Chef iQ probes direct over Bluetooth (T-080;
+  Jason, 2026-11-17). The alarm log on the Android side (T-068) was moved into 0.3.0 and is done (merged
+  2026-11-16).
 - **0.5.0 or later:** T-051 to T-055 (Home Assistant phases 2 to 4).
 - Nothing from 0.4.0 or later is started before 0.3.0 ships.
 
