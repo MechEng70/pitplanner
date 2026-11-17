@@ -440,8 +440,9 @@ describe('the temp step question on the smoker card', () => {
     await fireEvent.changeText(sheet(MODEL).getByLabelText('Dial settings (C)'), '80, 105, 120');
     await fireEvent.press(sheet(MODEL).getByRole('button', { name: 'Save smoker' }));
     await settle();
-    // Dial settings read like every other set point in C (the 2C rounding): 221F is 105C, shown as 106C.
-    expect(screen.getByText('Has fixed settings: 80, 106, 120C.')).toBeOnTheScreen();
+    // Jason, 2026-11-17: dial settings are real dial marks, so they read as typed, to the whole degree, not
+    // with the 2C set point rounding (221F is 105C, which that rounding showed as 106C).
+    expect(screen.getByText('Has fixed settings: 80, 105, 120C.')).toBeOnTheScreen();
     await press('Continue');
     expect(repos.cookers.load().smoker).toMatchObject({ tempStepF: null, tempPresetsF: [176, 221, 248] });
   });

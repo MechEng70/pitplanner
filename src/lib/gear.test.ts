@@ -45,7 +45,9 @@ describe('the smoker catalog (data/cookers.json)', () => {
     expect(stepNote(at(5), 'F')).toBeNull();
     expect(stepNote(at(5), 'C')).toBeNull();
     expect(stepNote(at(null, [250, 180, 225]), 'F')).toBe('Has fixed settings: 180, 225, 250F.');
-    expect(stepNote(at(null, [180, 225, 250]), 'C')).toBe('Has fixed settings: 82, 108, 122C.');
+    // Whole degrees, not the 2C set point rounding (82, 108, 122C): dial settings are real dial marks.
+    expect(stepNote(at(null, [180, 225, 250]), 'C')).toBe('Has fixed settings: 82, 107, 121C.');
+    expect(stepNote(at(null, [176, 221, 248]), 'C')).toBe('Has fixed settings: 80, 105, 120C.');
     expect(stepChoice(at(null, [180, 225]), 'C')).toBe('other');
   });
 

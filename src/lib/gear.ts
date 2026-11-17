@@ -2,7 +2,7 @@
 // unverified entries stay blank until the user fills them in (Setup / Gear screens, "Enter it yourself").
 
 import type { GriddleProfile, OvenProfile, SmokerProfile } from '../../engine/types.ts';
-import { cToF, showSetPoint, showStep, type TempUnit } from '../../engine/units.ts';
+import { cToF, showStep, showTemp, type TempUnit } from '../../engine/units.ts';
 import cookersJson from '../../data/cookers.json';
 
 // Pellet burn estimates from SPEC.md section 12 (open item: learn from logged refills).
@@ -155,14 +155,15 @@ export function stepChoice(s: SmokerProfile, unit: TempUnit): string {
 
 /**
  * The line under the question when Other is what is saved: "Sets in 20F steps." or "Has fixed settings:
- * 180, 225, 250F." in the display unit; null otherwise.
+ * 180, 225, 250F." in the display unit; null otherwise. Dial settings are real dial marks, so they read as
+ * typed, to the whole degree, not with the 2C set point rounding (Jason, 2026-11-17).
  */
 export function stepNote(s: SmokerProfile, unit: TempUnit): string | null {
   if (stepChoice(s, unit) !== 'other') return null;
   if (s.tempStepF) return `Sets in ${showStep(s.tempStepF, unit)} steps.`;
   const presets = [...(s.tempPresetsF ?? [])].sort((a, b) => a - b);
   if (presets.length === 0) return null;
-  return `Has fixed settings: ${presets.map(f => showSetPoint(f, unit, null).slice(0, -1)).join(', ')}${unit}.`;
+  return `Has fixed settings: ${presets.map(f => showTemp(f, unit).slice(0, -1)).join(', ')}${unit}.`;
 }
 
 /** What the user typed in "Enter it yourself" (or to finish an unverified model). Stored units: F, lb. */
