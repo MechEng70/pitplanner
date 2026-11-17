@@ -428,7 +428,9 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
 
   const smoker = input.cookers.smoker;
   if (smoker) {
-    if (!isSettable(smoker, pit))
+    // The plan does not know the display unit (T-082: it decides whether a 9, 18, 27 or 45F step is read in
+    // C), so it warns only for a temp that is off the grid either way. Open with Jason: carry the unit in.
+    if (!isSettable(smoker, pit, 'F') && !isSettable(smoker, pit, 'C'))
       warnings.push({ code: 'TEMP_NOT_SETTABLE', level: 'warn', message: `${smoker.name} cannot be set to ${pit}F.` });
   }
   // A missing cooker is said once per food, however many of its steps need it (T-075).

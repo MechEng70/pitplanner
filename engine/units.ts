@@ -21,13 +21,18 @@ export function showTemp(f: number, unit: TempUnit, setPoint = false): string {
   return `${setPoint ? Math.round(c / SET_POINT_STEP_C) * SET_POINT_STEP_C : Math.round(c)}C`;
 }
 
+/** The stored F of the four Celsius choices, 5C, 10C, 15C and 25C (T-082). */
+export const CELSIUS_STEPS_F = [9, 18, 27, 45];
+
 /**
- * A Celsius step (T-082): a stored F step that is a whole number of 5C, so 9F (5C), 18F (10C), 27F (15C),
- * 45F (25C) and so on. Its grid counts in C from 0C (engine/temps.ts) and its set points read as exact C.
- * Storage is F only, so a 45F step typed by a Fahrenheit user reads as 25C too; no F controller is known to
- * step by a multiple of 9F.
+ * A Celsius step (T-082, Jason 2026-11-17): the display unit decides, as steps are stored in F only. In
+ * Celsius display a stored 9F, 18F, 27F or 45F step is 5C, 10C, 15C or 25C: its grid counts in C
+ * (engine/temps.ts) and its set points read as exact C. In Fahrenheit display every step is an F step, and in
+ * Celsius display any other step stays an F step. So switching units changes the meaning of those four steps
+ * (a stored step unit is planned for 0.3.x).
  */
-export const isCelsiusStep = (stepF: number | null | undefined): boolean => !!stepF && stepF % 9 === 0;
+export const isCelsiusStep = (stepF: number | null | undefined, unit: TempUnit): boolean =>
+  unit === 'C' && stepF != null && CELSIUS_STEPS_F.includes(stepF);
 
 /** A step in the display unit: "5F", "5C" for 9F. A step is a difference, so C is step * 5/9 with no offset. */
 export function showStep(stepF: number, unit: TempUnit): string {
@@ -39,7 +44,7 @@ export function showStep(stepF: number, unit: TempUnit): string {
  * whole degrees off the grid; any other smoker keeps showTemp's 2C set point rounding.
  */
 export function showSetPoint(f: number, unit: TempUnit, stepF: number | null | undefined): string {
-  return unit === 'C' && isCelsiusStep(stepF) ? showTemp(f, unit) : showTemp(f, unit, true);
+  return isCelsiusStep(stepF, unit) ? showTemp(f, unit) : showTemp(f, unit, true);
 }
 
 export function showWeight(lb: number, unit: WeightUnit): string {
