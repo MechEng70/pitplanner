@@ -3738,3 +3738,46 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   its own choices, proposed 1C / 2C / 5C / 10C / Other (1C: Z Grills Australia, sourced; the others to be
   sourced), mockup first. Fahrenheit choices stay 5 / 10 / 15 / 25 / Other.
 
+
+### T-083 New foods: bacon and baked potato on the smoker at 350F
+
+- **Version (Jason, 2026-11-17):** after 0.3.0. Decide alongside the wings proposal (branch
+  `worktree-agent-a00d9697f70d1c24c`, wings on a smoker under 400F). Backlog only: no code, no data yet.
+- **Status:** todo. Recorded from Jason's note of 2026-11-17; nothing is decided.
+- **Bacon (Jason's measured numbers):** smoker at 350F, 20 to 25 min, timer only, done by crispness. No
+  internal temperature: FSIS gives none for bacon; bacon is not ready-to-eat and must be cooked (source named
+  by Jason, to be read and cited before it goes into data). Check alarms at 15, 20 and 25 min: it can finish
+  early depending on where it sits in the smoker (hot spots).
+- **Baked potato:** smoker at 350F, about 1 hr (Jason's measured number), done at 210F on a probe. Source
+  named by Jason, to be read and cited before data: Idaho Potato Commission, "Dr. Potato": 210F; their time
+  is 1 hr at 400F; pull at 185F if the potato is held warm, carryover finishes it.
+- **Design notes (Jason, 2026-11-17):**
+  1. Both cook on the smoker (Jason's "grill" is the Pit Boss). Both are fixed 350F smoker items: the same
+     gap as wings (the wings method "Smoker at 350F" is a fixed 350F phase too). Today nothing warns when the
+     smoker is set lower, for example 225F for a brisket. One rule for all fixed-temp items, not one per
+     food. Placement options to offer or explain: after the brisket comes off to rest; the griddle for
+     bacon; the oven for potatoes.
+  2. Bacon's three checks: does the existing check-step pattern cover several checks on one food? Read on
+     2026-11-17, nothing built or tested: **partly.** The data shape allows it: every phase of a method can
+     be a check (`checkStep` with `fixedMin`, `engine/rules.ts`, `engine/plan.ts`), and the pull can be one
+     too; brisket already has two checks on one food (the wrap check and the pull). So checks at 15 and 20
+     min as phases and 25 min as the pull can be written in `data/foods.json` alone. The behavior needs new
+     work: (a) Not yet is fixed at 30 min for every check (`NOT_YET_MIN`, `src/screens/cook/CookOptions.tsx`),
+     wrong for checks 5 min apart; (b) Done on a phase check means "that phase happened, on to the next
+     one", but at bacon's 15 min check the answer may be "it is done, take it off": whether Live cook can
+     take a food off at an earlier check was not looked at and has to be; (c) a phase's short label is a
+     state on the lane ("Wrapped"), and bacon's checks change no state. The other shape: one check at 15 min
+     with Not yet meaning 5 min for this food, tapped up to twice; it needs a Not yet length per food and
+     nothing else new. Pick one with Jason; new wording or a new button needs his words.
+  3. Potato: a timer estimate with a 210F probe check, the same question as fish (T-071, sources Q5:
+     thickness as a timer, or an estimate with a probe check). Answer them together.
+- **Open for Jason:** bacon regular or thick cut? Potato size, and foil or bare?
+- **Also open (main session, 2026-11-17):** the quantity unit for each (bacon by the pound or the slice,
+  potatoes by count); where they sit in Add food (SPEC lists Beef, Pork, Chicken, Turkey, with Fish after
+  Turkey: a potato fits none, so a new group is new UI and needs his OK); holding (bacon has no rest; the
+  potato's 185F line is its hold rule).
+- **Sources first, as for T-059 and T-071:** nothing goes into `data/foods.json` without a source, and
+  `engine/rules.test.ts` fails a food-safety number with no `sources` entry. Jason's measured times are
+  labelled as his, corrected by learning.
+- **Files (when it is built):** `data/foods.json`, `engine/rules.test.ts`, `engine/plan.test.ts`,
+  `FoodPick.test.tsx`, SPEC sections 3 and 4, plus whatever the fixed-temp rule and the check shape touch.

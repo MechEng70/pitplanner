@@ -12,6 +12,8 @@ decided until Jason triages it. New ideas that come up during the port are added
 | A name of the user's own for a food ("Dad's brisket"), replacing the default label | T-062 | Cook of 2026-11-14 | Wanted; needs a mockup. The default label ("11.5 lb brisket") is in 0.3.0 as T-061. |
 | Go back on the full timeline to set what was missed: tap a step, adjust it | none yet | Cook of 2026-11-14 | Next version (Jason, 2026-11-14). Taking back a step marked Done by mistake is not here: it is in 0.3.0 as T-063. Needs a mockup. |
 | More than one smoker or griddle (Add a cooker offers only the kinds not switched on yet; someone may own two) | none yet | Review of fidelity PNG 17, 2026-11-15 | Next version (Jason, 2026-11-15). Touches Setup, Gear, the plan's cooker choice and rates per cooker. Needs a mockup. |
+| New food: bacon on the smoker at 350F, 20 to 25 min, timer only, done by crispness, with checks at 15, 20 and 25 min (it can finish early in a hot spot) | T-083 | Jason, 2026-11-17, his measured times | After 0.3.0. Decide alongside the wings proposal (branch `worktree-agent-a00d9697f70d1c24c`): the same fixed 350F gap. Open: regular or thick cut; how three checks on one food work |
+| New food: baked potato on the smoker at 350F, about 1 hr, done at 210F on a probe | T-083 | Jason, 2026-11-17, his measured time | After 0.3.0, with bacon. A timer estimate with a probe check, the same question as fish (T-071). Open: potato size, foil or bare |
 
 ## Planned before, not in 0.3.0
 
