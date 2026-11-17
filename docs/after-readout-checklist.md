@@ -99,6 +99,14 @@ Branches only until the readout passes; then merge one at a time, the gate after
       quarter of the screen wide (Android clamps off-screen bounds to the edge, so "inside the screen" alone
       passes a 24 px sliver). Use it for the three sheets at merge, then for every tapped button in every
       device test.
+- [ ] **Device rig fixes from the full pass of 2026-11-17** (HANDOFF section 5): date the legacy-import
+      fixture's running cook from the clock; wait for the MediaStore row before opening a pushed plan file
+      (`shared`, `shared-soon`); scroll to Alerts in `gear` at 130%; scroll a button clear of the pinned footer
+      before tapping it (`setup`'s test alert, `cook-finished`'s Keep). Then rerun those five, plus
+      `followups` and `turkey`, at 115% and 130%.
+- [ ] **For Jason, from that pass at 130%:** Setup's "Send a test alert in 10 sec" and Cook finished's
+      Use / Keep buttons are hidden under the pinned buttons until scrolled (`tools/device/out/1.3/
+      setup-alerts.png`, `cook-finished-rate.png`). Leave, or change the layout?
 - [ ] **User guide pictures (T-066):** 5 of 22 slots are filled on a branch; shoot the other 17 on the
       emulator at 115% from seeded test data only, check each for personal data before committing. Replace
       `docs/fidelity/rn-debug-send.png` with a picture showing the app's address (the old one shows Jason's

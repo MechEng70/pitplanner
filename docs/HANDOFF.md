@@ -106,13 +106,39 @@ clamps off-screen bounds, so "inside" alone passes a 24 px sliver), Setup and Ge
 - The Samsung tester's answer on the locked-reboot check.
 - Two T-060 facts (what the smoker went back up to 250F for on 2026-11-14; which probe pairs with which).
 - Layout problems he finds on beta.1 on his phone (one list, after Sunday).
+- Two layout points from the device pass at 130% (section 5): Setup's test alert button and Cook finished's
+  Use / Keep buttons are hidden under the pinned buttons until scrolled. Leave as is, or change the layout?
 
-### 5. The full device pass (T-034), 115% and 130%, started 2026-11-17 12:00
+### 5. The full device pass (T-034), 115% and 130%, 2026-11-17 12:00 to 2:34 PM
 
-Running since 12:00; results to follow in this session. One test after another (`DEVICE_SCALES="1.15 1.3"
-tools/device/run.sh --no-build --only <test>`), logs in the session scratchpad `full/<test>.log`, pictures in
-`tools/device/out/1.15/` and `tools/device/out/1.3/`. At 12:22: smoke and sheet-keyboard pass at both sizes,
-stable-controls in progress, no failure so far.
+One test after another (`DEVICE_SCALES="1.15 1.3" tools/device/run.sh --no-build --only <test>`), dev build
+on the emulator, `main` at the forced-gate commit plus docs. **It did not finish:** at 2:34 PM Claude Code
+stopped it because the computer was critically low on memory (the second time that day; FreeCAD and other
+apps were open again). 23 of 25 tests finished; `followups` was cut off at 115% with no result and `turkey`
+did not run (both passed at 115% earlier that day). The emulator went down with it: it may hold a test cook
+and a font scale of 1.15; the next device run seeds its own data. Pictures: `tools/device/out/1.15/` and
+`tools/device/out/1.3/` (git-ignored). Logs were in the session scratchpad and are gone after a reboot;
+this table is the record.
+
+**Pass at both sizes (17):** smoke, sheet-keyboard, stable-controls, db, migration-error, db-unopenable,
+alarm, plan, plan-3button, plan-sheets, food-details, survive, cook, cook-options, history, live-warnings,
+fast-cook.
+
+**Failures (6 tests). None is an app regression; four are test rig faults, two show a layout point at 130%
+for Jason:**
+
+| Test | Size | What failed | Cause | Pictures |
+|---|---|---|---|---|
+| `legacy-import` | both | "the imported cook's alarms": stored alarms 0 | Rig. The fixture's running cook is dated Saturday 2026-11-14 (the Saturday fixture), now wholly in the past, and alarms are only set for steps still to come (`engine/alarms.ts:98`). The rest of the test passed. Fix: date the fixture's cook from the clock | `out/1.15/import-full.png`, `out/1.3/import-full.png`, `out/legacy-import.png` |
+| `shared` | both | the Open shared plan sheet, the too-big and not-a-plan messages | Rig. "pp-test.pitplan is not in MediaStore": the pushed files were not indexed yet when the test looked them up, so nothing was opened. The own-cache refusal check passed. Fix: wait for the MediaStore row (or trigger a scan) before opening | none new (nothing opened) |
+| `shared-soon` | both | the Open shared plan sheet | Rig, the same MediaStore lookup | none new |
+| `gear` | 130% | "Alerts (Gear)" on the first screen | Rig. At 130% the Alerts row is below the first screen since T-036's two rows (as Units is at 115%). Every later check in the test passed after scrolling. Fix: scroll to Alerts for its check | `out/1.3/gear.png` |
+| `setup` | 130% | the test alert line, Plan after Finish setup, the back button | Rig, with a layout point. At 130% "Send a test alert in 10 sec" (y 2020 to 2164 px) lies under the pinned Back and Finish setup buttons (y 2088 to 2256) until the step is scrolled; the test tapped its middle, which is Finish setup, so Setup finished early and the later checks fell with it. Fix: scroll the button clear before tapping. **For Jason:** as opened at 130% the test alert button is hidden under the footer; only its top edge shows | `out/1.3/setup-alerts.png` |
+| `cook-finished` | 130% | "Keep 0.75 chosen", "nothing moving", "no cook saved after Discard" | Rig, with a layout point. With the rate card ("Brisket finished early"), "Use 0.74" and "Keep 0.75" (y 1484 to 1628) lie under the pinned Save to history (y 1548 to 1716) until scrolled; the test tapped Keep's middle, which is Save to history, so the cook was saved. Fix: scroll the card clear before tapping. **For Jason:** as opened at 130% the Use and Keep buttons are hidden behind Save to history, so the cook can be saved without the choice being seen | `out/1.3/cook-finished-rate.png` |
+
+At 115% all four of `gear`, `setup`, `cook-finished` pass. The rig fixes above go with the after-readout rig
+rule (a tapped button inside the screen, at least a quarter of the screen wide, and not under another
+button). Owed: `followups` and `turkey` at both sizes, and the three rig-failed tests again after the fixes.
 
 ### 6. Rules and traps (kept from the twenty-second session, plus today's)
 
@@ -122,7 +148,9 @@ stable-controls in progress, no failure so far.
   full gate on `main` alone; one rerun only if every failure is a timeout; a file outside the list means
   stop and ask; an agent with its own wait timers can loop on its report: tell it not to start any, and stop
   it with TaskStop if it does. Max 5.
-- Memory: a release build needs it. Stop the emulator and `./gradlew --stop`, look at `free -m`; start a
+- Memory: a release build and a long device pass both need it; twice on 2026-11-17 Claude Code stopped a
+  background task at about 23 of 30 GB in use. Before either, ask Jason to close FreeCAD and the like.
+  A release build needs it. Stop the emulator and `./gradlew --stop`, look at `free -m`; start a
   long build detached (`setsid nohup`) and watch it in the foreground, stopping under 4 GB available.
 - A device test that taps by label passes on a button that is a sliver at the screen edge: look at bounds.
 - Dev build: with its process dead a ringing alarm brings up the dev launcher's error screen; use a release
