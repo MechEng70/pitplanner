@@ -91,7 +91,9 @@ Branches only until the readout passes; then merge one at a time, the gate after
 - [ ] **`.gitignore`:** add `.claude/worktrees/` and `.claude/settings.local.json` with the first merge after
       the readout; confirm `git status` no longer shows them. (Checked 2026-11-17: `.claude/` holds only
       `worktrees/`; nothing else is there to ignore or track.)
-- [ ] **Start cook dead after one cook (found by Jason on his phone, 2026-11-17; must be in 0.3.0).** The
+- [x] **Start cook dead after one cook (found by Jason on his phone, 2026-11-17): fixed on `main`, `d2fdccc`,
+      gated; goes out in 0.3.0-beta.2 (HANDOFF section 0). Left: a device check that starts two cooks in one
+      app launch, and whether a start that fails gets a message.** The original item: The
       double-tap guard in `src/screens/plan/PlanTab.tsx` is never cleared after a cook starts, so Start cook
       does nothing after that cook ends until the app is restarted. Failing Jest test first (start, end,
       start again, mounted throughout), the fix, a device check that starts two cooks in one app launch.

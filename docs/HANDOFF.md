@@ -1,4 +1,4 @@
-# Handoff (2026-11-17: first, Start cook is dead after one cook until the app restarts (beta.1, workaround known); freeze until Sunday's readout; fourteen branches parked)
+# Handoff (2026-11-17: first, finish beta.2: the Start cook fix is committed and gated, Jason runs the build; freeze until Sunday's readout; fourteen branches parked)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
@@ -6,48 +6,64 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
 ## Restart, twenty-fourth session (written Tuesday 2026-11-17, afternoon; read this first)
 
 One long working day (sessions twenty-two and twenty-three ran together). `main` is committed and clean;
-the commits after Jason's last push are docs only (check `git log origin/main..main`). The last gate on code
-was the forced one (`ANDROID_TESTS_FORCE=1 npm run check`) on `ab7c9fd`: engine 229, gate self-tests 153,
-Jest 913, Kotlin 117 (pit-alarms 68, pit-legacy 9, pit-share 40, all "ran"), Snyk 26 projects, none skipped.
+the commits after Jason's last push are docs plus the Start cook fix `d2fdccc` (check
+`git log origin/main..main`). The last gate on code was the forced one (`ANDROID_TESTS_FORCE=1 npm run check`)
+on `d2fdccc`: engine 229, gate self-tests 153, Jest 914, Kotlin 117 (pit-alarms 68, pit-legacy 9, pit-share 40, all "ran"), Snyk 26 projects, none skipped.
 Emulators and Metro are stopped. No agent is running. Fourteen agent branches are parked, none merged; their
 worktrees are under `.claude/worktrees/`. `dashboard.html` is current.
 
-### 0. First thing: Start cook is dead after a cook has been started once (found by Jason on his phone, 2026-11-17)
+### 0. First thing: finish beta.2 (the Start cook fix is committed and gated; the build is Jason's to run)
 
-**Cause, confirmed by reading the code and by Jason's own test; not yet reproduced on the emulator.**
-`src/screens/plan/PlanTab.tsx:163-180`: the double-tap guard `starting` (a ref) is set to true when a cook
-starts (lines 167 and 173) and is set back to false only when the alert check sheet opens (line 178). It
-is never cleared after a cook has started. So in one run of the app: the first Start cook works; after
-that cook ends (End cook then Save or Discard, or Start over) Start cook looks normal and does nothing
-(`if (cooking || starting.current) return;`, line 172), because the Plan tab stays mounted. Closing the
-app fully and opening it again clears it. In the code since T-021 (`663357a`, 2026-11-15), so in every
-alpha and in 0.3.0-beta.1.
+**The bug (found by Jason on his phone with 0.3.0-beta.1, 2026-11-17):** in one run of the app the first
+Start cook works; after that cook ends (End cook then Save or Discard, or Start over) Start cook looks
+normal and does nothing until the app is restarted. Cause: the double-tap guard `starting` in
+`src/screens/plan/PlanTab.tsx` was set when a cook started and never cleared. In the code since T-021
+(2026-11-15), so in every alpha and in beta.1. No test started two cooks in one run of the app.
 
-**Jason's reports, in order:** "the version that you put on my phone DOES NOT start cook. when you click
-it, it does nothing. cook tab is empty." Then: Start cook looks normal, not greyed out; the Cook tab says
-"No cook running" with Go to Plan; Plan shows his five foods and a fire time. Then: "when I reopen the app
-it works. if I discard the cook (ie end it) then it will not restart the cook." All of it fits the guard.
+**Fixed on `main`** (`d2fdccc`, a freeze exception by Jason's order: "fix now and build beta.2, then the
+forced gate, upgrade test, locked-reboot and your phone again; Saturday runs on beta.2"). The guard is
+cleared when no cook is running any more; two quick taps still start one cook. Regression test first, seen
+failing at the second start: `src/screens/plan/StartCook.test.tsx`, "after a cook has ended, Start cook
+starts the next one without the app being restarted". Forced gate on it, single run, alone: engine 229,
+gate self-tests 153, Jest 914, Kotlin 117 (68 / 9 / 40, all "ran"), Snyk 26 projects, none skipped.
 
-**Workaround until it is fixed:** after any cook has ended, swipe the app away and open it again before
-Start cook. It is in Friday's checklist (step 14). With that, Saturday's staged cook can run on beta.1.
+**beta.2 is NOT built yet.** The build was started once and stopped by the main session's own memory watch
+at 3.9 GB available (9.3 GB at the start was not enough; swap was full; Chrome 7 GB, a python3 job 3 GB,
+Teams and others). Nothing was killed, the tree is clean, the dev `android/` was regenerated, `release/`
+holds beta.1 only. **Jason runs the build himself** in a plain terminal after closing apps (his choice):
+`npm run release -- --version 0.3.0-beta.2` (about 20 minutes). It must end `cert ok` and
+`app config ok: version 0.3.0-beta.2, versionCode 300302, io.github.mecheng70.pitplanner, variant production`.
 
-**Why no test caught it:** every device test starts one cook per app launch (`launch` force-stops the app
-first), and no Jest test does start, end, start again in one mounted tree.
+**When he says it is built, in this order:**
+1. `npm run release -- --verify release/pitplanner-0.3.0-beta.2.apk --version 0.3.0-beta.2`; record the
+   SHA-256; `aapt2 dump badging` (version, no banned permissions) as for beta.1.
+2. Upgrade test: `tools/device/upgrade020.sh setup`, then `check release/pitplanner-0.3.0-beta.2.apk`. The
+   release app on the test emulator `pitplanner` (beta.1, with test data) must be uninstalled first:
+   **ask Jason for a plain yes** (asked twice on 2026-11-17, not answered). Free memory first.
+3. On that emulator, by hand, the proof of the fix on a real build: Start cook, End cook, Discard this
+   cook, Start cook again, without restarting the app; then the same after Save to history.
+4. `tools/device/locked-reboot.sh release/pitplanner-0.3.0-beta.2.apk` (lock emulator only).
+5. The phone: list each action and wait for his yes: read the version (expect 0.3.0-beta.1 / 300301),
+   `adb install -r release/pitplanner-0.3.0-beta.2.apk`, read the version (0.3.0-beta.2 / 300302). Then he
+   tries start, end, start. No reboot, no data cleared, no uninstall.
+6. Then update: T-038 and T-037 in TASKS, `docs/t037-checklist.md` (step 14's "swipe the app away first"
+   is not needed on beta.2; the build named in the Friday table and the readout), `docs/RELEASING.md` if
+   it names beta.1, the release notes' "Check before release", the dashboard. beta.1's APK stays on disk
+   until Jason approves the cleanup list.
 
-**To do (Jason decides when; a 0.3.0 must-fix either way):** a failing Jest test first (Plan tab mounted:
-Start cook, end and discard the cook, Start cook again starts a second cook; the same after Save to
-history and after Start over), then the fix (clear the guard when the cook goes away, or when the start
-has been drawn; keep the double-tap protection and its test), then a device check that starts two cooks
-in one app launch. Option 1: on a branch now, merged after Sunday's readout with the other 0.3.0 fixes,
-Saturday on beta.1 with the workaround. Option 2: fix now, build beta.2 (never rebuild beta.1 under its
-name), forced gate, upgrade test, locked-reboot, phone again, and Saturday on beta.2.
+**Workaround while beta.1 is on the phone:** after any cook ends, swipe the app away and open it again
+before Start cook (Friday's checklist, step 14).
 
-**Still not known, ask him:** did the 0.2.0 cook that was running in Sunday's copy of his data (started Sun
-Nov 15, serve Sat Nov 21 5:00 PM) come across and did he end or discard it while trying the app, or was
-it never there? The main session told him that morning it had come across and that Start cook would be
-greyed out, from Sunday's copy and the code, without anything checked on the phone. Friday's steps 9 to 11
-lean on that cook: if it is gone, they need a short cook started on Friday instead (his call). The import
-of a running cook with steps still ahead is still not covered by any device test.
+**Still not known, ask him:** did the 0.2.0 cook that was running in Sunday's copy of his data (serve Sat
+Nov 21 5:00 PM) come across to beta.1, and did he end or discard it while trying the app? The main session
+told him that morning it had come across and that Start cook would be greyed out, from Sunday's copy and
+the code, without anything checked on the phone. Friday's steps 9 to 11 lean on that cook: if it is gone,
+they need a short cook started on Friday instead (his call). The import of a running cook with steps still
+ahead is still not covered by any device test.
+
+**Follow-up for 0.3.0, not done:** a start that throws (in `newCook`, the store's save or the alarm sync)
+is an unhandled rejection: nothing is shown. Decide with Jason whether a failed start gets a message (new
+UI, needs his words). A device check that starts two cooks in one app launch belongs in the `cook` test.
 
 ### 1. The freeze and the dates
 
