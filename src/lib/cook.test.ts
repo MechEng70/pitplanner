@@ -328,6 +328,21 @@ describe('serve moves for one food: the others follow (T-076)', () => {
     expect(one.notice).not.toMatch(/other foods/);
   });
 
+  test('serve moved but every other food is already off the heat: the notice says only that serve moved', () => {
+    // 4:55 PM: the brisket came off at 3:40 PM and the breasts at 4:52 PM, both holding. The wings get +15 at
+    // their pull; their 5 min hold does not cover it, so serve moves to 5:15 PM. The brisket and the breasts
+    // cannot move (only their holds grow), so no other food moved with serve.
+    const pull = pending(fresh).find(k => k.event.kind === 'pull' && k.event.itemId === 'w')!;
+    const before = cookAt(pull.event.at);
+    const after = applyActions(before, [{ type: 'snooze15', alarmId: pull.key, keys: [pull.key], at: pull.event.at }]);
+    expect(after.plan.serveAt).toBe(at(17, 15));
+    for (const id of ['b', 'c']) {
+      expect(item(after, id).finish).toBe(item(before, id).finish);
+      expect(item(after, id).phases).toEqual(item(before, id).phases);
+    }
+    expect(after.notice).toBe('Pull wings at 175-185F: moved 15 min from the alert. Serve moved to 5:15 PM.');
+  });
+
   test('lock screen and app agree (T9): Done from the alert gives the plan of Done in the app with the choice the sheet preselects', () => {
     for (const [doneAt, serve] of [
       [AT_1023, at(17, 0)],

@@ -257,13 +257,31 @@ export function applyActions(c: ActiveCook, actions: NotificationAction[]): Acti
       );
       if (next.plan.serveAt !== cur.plan.serveAt)
         said.push(
-          // The other foods follow serve (T-076). With one food there are none to speak of.
-          `Serve moved to ${fmtTime(next.plan.serveAt)}.${next.plan.items.length > 1 ? ' The other foods moved with it.' : ''}`,
+          // The other foods follow serve (T-076), said only when one of them actually moved: a food already
+          // off the heat cannot, only its hold grows.
+          `Serve moved to ${fmtTime(next.plan.serveAt)}.${othersMoved(cur.plan, next.plan, k.event.itemId) ? ' The other foods moved with it.' : ''}`,
         );
       cur = next;
     }
   }
   return said.length ? { ...cur, notice: [cur.notice, ...said].filter(Boolean).join(' ') } : cur;
+}
+
+/**
+ * A food other than `itemId` moved between the two plans: its off-heat time or any of its cooking steps (a
+ * phase's start or end) changed. A hold that only grew is not a move.
+ */
+function othersMoved(before: Plan, after: Plan, itemId: string | undefined): boolean {
+  return after.items.some(a => {
+    if (a.input.id === itemId) return false;
+    const b = before.items.find(i => i.input.id === a.input.id);
+    if (!b) return true;
+    return (
+      a.finish !== b.finish ||
+      a.phases.length !== b.phases.length ||
+      a.phases.some((p, i) => p.start !== b.phases[i]!.start || p.end !== b.phases[i]!.end)
+    );
+  });
 }
 
 /** Step text for the Next up card: "Check the brisket" / "Wrap once the bark is set, about 165-170F." */
