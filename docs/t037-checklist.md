@@ -117,6 +117,10 @@ Seen during the rehearsal, to settle in the readout:
   early, or he means the 4:20 PM step, or that Done is his choice for 4:35 PM. Asked.
   **Settled, 4:23 PM (Jason):** nothing rang early. Wings crisp is due at 4:35 PM; the app is swiped away
   and the phone is locked.
+- **4:35 PM and 4:40 PM (Jason):** Wings crisp at 400F rang at 4:35 PM and Fire the griddle at 4:40 PM,
+  with the app swiped away and the phone locked; Done on the lock screen for both. (The table asks for +15
+  on Wings crisp; that test was run at 3:15 PM on Wings on the smoker, so "Fire the griddle rings at the
+  time it had before the +15 tap" is not run on this step today. Saturday's table still has it.)
 
 ## The plan to load (Friday night)
 
