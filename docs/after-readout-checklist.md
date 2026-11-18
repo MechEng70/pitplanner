@@ -6,7 +6,8 @@
   not beta.2. The steps are kept for that day: read 0.3.0 where they say 0.3.0-beta.2, and step 3 is
   INSTALL.md's own step 1 (the releases page), not a Drive link.
 - **INSTALL.md: one fix for Monday, done 2026-11-18 (Jason: "That's the only fix for Monday").** The "Oven
-  hold raised to 140F, the safe minimum." line a 0.2.0 import can add is now in INSTALL.md.
+  hold raised to 140F, the safe minimum." line a 0.2.0 import can add is now in INSTALL.md, with "(In
+  Celsius it reads 60C.)", which he kept.
 - **Part 2 (the two-phone share test, his wife's phone to his and back) moves to 0.3.1.** The share guard
   it was waiting for is on a parked branch for beta.3.
 - **The Samsung tester's locked-reboot request moves to 0.3.1.** For 0.3.0 the locked restart is tested on

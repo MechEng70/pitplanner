@@ -79,7 +79,8 @@ Assistant address is replaced by an example in the tracked docs. User guide: tex
 **Waiting on Jason:** the 15 questions on the Home Assistant mockups and five more kept from the deleted
 duplicate; six sign-in choices (T-044); wording for the connect error and a `.local` test on his phone
 (T-045); the "Kamad" chip; brine options; T-084 and T-085 wording; the open user guide wording (T-066);
-a light theme (T-087, mockups first). Settled the same evening: INSTALL.md got its one fix (the oven hold
+Settled the same evening: the light theme (T-087) comes after 0.4.0 as its own small release, mockups
+first; INSTALL.md got its one fix (the oven hold
 line); the release notes carry his line on restarts ("only tested on a OnePlus with Android 16"); SPEC's
 definition of done puts the two-phone round trip in 0.3.1 and the Adjust, Pit went out, Not yet line reads
 "0.3.0: covered by Jest; phone check in 0.3.1 (T-086)".

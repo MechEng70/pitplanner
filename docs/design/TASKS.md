@@ -4071,8 +4071,9 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Real phone:** yes, for the phone check SPEC names (above); the rig tests themselves are emulator only.
 
 ### T-087 Light theme, with a setting that follows the phone
-- **Jason (Wed 2026-11-18): backlog, 0.3.x or 0.4.0, mockups first.** Asked as a report only; nothing built.
-- **Status:** backlog. No work before his OK on light mockups.
+- **Jason (Wed 2026-11-18): backlog, mockups first.** Asked as a report only; nothing built.
+- **Version, decided by Jason the same evening: "after 0.4.0, as its own small release."**
+- **Status:** backlog. Not before 0.4.0 ships; then no work before his OK on light mockups.
 - **What the code looks like today (counted 2026-11-18, tests left out):** the colours are in one shared
   palette, not typed into the screens. `src/theme/tokens.ts` holds all 33 hex values (33 distinct) and two
   `rgba()` scrims; no other file in `src/` or `app/` has a hex colour. `tailwind.config.js` builds the
@@ -4098,8 +4099,6 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   palette and mockups with his review, one or two for the palette, variables and the 79 call sites, one for
   the setting and the native side, one for the device pass in both themes. Most of the risk is in the
   design and the device checks, not the code.
-- **Version:** his call between a 0.3.x release and 0.4.0. ROADMAP keeps 0.3.x for bug fixes with two named
-  exceptions, and 0.4.0 is Home Assistant phase 1; this would be a third exception or ride with 0.4.0.
 - **Files (when built):** `src/theme/tokens.ts`, `tailwind.config.js`, `src/theme/navTheme.ts`, a new theme
   hook, the 22 files that use a colour directly, `app.config.ts`, Gear's App group, SPEC, mockups.
 
