@@ -5,26 +5,37 @@ locked, unplugged and idle, through a reboot and every kind of change. It ends w
 rates are not touched. Pass: every ring within 1 minute of its planned time, nothing lost at the reboot,
 nothing twice.
 
-Fixture times below come from the engine on 2026-11-16 (`data/foods.json` at commit `fe5e384`, a 20 min
-smoker preheat, a 15 min griddle preheat). Your phone's plan is the truth: write its times in the blank
-column at Start cook, and after each change that moves serve.
+Fixture times below come from the engine on 2026-11-17 (evening), built the way the phone builds the plan:
+the gear, saved rates and cook history from the phone's debug file of 2026-11-17 4:24 PM (a 20 min smoker
+preheat, a 15 min griddle preheat, brisket saved at 0.65 hr/lb and used as-is: two brisket cooks logged, the
+blend starts at three), `data/foods.json` at commit `c95f4ba` and the engine as built into beta.2. The first
+fixture (2026-11-16) assumed a saved 0.75; the same run at 0.75 gives its times again (fire 7:50 AM, wrap
+check 12:15 PM), so only the rate moved them. Jason's decision, 2026-11-17: keep 0.65, do not touch the rate.
+Your phone's plan is the truth: write its times in the blank column at Start cook, and after each change
+that moves serve.
 
-## The plan to load (Friday night)
+## The plan to load (Tuesday night, 2026-11-17; first planned for Friday night)
 
 Ready by Saturday 5:00 PM. Smoker 225F.
 
 | Food | Settings |
 |---|---|
-| Brisket | 10 lb trimmed, butcher paper wrap, rest 60 min, saved rate 0.75 hr/lb (do not change the rate) |
+| Brisket | 10 lb trimmed, butcher paper wrap, rest 60 min, no rate of its own (the phone's saved 0.65 hr/lb applies; do not change the rate) |
 | Chicken wings | 2 lb, smoke then crisp, dry brine, rest 5 min |
 | Chicken breasts | 4, griddle, pounded, no brine, rest 8 min |
 
-The first ring is Fire the smoker at 7:50 AM. Nothing rings before 7:30 AM. Two reminders have no alarm
-(Prep the brisket 6:55 AM, Dry brine the wings 7:15 AM).
+The first ring is Fire the smoker at 8:50 AM. Nothing rings before 8:30 AM. Two reminders have no alarm
+(Dry brine the wings 7:15 AM, Prep the brisket 7:55 AM).
 
 ## Friday: upgrade over 0.2.0 (T-038's phone check) and get ready
 
 Phone unlocked and plugged in, Jason present. Claude runs only the adb lines, each after Jason's yes.
+
+**Moved to Tuesday 2026-11-17 night (Jason, that evening):** steps 3 and 8 to 15 are run on Tuesday night,
+not Friday. Saturday's cook therefore sits on the phone for four days (Tuesday night to Saturday) before its
+first ring, on a phone in daily use, not one night. Until Saturday that cook is not ended or changed. The
+event log and the ring log will also hold Tuesday's entries (the beta.1 cook, step 10's start, end, start):
+Sunday's readout filters both to Saturday.
 
 **Done early, Tuesday 2026-11-17 (Jason wanted beta.1 on the phone to look for layout bugs; each adb line
 after his yes):** steps 1, 2, 6 and 7. Before: 0.2.0, versionCode 200, the same signing key as beta.1
@@ -68,13 +79,13 @@ running 0.2.0 cook is therefore not proven on the phone; it is covered on the em
 | 6 | Claude | `adb -s <phone> install -r release/pitplanner-0.3.0-beta.1.apk` (installs over 0.2.0; nothing uninstalled, no data cleared). Done 2026-11-17; beta.2 went over beta.1 the same afternoon | |
 | 7 | Jason | Open the app. Read the import notice. Compare Gear, Cook rates and Cook history with the step 4 screenshots | |
 | 8 | Jason | Gear, Export my data, save to Drive | |
-| 9 | Claude | `adb -s <phone> shell dumpsys alarm` for the app and `dumpsys package` again (read only: each alarm of the running cook once, 18 of them, the first Fire the smoker at Saturday 8:55 AM; exact alarms still granted). The running cook is the one started on beta.1 on 2026-11-17 at 2:53 PM (serve Sat Nov 21 5:00 PM, 250F, five foods), not a 0.2.0 cook; Jason keeps it until this step | |
-| 10 | Jason | Open the running cook, End cook, Discard. (Its first alarm is Saturday 8:55 AM, so no ring is waited for on Friday.) **Then the beta.2 check on the phone, not before this step** (Jason, 2026-11-17: no start, end, start on the phone while that cook runs): without closing the app, Start cook, End cook, Discard, then Start cook again: the second start must work (in beta.1 it did nothing until the app was restarted). End cook and Discard once more, so nothing is pending for step 11. This is the last step before Saturday's plan is loaded | |
+| 9 | Claude | `adb -s <phone> shell dumpsys alarm` for the app and `dumpsys package` again (read only: each alarm of the running cook once, 18 of them, the first Fire the smoker at Saturday 8:55 AM; exact alarms still granted: the line to read is `android.permission.USE_EXACT_ALARM: granted=true`. The phone is Android 16, API 36, and the manifest of `modules/pit-alarms` declares `SCHEDULE_EXACT_ALARM` only up to API 32, so the app relies on `USE_EXACT_ALARM` and there is no `appops` line for step 9). The running cook is the one started on beta.1 on 2026-11-17 at 2:53 PM (serve Sat Nov 21 5:00 PM, 250F, five foods), not a 0.2.0 cook; Jason keeps it until this step | |
+| 10 | Jason | Open the running cook, End cook, Discard. (Its first alarm is Saturday 8:55 AM, so no ring is waited for at this step.) **Then the beta.2 check on the phone, not before this step** (Jason, 2026-11-17: no start, end, start on the phone while that cook runs): without closing the app, Start cook, End cook, Discard, then Start cook again: the second start must work (in beta.1 it did nothing until the app was restarted). End cook and Discard once more, so nothing is pending for step 11. This is the last step before Saturday's plan is loaded | |
 | 11 | Claude | `adb -s <phone> shell dumpsys alarm` for the app (read only: nothing pending, so none of that cook's Saturday alarms is left: the first was Fire the smoker at 8:55 AM) | |
 | 12 | Jason | Settings: notifications on; battery not restricted; on the app's battery usage page, allow background activity | |
 | 13 | Jason | Gear, 5 taps on the version line: it reads 0.3.0-beta.2 | |
 | 14 | Jason | Load Saturday's plan (above). Start cook. (No need to swipe the app away first on beta.2: Start cook after an ended cook is fixed, `d2fdccc`. Only beta.1 needed it.) If a sheet "Alerts may not ring" shows, tap **Start anyway** and note it here: ____ (in beta.1 and beta.2 its second button, Start cook, is pushed off the right edge at larger font sizes; known, fixed after the readout; it should not show if step 12's settings are on). Write the times in the table below | |
-| 15 | Claude | `adb -s <phone> shell dumpsys alarm` for the app (read only): no Pit Planner alarm before 7:30 AM Saturday; the first is Fire the smoker at 7:50 AM. If any alarm is earlier, stop and tell Jason before he unplugs. Then unplug | |
+| 15 | Claude | `adb -s <phone> shell dumpsys alarm` for the app (read only): no Pit Planner alarm before 8:30 AM Saturday; the first is Fire the smoker at 8:50 AM. If any alarm is earlier, stop and tell Jason before he unplugs. Then unplug | |
 
 ## Saturday
 
@@ -83,13 +94,13 @@ not moving). Answer each alert within a couple of minutes. Never open the dev bu
 
 | Fixture time | What rings | What you do | Your phone's time | Rang at | OK |
 |---|---|---|---|---|---|
-| 7:50 AM | Fire the smoker to 225F | **Done** on the lock screen | | | |
-| 8:10 AM | Brisket on the smoker | Unlock. **Done** in the app. Lock | | | |
-| 12:00 PM | nothing | Plug the phone in. Claude saves the battery history to a file on the computer: `adb shell dumpsys batterystats --history` (read-only, after Jason's yes). Unplug. Plugging in ends deep idle for that moment, by design: a reboot can drop the newest history entries (seen on the emulator, 2026-11-17), and this keeps the morning's | | | |
-| 12:05 PM | nothing | **Reboot** the phone. Do not unlock it afterwards | | | |
-| 12:15 PM | Check the brisket (wrap) | It must ring while the phone is still locked after the reboot. Note the time. Unlock. Tap **Not yet**, keep serve | | | |
-| about 12:30 PM | Check the brisket again | **Done**. Then Cook options, **Undo** that Done | | | |
-| about 12:40 PM | Check the brisket a third time (10 min after the Undo) | **Done**. Lock | | | |
+| 8:50 AM | Fire the smoker to 225F | **Done** on the lock screen | | | |
+| 9:10 AM | Brisket on the smoker | Unlock. **Done** in the app. Lock | | | |
+| 12:25 PM | nothing | Plug the phone in. Claude saves the battery history to a file on the computer: `adb shell dumpsys batterystats --history` (read-only, after Jason's yes). Unplug. Plugging in ends deep idle for that moment, by design: a reboot can drop the newest history entries (seen on the emulator, 2026-11-17), and this keeps the morning's | | | |
+| 12:30 PM | nothing | **Reboot** the phone, 10 minutes before the wrap check. Do not unlock it afterwards | | | |
+| 12:40 PM | Check the brisket (wrap) | It must ring while the phone is still locked after the reboot. Note the time. Unlock. Tap **Not yet**, keep serve | | | |
+| about 12:55 PM | Check the brisket again | **Done**. Then Cook options, **Undo** that Done | | | |
+| about 1:05 PM | Check the brisket a third time (10 min after the Undo) | **Done**. Lock | | | |
 | 1:30 PM | nothing | Cook options, **Pit went out**. Lock | | | |
 | 1:45 PM | nothing | **Back up to temp**, choose Move serve. Write the new serve time: ________. Every time below moves with it | | | |
 | 2:30 PM | nothing | **Adjust** on Next up: later by 10 min, Move serve. Write the new serve time: ________ | | | |
@@ -144,7 +155,9 @@ lock screen before opening the app. With two alerts waiting, Android may group t
 ## Sunday readout (Claude, phone plugged in, each line read only and after Jason's yes)
 
 - The debug file from Send to developer: the alarm ring log (planned and actual time of every ring, T-068)
-  and the event log (each Done, Not yet, Undo, Pit went out, Adjust and +15).
+  and the event log (each Done, Not yet, Undo, Pit went out, Adjust and +15). **Filter both to Saturday
+  2026-11-21 first:** the cook was started on Tuesday 2026-11-17 night, so both logs also hold Tuesday's
+  entries (the beta.1 cook, step 10's start, end, start, and the start of Saturday's cook).
 - `adb shell dumpsys deviceidle`: Doze state and settings.
 - `adb shell dumpsys batterystats --history`: when the phone went into and out of deep idle.
 - `adb shell dumpsys alarm` for the app: nothing pending after Discard.
