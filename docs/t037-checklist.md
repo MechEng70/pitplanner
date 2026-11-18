@@ -115,6 +115,8 @@ Seen during the rehearsal, to settle in the readout:
 - **4:22 PM (Jason): "I tapped done."** Said 13 minutes before Wings crisp at 400F was due (4:35 PM), in
   answer to the question Done or +15 on that step. Not clear yet whether an alert for Wings crisp rang
   early, or he means the 4:20 PM step, or that Done is his choice for 4:35 PM. Asked.
+  **Settled, 4:23 PM (Jason):** nothing rang early. Wings crisp is due at 4:35 PM; the app is swiped away
+  and the phone is locked.
 
 ## The plan to load (Friday night)
 
