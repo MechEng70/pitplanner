@@ -92,6 +92,16 @@ Seen during the rehearsal, to settle in the readout:
   tenderness 3:45 PM ring at their times); when he opens the app (the 4:05 PM step) it applies the tap,
   shows one notice, and moves serve later with the other foods if the wings' hold cannot take 15 minutes.
   After that the remaining times are the app's new ones, not the table's.
+- **3:30 PM (Jason): the wings alert rang again; no Oven to 170F alert.** He tapped Done on the wings alert.
+  On the Cook tab afterwards, Oven to 170F is set for 3:45 PM and the banner reads (his words, read aloud):
+  "Wings on the smoker on a wire rack, moved 15 minutes from the alert. Serve moved to 5:15. The other
+  foods moved with it. Wings on the smoker on a wire rack, done at 3:30 p.m. from the alert." That is the
+  notice the pass line describes: the +15 applied, serve moved from 5:00 to 5:15 PM, the other foods moved
+  with it, then the Done. **Not known yet: when the app applied the +15.** If it was only when he opened
+  the app after 3:30 PM, the oven alarm should still have rung at its old time, 3:30 PM, and it did not;
+  if the app was still alive in the background and applied the tap at 3:15 PM, the alarms were set again
+  then and 3:45 PM is right. Tonight's event log has the time of the "moved 15 min" line and of the alarm
+  set. From here the Cook tab's times are the schedule for today.
 
 ## The plan to load (Friday night)
 
