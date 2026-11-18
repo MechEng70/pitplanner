@@ -108,6 +108,8 @@ Seen during the rehearsal, to settle in the readout:
   Chicken breasts on the griddle and Slice or plate the brisket, both 4:55 PM (he first said 4:45 for the
   breasts, then "4:45 or 4:55"; 4:55 is what the 15 minute move gives); Pull chicken breasts 5:07 PM; Pull
   wings 5:10 PM; Serve 5:15 PM. The table's actions stay, at these times.
+- **3:45 PM and 4:00 PM (Jason):** Oven to 170F rang at 3:45 PM and Check tenderness at 4:00 PM, both at
+  the times the Cook tab showed after the +15; Done on the lock screen for both.
 
 ## The plan to load (Friday night)
 
