@@ -12,10 +12,31 @@ nothing is built. Why: that afternoon the main session told Jason the Home Assis
 mocked and no sign-in code existed, from `main` alone; both were on parked branches from 2026-11-17, and an
 agent then made a duplicate set of mockups.
 
-**State.** `main` is clean (only `.claude/` untracked). Every commit of the twenty-sixth session is docs only
-and not pushed (`git log origin/main..main`); Jason pushes or asks. No code changed on `main`, so the last
-gate on code is still the one on `1cecd97`. Emulators, Metro and Gradle are stopped; no agent is running.
-The freeze on `main` holds until Thursday's readout. `dashboard.html` is current (local, never committed).
+**State (Wednesday 2026-11-18, 5:55 PM, end of the twenty-sixth session).** `main` is clean (only `.claude/`
+untracked). **Not pushed: the commits from `24dfb2a` on (26 of them; `git log origin/main..main`
+lists them). All are docs only** (docs, SPEC, CLAUDE.md, `.gitignore`); Jason pushes or
+asks. No app code changed on `main`, so the last gate on code is still the one on `1cecd97`. Emulators,
+Metro and Gradle are stopped; no agent is running. The freeze on `main` holds until Thursday's readout.
+`dashboard.html` is current and trimmed to one screen (local, never committed); after any edit to it, load
+it in headless Chrome and report the page error count, which must be 0 (CLAUDE.md, Models and agents).
+**His phone: unplugged for the night, 0.3.0-beta.2, the overnight check's cook running with four alarms
+(the 5:36 PM read). Do nothing on the phone without a list and his yes.**
+
+**Thursday 2026-11-19, in order.**
+
+1. **By 7:30 AM, Jason:** End cook, Discard this cook; then Gear, 5 taps on the version line, Send to
+   developer. He puts the debug file where the session can read it (read it in place, never commit it,
+   delete it when he says).
+2. **Then he plugs the phone in. Say first that it is about 2 minutes, list the reads, and wait for his
+   yes:** `adb -s 5ece07c1 shell dumpsys alarm` (nothing of the app's left), `dumpsys deviceidle`,
+   `dumpsys batterystats --history`; each saved under `tools/device/out/` (git-ignored). The ring log is in
+   the debug file.
+3. **Read the overnight check:** the 5:30 AM ring within 1 minute while the phone was in deep idle
+   (the ring log's `idle` flag, checked against `device_idle=full` in the battery history; on the rehearsal
+   the two agreed on all 14). Unanswered alerts repeat every 10 minutes, so repeats in the log are expected.
+   Write the result into `docs/t037-checklist.md` ("Overnight check", the table and "Result") and TASKS T-037.
+4. **The readout,** from the rehearsal's reads and the overnight check; then the freeze on `main` ends.
+5. **The beta.3 merges,** item 4 below, one at a time.
 
 **Jason's decisions, 5:45 PM: "beta.3, and no Saturday cook. T-037 closes on today's rehearsal; I don't load
 Saturday's plan."**
@@ -61,7 +82,9 @@ Saturday's plan."**
 
    Checked 2026-11-18 5:30 PM from each branch's file list against `main`. Known conflicts are listed under
    "Parked branches" below (T-082 and the capitals fix both change `TempMenu.tsx` and `engine/plan.ts`;
-   merges 1 and 3 both change `GearScreen.tsx` and `StartCook.test.tsx`).
+   merges 1 and 3 both change `GearScreen.tsx`, `StartCook.test.tsx` and `GearData.test.tsx`; the two code
+conflicts the earlier session listed are `TempMenu.tsx` and `CookerSheets.test.tsx` between T-082 and the
+plural fix, and `src/lib/gear.test.ts` for T-082).
 5. **Then:** the beta.3 build (Jason runs the release command), the emulator locked reboot on beta.3
    (`tools/device/locked-reboot.sh`), the `turkey` test on the emulator at 115% and 130%, then beta.3 on his
    phone. **Release 0.3.0 Monday 2026-11-23 unless he says earlier.** **No other phones are tested for 0.3.0
@@ -76,18 +99,34 @@ scheme when none is typed and the connect screen says "Will connect to ..." (TAS
 Assistant address is replaced by an example in the tracked docs. User guide: text audited, 17 pictures in
 `docs/guide/` (TASKS T-066). New backlog: T-084, T-085. The `turkey` test: `docs/after-readout-checklist.md`.
 
-**Waiting on Jason:** the 15 questions on the Home Assistant mockups and five more kept from the deleted
-duplicate; six sign-in choices (T-044); wording for the connect error and a `.local` test on his phone
-(T-045); the "Kamad" chip; brine options; T-084 and T-085 wording; the open user guide wording (T-066);
-Settled the same evening: the light theme (T-087) comes after 0.4.0 as its own small release, mockups
-first; INSTALL.md got its one fix (the oven hold
-line); the release notes carry his line on restarts ("only tested on a OnePlus with Android 16"); SPEC's
-definition of done puts the two-phone round trip in 0.3.1 and the Adjust, Pit went out, Not yet line reads
-"0.3.0: covered by Jest; phone check in 0.3.1 (T-086)".
+**Waiting on Jason.**
+
+- The Home Assistant mockup review: the 15 questions in the proposal on branch `a9241eb3e2b1eb08c`, plus
+  the 5 kept from the deleted duplicate (the "(deleted)" row under "Parked branches").
+- T-044's six open choices (http to a remote host, port 8123, what counts as home network, IPv6, timeout, a
+  refused token staying refused).
+- The connect-error wording, on the mockup first: the first connect fails and the app added the scheme, so
+  it tells him to type the full address with `http://` or `https://` (T-045).
+- A throwaway Home Assistant token, to test deleting the token at Home Assistant on Disconnect (the delete
+  call would end the token in use, so step 0 did not try it; `docs/ha-entities.md`).
+- A `.local` address tested on his phone before the connect screen offers one (T-045).
+- The bug report card in Claude Code, still to review and send.
+- After the readout: the "Kamad" chip cut off at 115%; the brine options that change nothing the user sees;
+  wording for T-084 and T-085; the open user guide wording (TASKS T-066); the disk cleanup list.
+
+**Settled the same evening, already in the docs:** the light theme (T-087) comes after 0.4.0 as its own
+small release, mockups first; INSTALL.md got its one fix (the oven hold line, with the 60C note kept); the
+release notes carry his line on restarts ("only tested on a OnePlus with Android 16"); SPEC's definition of
+done puts the two-phone round trip in 0.3.1 and the Adjust, Pit went out, Not yet line reads "0.3.0: covered
+by Jest; phone check in 0.3.1 (T-086)".
 
 **The overnight check is started (5:36 PM read):** four alarms pending on his phone, Thursday 5:30:00,
-5:45:00, 5:57:00 and 6:05:00 AM, each once, nothing else of the app's; he unplugs for the night. The reads
+5:45:00, 5:57:00 and 6:05:00 AM, each once, nothing else of the app's; the phone is unplugged for the night (Jason, about 5:50 PM). The reads
 of the day, the midday ones too, are in `tools/device/out/t037-rehearsal-2026-11-18/`.
+
+**To start the next session,** Jason clears the conversation and says: "Read CLAUDE.md, then docs/HANDOFF.md
+and follow its top section, 'Restart, twenty-seventh session'." Thursday morning he adds that the overnight
+cook is discarded, where the debug file is, and that the phone is plugged in.
 
 ## Earlier on Wednesday 2026-11-18 (written 8:00 AM; superseded where the section above differs)
 
@@ -159,8 +198,8 @@ Rules added:
 - **Alarm times come from the phone, step names do not:** `dumpsys alarm` shows times only. Names need the
   debug file or an engine run; say which.
 
-To start the next session, Jason clears the conversation and says: "Read CLAUDE.md, then docs/HANDOFF.md and
-follow its top section, 'Restart, twenty-seventh session'."
+(The line for starting the next session is at the end of the top section, "Restart, twenty-seventh session",
+written 5:50 PM.)
 
 ## Restart, twenty-sixth session (written Tuesday 2026-11-17, 7:30 PM)
 
