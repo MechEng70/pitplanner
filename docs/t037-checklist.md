@@ -14,6 +14,28 @@ check 12:15 PM), so only the rate moved them. Jason's decision, 2026-11-17: keep
 Your phone's plan is the truth: write its times in the blank column at Start cook, and after each change
 that moves serve.
 
+## Rehearsal, Wednesday 2026-11-18 (Jason's decision that morning)
+
+The same staged cook runs today on his phone as a rehearsal: the same plan, ready today 5:00 PM, so every
+time is the same as Saturday's table below. **Today uses Saturday's fixture times; the engine was not run
+again for today** (no time before Fire the smoker at 8:50 AM). Saturday 2026-11-21 stays the main run. One
+phone, no second device. He is in meetings; the phone lies face down, unplugged, and is not used for
+anything else.
+
+- Before 8:35 AM he ends and discards Saturday's cook (started that morning, steps 14 and 15), sets the same
+  plan to ready today 5:00 PM and taps Start cook once. Dry brine the wings (7:15 AM) and Prep the brisket
+  (7:55 AM) are already past; neither has an alarm.
+- Claude reads the app's alarms right after (read only): the first is Fire the smoker 8:50 AM today, then
+  Brisket on the smoker 9:10 AM, nothing left of Saturday's cook. Then he unplugs.
+- 12:25 PM: at the computer, plugged in, for the battery history (one read-only adb line after his yes).
+  12:30 PM: the reboot, on the phone.
+- Tonight, after Time to serve and Discard: Send to developer, then the phone's reads for the readout while
+  it is plugged in and before it charges to full, then he loads Saturday's plan again (ready Sat Nov 21
+  5:00 PM), one tap Start cook, and step 15's read again.
+
+Results of the rehearsal go in a table of their own at the end of this file; Saturday's table stays blank
+for Saturday.
+
 ## The plan to load (Friday night)
 
 Ready by Saturday 5:00 PM. Smoker 225F.

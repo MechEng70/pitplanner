@@ -18,6 +18,11 @@ chicken breasts. Read at 7:58 AM: 13 alarms, each time once, 8:50 AM, 9:10 AM, 1
 after that. He does not end that cook, start another, or open the dev build before Saturday. One tap only
 on Share plan and Export my data.
 
+**Changed at 8:05 AM (Jason): the same staged cook runs today, Wednesday, as a rehearsal** (ready today
+5:00 PM, Saturday's times; `docs/t037-checklist.md`, "Rehearsal"). He ends Saturday's cook for it and loads
+Saturday's plan again tonight, then step 15's read again. Saturday stays the main run. What is on the phone
+is whatever the last read in the checklist says, not the paragraph above.
+
 **Next: Saturday 2026-11-21, the Saturday table of `docs/t037-checklist.md`.** The cook is Jason's; Claude
 is needed once, at 12:25 PM, for one read-only adb line after his yes (the battery history to a file), then
 he reboots at 12:30 PM. Sunday 2026-11-22: the readout (filter both logs to Saturday: they also hold
