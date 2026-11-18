@@ -2128,6 +2128,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   two-phone share test, Gmail and Drive. One list: `docs/after-readout-checklist.md`. Where the sources are
   silent it says "to confirm with Jason" (the way the beta.1 file reaches her phone; whether her phone to his
   is part of the test).
+- **Jason (2026-11-18):** her phone to his is part of the test; she sends a one-food plan of her own. The
+  two-phone test runs after the share guard is merged in Sunday's fix window (two fast taps on Share plan
+  show a false "Couldn't share" behind the open sheet: cause and fix in `docs/after-readout-checklist.md`);
+  single taps only until then. Single taps to Drive and to email work on his phone on beta.2 (his word).
 - **Status:** todo (Jason, hands-on), rescheduled to after Sunday's readout. Remains: the checklist ticked.
 - **Goal:** SPEC definition of done: a plan round-trips between two phones through Gmail and through Drive.
 - **Files:** fixes only if a route fails; `docs/HANDOFF.md`.
@@ -2186,6 +2190,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Jason (2026-11-17):** INSTALL.md is followed on his wife's phone on Sunday afternoon 2026-11-22, after the
   readout passes, together with T-031: 0.3.0-beta.1 as an upgrade over her 0.2.0, with his yes. Part 1 of
   `docs/after-readout-checklist.md`. T-038 (the release, Monday 2026-11-23) waits for it.
+- **Jason (2026-11-18):** 0.3.0-beta.2 reaches her phone by a Drive link to the APK. Wording fixes from her
+  run go into INSTALL.md before Monday; anything that needs an app change goes to 0.3.1.
 - **Status:** written, merged onto `main` and gate-complete 2026-11-15. Not done until INSTALL.md has been
   followed once on his wife's phone (after Sunday's readout; the review and the six questions are answered).
 - **Goal:** friends can install or upgrade; Claude can release by checklist.

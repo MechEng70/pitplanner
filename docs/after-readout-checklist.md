@@ -18,7 +18,7 @@ Jason present, her phone in his hands or hers, on wifi.
 |---|---|---|---|---|
 | 1 | On her phone, open the Gear screen of 0.2.0 and read the version line at the bottom | It reads 0.2.0 | yes | |
 | 2 | Screenshot her 0.2.0 Gear, Cook rates and Cook history (to compare later) | Three pictures, status bar cropped off | yes | |
-| 3 | Get the 0.3.0-beta.2 file onto her phone. INSTALL.md step 1 points at the GitHub releases page, which has no beta.2 until the release | To confirm with Jason: how the beta.2 file reaches her phone | yes | |
+| 3 | Get the 0.3.0-beta.2 file onto her phone. INSTALL.md step 1 points at the GitHub releases page, which has no beta.2 until the release | Jason, 2026-11-18: by a Drive link to the APK (he sends her the link; she opens it on her phone and downloads the file). This one step differs from INSTALL.md on Sunday; the rest is followed as written | yes | |
 | 4 | INSTALL.md "Install" step 3: tap "Open" on the finished download | Android shows the install screen | yes | |
 | 5 | INSTALL.md "Install" step 4: if asked, Settings, "Allow from this source", go back | The install screen comes back | yes | |
 | 6 | INSTALL.md "Install" step 5: tap "Install", then "Open". Do not uninstall 0.2.0 first | It installs over 0.2.0, no "App not installed" | yes | |
@@ -27,7 +27,7 @@ Jason present, her phone in his hands or hers, on wifi.
 | 9 | Gear, 5 taps on the version line | It reads 0.3.0-beta.2 | yes | |
 | 10 | Allow the alerts, if the app asks (INSTALL.md "Allow the alerts"): Notifications, Alarms and reminders, No battery limits, and Full-screen alerts if shown | Each row shows as on | yes | |
 | 11 | Tap "Send a test alert in 10 sec" and lock the phone | It rings | yes | |
-| 12 | Write down every place in INSTALL.md she hesitated, or where the wording of her phone differed | Notes here: ____________. What to do with them: to confirm with Jason | no | |
+| 12 | Write down every place in INSTALL.md she hesitated, or where the wording of her phone differed | Notes here: ____________. Jason, 2026-11-18: wording fixes go into INSTALL.md before Monday's release; anything that needs an app change goes to 0.3.1 | no | |
 
 If the install fails, INSTALL.md says: do not uninstall the app. Stop and email pitplanapp@gmail.com with the
 version and what the phone said.
@@ -36,6 +36,10 @@ version and what the phone said.
 
 Jason's phone with 0.3.0-beta.2 (the release build, not the dev build) and her phone with 0.3.0-beta.2 from
 Part 1. A plan on his phone that has at least two foods.
+
+**Part 2 runs after the share guard is merged (Jason, 2026-11-18).** Until then every share is one single
+tap: two fast taps on Share plan or Export my data open the sheet and show a false "Couldn't share" behind
+it (the item "Share plan failed on the phone" below has the cause and the fix).
 
 | # | What to do | What must be seen | Needs yes | Done |
 |---|---|---|---|---|
@@ -46,7 +50,7 @@ Part 1. A plan on his phone that has at least two foods.
 | 17 | Repeat steps 14 to 16 with the app already open on her phone | The sheet opens | yes | |
 | 18 | On his phone, tap the share icon again, choose Drive, save the file | The file is in Drive, no "Couldn't share" | yes | |
 | 19 | On her phone, open the file from Drive | The Shared plan sheet opens with the right menu | yes | |
-| 20 | The other direction: from her phone to his, Gmail and Drive. SPEC says "round-trips between two phones"; T-031 only names his phone to hers | To confirm with Jason: whether her phone to his is part of the test, and what plan she sends | yes | |
+| 20 | The other direction: from her phone to his, Gmail and Drive. SPEC says "round-trips between two phones"; T-031 only names his phone to hers | Jason, 2026-11-18: yes, her phone to his is part of the test. She sends a one-food plan of her own, by Gmail and by Drive; on his phone the Shared plan sheet opens with her menu | yes | |
 | 21 | Note anything that did not open, with the exact words on screen. A failing route gets a regression test (T-031) | Notes here: ____________ | no | |
 
 ## When both parts pass
@@ -121,8 +125,25 @@ Branches only until the readout passes; then merge one at a time, the gate after
       window was shown on alpha.3 (`docs/alarm-testing.md`, "Upgrade with a live cook"); a ring before the
       first open has never been run, and `upgrade020.sh check` opens the app at once, so it needs its own
       step. Not run on 2026-11-17 (his order).
-- [ ] **A start that fails shows nothing** (`newCook`, the store's save or the alarm sync throwing is an
-      unhandled rejection). Whether it gets a message is Jason's call, after Sunday; new UI needs his words.
+- [ ] **A start that fails shows nothing.** **Jason, 2026-11-18: it gets a message in 0.3.1, "Couldn't start
+      the cook. Try again." Before building: confirm a failed start leaves no partial state, and report.**
+      First read of the code, 2026-11-18 (read only, nothing run, no test written):
+      - `newCook` throwing (`src/screens/plan/PlanTab.tsx:175`): nothing is stored and no alarm is set.
+      - The store's save throwing (`src/lib/store.tsx`, `saveCook`): the write is one transaction
+        (`src/db/repos/activeCook.ts:31`), so no cook row is left, the state keeps "no cook" and the alarm
+        sync is not reached. Two things are left behind: the event log already holds a "cook started" line
+        (it is written before the save), and the double-tap guard `starting` stays set, because it is only
+        cleared when a running cook ends. So after a failed start, Start cook does nothing until the app is
+        restarted, and "Try again" would be a dead button. The 0.3.1 work clears the guard on a failed start
+        and logs the failure, each with a failing test first.
+      - The alarm sync failing is not a failed start and is not silent: the store catches it
+        (`alarmSync: 'failed'`, an `error` line in the event log), the cook is saved and running, and the
+        Cook tab shows "Alarms could not be set. Steps will not ring." with Try again. The earlier note that
+        called it an unhandled rejection was wrong. Not read: whether the native `replaceAll` can leave part
+        of the alarm set behind when it fails.
+      - From the "Alerts may not ring" sheet, Start anyway calls the same start from a button press, not
+        from a promise, so a throw there takes a different route. What a release build does with it was not
+        checked.
 - [ ] **Device rig fixes from the full pass of 2026-11-17** (HANDOFF section 5): date the legacy-import
       fixture's running cook from the clock; wait for the MediaStore row before opening a pushed plan file
       (`shared`, `shared-soon`); scroll to Alerts in `gear` at 130%; scroll a button clear of the pinned footer
@@ -131,6 +152,11 @@ Branches only until the readout passes; then merge one at a time, the gate after
 - [ ] **For Jason, from that pass at 130%:** Setup's "Send a test alert in 10 sec" and Cook finished's
       Use / Keep buttons are hidden under the pinned buttons until scrolled (`tools/device/out/1.3/
       setup-alerts.png`, `cook-finished-rate.png`). Leave, or change the layout?
+      **Jason, 2026-11-18: change the layout, in 0.3.1** (`docs/ROADMAP.md`). The parked sheet-buttons branch
+      (`a8c0f87e3e0ab96ed`) covers neither: it changes only the three confirm sheets ("Replace your data?",
+      "Start over?", "Alerts may not ring"; `GearScreen.tsx`, `CookOptions.tsx`, `StartCheckSheet.tsx` and
+      their tests) and does not touch Cook finished or Setup. The new layout is shown to Jason before it is
+      built.
 - [ ] **User guide pictures (T-066):** 5 of 22 slots are filled on a branch; shoot the other 17 on the
       emulator at 115% from seeded test data only, check each for personal data before committing. Replace
       `docs/fidelity/rn-debug-send.png` with a picture showing the app's address (the old one shows Jason's
@@ -146,7 +172,30 @@ Branches only until the readout passes; then merge one at a time, the gate after
       Share on Plan showed "Couldn't share. The plan was not shared. Try again." The share sheet opened first; the message
       came after it (Jason). Gear's Export my data the same evening "seemed like it did" work (Jason). Both
       go through `shareTextFile` (`src/platform/shareFile.ts`), which fails only when `Sharing.shareAsync`
-      rejects, so the reject came after the sheet was up. Cause not found; no code read past that, no log
-      taken from the phone (offered, not answered, so not run). To find out first: what he did in the sheet
-      (picked an app, or went back), whether it fails every time and after a restart, and the phone's log
-      of one failing try. T-031 (two-phone share) depends on this.
+      rejects, so the reject came after the sheet was up. T-031 (two-phone share) depends on this.
+      **Cause found, Wed 2026-11-18 (diagnosis only, no code changed): a second tap while the share sheet is
+      opening.** `expo-sharing` keeps one open share request and refuses a second one
+      (`SharingModule.kt`: "Another share request is being processed now."); `PlanTab.tsx:196` and
+      `GearScreen.tsx:132` show the failure sheet for any rejection. Neither button ignores a second tap and
+      `shareTextFile` has no guard. The share itself works: the sheet from the first tap is live and the
+      file can be sent; the message is a false alarm, and the next single tap works.
+      - Emulator, the beta.2 release APK (SHA-256 `e27ea9b3...8b242`): one tap on Share plan or Export my
+        data opens the sheet with no message; two fast taps open the sheet with "Couldn't share" or
+        "Couldn't export" behind it. The log shows one chooser start and no error line (the release build
+        logs nothing and the catch drops the error, so the rejection's text is from reading the module, not
+        from a log).
+      - Jason's phone, beta.2: single taps on Share plan work every time, to Drive and to email, with and
+        without a cook running (Jason). One fast double tap at 7:48 AM: "Couldn't share" showed (Jason); the
+        phone's log has one chooser start at 7:48:26 and no error line, as on the emulator. Export my data
+        with one tap at 7:49 AM went to Drive and the file is there (Jason; the log shows the hand-off to
+        Drive). So it is not specific to the phone.
+      - Not proven: that Tuesday evening's failure was a double tap (no log from then). Nothing else in the
+        code rejects once the sheet is up.
+      **Decision (Jason, 2026-11-18): not a blocker; Saturday runs on beta.2, no beta.3 for this. The fix
+      merges in Sunday's fix window after the readout, regression test first:** ignore only the "another
+      share request is being processed" rejection; any other error keeps the notice and is written to the
+      debug event log, so it is not silent in a release build. The same guard in `PlanTab` and `GearScreen`,
+      or in `shareTextFile` if that covers both (it does carry both; the event log is the store's, so the
+      log line is written where the store is in reach: decide at the build, with how the rejection is told
+      apart from others). Part 2 above runs after this is merged; single taps only until then. A device
+      check that taps twice belongs with it.

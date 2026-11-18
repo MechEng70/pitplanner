@@ -61,6 +61,16 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
 - **No task.** Lane chart label (Jason, 2026-11-17; 0.3.1, cosmetic): a short bar shows a cut label, for
   example the tri-tip's smoke bar reads only "s". Drop a label that does not fit, or shorten it. Why: it
   reads as a glitch. Blocked on: nothing.
+- **No task.** Buttons hidden under the pinned footer at 130% (Jason, 2026-11-18; 0.3.1): change the layout
+  so Setup's "Send a test alert in 10 sec" and Cook finished's Use / Keep buttons are not under the pinned
+  buttons when the screen opens (`tools/device/out/1.3/setup-alerts.png`, `cook-finished-rate.png`). On Cook
+  finished the cook can be saved today without the rate choice being seen. The parked sheet-buttons branch
+  (`a8c0f87e3e0ab96ed`) covers neither screen. Why: a button the user cannot see. Blocked on: the new layout
+  shown to Jason first.
+- **No task.** A failed start says so (Jason, 2026-11-18; 0.3.1): "Couldn't start the cook. Try again."
+  Why: today nothing is shown, and Start cook then does nothing until the app is restarted (the double-tap
+  guard stays set). Blocked on: the report to Jason that a failed start leaves no partial state, before
+  anything is built (first read: `docs/after-readout-checklist.md`, "A start that fails shows nothing").
 - **T-078** Lock-screen taps re-plan with the app closed (headless JS).
   Why: other alarms keep old times until the app opens (T-076 limit).
   Blocked on: a half-day spike on the emulator, then a report to Jason before any build. Also his answer on
