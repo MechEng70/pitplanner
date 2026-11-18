@@ -46,14 +46,29 @@ Saturday's plan."**
    | 6 | `a6d5ad9a3b663d00e` | README (create `docs/DEVELOPING.md` at merge) | no | no | no (docs only) |
    | 7 | `af96b15db6f617be3` | Guide pictures (5 slots; 17 are on `main` already; `start-check.png` is retaken after merge 3) | no | no | no (docs only) |
 
+   **After merge 1, an emulator check (Jason, 2026-11-18): start a cook, tap Not yet, then `dumpsys alarm`
+   shows the moved times.** Why: cancelling and setting the alarms runs from `saveCook` itself: its last
+   line calls `sync()`, which queues `syncAlarms` (replace the phone's whole set) after the save and the
+   state update, and merge 1 changes `saveCook` (the "cook started" log line moves to after the save; the
+   `sync()` call is not touched, and a save that throws reaches neither `commit` nor `sync`, before or after
+   the change). How: test emulator, dev build, 115% (`--no-build`, nothing native changed); end any cook
+   (`pitplanner://dev/alarm?cook=end`), open the mockup cook (`pitplanner://dev/plan?seed=cooking`, Next up
+   is the brisket's wrap check); save `adb -s emulator-5554 shell dumpsys alarm` and list the dev build's
+   pending alarms; Cook options, "Not yet, check again in 30 min"; list them again. Pass: the brisket's
+   check is 30 minutes later with its later steps, the other foods' alarms are where they were, the count
+   is the same, every time once, nothing left at an old time, and the event log has one "set N" line for
+   it. Then the gate, as for every merge.
+
    Checked 2026-11-18 5:30 PM from each branch's file list against `main`. Known conflicts are listed under
    "Parked branches" below (T-082 and the capitals fix both change `TempMenu.tsx` and `engine/plan.ts`;
    merges 1 and 3 both change `GearScreen.tsx` and `StartCook.test.tsx`).
 5. **Then:** the beta.3 build (Jason runs the release command), the emulator locked reboot on beta.3
    (`tools/device/locked-reboot.sh`), the `turkey` test on the emulator at 115% and 130%, then beta.3 on his
-   phone. **Release 0.3.0 Monday 2026-11-23 unless he says earlier.** His wife's phone and the two-phone
-   share test (`docs/after-readout-checklist.md`) are still set for Sunday in that file; ask him whether
-   they stay there now that the readout is Thursday.
+   phone. **Release 0.3.0 Monday 2026-11-23 unless he says earlier.** **No other phones are tested for 0.3.0
+   (Jason, 5:50 PM):** the two-phone share test and the Samsung tester's locked-reboot request move to
+   0.3.1; his wife gets 0.3.0 when he sends it, not beta.2; INSTALL.md wording fixes still go in before
+   Monday (`docs/after-readout-checklist.md`, top). New 0.3.1 backlog: T-086, rig tests for Not yet, Back up
+   to temp with Move serve and the Adjust tap.
 
 **Also from today, in the docs:** Home Assistant step 0 passed (`docs/ha-entities.md`); his login is in a
 private file outside the repo (`~/.config/pitplanner/ha.env`; never print or copy it); the app adds the
@@ -64,7 +79,13 @@ Assistant address is replaced by an example in the tracked docs. User guide: tex
 **Waiting on Jason:** the 15 questions on the Home Assistant mockups and five more kept from the deleted
 duplicate; six sign-in choices (T-044); wording for the connect error and a `.local` test on his phone
 (T-045); the "Kamad" chip; brine options; T-084 and T-085 wording; the open user guide wording (T-066);
-whether Sunday's phone tests move.
+which INSTALL.md wording fixes he has in mind for Monday; whether the 0.3.0 notes say alarms after a locked
+restart were not tested on a Samsung, and the words; SPEC's definition of done still lists the two-phone
+share round trip.
+
+**The overnight check is started (5:36 PM read):** four alarms pending on his phone, Thursday 5:30:00,
+5:45:00, 5:57:00 and 6:05:00 AM, each once, nothing else of the app's; he unplugs for the night. The reads
+of the day, the midday ones too, are in `tools/device/out/t037-rehearsal-2026-11-18/`.
 
 ## Earlier on Wednesday 2026-11-18 (written 8:00 AM; superseded where the section above differs)
 

@@ -469,8 +469,8 @@ that alert only. The phone must be unplugged all night: a phone on a charger doe
 
 | # | Who | What | Done |
 |---|---|---|---|
-| 1 | Jason | Enter the plan above and tap Start cook once. Say what Plan and Cook show | |
-| 2 | Claude | After his yes: `adb -s <phone> shell dumpsys alarm` (read only). Expect four alarms of the app, Thursday 5:30, 5:45, 5:57 and 6:05 AM, each once, nothing else | |
+| 1 | Jason | Enter the plan above and tap Start cook once. Say what Plan and Cook show | Wed 5:35 PM: brisket and wings removed, breasts as they were, Start at Thu 5:30 AM; Plan showed the breasts at 5:45 AM and serve at 6:05 AM; Start cook tapped once (Jason) |
+| 2 | Claude | After his yes: `adb -s <phone> shell dumpsys alarm` (read only). Expect four alarms of the app, Thursday 5:30, 5:45, 5:57 and 6:05 AM, each once, nothing else | Wed 5:36:07 PM, after his yes: four alarms of the app pending, Thu 5:30:00, 5:45:00, 5:57:00 and 6:05:00 AM, each once; nothing else of the app's, nothing of the dev build's; Android's next alarm clock for the phone is Thu 5:30:00 AM |
 | 3 | Jason | Unplug. Phone locked, not on a charger, until morning | |
 | 4 | Jason | By 7:30 AM: End cook, Discard this cook. Gear, 5 taps on the version line, Send to developer | |
 | 5 | Claude | After his yes: read the ring log from the debug file, `dumpsys deviceidle` and the battery history (read only) | |

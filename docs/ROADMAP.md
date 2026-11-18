@@ -85,6 +85,14 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
   Why: other alarms keep old times until the app opens (T-076 limit).
   Blocked on: a half-day spike on the emulator, then a report to Jason before any build. Also his answer on
   whether the app still jumps to the Cook tab after a tap.
+- **T-086** Rig tests on the emulator for Not yet, Back up to temp with Move serve, and the Adjust tap
+  (Jason, 2026-11-18; 0.3.1). Why: the rehearsal did not tap them and only Jest covers them. Blocked on: the
+  rig fixes of the 2026-11-17 full pass.
+- **T-031** (the two-phone part) Share between his wife's phone and his, both ways (Jason, 2026-11-18; moved
+  from 0.3.0 to 0.3.1: no other phones are tested for 0.3.0). Blocked on: 0.3.0 on her phone.
+- **The Samsung tester's locked-reboot check** (parity P4, T-072; Jason, 2026-11-18; moved to 0.3.1). Why:
+  alarms after a restart with the phone still locked are proven on a OnePlus and the emulator only.
+  Blocked on: asking the tester.
 - **T-082** (if it slips) Temp step question on Setup's smoker card and in Gear.
   Why: nothing lets the user change a catalog smoker's step.
   Blocked on: Jason's OK on the PNGs, then the merge after Sunday's readout. Planned for 0.3.0 on Monday

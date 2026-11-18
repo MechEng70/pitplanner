@@ -2178,6 +2178,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** see T-031.
 
 ### T-031 Share between two phones (Gmail, Drive)
+- **Moved to 0.3.1 (Jason, Wed 2026-11-18 evening): "No other phones are tested for 0.3.0."** The two-phone
+  test, his wife's phone to his and back (`docs/after-readout-checklist.md`, Part 2), is not run before
+  0.3.0. SPEC's definition of done still lists "Share plan round-trips between two phones"; his to settle.
+  What 0.3.0 has: the single-phone stand-in below, the emulator `shared` test, and the share guard on a
+  parked branch for beta.3.
 - **Single-phone stand-in (2026-11-16, Jason's phone, dev build):** a plan shared from the dev build and
   emailed to himself opened the Shared plan sheet when the dev build was already running. On a cold start
   it said "Could not read that file.": the Expo dev launcher takes the intent first and the read permission
@@ -2239,6 +2244,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - The dev build ("Pit Planner dev") checks too, once a day, as built (Jason, 2026-11-15). Nothing to change.
 
 ### T-033 Release docs: notes, install guide, releasing checklist
+- **Changed (Jason, Wed 2026-11-18 evening):** INSTALL.md is not followed on his wife's phone before the
+  release; she gets 0.3.0 when he sends it, not beta.2. INSTALL.md wording fixes still go in before Monday
+  2026-11-23 (known so far: the "Oven hold raised to 140F, the safe minimum." import line is missing; which
+  others he has in mind is to ask). The Samsung tester's locked-reboot request moves to 0.3.1; whether the
+  0.3.0 notes say alarms after a locked restart were not tested on a Samsung, and in what words, is his call.
 - **Answers put in (2026-11-15, eighteenth session):** INSTALL.md has the contact address (the one the debug
   screen uses) and a line on betas; RELEASING.md says testers get betas, describes the update check as built
   (T-032) in place of the "Not built yet" note, and names where the contact address lives. TECH-DESIGN now
@@ -4035,4 +4045,24 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   whether an early tap is flagged too.
 - **Status:** backlog. **Files (when it is built):** `src/lib/finish.ts`, `src/lib/cook.ts`, the Cook
   finished screen and their tests (screen tests first), SPEC sections 5 and the rates lines, a mockup.
+
+### T-086 Rig tests on the emulator for Not yet, Back up to temp with Move serve, and the Adjust tap
+- **Jason (Wed 2026-11-18): 0.3.1 backlog.** From the T-037 rehearsal's list of what was not tested
+  (`docs/t037-checklist.md`, "What today did not test, and where each is covered already"): these three are
+  covered by Jest only, or only as far as the button being on screen.
+- **Status:** backlog, 0.3.1.
+- **Goal:** three additions to the device rig (`tools/device/run.sh`, emulator, the mockup cook at 115% and
+  130%), each ending with a read of the phone's alarm list:
+  1. **Not yet** at a check step (Cook options, "Not yet, check again in 30 min"): Next up reads 30 minutes
+     later, serve is kept, and `dumpsys alarm` shows that food's alarms at the moved times, each once,
+     nothing left at the old times.
+  2. **Back up to temp with Move serve:** Pit went out, Back up to temp, choose Move serve, Apply: the
+     banner goes, serve reads later, the other foods moved with it, and the alarm list matches.
+  3. **The Adjust tap** on the Next up card: it opens Cook options (today the rig only checks the button is
+     there).
+- **Files:** `tools/device/run.sh`, `tools/device/README.md` (the test table), `tools/device/targets.tsv` if
+  a step is a stable-controls target. No app code.
+- **Depends on:** the rig fixes of the full pass of 2026-11-17 (a button scrolled clear of the pinned
+  footer before it is tapped).
+- **Real phone:** no.
 
