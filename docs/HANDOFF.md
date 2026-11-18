@@ -22,6 +22,13 @@ on Share plan and Export my data.
 5:00 PM, Saturday's times; `docs/t037-checklist.md`, "Rehearsal"). He ends Saturday's cook for it and loads
 Saturday's plan again tonight, then step 15's read again. Saturday stays the main run. What is on the phone
 is whatever the last read in the checklist says, not the paragraph above.
+If today is clean (Jason's lean, 8:15 AM, not decided): the readout on Thursday from tonight's reads; a
+0.3.0-beta.3 on Friday with a hard cutoff (anything not merged and gated by Friday noon waits for 0.3.1;
+the share guard and the start guard first, then T-082, then the small branches); the emulator's
+locked-reboot on beta.3 before his phone. With beta.3 he does not load Saturday's plan tonight: beta.3 goes
+on the phone Friday, then he loads Saturday's plan and step 15 is read. Tonight's reads stay: after Discard,
+Send to developer, then `dumpsys alarm` (nothing pending), `dumpsys deviceidle` and
+`dumpsys batterystats --history`, before the phone charges to full.
 
 **Next: Saturday 2026-11-21, the Saturday table of `docs/t037-checklist.md`.** The cook is Jason's; Claude
 is needed once, at 12:25 PM, for one read-only adb line after his yes (the battery history to a file), then

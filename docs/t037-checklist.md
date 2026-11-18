@@ -23,10 +23,12 @@ phone, no second device. He is in meetings; the phone lies face down, unplugged,
 anything else.
 
 - Before 8:35 AM he ends and discards Saturday's cook (started that morning, steps 14 and 15), sets the same
-  plan to ready today 5:00 PM and taps Start cook once. Dry brine the wings (7:15 AM) and Prep the brisket
-  (7:55 AM) are already past; neither has an alarm.
-- Claude reads the app's alarms right after (read only): the first is Fire the smoker 8:50 AM today, then
-  Brisket on the smoker 9:10 AM, nothing left of Saturday's cook. Then he unplugs.
+  plan to ready today 5:00 PM and taps Start cook once. Done about 8:10 AM: the Cook tab shows Fire the
+  smoker to 225F at 8:50 AM, ready today 5:00 PM (Jason).
+- Claude reads the app's alarms right after (read only). Read at 8:11:08 AM, after his yes: 13 alarms, each
+  time once, all dated today: 8:50 AM, 9:10 AM, 12:40 PM, 3:15, 3:25, 3:40, 4:05, 4:20, 4:25, 4:40, 4:52, 4:55
+  and 5:00 PM. Nothing dated Saturday, none of the dev build: the first is Fire the smoker 8:50 AM today,
+  then Brisket on the smoker 9:10 AM, and nothing is left of Saturday's cook. He was told to unplug.
 - 12:25 PM: at the computer, plugged in, for the battery history (one read-only adb line after his yes).
   12:30 PM: the reboot, on the phone.
 - Tonight, after Time to serve and Discard: Send to developer, then the phone's reads for the readout while
@@ -46,8 +48,15 @@ Ready by Saturday 5:00 PM. Smoker 225F.
 | Chicken wings | 2 lb, smoke then crisp, dry brine, rest 5 min |
 | Chicken breasts | 4, griddle, pounded, no brine, rest 8 min |
 
-The first ring is Fire the smoker at 8:50 AM. Nothing rings before 8:30 AM. Two reminders have no alarm
-(Dry brine the wings 7:15 AM, Prep the brisket 7:55 AM).
+The first ring is Fire the smoker at 8:50 AM, and it is also the first step the phone shows. Nothing rings
+before 8:30 AM. The phone shows and rings 14 steps, in 13 alerts (two steps share 4:40 PM).
+
+**No prep or brine reminder is on the phone (corrected 2026-11-18, Jason).** An earlier line here said "two
+reminders have no alarm (Dry brine the wings 7:15 AM, Prep the brisket 7:55 AM)". The engine does still
+make those entries, and two more (Prep the chicken breasts 4:10 PM, Smoker done 4:55 PM), each with no
+alarm; the engine run of that morning listed them and was not stale. But the app never shows them: the Cook
+tab lists only steps that ring (`steps`, `src/lib/cook.ts:87`), and Plan shows no step list. So on the phone
+there is nothing at 7:15 AM or 7:55 AM, and nothing to be "already past" when a cook is started later.
 
 ## Friday: upgrade over 0.2.0 (T-038's phone check) and get ready
 

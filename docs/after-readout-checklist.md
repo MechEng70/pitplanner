@@ -208,3 +208,14 @@ Branches only until the readout passes; then merge one at a time, the gate after
 - [ ] **Plan edited while a cook runs (found by Jason on his phone, 2026-11-18):** the running cook does not
       change and nothing says so. SPEC is silent on it. His lean: a prompt, his wording, 0.3.1. Task T-084
       in `docs/design/TASKS.md`.
+- [ ] **"Dry brine ahead" on wings and "Wet brine 1-2 hr" on chicken breasts change nothing the user sees
+      (read 2026-11-18, after Jason's correction that prep and brine reminders are not in the app's
+      timeline, on purpose: prep is on the user).** In `data/foods.json` each of the two choices only adds
+      a prep entry to the engine's plan ("Dry brine the wings." 8 hours before they go on, "Brine the
+      chicken breasts." 150 minutes before). A prep entry has no alarm, and the app lists only steps that
+      ring, so no time, step or alert changes with the choice; it is saved with the food, goes into a
+      shared plan file and into the saved cook. The same holds for every food's "Prep the ..." entry. TASKS
+      (T-059, 2026-11-15) records "The reminders stay": true in the engine, never shown by the Expo app
+      (the filter is in its first Cook tab, `45e0749`). For Jason, after the readout: keep the two options
+      as a note to self, or take them out of Food details; and whether the engine's prep entries go too
+      (data and engine tests change with them).
