@@ -2291,7 +2291,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   needs you" in Robolectric. P3 run on the phone. P4 at T-037 on the tester's Samsung. No parity decision
   is waiting on him.
 - **Status:** review written 2026-11-15 (nineteenth session), `docs/parity.md`; open rows wait for Jason's
-  decisions (section 1a), the full device pass at 115% and 130% is not run
+  decisions (section 1a). **The full device pass at 115% and 130% was run on Tue 2026-11-17** (HANDOFF,
+  "The full device pass (T-034)"): 23 of 25 tests finished before the computer ran low on memory; 17 pass at
+  both sizes, 6 fail on test rig faults (no app regression), `followups` and `turkey` did not get a result.
+  The reruns wait for the rig fixes; `turkey` runs with beta.3. As first written here: the full device pass
+  at 115% and 130% is not run
 - **Goal:** every SPEC screen and failure mode that 0.2.0 handled works in the Expo build.
 - **Files:** `docs/parity.md` (checklist: SPEC 3 screens, SPEC 5 live rules, SPEC 7 failure modes 1-15, mockups
   01-20 with fidelity PNG links).
