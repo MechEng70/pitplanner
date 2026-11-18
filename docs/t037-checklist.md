@@ -47,6 +47,8 @@ Seen during the rehearsal, to settle in the readout:
   OK; as designed), or the step still open in the app with Done (the lock-screen tap not applied; a bug).
   Tonight's debug file settles it: the event log's "done" line for the fire step reads 8:50 AM in the first
   case and about 9:10 AM in the second.
+  **Jason, later that morning: "it was a banner above the next step".** So it was the notice, as designed.
+  The 8:50 AM "done" line is still checked in tonight's debug file.
 
 ## The plan to load (Friday night)
 
