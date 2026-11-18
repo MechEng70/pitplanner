@@ -163,7 +163,10 @@ Branches only until the readout passes; then merge one at a time, the gate after
       "Start over?", "Alerts may not ring"; `GearScreen.tsx`, `CookOptions.tsx`, `StartCheckSheet.tsx` and
       their tests) and does not touch Cook finished or Setup. The new layout is shown to Jason before it is
       built.
-- [ ] **User guide pictures (T-066):** 5 of 22 slots are filled on a branch; shoot the other 17 on the
+- [ ] **User guide pictures (T-066): 16 of the 17 done Wed 2026-11-18** (`docs/guide/`, in the guide; the
+      debug-send picture in `docs/fidelity/` is replaced too). Left: the lock-screen alert, the branch's 5,
+      the README's 4. Two things seen in the pictures are in TASKS T-066 (the "Kamad" chip, a sliver of
+      Start cook beside the check sheet). As first written: 5 of 22 slots are filled on a branch; shoot the other 17 on the
       emulator at 115% from seeded test data only, check each for personal data before committing. Replace
       `docs/fidelity/rn-debug-send.png` with a picture showing the app's address (the old one shows Jason's
       old email address; no history rewrite, his decision).

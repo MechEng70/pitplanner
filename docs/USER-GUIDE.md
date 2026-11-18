@@ -32,15 +32,21 @@ The first time you open the app, Setup asks three short things. Nothing is saved
 
 <!-- SCREENSHOT: setup-welcome | Setup step 1, Welcome to Pit Planner, units chosen, status bar cropped -->
 
+<img src="guide/setup-welcome.png" alt="Setup step 1: Welcome to Pit Planner, with the temperature and weight units" width="320">
+
 **Welcome to Pit Planner.** Pick Fahrenheit or Celsius, and Pounds or Kilograms. Tap Continue.
 
 <!-- SCREENSHOT: setup-cookers | Setup step 2, What do you cook on, smoker, griddle and oven rows, status bar cropped -->
+
+<img src="guide/setup-cookers.png" alt="Setup step 2: What do you cook on, with a smoker picked, a griddle and an oven" width="320">
 
 **What do you cook on?** Tap the Smoker card to pick your model. Turn on Griddle if you have one. Turn on
 Oven for holding if you will hold food warm in the oven. Tap Add another cooker for more. You need a smoker or
 a griddle to continue. You can change all of this later in Gear.
 
 <!-- SCREENSHOT: setup-picker | The smoker picker with search and type chips, status bar cropped -->
+
+<img src="guide/setup-picker.png" alt="The smoker picker with the search box and the type chips" width="320">
 
 In the smoker picker, search by brand or model, or use the chips (All, Pellet, Kamado, Offset, Drum, Gravity,
 Electric). If your smoker is not in the list, tap Not listed? Enter it yourself and fill in its details. When
@@ -70,10 +76,14 @@ Plan is the first tab. Here you build the menu and see the times.
 
 <!-- SCREENSHOT: plan-empty | Plan with nothing on the menu, What are we cooking, Add food button, status bar cropped -->
 
+<img src="guide/plan-empty.png" alt="Plan with nothing on the menu and the Add food button" width="320">
+
 With nothing on the menu, Plan says "What are we cooking?" Tap Add food. Once you have a saved cook, a Cook a
 past plan again button also shows. See section 7.
 
 <!-- SCREENSHOT: plan-main | Plan with the Saturday menu, three foods, tiles at the bottom, 115% font, status bar cropped -->
+
+<img src="guide/plan-main.png" alt="Plan with three foods, the Add food button, the three tiles and Start cook" width="320">
 
 ### Serve time
 
@@ -88,11 +98,15 @@ Tap the day and time to change it. Tap the calendar icon to pick a date and time
 
 <!-- SCREENSHOT: plan-add-food | The Add food sheet with the search box and the Beef, Pork, Chicken groups, status bar cropped -->
 
+<img src="guide/plan-add-food.png" alt="The Add food sheet with the search box and the food groups" width="320">
+
 Tap Add food. Search for a food or scroll the groups. Tap a food to open its details.
 
 ### Food details
 
 <!-- SCREENSHOT: plan-food-details | Food details for a brisket, with the result bar pinned at the bottom, status bar cropped -->
+
+<img src="guide/plan-food-details.png" alt="Food details for a brisket, with the fire, off heat and serve times above Add to plan" width="320">
 
 The food details screen shows what you can change for that food:
 
@@ -119,6 +133,8 @@ run faster. Set your own rate or total hours if you know them.
 
 <!-- SCREENSHOT: plan-temp-menu | The Smoker temp menu open, each row with its fire time, status bar cropped -->
 
+<img src="guide/plan-temp-menu.png" alt="The Smoker temp menu open, each row with its fire time" width="320">
+
 Tap the Smoker temp field. A menu lists the temperatures your smoker can be set to. Each row shows the fire
 time you would get with that temperature. Pick one. The menu starts with the usual range, 200F to 300F. Tap
 the Show button at the bottom to see every temperature. Times outside the usual range are marked as a rough
@@ -127,6 +143,8 @@ guess.
 ### The tiles and Conflicts
 
 <!-- SCREENSHOT: plan-conflicts | The Conflicts sheet with a warning and its fix buttons, status bar cropped -->
+
+<img src="guide/plan-conflicts.png" alt="The Conflicts sheet with a smoker conflict and its fix buttons" width="320">
 
 Under the menu, tiles show the fire time, the pellets (or charcoal) the cook needs, and Conflicts. Conflicts
 shows None when the plan fits your cookers. When it shows a number, tap it. The sheet lists each problem in
@@ -149,11 +167,15 @@ tap Start anyway and keep an eye on the clock. While a cook is running, Start co
 
 <!-- SCREENSHOT: start-check | The Alerts may not ring sheet with the permission rows, status bar cropped -->
 
+<img src="guide/start-check.png" alt="The Alerts may not ring sheet with the three permission rows and Start anyway" width="320">
+
 The Cook tab opens. With no cook running, the Cook tab says "No cook running" and gives you a Go to Plan button.
 
 ### Live cook
 
 <!-- SCREENSHOT: cook-live | Live cook with the Next up card, lane chart and next steps, 115% font, status bar cropped -->
+
+<img src="guide/cook-live.png" alt="Live cook with the Next up card, Done and Adjust, and the chart with one lane for each food" width="320">
 
 The Live cook screen is titled Cooking. Under the title it shows the smoker temp and the serve time. A chip on
 the right says On plan, Behind or Ahead. The three dots open Cook options.
@@ -256,6 +278,9 @@ Gear is the third tab. It holds your cookers and settings.
 
 <!-- SCREENSHOT: gear-main | Gear with Cookers, Your numbers and App groups and the version line, status bar cropped -->
 
+<img src="guide/gear-main.png" alt="Gear: the Cookers and Your numbers groups" width="320">
+<img src="guide/gear-main-end.png" alt="Gear scrolled down: the App group and the version line" width="320">
+
 **Cookers.** Your smoker, griddle and oven. Tap one to edit it.
 
 <!-- SCREENSHOT: gear-griddle | The Griddle sheet with name, size, burners and dome, status bar cropped -->
@@ -292,6 +317,8 @@ The last line shows the app version.
 
 <!-- SCREENSHOT: history-main | Cook history with a rate card, the list of cooks and the help line, status bar cropped -->
 
+<img src="guide/history-main.png" alt="Cook history with a rate card, one saved cook and the help line" width="320">
+
 To reach Cook history, open the Gear tab and tap Cook rates, under Your numbers.
 
 At the top, a card for each food you have cooked, or have saved a rate for, shows:
@@ -308,6 +335,8 @@ Under Cooks, each saved cook shows its day, the foods and whether it ran on plan
 actual times and your notes.
 
 <!-- SCREENSHOT: history-cook | One saved cook open with Edit, Cook again and Remove from history, status bar cropped -->
+
+<img src="guide/history-cook.png" alt="One saved cook open, with planned and actual times, notes, Edit, Cook again and Remove from history" width="320">
 
 - Cook again puts that menu on Plan with a new serve time. If Plan already has food, the first tap says "This
   replaces the plan you have now. Tap Cook again to go on." Tap again to do it.
@@ -327,6 +356,8 @@ smoker temp. It holds no personal data and no history. If it fails, the app says
 Open shared plan sheet.
 
 <!-- SCREENSHOT: shared-plan | The Open shared plan sheet with the sender's menu and the Serve on choice, status bar cropped -->
+
+<img src="guide/shared-plan.png" alt="The Open shared plan sheet with the menu, the Serve on choice and Use this plan" width="320">
 
 It shows the sender's menu and serve time. Then:
 
@@ -379,6 +410,8 @@ The screen shows the developer's email address, pitplanapp@gmail.com. Tap the ad
 address is not filled in for you, type it.
 
 <!-- SCREENSHOT: debug-send | The Alarm tests screen at Send to developer with the address and the Send button, status bar cropped -->
+
+<img src="guide/debug-send.png" alt="The Alarm tests screen at Send to developer, with the address the file goes to" width="320">
 
 The file holds the app version, your Android version, the phone model, font size and time zone. It also holds
 your alert permissions, the alarms the app has stored, the app's data (cookers, plan, running cook, history,

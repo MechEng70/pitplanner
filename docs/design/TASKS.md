@@ -1659,6 +1659,24 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   plan-main), live cook (same as cook-live), lock-screen alert (same slot), Cook finished rate card
   (seed=finished-blend, or reuse the parked one). Order: setup; empty; mockup, clash; gear; history; shared;
   tomorrow; cooking, followups; finished-blend; the lock-screen step last.
+- **16 pictures shot and in the guide, Wed 2026-11-18 (Jason: "shoot the 16 today between rings").** In
+  `docs/guide/`, named by slot, shown 320 px wide. Emulator, dev build, 115%, seeded data only, status bar
+  cropped, each looked at before the commit. From the rig run (`setup,plan,plan-sheets,food-details,cook,
+  gear,history,shared,followups`, all PASS at 115%): setup-welcome, setup-cookers, setup-picker, plan-empty,
+  plan-add-food, plan-food-details, plan-temp-menu, plan-conflicts, history-main, history-cook, shared-plan,
+  debug-send. Retaken by hand with the rig's helpers: plan-main (seed=tomorrow, so Start cook is live; the
+  mockup seed's Sat Nov 14 is past and greys it out), start-check, cook-live (every alert permission on, no
+  red banner), gear-main as two pictures (top, and the end with the version line). **The version line reads
+  0.3.0 because Metro was started with `APP_VERSION=0.3.0` for these pictures; the build is the dev build.**
+  The battery allowlist entry was taken off the emulator again afterwards. `docs/fidelity/rn-debug-send.png`
+  is replaced with the same new picture (the app's address). **Left:** lock-screen-alert (needs the new
+  rig step and a release build); the 5 slots on `worktree-agent-af96b15db6f617be3` (they point at the
+  2026-11-15/16 fidelity PNGs; today's run also made fresh `setup-alerts`, `cook-options`,
+  `cook-finished-rate` and `gear-griddle`, cook-banner needs the `live-warnings` test); the README's 4.
+  **Seen in the pictures, for Jason (not fixed, the freeze holds):** (1) in the smoker picker at 115% the
+  chip reads "Kamad", the last letter of Kamado is cut off; (2) with the Alerts may not ring sheet open, a
+  24 px sliver of Plan's Start cook button shows at the right edge of the screen beside Start anyway, and
+  it is tappable (`cook-start.xml`: "Start cook" at x 1056 to 1080).
 - **Depends on:** the 0.3.0 screens, T-065.
 
 ### T-022 Cook options (13) and keep or move serve
