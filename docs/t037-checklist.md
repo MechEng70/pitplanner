@@ -112,6 +112,9 @@ Seen during the rehearsal, to settle in the readout:
   the times the Cook tab showed after the +15; Done on the lock screen for both.
 - **4:20 PM (Jason):** Turn the smoker up to 400F rang at 4:20 PM; Done in the app, then the app swiped
   away from recent apps and the phone locked. From here the app is closed.
+- **4:35 PM (Jason):** Wings crisp at 400F: he tapped Done (the table asks for +15 here; the +15 with
+  the app closed was run at 3:15 PM on Wings on the smoker). So "Fire the griddle rings at the time it had
+  before the +15 tap" is not run on this step today; Saturday's table still has it.
 
 ## The plan to load (Friday night)
 
