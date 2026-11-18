@@ -308,3 +308,54 @@ lock screen before opening the app. With two alerts waiting, Android may group t
 "Planned" is the time in force when it rang (after Not yet, Pit went out, Adjust and +15 it is the
 re-planned time). Android wakes the phone out of deep idle just before an alarm-clock alarm, so the idle
 column says whether the phone was in deep idle in the stretch before the ring, not at the ring.
+
+## Rehearsal results, Wednesday 2026-11-18 (0.3.0-beta.2 on Jason's phone)
+
+From the two debug files Jason sent at 5:17 PM (one before Discard, one after; read in place and deleted
+afterwards at his word, never in the repo): the phone's ring log and the app's event log. Times are the
+phone's. "Idle" is the ring log's own flag for the phone being in idle mode when the alarm fired; the Doze
+and battery history reads are a separate check.
+
+| Step | Due | Rang | Late | Idle | Answer |
+|---|---|---|---|---|---|
+| Fire the smoker to 225F | 8:50:00 AM | 8:50:00 | 0.4 s | yes | Done on the lock screen, 8:50:27 |
+| Brisket on the smoker | 9:10:00 AM | 9:10:00 | 0.0 s | no (screen on) | Done in the app, 9:10:26 |
+| Check the brisket (wrap) | 12:40:00 PM | 12:40:01 | 1.6 s | yes | 10.6 min after the reboot, before the first unlock; **the alert was posted**. Done on the alert 12:44:41, applied when the app was opened at 12:49:03 |
+| Wings on the smoker | 3:15:00 PM | 3:15:00 | 0.1 s | yes | **+15 min** on the alert, 3:15:10; applied at once, serve 5:00 to 5:15 PM |
+| Wings on the smoker, again | 3:30:00 PM | 3:30:01 | 1.4 s | yes | Done on the lock screen, 3:30:10 |
+| Oven to 170F | 3:45:00 PM | 3:45:00 | 0.1 s | yes | Done on the lock screen, 3:45:05 |
+| Check tenderness (brisket pull) | 4:00:00 PM | 4:00:00 | 0.2 s | yes | Done on the lock screen, 4:00:09 |
+| Turn the smoker up to 400F | 4:20:00 PM | 4:20:00 | 0.1 s | no | Done in the app, 4:21:22; then the app swiped away |
+| Wings crisp at 400F | 4:35:00 PM | 4:35:01 | 1.3 s | yes | App closed. Done on the alert 4:35:05, applied 4:57:28 |
+| Fire the griddle | 4:40:00 PM | 4:40:00 | 0.0 s | no | App closed. Done on the alert 4:40:04, applied 4:57:28 |
+| Chicken breasts on the griddle, Slice or plate the brisket (one alert) | 4:55:00 PM | 4:55:00 | 0.0 s | yes | App closed. Done on the alert 4:55:11, applied 4:57:28 |
+| Pull chicken breasts | 5:07:00 PM | 5:07:01 | 1.3 s | no | Done on the lock screen, 5:07:08 |
+| Pull wings | 5:10:00 PM | 5:10:00 | 0.0 s | no | Done on the lock screen, 5:10:07 |
+| Time to serve | 5:15:00 PM | 5:15:01 | 1.2 s | no | Done 5:15:42; Discard 5:17:45 |
+
+**Against the pass line.** 14 alerts, each rang once, every one within 1.6 seconds of its time (the line
+is 1 minute); none repeated (each was answered inside 10 minutes); nothing was lost at the reboot. After
+Discard: no alarm and no repeat stored, the running cook gone, and cook history, its items, the saved rates
+and the cookers identical before and after, so the rates were not touched. The permissions all read on.
+
+**What the logs settle.**
+
+- **12:40 PM after the locked reboot:** the alert was posted at 12:40:01.6, before the unlock at 12:43 PM.
+  So the app did its part and the silence until the unlock is the phone, as Jason judged.
+- **8:50 AM:** the Done from the lock screen is logged at 8:50:27, so the banner he saw at 9:10 AM was the
+  notice, as designed.
+- **No Oven to 170F at 3:30 PM was right.** The app was still alive in the background at 3:15 PM, so it
+  applied the +15 ten seconds after the ring, moved serve to 5:15 PM and set the ten alarms again; the wings
+  alert at 3:30 PM is a plain alarm at the new time, not a snooze repeat.
+- **The +15 with the app closed (the table's 4:20 PM step) was therefore not what ran today.** Today's +15
+  met a live app. The case "the wings alert rings 15 minutes after the tap and no other alarm moves until
+  the app is opened" is still only proven on the emulator; Saturday's table has it with the app swiped away.
+- **Taps with the app swiped away** (4:35, 4:40, 4:55 PM) were kept on the phone and applied with their own
+  tap times when the app next ran, at 4:57:28 PM. The event log has no "fired" lines for those three (the
+  app was not running); the phone's ring log has them.
+- **For T-085:** every step that feeds a cook rate was answered within 26 seconds of its ring (brisket on
+  9:10:26, brisket pull 4:00:09; wings on 3:30:10, wings pull 5:10:07; breasts on 4:55:11, pull 5:07:08).
+
+**Different from Saturday's table:** Done where the table has Not yet at 12:40 PM; the +15 at 3:15 PM on
+Wings on the smoker and Done at Wings crisp; an extra Done in the app at 12:53:37 PM on the brisket's end of
+smoke step. **Still to read:** the phone's alarm list, Doze history and battery history (after his yes).
