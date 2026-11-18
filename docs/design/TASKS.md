@@ -1623,6 +1623,42 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   create a README once we get done with everything and create screenshots for everything").
 - **Goal:** how to use the app, screen by screen, with screenshots (status bar cropped), including where the
   cook history is and how to reach the debug screen.
+- **Text audit against `main`, Wed 2026-11-18 (Opus agent, read-only; Jason asked for a start and a plan).**
+  Fixed in the guide the same day, each checked in the code by the main session: the chart has one lane
+  per food, not per cooker (`cookView.ts:107`); no note shows after Apply on Keep or Move (the notice is set
+  only for taps on an alert, `cook.ts:282`); Done on the alert never asks about serve (keeps it if it can,
+  else moves it later, never earlier) and the Live cook banner says what the tap did; the Conflicts sheet
+  on a shared plan opens only when a food that changed cooker causes one (`sharedPlan.ts:228`).
+  **Still open, the agent's findings, not checked by the main session, wording for Jason:**
+  1. End cook "turns off all the alerts" (the app's own words, `CookOptions.tsx:226`): the alarms are
+     cleared at Save to history or Discard, not at End cook (`CookFlow.tsx`).
+  2. "Done ... five minutes or more early or late, a sheet asks": only for a food going on and steps like
+     the wrap, not for pull, fire or serve, and not when early and serve cannot move sooner (`cook.ts:124-141`).
+  3. Missing: Plan edits do not change a running cook (T-084); Done takes the tap time and the rates learn
+     from it (T-085); brine choices add no step and no alert (the guide promises none, but says nothing).
+  4. Section 11: no warning that the debug screen's Cancel all alarms silences a running cook and Read and
+     clear drops queued alert taps (`DebugScreen.tsx:256-289`); the file also holds when each alert rang.
+  5. Smaller: the four other "cannot open this plan" messages (`sharedPlan.ts:85-119`); temp menu rows show
+     "ready {time}" in Start at mode (`TempMenu.tsx:107`); Restore also replaces units and settings
+     (`restore.ts:30`); the rate hint reads "Published estimate...", not "a guess" (`FoodEdit.tsx:559`); chip
+     order; Oven for holding starts on; when Remove griddle and Remove oven show (`CookerSheets.tsx:45,54`);
+     at 130% "scroll down for Use and Keep"; INSTALL: the "Oven hold raised to 140F" import line.
+  6. Share double tap: no guide line if the share guard ships in 0.3.0.
+- **Picture plan, same agent (22 slots; 5 filled on `worktree-agent-af96b15db6f617be3`: setup-alerts,
+  cook-banner, cook-options, cook-finished, gear-griddle).** The rig (`tools/device/run.sh`) already takes
+  16 of the other 17 at 115% from seeds: setup-welcome, setup-cookers, setup-picker (`setup` test, empty
+  database); plan-empty (seed=empty); plan-food-details (seed=empty&add=brisket); plan-main, plan-add-food,
+  plan-temp-menu (seed=mockup); plan-conflicts (seed=clash); gear-main; history-main, history-cook
+  (seed=history); shared-plan (`shared` test); start-check (seed=tomorrow, one permission off); cook-live
+  (seed=cooking; grant every alert permission first or the red banner shows); debug-send (`followups`
+  test; shows the app's address). Not possible today: lock-screen-alert (the rig refuses non-app windows;
+  needs a new step: lock, wait for a step, screencap, crop the status bar; a release build, since the dev
+  build's alert says "Pit Planner dev"). Do not reuse the 2026-11-15 fidelity PNGs: they show "Pit Boss
+  820", the seed is now the Sportsman 850, and most are labelled composites. Gear's version line: build with
+  the release version or crop it. The README's 4 (branch `worktree-agent-a6d5ad9a3b663d00e`): plan (same as
+  plan-main), live cook (same as cook-live), lock-screen alert (same slot), Cook finished rate card
+  (seed=finished-blend, or reuse the parked one). Order: setup; empty; mockup, clash; gear; history; shared;
+  tomorrow; cooking, followups; finished-blend; the lock-screen step last.
 - **Depends on:** the 0.3.0 screens, T-065.
 
 ### T-022 Cook options (13) and keep or move serve

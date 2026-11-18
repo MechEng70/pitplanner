@@ -165,7 +165,7 @@ food first.
 - Done: tap when you have done the step. The app re-plans from what really happened.
 - Adjust: opens Cook options, for when the food is not ready.
 
-Below the card is a chart with one lane for each cooker, from the first step to serve. A line shows now. Under
+Below the card is a chart with one lane for each food, from the first step to serve. A line shows now. Under
 the chart you see the next three steps. Tap Full timeline to see every step, with the done ones dimmed.
 
 When you tap Done on a step five minutes or more early or late, a sheet asks what to do about serve time:
@@ -173,8 +173,7 @@ When you tap Done on a step five minutes or more early or late, a sheet asks wha
 - Keep serve: the hold time (the time the food rests warm) changes instead.
 - Move serve: serve time changes. The other foods move with it.
 
-Each choice shows what it does to the hold. Tap Apply. When the app moved serve, a note on Live cook says so,
-for example "Serve moved to 5:40 PM. The other foods moved with it." Tap OK to clear it.
+Each choice shows what it does to the hold. Tap Apply. The plan and the serve time change at once.
 
 ### Warning banners
 
@@ -187,6 +186,8 @@ Banners sit at the top of Live cook.
 - "Pit out since (time). Steps are on hold." with Back up to temp. See section 4.
 - An amber banner when a change causes a smoker conflict the plan did not have before, or makes a hold
   longer than the food should wait. It says what changed. It does not ring. Tap OK to hide it.
+- An amber banner after you tapped Done or +15 min on an alert, for example "Check the brisket: done at
+  12:44 PM from the alert." If serve had to move, it adds "Serve moved to 5:40 PM." Tap OK to hide it.
 
 ### The alert on your lock screen
 
@@ -194,10 +195,12 @@ Banners sit at the top of Live cook.
 
 Each step rings as a real alarm, even with the phone asleep or locked. The alert has two buttons:
 
-- Done: the same as Done in the app.
+- Done: marks the step done at the time you tap. The app does not ask about serve time here. It keeps serve
+  if it can, or else moves serve later, never earlier.
 - +15 min: pushes that step back 15 minutes.
 
-Tap the alert itself to open the app. The buttons work with the app closed. If you do not answer, the alert
+Tap the alert itself to open the app. The buttons work with the app closed. When you next open the app, a
+banner on Live cook says what your tap did. If you do not answer, the alert
 rings again every 10 minutes, up to six more times, and then sends a last "Cook needs you" alert. The Live
 cook screen shows the step as overdue.
 
@@ -335,7 +338,7 @@ It shows the sender's menu and serve time. Then:
   move to another cooker, or asks you to add the cooker in Gear.
 
 Times are worked out for your gear and your cook rates, not the sender's. Tap Use this plan. It replaces the
-plan you have now. If the plan has conflicts, the Conflicts sheet opens.
+plan you have now. If moving a food to one of your cookers causes a conflict, the Conflicts sheet opens.
 
 If the file cannot be opened, the app says so: too big, or could not be read.
 
