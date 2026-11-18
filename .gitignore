@@ -36,3 +36,7 @@ modules/*/android/.cxx/
 # Jason's own captures for context (charts from his cooks, phone screenshots with other apps' icons): never
 # uploaded. What they show is written into the task that uses them.
 docs/screenshots/
+
+# Home Assistant test login (lives in ~/.config/pitplanner/, never in the repo). A copy here must never be committed.
+ha.env
+*.env
