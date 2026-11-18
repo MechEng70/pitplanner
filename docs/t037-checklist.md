@@ -49,6 +49,18 @@ Seen during the rehearsal, to settle in the readout:
   case and about 9:10 AM in the second.
   **Jason, later that morning: "it was a banner above the next step".** So it was the notice, as designed.
   The 8:50 AM "done" line is still checked in tonight's debug file.
+- **12:40 PM, the locked reboot (Jason): it did not ring while the phone was still locked.** Battery history
+  was saved at 12:27 PM, he unplugged, rebooted at 12:30 PM and left the phone locked. Check the brisket
+  (wrap) did not ring before the unlock; the alert showed once he unlocked, and he tapped Done then (the
+  table asked for Not yet, keep serve). Unlock time and ring time not noted yet. This is the pass line "nothing
+  lost at the reboot" and Jason's own 0.3.0 acceptance (T-038, 2026-11-16: a step that comes due while the
+  phone is still locked rings before unlock), so it is a fail until shown otherwise. **Cause not known.**
+  Jason's lean: the phone, not the app ("true of all the notifications until I unlock it"). What is on
+  record: the same beta.2 release build passes this on the PIN emulator, 6 of 6; on this OnePlus the only
+  earlier locked reboot was the dev build (2026-11-16), where Android did start the app for
+  LOCKED_BOOT_COMPLETED 2 seconds after boot and it crashed in dev-only code; a release build was never
+  run through a locked reboot on this phone before today. Evidence to read: the crash log and logcat from
+  the boot (they wrap, so soon), and tonight's ring log (when the 12:40 PM step is logged as rung).
 
 ## The plan to load (Friday night)
 
