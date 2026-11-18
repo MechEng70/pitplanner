@@ -84,6 +84,14 @@ Seen during the rehearsal, to settle in the readout:
   issue." Pass on this phone means: the alarm is back and delivered on time while the phone is still locked
   (shown above), and it sounds at the unlock. Still read tonight, as a check and not a gate: the ring log's
   12:40 PM record (when it rang, and that the alert was posted).
+- **3:15 PM (Jason): Wings on the smoker rang, and he tapped +15 min on the alert**, where the table asks
+  for Done. So the +15 tap with the app closed is being run here, on Wings on the smoker, and not at 4:20 PM
+  on Wings crisp. By "The +15 tap with the app closed" below, expected, not read from the phone: the wings
+  alert rings again 15 minutes after his tap (about 3:30 PM, the same minute as Oven to 170F, so two alerts
+  that Android may group); no other alarm moves while the app stays closed (Oven to 170F 3:30 PM and Check
+  tenderness 3:45 PM ring at their times); when he opens the app (the 4:05 PM step) it applies the tap,
+  shows one notice, and moves serve later with the other foods if the wings' hold cannot take 15 minutes.
+  After that the remaining times are the app's new ones, not the table's.
 
 ## The plan to load (Friday night)
 
