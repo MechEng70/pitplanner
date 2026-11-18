@@ -155,8 +155,10 @@ Branches only until the readout passes; then merge one at a time, the gate after
       (`shared`, `shared-soon`); scroll to Alerts in `gear` at 130%; scroll a button clear of the pinned footer
       before tapping it (`setup`'s test alert, `cook-finished`'s Keep). Then rerun those five, plus
       `followups` and `turkey`, at 115% and 130%.
-- [ ] **Turkey for Thanksgiving (Jason, Wed 2026-11-18): the owed `turkey` device test on Sunday
-      2026-11-22, after the merges and before Monday's release.** Emulator, 115% and 130%:
+- [ ] **Turkey for Thanksgiving (Jason, Wed 2026-11-18): the owed `turkey` device test.** **Moved the
+      same evening with the beta.3 decision:** it runs after the beta.3 build and the emulator locked reboot
+      on beta.3, and before beta.3 goes on his phone (so Friday 2026-11-20, not Sunday). As first set: on
+      Sunday 2026-11-22, after the merges and before Monday's release. Emulator, 115% and 130%:
       `DEVICE_SCALES="1.15 1.3" tools/device/run.sh --only turkey` (a build first if a merged branch changed
       anything native, else `--no-build`). It does not wait for the rig fixes above: `turkey` was never a
       rig failure, it did not get its turn in the full pass of 2026-11-17, and its only run so far is 115%

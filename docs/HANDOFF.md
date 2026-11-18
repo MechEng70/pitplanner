@@ -1,9 +1,9 @@
-# Handoff (2026-11-18 morning: the table is done to step 15, Saturday's cook is running on Jason's phone on beta.2 and sits three nights; the share failure is a second tap, not a blocker; freeze until Sunday's readout; next is Saturday's cook, then the readout; fourteen branches parked)
+# Handoff (2026-11-18 evening: T-037 is closed on the rehearsal, no Saturday cook; beta.3 by Friday noon from the parked branches, one merge and one full gate at a time; an overnight check on beta.2 runs tonight; readout Thursday; release 0.3.0 Monday)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## Restart, twenty-seventh session (written Wednesday 2026-11-18, 8:00 AM; read this first)
+## Restart, twenty-seventh session (written Wednesday 2026-11-18, 5:50 PM; read this first)
 
 **Rule (Jason, 2026-11-18, 2:40 PM).** Before saying a task, mockup or design doesn't exist, check the parked
 branches and `.claude/worktrees` as well as `main`: the tables under "Parked branches" below,
@@ -11,6 +11,63 @@ branches and `.claude/worktrees` as well as `main`: the tables under "Parked bra
 nothing is built. Why: that afternoon the main session told Jason the Home Assistant screens were not
 mocked and no sign-in code existed, from `main` alone; both were on parked branches from 2026-11-17, and an
 agent then made a duplicate set of mockups.
+
+**State.** `main` is clean (only `.claude/` untracked). Every commit of the twenty-sixth session is docs only
+and not pushed (`git log origin/main..main`); Jason pushes or asks. No code changed on `main`, so the last
+gate on code is still the one on `1cecd97`. Emulators, Metro and Gradle are stopped; no agent is running.
+The freeze on `main` holds until Thursday's readout. `dashboard.html` is current (local, never committed).
+
+**Jason's decisions, 5:45 PM: "beta.3, and no Saturday cook. T-037 closes on today's rehearsal; I don't load
+Saturday's plan."**
+
+1. **T-037 is done on the rehearsal of 2026-11-18** (0.3.0-beta.2 on his phone): 14 alerts, each once, each
+   within 1.6 seconds; results, the three evening reads, what was not tested and where tests cover it, in
+   `docs/t037-checklist.md`. The phone reads are in `tools/device/out/t037-rehearsal-2026-11-18/`
+   (git-ignored; they name other apps, never commit them).
+2. **Overnight check on beta.2, tonight** (`docs/t037-checklist.md`, "Overnight check"): Chicken breasts, 4,
+   griddle, Start at Thu Nov 19 5:30 AM; four alerts, 5:30, 5:45, 5:57, 6:05 AM. He enters it and taps Start
+   cook once; after his yes the alarm list is read; he unplugs until morning; by 7:30 AM he discards and does
+   Send to developer; after his yes the ring log, `dumpsys deviceidle` and the battery history are read.
+   Pass: the 5:30 AM ring within 1 minute while the phone was in deep idle. **Where this stands is in that
+   section's table: read it before doing anything on the phone.**
+3. **Readout Thursday 2026-11-19**, from the rehearsal's reads and the overnight check.
+4. **beta.3: merges by Friday 2026-11-20 noon, in this order, the full gate (`npm run check`) alone after
+   each, its counts reported. Anything not merged and gated by noon goes to 0.3.1.** No merge before the
+   readout. `main` has moved (docs) since every branch was cut, so each merge starts by bringing the branch
+   up to `main`.
+
+   | # | Branch | Holds | pit-alarms | Restore code | `cook.ts` |
+   |---|---|---|---|---|---|
+   | 1 | `a8775a2ca28f2344f` (3 commits) | Share guard and start guard | no | no | no (it changes `saveCook` in `src/lib/store.tsx`, the save every cook change goes through, plus `shareFile.ts`, `PlanTab.tsx`, `GearScreen.tsx` export only) |
+   | 2 | `a0ce7915c8c901c69` (6 commits) | T-082 temp step question, with its mockups branch `a1211e2e2ed4313e1`, the SPEC Units text, and the emulator Setup and Gear looks at 115% and 130% | no | no | no (it changes `engine/plan.ts`, `engine/temps.ts`, `engine/units.ts`, `src/lib/gear.ts`, Setup, the picker, `TempMenu`, `CookerSheets`) |
+   | 3 | `a8c0f87e3e0ab96ed` (3 commits) | Sheet buttons off the right edge at 115% | no | no (it changes the "Replace your data?" sheet's buttons in `GearScreen.tsx`, not `src/db/restore.ts`) | no (`CookOptions.tsx`, `StartCheckSheet.tsx`) |
+   | 4 | `a162a9d40e02d7402` (7 commits) | Plural food names and capitals | no | no | no (`src/lib/cookView.ts`, not `cook.ts`; also `data/foods.json`, `engine/labels.ts`, `engine/plan.ts`, `engine/rules.ts`, `sharedPlan.ts`, six screens) |
+   | 5 | `a9b7f7e3f7806b35c` | Release notes | no | no | no (docs only) |
+   | 6 | `a6d5ad9a3b663d00e` | README (create `docs/DEVELOPING.md` at merge) | no | no | no (docs only) |
+   | 7 | `af96b15db6f617be3` | Guide pictures (5 slots; 17 are on `main` already; `start-check.png` is retaken after merge 3) | no | no | no (docs only) |
+
+   Checked 2026-11-18 5:30 PM from each branch's file list against `main`. Known conflicts are listed under
+   "Parked branches" below (T-082 and the capitals fix both change `TempMenu.tsx` and `engine/plan.ts`;
+   merges 1 and 3 both change `GearScreen.tsx` and `StartCook.test.tsx`).
+5. **Then:** the beta.3 build (Jason runs the release command), the emulator locked reboot on beta.3
+   (`tools/device/locked-reboot.sh`), the `turkey` test on the emulator at 115% and 130%, then beta.3 on his
+   phone. **Release 0.3.0 Monday 2026-11-23 unless he says earlier.** His wife's phone and the two-phone
+   share test (`docs/after-readout-checklist.md`) are still set for Sunday in that file; ask him whether
+   they stay there now that the readout is Thursday.
+
+**Also from today, in the docs:** Home Assistant step 0 passed (`docs/ha-entities.md`); his login is in a
+private file outside the repo (`~/.config/pitplanner/ha.env`; never print or copy it); the app adds the
+scheme when none is typed and the connect screen says "Will connect to ..." (TASKS T-045); the real Home
+Assistant address is replaced by an example in the tracked docs. User guide: text audited, 17 pictures in
+`docs/guide/` (TASKS T-066). New backlog: T-084, T-085. The `turkey` test: `docs/after-readout-checklist.md`.
+
+**Waiting on Jason:** the 15 questions on the Home Assistant mockups and five more kept from the deleted
+duplicate; six sign-in choices (T-044); wording for the connect error and a `.local` test on his phone
+(T-045); the "Kamad" chip; brine options; T-084 and T-085 wording; the open user guide wording (T-066);
+whether Sunday's phone tests move.
+
+## Earlier on Wednesday 2026-11-18 (written 8:00 AM; superseded where the section above differs)
+
 
 **State.** `main` is clean (only `.claude/` untracked); the commits not pushed are listed by
 `git log origin/main..main` (docs only; Jason pushes or asks). No code changed in the twenty-sixth session, so

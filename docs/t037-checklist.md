@@ -1,5 +1,11 @@
 # T-037 staged cook: checklist (Saturday 2026-11-21, 0.3.0-beta.2)
 
+**Closed on the rehearsal (Jason, Wednesday 2026-11-18, about 5:45 PM): "beta.3, and no Saturday cook. T-037
+closes on today's rehearsal; I don't load Saturday's plan."** T-037 is done on the rehearsal of 2026-11-18
+("Rehearsal results" near the end of this file), with the overnight check ("Overnight check" at the end)
+added when it is read. Everything below about Saturday 2026-11-21 and Sunday's readout is kept as written
+and is not run. The readout is Thursday 2026-11-19, from the rehearsal's reads and the overnight check.
+
 No food. The full-length real timeline on Jason's phone, to prove every alarm rings on time with the phone
 locked, unplugged and idle, through a reboot and every kind of change. It ends with Discard, so the cook
 rates are not touched. Pass: every ring within 1 minute of its planned time, nothing lost at the reboot,
@@ -374,15 +380,42 @@ smoke step.
   7:30 to 8:17 AM, 12:26 to 12:28 PM and 12:48 to 12:56 PM (the reads), and 3:16 to 3:21 PM.
 - **Doze state at the read:** active, screen on, charging. Nothing more to read from it.
 
-### What today did not test
+### What today did not test, and where each is covered already
+
+"Emulator" means the device rig (`tools/device/run.sh`) on the dev build unless it says by hand. "Jest" and
+"Kotlin" are unit and screen tests in the gate. Nothing in this list has been done on a real phone.
 
 1. **+15 min with the app closed.** Today's +15 met an app still alive in the background, which applied it
-   at once. "The alert rings again 15 minutes after the tap and no other alarm moves until the app is
-   opened" is proven on the emulator only.
+   at once.
+   - Kotlin: `ReceiversTest.plus15OnTheNotificationQueuesTheActionAndRingsAgainIn15Minutes` (the tap is
+     kept and the alert rings again in 15 minutes with no app running); `RingLogTest.aPlus15RingIsMarked
+     SnoozeAndSoAreItsRepeats`.
+   - Jest: `src/lib/cook.test.ts`, "+15 min tapped on the lock screen can make a conflict", "four +15 taps
+     on the brisket pull: serve 5:30 PM", "the notice says serve moved and that the other foods moved with
+     it"; `src/lib/alertTaps.test.ts` (a kept tap is applied once).
+   - Emulator: by hand only, 2026-11-17 (dev build, the app's process killed; "The +15 tap with the app
+     closed" above). **No rig test, and not on a release build.**
 2. **Not yet, Undo, Pit went out, Back up to temp with Move serve, and Adjust.** None was tapped today.
-   (Not yet was the table's action at 12:40 PM; Done was tapped.)
-3. **Two alerts waiting at once.** Every alert was answered before the next one rang, so Android never had
-   two to group. (The 4:55 PM alert was one alert for two steps, which is a different thing.)
+   - **Not yet:** Jest: `CookOptions.test.tsx` "Not yet at a check step", `src/lib/cook.test.ts` "Not yet
+     at a pull: that food comes off 30 min later", `engine/cook.test.ts` (two tests). **Emulator: not
+     covered.**
+   - **Undo:** Jest: `src/lib/cook.test.ts` "undo the most recent Done" (five tests). Emulator: `followups`
+     (Done, then Undo puts Next up back); it passed at 115% on 2026-11-18.
+   - **Pit went out:** Jest: `CookOptions.test.tsx` "Pit went out stops the clock", `engine/cookState.test.ts`
+     "PitDown". Emulator: `cook-options` (the banner shows and the steps hold).
+   - **Back up to temp with Move serve:** Jest: `CookOptions.test.tsx` "Back up to temp asks keep or move;
+     Move serve re-times the steps and replaces the alarms once". Emulator: `cook-options` gets the keep or
+     move question and taps Apply on the choice already selected; **Move serve itself is not covered on a
+     device.**
+   - **Adjust:** Jest: `CookOptions.test.tsx` "Adjust opens it too" and "Running behind or ahead";
+     `engine/live.test.ts` T16. Emulator: `cook` checks the Adjust button is there; **tapping it is not
+     covered on a device.**
+3. **Two alerts waiting at once.** Every alert was answered before the next one rang.
+   - Seen by hand on the emulator, 2026-11-18 2:20 PM, release beta.2: two alerts under one Pit Planner
+     card, each opening to its own Done and +15 min (`docs/guide/lock-screen-alert.png`). Neither button
+     was tapped there.
+   - Jest: `src/lib/alertTaps.test.ts` and `applyActions` in `src/lib/cook.test.ts` apply several kept taps
+     in order. **Tapping Done on two waiting alerts on a device: not covered.**
 
 ### Why Oven to 170F and Check tenderness moved 5 minutes after the 12:44 PM Done, and slice and serve did not
 
@@ -404,3 +437,42 @@ SPEC section 5 says the same three things: a Done on a check step moves that foo
 difference; with serve kept, the hold absorbs it; and times set by these changes round to 5 minutes. One
 thing to know: because of the rounding to the nearest 5, a Done 2 minutes 30 seconds to 7 minutes 29 seconds
 late counts as 5 minutes, and one less than 2 minutes 30 seconds late moves nothing.
+
+## Overnight check, Wednesday night to Thursday morning 2026-11-19 (beta.2, no food)
+
+Jason's order (2026-11-18, about 5:45 PM): a short plan whose first ring is 5:30 AM Thursday and whose serve
+is by 7:15 AM; he starts it tonight with one tap; the alarm list is read over adb after his yes; then the
+phone is unplugged until morning; he discards by 7:30 AM and does Send to developer; then the ring log and
+`dumpsys deviceidle` are read, after his yes. **Pass: the 5:30 AM ring within 1 minute while the phone was
+in deep idle.** It answers the limit in the rehearsal's reads: no ring there came out of hours of deep idle.
+
+**The plan** (from the engine with the phone's own gear and rates, 2026-11-18 5:30 PM): one food, **Chicken
+breasts, 4, on the griddle, pounded, no brine**; **Start at Thursday Nov 19, 5:30 AM**. Four alerts:
+
+| Time | Alert |
+|---|---|
+| 5:30 AM | Fire the griddle |
+| 5:45 AM | Chicken breasts on the griddle |
+| 5:57 AM | Pull chicken breasts |
+| 6:05 AM | Serve |
+
+(Wings alone would serve at 7:35 AM, past his 7:15 AM. The engine also makes "Prep the chicken breasts" at
+5:15 AM; it has no alarm and the app does not show it.)
+
+**What Jason enters:** on Plan, open Brisket and tap Remove; open Chicken wings and tap Remove; leave Chicken
+breasts as it is (4, griddle, pounded). Tap Start at, then the date and time: Thu Nov 19, 5:30 AM. Plan
+should then show the breasts at 5:45 AM and serve at 6:05 AM. One tap on Start cook.
+
+**To know before the night:** an alert nobody answers rings again every 10 minutes, six times, then "Cook
+needs you". Four alerts left alone ring on and off from 5:30 AM to about 7:05 AM. Done on an alert stops
+that alert only. The phone must be unplugged all night: a phone on a charger does not go into deep idle.
+
+| # | Who | What | Done |
+|---|---|---|---|
+| 1 | Jason | Enter the plan above and tap Start cook once. Say what Plan and Cook show | |
+| 2 | Claude | After his yes: `adb -s <phone> shell dumpsys alarm` (read only). Expect four alarms of the app, Thursday 5:30, 5:45, 5:57 and 6:05 AM, each once, nothing else | |
+| 3 | Jason | Unplug. Phone locked, not on a charger, until morning | |
+| 4 | Jason | By 7:30 AM: End cook, Discard this cook. Gear, 5 taps on the version line, Send to developer | |
+| 5 | Claude | After his yes: read the ring log from the debug file, `dumpsys deviceidle` and the battery history (read only) | |
+
+**Result:** not run yet.

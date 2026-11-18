@@ -2499,6 +2499,15 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Real phone:** no (Jason, 2026-11-15: emulator only).
 
 ### T-037 Saturday cook on the Expo build (SPEC definition of done)
+- **Done on the rehearsal of Wed 2026-11-18 (Jason, that evening: "T-037 closes on today's rehearsal; I
+  don't load Saturday's plan"), with the overnight check added when it is read.** On his phone,
+  0.3.0-beta.2: 14 alerts, each rang once and within 1.6 seconds of its time; the alert after the locked
+  reboot was posted before the first unlock (the phone itself stays silent until unlocked, his judgment,
+  now shown by the ring log); 8 of the 14 fired with the phone in deep idle; taps made with the app swiped
+  away were applied with their own times; after Discard no alarm was left and history and rates were
+  untouched. Not run on a phone, with where each is covered by tests: `docs/t037-checklist.md`, "What today
+  did not test". The overnight check (first ring 5:30 AM Thu 2026-11-19 out of a night of deep idle) is in
+  the same file. Readout Thursday 2026-11-19. No Saturday cook.
 - **Checklist:** `docs/t037-checklist.md` (the plan to load, Friday's upgrade over 0.2.0 with T-038's phone
   check, Saturday's taps with fixture times, the +15 pass line, Sunday's readout). Brisket 10 lb so the
   first ring is 7:50 AM (Jason: nothing before 7:30 AM).
@@ -2529,7 +2538,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   9:10 AM, the last 5:00 PM; nothing before 8:30 AM; nothing left from a 250F cook he started and discarded
   first. The times column of `docs/t037-checklist.md` is filled from that read. One tap only on Share plan
   and Export my data until the share guard is merged.
-- **Status:** todo (Jason, hands-on): Saturday's cook, then Sunday's readout.
+- **Status:** **done** on the rehearsal of 2026-11-18 (Jason); the overnight check of 2026-11-19 is added to `docs/t037-checklist.md` when read; readout Thursday 2026-11-19. Was: todo (Jason, hands-on): Saturday's cook, then Sunday's readout.
 - **Goal:** a full cook (brisket, wings, breasts) on the dev build with every alarm on time with the screen off,
   including after a reboot mid-cook; Adjust, Pit went out, Not yet and End cook leave no duplicate alarms.
 - **Files:** `docs/alarm-testing.md`, `docs/HANDOFF.md`.
