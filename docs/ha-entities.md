@@ -55,7 +55,39 @@ recheck the `battery` entities once charged, and enable them if they are disable
 ## Open from Phase 0
 
 - ha-pitboss connection mode (`wss` / `local` / `ble`): not read; check the integration's options.
-- Registry reads as a non-admin user (HA-INTEGRATION 4.3): not tested. This survey used an admin
-  connection. The `pitplanner` HA user now exists (Jason has the credentials); test with it in Phase 1.
+- Registry reads as a non-admin user (HA-INTEGRATION 4.3): tested 2026-11-18, both lists pass (the table at
+  the end of this file). This survey itself used an admin connection.
 - The MCP server used here is the ha-mcp add-on with full read and write tools over every entity, not HA's
   built-in MCP server limited to exposed entities (HA-INTEGRATION section 2). Only read tools were used.
+
+## Token call checks (T-044 step 0, HA-INTEGRATION 8.1), run Wed 2026-11-18, 2:28 PM
+
+With a long-lived token created by the dedicated `pitplanner` user (not an admin, not the owner: Home
+Assistant's own answer to `auth/current_user`), Home Assistant 2026.11.2, from the development computer.
+Read only. The address and the token live in a private file outside the repo and are in no log, doc or
+commit; the check script prints pass or fail and counts only.
+
+| # | Call | Result |
+|---|---|---|
+| 1 | WebSocket connect and `auth` with the token | **Pass**: `auth_ok` |
+| 2 | `get_states` | **Pass**: 2303 states (24 temperature sensors, 2 climate entities) |
+| 3 | `config/entity_registry/list` | **Pass** for the non-admin user: 4093 rows |
+| 4 | `config/device_registry/list` | **Pass** for the non-admin user: 297 rows |
+| 5 | `subscribe_events` for `state_changed` | **Pass**: subscribed, first event after 1 s |
+| 5 | `subscribe_entities` (three temperature sensors) | **Pass**: subscribed, first message received |
+| 6 | REST `GET /api/` with the bearer header | **Pass**: 200, `{"message":"API running."}`. With a wrong token: 401 |
+
+So nothing a non-admin user is refused changes the design: discovery (4.3) can use both registry lists.
+
+Also read:
+
+- `auth/current_user` works for this user (name, `is_admin` false): the "User" row on the connected screen
+  can be filled from it. It is one more call than the six above.
+- `auth/refresh_tokens` works for this user and lists its own tokens (2, one of them long-lived). **Deleting
+  the token at Home Assistant on Disconnect was not tested**: the delete call would end the token in use.
+  That the user can list its tokens suggests it can delete them; test it with a throwaway token.
+- The address in the private file was a bare host name with no scheme. `https://` plus the host answered
+  (401 without a token); the port 8123 fallback was not needed. This is the case behind T-044's open choice
+  "scheme when none typed".
+- Not tested here: the same calls from the phone, on the home network by local address, and with the grill
+  and probes switched on (every survey so far read them as unavailable).

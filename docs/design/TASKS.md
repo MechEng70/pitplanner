@@ -2951,6 +2951,10 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   the token with one call; (4) a 401 means signed out; (5) no token reaches a logger. The authorize URL,
   nonce, code exchange, refresh and revoke below are not built.
 - **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
+- **Step 0 done, Wed 2026-11-18:** all six calls of HA-INTEGRATION 8.1 pass with a token of the non-admin
+  `pitplanner` user (both registry lists included); results in `docs/ha-entities.md`, "Token call checks".
+  Not tested: deleting the token at Home Assistant on Disconnect. The logic itself is built on parked branch
+  `a4d0fb0875a099229` (111 tests, seven open choices for Jason), not merged.
 - **Status:** todo
 - **Goal:** address normalize, authorize URL with a state nonce, callback check, token exchange, refresh on 401,
   revoke, all with an injected `fetch`.
