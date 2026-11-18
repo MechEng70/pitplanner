@@ -14,7 +14,7 @@ firmware 16.8.7. Catalog entry `pitboss-sportsman-850` in data/cookers.json; pic
 | Pit temp, current and set point (climate) | `climate.patio_pitbosssmoker_grill_temperature` |
 | Grill probe 1 | `sensor.patio_pitbosssmoker_probe_1` |
 | Grill probe 2 | `sensor.patio_pitbosssmoker_probe_2` |
-| Probes 3 and 4 (registry only, likely disabled, default names) | `sensor.pbc2_8c4f001a77a4_probe_3`, `sensor.pbc2_8c4f001a77a4_probe_4` |
+| Probes 3 and 4 (registry only, likely disabled, default names) | `sensor.pbc2_<id>_probe_3`, `sensor.pbc2_<id>_probe_4` |
 | Probe targets (number) | `number.patio_pitbosssmoker_probe_1_target`, `..._probe_2_target` |
 | Probe target reached | `binary_sensor.patio_pitbosssmoker_probe_1_target_reached`, `..._probe_2_target_reached` |
 | Errors (blueprint: notify at once) | `binary_sensor.patio_pitbosssmoker_startup_error`, `_high_temperature_error`, `_fan_error`, `_igniter_error`, `_auger_error`, `_probe_1_error`, `_probe_2_error`, `_probe_3_error` |
