@@ -76,6 +76,11 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
 - **T-084** Plan edited while a cook runs (Jason, 2026-11-18; 0.3.1): the running cook does not change and
   nothing says so; a prompt, his wording. Why: he changed the smoker temp on Plan and expected the cook to
   follow. Blocked on: his words.
+- **T-085** Done records the tap, not when the step happened (Jason, 2026-11-18; 0.3.1 or later): a late
+  tap on "on the smoker" or on the pull skews the learned rate. Proposal: Cook finished shows the times the
+  rate is based on, flags a rate-feeding step tapped more than about 15 min after it rang, and lets the user
+  fix the time or Keep the old rate. Why: the rate should come from what happened. Blocked on: a mockup and
+  his wording; the first read of the code is in TASKS.
 - **T-078** Lock-screen taps re-plan with the app closed (headless JS).
   Why: other alarms keep old times until the app opens (T-076 limit).
   Blocked on: a half-day spike on the emulator, then a report to Jason before any build. Also his answer on

@@ -3864,3 +3864,59 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   running cook (today the smoker temp and the menu of a running cook cannot be changed at all).
 - **Files (when it is built):** `src/screens/plan/PlanTab.tsx`, `src/screens/plan/PlanScreen.tsx`, their
   tests (screen tests first), SPEC section 3, a mockup or his OK on a picture first.
+
+
+### T-085 Done records the tap, not when the step happened: late taps and learned rates
+
+- **Raised by Jason, 2026-11-18. Backlog: docs only, nothing designed, nothing built.** A Done tapped late
+  (saw the alert, did the step, tapped later) is saved as the time the step happened, and that would skew
+  the learned rate. Target 0.3.1 or later. The answers below are from reading the code that day; nothing
+  was run.
+- **1. What feeds rate learning, and the path.** Two taps per food, nothing else:
+  - Done on the food's first phase step ("Brisket on the smoker") sets `onAt[itemId]` to the tap time
+    (`doneStep`, `src/lib/cook.ts:127`).
+  - Done on the food's pull step (kind `pull`; for brisket "Check tenderness: pull at 200-205F") sets
+    `offAt[itemId]` to the tap time (`src/lib/cook.ts:146`).
+  - The tap time is the phone's clock at the tap: in the app `clock()` in `onDone`
+    (`src/screens/cook/CookScreen.tsx`), from an alert the time Android recorded for the tap
+    (`applyActions`, `src/lib/cook.ts`, `a.at`).
+  - At Cook finished, `summarize` (`src/lib/finish.ts:52`) takes minutes on heat as `offAt - onAt`. With no
+    on tap it uses the planned start; with no pull tap the food is "Not logged" and left out of rates.
+  - Save to history writes that number as `minutesOnHeat` in the food's log (`toRecord`), unless Keep was
+    chosen for that food. `rateFor` (`engine/plan.ts:104`) turns each log into hours per lb, corrected for
+    smoker temp and wrap, and blends it with the prior (`priorWeight` 3; a saved rate is used as-is until
+    3 logged cooks).
+  - Not feeding the rate: the wrap check and every other step in between (they move that food's later
+    steps, not its logged time), and Done on Serve (it gives "served ... late"). Only foods planned by a
+    rate get a rate card; a locked saved rate does not learn.
+  - Size of the effect (arithmetic, not measured): a tap 15 min late on a 6.5 hour brisket changes that
+    cook's observed rate by about 4%, and the blended rate by about 1% after one cook. A late on tap makes
+    the cook look shorter, a late pull tap longer; both late by the same amount cancel.
+- **2. Are ring time and tap time both stored?** Yes while the data is still on the phone; no in the saved
+  cook.
+  - Ring: the ring log (T-068) keeps, per ring, the step keys, the planned time and the actual time, the
+    repeat number and the source (`AlarmRing`, `src/platform/types.ts:78`); the newest 500 rings.
+  - Tap: `done[key]` in the running cook (gone when the cook ends), and a line "done <key> at <time>" in
+    the event log (the newest 300 events).
+  - Both carry the step key, so the gap can be worked out from the debug file after a cook (Sunday's
+    readout can list it for Saturday). Nothing in the app computes it today, and the saved cook keeps only
+    minutes on heat per food, no step times: once the logs roll over the gap is gone.
+- **3. Done tapped before its ring.** Only in the app, on Next up (an alert does not exist before the ring).
+  The tap time is taken as the truth, as for a late tap: a first phase sets `onAt` early and moves that
+  food's later steps earlier (under 5 min silently, serve kept; 5 min or more asks Keep serve or Move
+  serve, T-076); a pull sets `offAt` early. The step's alarm is left out of the next alarm set, so it
+  never rings and the ring log has no ring for it: for an early tap there is no gap to measure, only
+  "done before the planned time".
+- **What exists already:** Keep on the Cook finished rate card (the old rate stays); Undo on the last
+  Done (the new Done is again the tap time); and Cook history's edit sheet, where time on heat can be
+  changed after saving (`src/screens/gear/HistoryScreen.tsx`, "a wrong Done can be hours off").
+- **Proposal to record, not build (Jason):** on the Cook finished card, show the times the rate is based
+  on; flag any rate-feeding step tapped more than about 15 min after it rang; let the user fix that time
+  or Keep the old rate. New UI: a mockup and his wording first.
+- **Open before a design (main session):** the flag needs the first ring's time at Cook finished, so the
+  app has to read the ring log there or keep the ring time with the cook; whether the times shown are
+  the two taps or the minutes; what "fix" edits (the tap time, or minutes on heat as History does); and
+  whether an early tap is flagged too.
+- **Status:** backlog. **Files (when it is built):** `src/lib/finish.ts`, `src/lib/cook.ts`, the Cook
+  finished screen and their tests (screen tests first), SPEC sections 5 and the rates lines, a mockup.
+
