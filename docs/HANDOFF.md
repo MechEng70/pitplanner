@@ -363,6 +363,13 @@ UI, needs his words). A device check that starts two cooks in one app launch bel
 | 5 | `a6d5ad9a3b663d00e` | `7022bde` (2 commits) | **README** for the public page. At merge: create `docs/DEVELOPING.md` from the developer content the old README held (stack, Capacitor history, "What's here", the Develop section, links to RELEASING and the mockups page); the README's last line links it |
 | 6 | `af96b15db6f617be3` | `25a2820` | **User guide pictures:** 5 of 22 slots filled. Add the 17 new pictures and the README's 4 before merging |
 
+**Added Wed 2026-11-18 (built that afternoon with Jason's OK, on branches, not merged; the freeze holds):**
+
+| Branch id | Head | Holds |
+|---|---|---|
+| `a8775a2ca28f2344f` | `70e2035` (`7d60f2e`, `70e2035`) | **Share guard and start guard**, each with tests written failing first. Share: `shareTextFile` swallows only expo-sharing's in-progress rejection (code `ERR_SHARING_IN_PROGRESS`, the message as fallback; the code is read from the Kotlin source, not seen on a phone); any other share or export error keeps its sheet and is logged. Start: `begin` clears the guard only when `setCook` throws and logs "cook not started: ..." (an addition the agent made; no UI change); `saveCook` logs "cook started" after the save. Its own runs: Jest 927 of 927, ESLint clean on its 9 files; typecheck fails in the worktree only for the missing generated `expo-env.d.ts`. The main session has not read the diff or run the gate yet. Touches `PlanTab.tsx`, `GearScreen.tsx`, `store.tsx`, `shareFile.ts`. Not covered: `reportSharer`'s fallback and `shareFilesAsTar` call `Sharing.shareAsync` directly (Send to developer, database export) |
+| `a26afdf287cc86f59` | `0e5349d` | **A second set of Home Assistant mockups, made by mistake:** the main session told Jason the screens were not mocked; they were (branch `a9241eb3e2b1eb08c`, 2026-11-17, 20 pictures, 15 questions, his first reaction recorded). This set: 8 pictures `docs/mockups/21` to `26`, sources `Ha*.dc.html`, a note with 13 questions. Jason decides which set to keep; delete the other with his yes |
+
 Known conflicts: `src/screens/plan/TempMenu.tsx` (T-082 and the capitals fix, different lines),
 `src/screens/gear/CookerSheets.test.tsx` (T-082 and the plural fix: pattern on lines 154 and 161),
 `src/lib/gear.test.ts` (T-082; the catalog branch avoided it), `SPEC.md`/TASKS text is applied by the main

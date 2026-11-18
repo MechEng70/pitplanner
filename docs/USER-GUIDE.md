@@ -215,6 +215,8 @@ Banners sit at the top of Live cook.
 
 <!-- SCREENSHOT: lock-screen-alert | The step alert on the lock screen with the Done and +15 min buttons, status bar cropped -->
 
+<img src="guide/lock-screen-alert.png" alt="Two step alerts opened on a locked phone, one with its Done and +15 min buttons" width="320">
+
 Each step rings as a real alarm, even with the phone asleep or locked. The alert has two buttons:
 
 - Done: marks the step done at the time you tap. The app does not ask about serve time here. It keeps serve

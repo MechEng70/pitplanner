@@ -1677,6 +1677,15 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   chip reads "Kamad", the last letter of Kamado is cut off; (2) with the Alerts may not ring sheet open, a
   24 px sliver of Plan's Start cook button shows at the right edge of the screen beside Start anyway, and
   it is tappable (`cook-start.xml`: "Start cook" at x 1056 to 1080).
+  **Correction, same day:** (2) is not new. It is the sheet's own second button pushed off the right edge
+  at 115%, already fixed on parked branch `a8c0f87e3e0ab96ed` (HANDOFF, parked branches, row 2). Retake
+  `docs/guide/start-check.png` after that branch is merged.
+- **The lock-screen alert picture, Wed 2026-11-18, 2:20 PM:** `docs/guide/lock-screen-alert.png`, in the
+  guide. Emulator, the 0.3.0-beta.2 release app, a real cook started at 2:17 PM (wings, Start at): the
+  alerts for Fire the smoker and Wings on, opened in the notification panel of the locked emulator, the
+  smoker alert expanded to show Done and +15 min; cropped to the alert card. The test emulator has its lock
+  screen switched off, so it was switched on for the picture and off again; the cook was discarded
+  (no alarm of the app left pending). Left for the guide: the branch's 5 slots, the README's 4.
 - **Depends on:** the 0.3.0 screens, T-065.
 
 ### T-022 Cook options (13) and keep or move serve
