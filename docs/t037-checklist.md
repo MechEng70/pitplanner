@@ -14,7 +14,7 @@ check 12:15 PM), so only the rate moved them. Jason's decision, 2026-11-17: keep
 Your phone's plan is the truth: write its times in the blank column at Start cook, and after each change
 that moves serve.
 
-## The plan to load (Tuesday night, 2026-11-17; first planned for Friday night)
+## The plan to load (Friday night)
 
 Ready by Saturday 5:00 PM. Smoker 225F.
 
@@ -31,11 +31,20 @@ The first ring is Fire the smoker at 8:50 AM. Nothing rings before 8:30 AM. Two 
 
 Phone unlocked and plugged in, Jason present. Claude runs only the adb lines, each after Jason's yes.
 
-**Moved to Tuesday 2026-11-17 night (Jason, that evening):** steps 3 and 8 to 15 are run on Tuesday night,
-not Friday. Saturday's cook therefore sits on the phone for four days (Tuesday night to Saturday) before its
-first ring, on a phone in daily use, not one night. Until Saturday that cook is not ended or changed. The
-event log and the ring log will also hold Tuesday's entries (the beta.1 cook, step 10's start, end, start):
-Sunday's readout filters both to Saturday.
+**Tuesday 2026-11-17 evening, part done; the rest is Friday 2026-11-20 (Jason).** Jason asked to run
+steps 3 and 8 to 15 that evening, then had no time for the phone. What ran, 7:10 to 7:20 PM, is in the Done
+column: step 9 passed (18 alarms, each once, the first Sat 8:55 AM; 0.3.0-beta.2 / 300302;
+`USE_EXACT_ALARM: granted=true`), steps 3 and 8 by his word, step 10 ("yes it worked": the beta.2 start,
+end, start check passes on the phone) and step 11 (nothing pending). So the beta.1 cook is ended and
+discarded: at the 7:18 PM read no cook was running and no alarm was pending, and nothing has been read from
+the phone since. His wrap-up note listed steps 3, 8 and 10 to 15 for Friday and the beta.1 cook as still
+running; steps 3, 8, 10 and 11 had run by then, so on Friday they are repeated only if he wants.
+**Friday:** first step 9's two reads again (read only, after his yes) to see what is on the phone: with no
+cook started since Tuesday, nothing is pending (if one is running, he ends and discards it and step 11 is
+read again). Then steps 12 to 15. Saturday's plan is loaded on Friday night and sits on the phone one night.
+The phone steps are Jason's by design (Claude only reads over adb): about 15 minutes with the phone in hand,
+plugged in. The event log and the ring log hold Tuesday's entries (the beta.1 cook, step 10's start, end,
+start): Sunday's readout filters both to Saturday.
 
 **Done early, Tuesday 2026-11-17 (Jason wanted beta.1 on the phone to look for layout bugs; each adb line
 after his yes):** steps 1, 2, 6 and 7. Before: 0.2.0, versionCode 200, the same signing key as beta.1
@@ -73,15 +82,15 @@ running 0.2.0 cook is therefore not proven on the phone; it is covered on the em
 |---|---|---|---|
 | 1 | Claude | `adb devices` (read only: the phone's serial) | |
 | 2 | Claude | `adb -s <phone> shell dumpsys package io.github.mecheng70.pitplanner` (read only: 0.2.0, its versionCode, exact alarms granted) | |
-| 3 | Jason | In the dev build ("Pit Planner dev"): no cook running | |
+| 3 | Jason | In the dev build ("Pit Planner dev"): no cook running | Tue 2026-11-17 evening: "correct" (Jason) |
 | 4 | Jason | In 0.2.0: screenshots of Gear, Cook rates and Cook history | |
 | 5 | Jason | In 0.2.0: start a short cook with a step due in about 20 minutes | |
 | 6 | Claude | `adb -s <phone> install -r release/pitplanner-0.3.0-beta.1.apk` (installs over 0.2.0; nothing uninstalled, no data cleared). Done 2026-11-17; beta.2 went over beta.1 the same afternoon | |
 | 7 | Jason | Open the app. Read the import notice. Compare Gear, Cook rates and Cook history with the step 4 screenshots | |
-| 8 | Jason | Gear, Export my data, save to Drive | |
-| 9 | Claude | `adb -s <phone> shell dumpsys alarm` for the app and `dumpsys package` again (read only: each alarm of the running cook once, 18 of them, the first Fire the smoker at Saturday 8:55 AM; exact alarms still granted: the line to read is `android.permission.USE_EXACT_ALARM: granted=true`. The phone is Android 16, API 36, and the manifest of `modules/pit-alarms` declares `SCHEDULE_EXACT_ALARM` only up to API 32, so the app relies on `USE_EXACT_ALARM` and there is no `appops` line for step 9). The running cook is the one started on beta.1 on 2026-11-17 at 2:53 PM (serve Sat Nov 21 5:00 PM, 250F, five foods), not a 0.2.0 cook; Jason keeps it until this step | |
-| 10 | Jason | Open the running cook, End cook, Discard. (Its first alarm is Saturday 8:55 AM, so no ring is waited for at this step.) **Then the beta.2 check on the phone, not before this step** (Jason, 2026-11-17: no start, end, start on the phone while that cook runs): without closing the app, Start cook, End cook, Discard, then Start cook again: the second start must work (in beta.1 it did nothing until the app was restarted). End cook and Discard once more, so nothing is pending for step 11. This is the last step before Saturday's plan is loaded | |
-| 11 | Claude | `adb -s <phone> shell dumpsys alarm` for the app (read only: nothing pending, so none of that cook's Saturday alarms is left: the first was Fire the smoker at 8:55 AM) | |
+| 8 | Jason | Gear, Export my data, save to Drive | Tue 2026-11-17 evening: "seemed like it did" (Jason) |
+| 9 | Claude | `adb -s <phone> shell dumpsys alarm` for the app and `dumpsys package` again (read only: each alarm of the running cook once, 18 of them, the first Fire the smoker at Saturday 8:55 AM; exact alarms still granted: the line to read is `android.permission.USE_EXACT_ALARM: granted=true`. The phone is Android 16, API 36, and the manifest of `modules/pit-alarms` declares `SCHEDULE_EXACT_ALARM` only up to API 32, so the app relies on `USE_EXACT_ALARM` and there is no `appops` line for step 9). The running cook is the one started on beta.1 on 2026-11-17 at 2:53 PM (serve Sat Nov 21 5:00 PM, 250F, five foods), not a 0.2.0 cook; Jason keeps it until this step | Tue 2026-11-17 7:10 PM, serial `5ece07c1`: 18 alarms pending, each time once, the first Sat 8:55:00 AM, the last Sat 5:00 PM; 0.3.0-beta.2 / 300302; `USE_EXACT_ALARM: granted=true`; no alarm of the dev build pending |
+| 10 | Jason | Open the running cook, End cook, Discard. (Its first alarm is Saturday 8:55 AM, so no ring is waited for at this step.) **Then the beta.2 check on the phone, not before this step** (Jason, 2026-11-17: no start, end, start on the phone while that cook runs): without closing the app, Start cook, End cook, Discard, then Start cook again: the second start must work (in beta.1 it did nothing until the app was restarted). End cook and Discard once more, so nothing is pending for step 11. This is the last step before Saturday's plan is loaded | Tue 2026-11-17, about 7:17 PM: "yes it worked" (Jason): the second start worked without restarting the app |
+| 11 | Claude | `adb -s <phone> shell dumpsys alarm` for the app (read only: nothing pending, so none of that cook's Saturday alarms is left: the first was Fire the smoker at 8:55 AM) | Tue 2026-11-17 7:18 PM: no alarm pending for the app or the dev build; the removal history shows the cancels at 7:17:10 PM |
 | 12 | Jason | Settings: notifications on; battery not restricted; on the app's battery usage page, allow background activity | |
 | 13 | Jason | Gear, 5 taps on the version line: it reads 0.3.0-beta.2 | |
 | 14 | Jason | Load Saturday's plan (above). Start cook. (No need to swipe the app away first on beta.2: Start cook after an ended cook is fixed, `d2fdccc`. Only beta.1 needed it.) If a sheet "Alerts may not ring" shows, tap **Start anyway** and note it here: ____ (in beta.1 and beta.2 its second button, Start cook, is pushed off the right edge at larger font sizes; known, fixed after the readout; it should not show if step 12's settings are on). Write the times in the table below | |
@@ -156,8 +165,8 @@ lock screen before opening the app. With two alerts waiting, Android may group t
 
 - The debug file from Send to developer: the alarm ring log (planned and actual time of every ring, T-068)
   and the event log (each Done, Not yet, Undo, Pit went out, Adjust and +15). **Filter both to Saturday
-  2026-11-21 first:** the cook was started on Tuesday 2026-11-17 night, so both logs also hold Tuesday's
-  entries (the beta.1 cook, step 10's start, end, start, and the start of Saturday's cook).
+  2026-11-21 first:** both logs also hold Tuesday 2026-11-17's entries (the beta.1 cook and step 10's
+  start, end, start).
 - `adb shell dumpsys deviceidle`: Doze state and settings.
 - `adb shell dumpsys batterystats --history`: when the phone went into and out of deep idle.
 - `adb shell dumpsys alarm` for the app: nothing pending after Discard.

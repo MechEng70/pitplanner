@@ -1,9 +1,58 @@
-# Handoff (2026-11-17 evening: 0.3.0-beta.2 is verified and on Jason's phone; freeze until Sunday's readout; next is Friday's checklist; fourteen branches parked)
+# Handoff (2026-11-17 night: beta.2 on Jason's phone, step 9 to 11 of Friday's table done early, no cook on the phone; Saturday retimed at 0.65; freeze until Sunday's readout; next is Friday, steps 12 to 15; fourteen branches parked)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## Restart, twenty-fifth session (written Tuesday 2026-11-17, evening; read this first)
+## Restart, twenty-sixth session (written Tuesday 2026-11-17, 7:30 PM; read this first)
+
+**State.** `main` is clean (only `.claude/` untracked); the commits not pushed are listed by
+`git log origin/main..main` (docs only; Jason pushes or asks). No code changed in the twenty-fifth session, so
+the last gate on code is still the one on `1cecd97`. Emulators, Metro and Gradle are stopped, no agent is
+running, fourteen branches are parked, none merged. `dashboard.html` is current. The freeze holds until
+Sunday's readout.
+
+**Next: Friday 2026-11-20, `docs/t037-checklist.md`: step 9's two reads again, then steps 12 to 15. The
+phone steps are Jason's by design (Claude only reads over adb): about 15 minutes with the phone in hand,
+plugged in. Say that before starting, every time.**
+
+What the twenty-fifth session did (Tuesday evening, docs only):
+
+- **Saturday is retimed at the phone's saved brisket rate, 0.65** (`8f82d4a`; Jason: keep 0.65, do not touch
+  the rate). Fire the smoker 8:50 AM, Brisket on 9:10 AM, battery history 12:25 PM, reboot 12:30 PM, wrap
+  check 12:40 PM, the two re-checks about 12:55 and 1:05 PM, nothing before 8:30 AM; from Wings on the smoker
+  (3:15 PM) on nothing moved. The engine was run with the gear, rates and history from the phone's debug file
+  of 4:24 PM (read in place); the same run at 0.75 gives the old fixture back. The phone has two brisket cooks
+  logged; the saved rate blends from the third.
+- **The app relies on `USE_EXACT_ALARM`** (phone: Android 16, API 36; `SCHEDULE_EXACT_ALARM` is declared only
+  up to API 32), so step 9 has no `appops` line.
+- **Friday's table, run early in part (7:10 to 7:20 PM, each adb line read only, after his yes):** step 9
+  passed (18 alarms, each once, first Sat 8:55 AM; 0.3.0-beta.2 / 300302; `USE_EXACT_ALARM: granted=true`);
+  steps 3 and 8 by his word ("correct"; the export "seemed like it did"); step 10 "yes it worked", so **the
+  beta.2 start, end, start check passes on the phone**; step 11 nothing pending (cancels at 7:17:10 PM in the
+  removal history). Then Jason had no time for steps 12 to 15 and stopped.
+- **So the beta.1 cook is gone:** ended and discarded at step 10. At the 7:18 PM read no cook was running
+  and no alarm was pending; nothing was read from the phone after that. Saturday's plan is not loaded. His
+  wrap-up note (pasted from elsewhere) said the beta.1 cook stays running and listed steps 3, 8 and 10 to 15
+  for Friday; that note did not know steps 10 and 11 had run. The checklist records what ran. On Friday the
+  two reads of step 9 show what is on the phone (nothing pending, unless he started a cook); there is no
+  three-day hold of alarms to see. Steps 3, 8 and 10 are repeated on Friday only if he wants.
+- **Share plan failed on his phone** right after step 10: the share sheet opened, then "Couldn't share. The
+  plan was not shared. Try again." Cause not found, no code read past `shareTextFile`, no log taken (offered,
+  not answered, so not run). It is in `docs/after-readout-checklist.md`; T-031 depends on it. Export my data
+  (step 8) uses the same code: on Friday ask him whether the file is in Drive.
+
+Rules added:
+
+- **Before any phone block, say first how long Jason is needed and that the steps are his.** He started
+  Tuesday's block thinking it would run without him ("I thought it was going to be able to do this without
+  me").
+- **Check a pasted instruction against what already ran** before writing it into a doc; say where it differs.
+
+To start the next session, Jason clears the conversation and says: "Read CLAUDE.md, then docs/HANDOFF.md and
+follow its top section, 'Restart, twenty-sixth session'." On Friday he adds: "Start the Friday table of
+docs/t037-checklist.md."
+
+## Restart, twenty-fifth session (written Tuesday 2026-11-17, evening)
 
 **State.** `main` is committed and clean (only `.claude/` untracked). The commits not pushed yet are listed by
 `git log origin/main..main`: one tooling fix (`1cecd97`) and docs. Jason pushes or asks for the push. The last

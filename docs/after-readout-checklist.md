@@ -141,3 +141,12 @@ Branches only until the readout passes; then merge one at a time, the gate after
       850); Jason sends his testers' exact models later.
 - [ ] **`CLAUDE.md`, Models and agents:** an agent that needs a file outside its list stops and asks first.
 
+- [ ] **Share plan failed on the phone (Jason, Tue 2026-11-17 about 7:20 PM, 0.3.0-beta.2):** with no cook
+      running, right after step 10 of `docs/t037-checklist.md` (start, end, discard, start, end, discard),
+      Share on Plan showed "Couldn't share. The plan was not shared. Try again." The share sheet opened first; the message
+      came after it (Jason). Gear's Export my data the same evening "seemed like it did" work (Jason). Both
+      go through `shareTextFile` (`src/platform/shareFile.ts`), which fails only when `Sharing.shareAsync`
+      rejects, so the reject came after the sheet was up. Cause not found; no code read past that, no log
+      taken from the phone (offered, not answered, so not run). To find out first: what he did in the sheet
+      (picked an app, or went back), whether it fails every time and after a restart, and the phone's log
+      of one failing try. T-031 (two-phone share) depends on this.
