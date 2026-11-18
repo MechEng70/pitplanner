@@ -102,6 +102,12 @@ Seen during the rehearsal, to settle in the readout:
   if the app was still alive in the background and applied the tap at 3:15 PM, the alarms were set again
   then and 3:45 PM is right. Tonight's event log has the time of the "moved 15 min" line and of the alarm
   set. From here the Cook tab's times are the schedule for today.
+- **The schedule after the +15, read off the Cook tab by Jason at about 3:35 PM** (each is 15 minutes
+  later than the alarm list read from the phone at 12:50 PM): Oven to 170F 3:45 PM; Check tenderness
+  4:00 PM; Turn the smoker up to 400F 4:20 PM; Wings crisp at 400F 4:35 PM; Fire the griddle 4:40 PM;
+  Chicken breasts on the griddle and Slice or plate the brisket, both 4:55 PM (he first said 4:45 for the
+  breasts, then "4:45 or 4:55"; 4:55 is what the 15 minute move gives); Pull chicken breasts 5:07 PM; Pull
+  wings 5:10 PM; Serve 5:15 PM. The table's actions stay, at these times.
 
 ## The plan to load (Friday night)
 
