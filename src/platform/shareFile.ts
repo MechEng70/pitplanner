@@ -18,7 +18,7 @@ function writeCacheFile(name: string, text: string): File {
 
 /**
  * expo-sharing keeps one share at a time: a second call while the sheet is still opening (a second tap on
- * Share plan or Export my data) rejects with SharingInProgressException, whose code expo-modules-core infers
+ * Share plan, Export my data, Send to developer or the error screen's Export my data) rejects with SharingInProgressException, whose code expo-modules-core infers
  * from the class name. The first call's sheet is the share, so this one is not a failure. Known by its code;
  * the message is a fallback for a build where the code is missing.
  */
@@ -33,14 +33,21 @@ export function isShareInProgress(e: unknown): boolean {
   );
 }
 
-/** Any error but the in-progress one is passed on; the screens show it and log it. */
-export async function shareTextFile(name: string, text: string, mimeType: string, title: string): Promise<void> {
-  const file = writeCacheFile(name, text);
+/**
+ * Every expo-sharing call in the app goes through here: the in-progress rejection is dropped, any other
+ * error is passed on unchanged; the screens show it (and Plan and Gear log it).
+ */
+async function openShareSheet(uri: string, mimeType: string, title: string): Promise<void> {
   try {
-    await Sharing.shareAsync(file.uri, { mimeType, dialogTitle: title });
+    await Sharing.shareAsync(uri, { mimeType, dialogTitle: title });
   } catch (e) {
     if (!isShareInProgress(e)) throw e;
   }
+}
+
+export async function shareTextFile(name: string, text: string, mimeType: string, title: string): Promise<void> {
+  const file = writeCacheFile(name, text);
+  await openShareSheet(file.uri, mimeType, title);
 }
 
 /** Gear's "Export my data" (T-036): the pitplanner-data file through the share sheet. */
@@ -75,7 +82,7 @@ export function reportSharer(sendFile: SendFile): ShareReport {
     } catch {
       // Fall through to the share sheet without a recipient.
     }
-    await Sharing.shareAsync(file.uri, { mimeType: 'application/json', dialogTitle: title });
+    await openShareSheet(file.uri, 'application/json', title);
   };
 }
 
@@ -99,5 +106,5 @@ export async function shareFilesAsTar(
   const out = new File(Paths.cache, name);
   out.create({ overwrite: true });
   out.writeSync(tar(entries));
-  await Sharing.shareAsync(out.uri, { mimeType: 'application/x-tar', dialogTitle: title });
+  await openShareSheet(out.uri, 'application/x-tar', title);
 }

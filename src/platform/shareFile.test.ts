@@ -102,6 +102,46 @@ describe('a second tap while the share sheet is still opening (after-readout che
   });
 });
 
+describe('the same guard on the other two share paths', () => {
+  const report = () => shareReport('pitplanner-debug.json', '{"a":1}', 'dev@example.com');
+  const tar = () => shareFilesAsTar(['file:///files/SQLite/pitplanner.db'], 'db.tar', 'Export my data', 0);
+
+  describe("Send to developer's fallback (the native sendFile threw)", () => {
+    beforeEach(() => {
+      mockSendFails = new Error('no activity');
+    });
+    test('the in-progress rejection, by its code, resolves', async () => {
+      mockShareFails = inProgress('ERR_SHARING_IN_PROGRESS');
+      await expect(report()).resolves.toBeUndefined();
+    });
+    test('the in-progress rejection without a code, by its message, resolves', async () => {
+      mockShareFails = inProgress();
+      await expect(report()).resolves.toBeUndefined();
+    });
+    test('any other error still rejects, unchanged', async () => {
+      const other = Object.assign(new Error('No Activity found'), { code: 'ERR_SHARING_FAILED' });
+      mockShareFails = other;
+      await expect(report()).rejects.toBe(other);
+    });
+  });
+
+  describe("the error screen's Export my data (the database files as a tar)", () => {
+    test('the in-progress rejection, by its code, resolves', async () => {
+      mockShareFails = inProgress('ERR_SHARING_IN_PROGRESS');
+      await expect(tar()).resolves.toBeUndefined();
+    });
+    test('the in-progress rejection without a code, by its message, resolves', async () => {
+      mockShareFails = inProgress();
+      await expect(tar()).resolves.toBeUndefined();
+    });
+    test('any other error still rejects, unchanged', async () => {
+      const other = Object.assign(new Error('No Activity found'), { code: 'ERR_SHARING_FAILED' });
+      mockShareFails = other;
+      await expect(tar()).rejects.toBe(other);
+    });
+  });
+});
+
 describe('Send to developer (T-065)', () => {
   const written = [
     ['create', { overwrite: true }],
