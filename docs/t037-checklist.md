@@ -61,6 +61,24 @@ Seen during the rehearsal, to settle in the readout:
   LOCKED_BOOT_COMPLETED 2 seconds after boot and it crashed in dev-only code; a release build was never
   run through a locked reboot on this phone before today. Evidence to read: the crash log and logcat from
   the boot (they wrap, so soon), and tonight's ring log (when the 12:40 PM step is logged as rung).
+  **Read at 12:50 PM (phone plugged in, read only: crash log, logcat, `dumpsys alarm`):**
+  - The phone booted at 12:29:27 PM. Jason unlocked at 12:43 PM; "all my notifications sounded" then, Pit
+    Planner's among them. He tapped Done on the alert at 12:44 PM (the Cook tab banner says so) and opened
+    the app at 12:49:03 PM.
+  - **The alarm came back while locked and went off on time.** Android's alarm statistics since boot show
+    one Pit Planner step alarm delivered, at 12:40:01 PM, 2 to 3 minutes before the unlock; the app's
+    receiver ran for 358 ms. So the restore before the first unlock works on this phone with the release
+    build.
+  - The release app did not crash: the crash log since boot holds one app crash, the dev build
+    (`...pitplanner.debug`, also on the phone) at 12:29:50 PM, the known dev-only crash of T-072.
+  - **Not known: why nothing was heard at 12:40 PM.** Logcat had wrapped (it starts at 12:45 PM), so there
+    is no line from the alert itself. Either the app did not post the alert, or it posted it and the phone
+    made no sound before the first unlock. Tonight's ring log has the answer to the first half: the 12:40 PM
+    record says when it rang and whether the alert was posted.
+  - Ten alarms are pending for the rest of today, set again when he opened the app: 3:15, 3:30, 3:45, 4:05,
+    4:20, 4:25, 4:40, 4:52, 4:55, 5:00 PM. Against the table, Oven to 170F moved 3:25 to 3:30 PM and Check
+    tenderness 3:40 to 3:45 PM. Likely from the Done at 12:44 PM on the wrap check (4 minutes late); not
+    checked in the code yet.
 
 ## The plan to load (Friday night)
 
