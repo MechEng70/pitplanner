@@ -201,6 +201,10 @@ Tap the alert itself to open the app. The buttons work with the app closed. If y
 rings again every 10 minutes, up to six more times, and then sends a last "Cook needs you" alert. The Live
 cook screen shows the step as overdue.
 
+**If the phone restarts during a cook, unlock it once.** Pit Planner puts its alarms back by itself after a
+restart. But on some phones (seen on a OnePlus) no app's alert sounds until the first unlock after a restart.
+A step that comes due before you unlock stays silent until you do.
+
 ## 4. Cook options
 
 Tap the three dots, or Adjust, on Live cook.
@@ -354,6 +358,8 @@ Steps to try, in order:
    makers delay or stop alerts to save battery.
 4. During a cook, check Live cook for a banner. "Alerts are off" means a permission was turned off. Tap Fix.
    "Alarms could not be set" means the phone refused the alarms. Tap Try again.
+5. Did the phone restart (an update overnight, a dead battery)? Unlock it once. On some phones no alert
+   sounds until the first unlock after a restart.
 
 If steps 1 to 3 do not fix it, send a report. See section 11.
 
