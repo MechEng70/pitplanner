@@ -7,6 +7,7 @@ import { buildPlan } from '../../../engine/plan';
 import type { ItemInput, Plan, PlanInput } from '../../../engine/types';
 import type { Anchor } from '@/components/kit';
 import { newCook } from '@/lib/cook';
+import { errorText } from '@/lib/eventLog';
 import { newItemId } from '@/lib/itemId';
 import { method, newItem, rules } from '@/lib/rules';
 import { importConflicts, parsePitPlan, type ImportedPlan, type SharedPlan } from '@/lib/sharedPlan';
@@ -87,7 +88,7 @@ export function PlanTab({
   now = Date.now,
   open,
 }: PlanTabProps) {
-  const { state, setDraft, setCook, ui } = useStore();
+  const { state, setDraft, setCook, ui, logEvent } = useStore();
   const { draft, gear, units } = state;
   const fresh = (foodId: string): ItemInput =>
     newItem(
@@ -187,15 +188,19 @@ export function PlanTab({
   };
 
   // Share (SPEC section 3): the menu, serve time and smoker temp as a .pitplan file. A share that fails says so
-  // (Jason, 2026-11-15; 0.2.0 showed nothing).
+  // (Jason, 2026-11-15; 0.2.0 showed nothing) and is written to the event log, so it is not silent in a release
+  // build. A second tap while the sheet is still opening is not a failure: shareTextFile drops that one.
   const share = (plan: Plan) => {
     if (!sharePlanFile) return;
     const text = pitPlanText(toPitPlan(plan.serveAt, input.pitTempF, input.items));
-    const failed = () => setLayer({ kind: 'shareFailed' });
+    const failed = (e: unknown) => {
+      logEvent('error', `plan share failed: ${errorText(e)}`);
+      setLayer({ kind: 'shareFailed' });
+    };
     try {
       sharePlanFile(PLAN_FILE_NAME, text).catch(failed);
-    } catch {
-      failed();
+    } catch (e) {
+      failed(e);
     }
   };
 

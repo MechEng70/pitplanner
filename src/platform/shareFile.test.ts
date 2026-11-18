@@ -1,6 +1,8 @@
 import { REPORT_SUBJECT, shareDataFile, shareFilesAsTar, shareReport, shareTextFile } from './shareFile';
 
 const mockCalls: unknown[][] = [];
+/** What expo-sharing's shareAsync does next: open the sheet, or reject with this. */
+let mockShareFails: Error | null = null;
 /** What the native sendFile does next: nothing (it opened the sheet), or throw this. */
 let mockSendFails: Error | null = null;
 /** False for a build made before the function existed: the native module has no sendFile. */
@@ -40,13 +42,17 @@ jest.mock('expo-file-system', () => ({
   },
 }));
 jest.mock('expo-sharing', () => ({
-  shareAsync: async (uri: string, options: unknown) => void mockCalls.push(['share', uri, options]),
+  shareAsync: async (uri: string, options: unknown) => {
+    mockCalls.push(['share', uri, options]);
+    if (mockShareFails) throw mockShareFails;
+  },
 }));
 
 beforeEach(() => {
   mockCalls.splice(0);
   mockSendFails = null;
   mockHasSendFile = true;
+  mockShareFails = null;
 });
 
 test('writes the text to a cache file (replacing an old one), then opens the share sheet for it', async () => {
@@ -69,6 +75,31 @@ test('Gear Export my data (T-036) shares the data file as JSON under its own nam
       { mimeType: 'application/json', dialogTitle: 'Export my data' },
     ],
   ]);
+});
+
+/** The rejection expo-sharing gives a second share while the sheet is still opening (SharingInProgressException). */
+const inProgress = (code?: string) =>
+  Object.assign(new Error('Another share request is being processed now.'), code ? { code } : {});
+
+describe('a second tap while the share sheet is still opening (after-readout checklist)', () => {
+  test('the in-progress rejection, by its code, is not an error: the sheet that is opening is the share', async () => {
+    mockShareFails = inProgress('ERR_SHARING_IN_PROGRESS');
+    await expect(shareTextFile('cook.pitplan', '{}', 'application/json', 'Share plan')).resolves.toBeUndefined();
+    expect(mockCalls.map(c => c[0])).toEqual(['create', 'write', 'share']);
+  });
+
+  test('the same rejection without a code is known by its message', async () => {
+    mockShareFails = inProgress();
+    await expect(shareDataFile('pitplanner-data.json', '{}')).resolves.toBeUndefined();
+  });
+
+  test('any other share error still rejects, unchanged', async () => {
+    const other = Object.assign(new Error('No Activity found'), { code: 'ERR_SHARING_FAILED' });
+    mockShareFails = other;
+    await expect(shareTextFile('cook.pitplan', '{}', 'application/json', 'Share plan')).rejects.toBe(other);
+    mockShareFails = new Error('no share sheet');
+    await expect(shareDataFile('pitplanner-data.json', '{}')).rejects.toThrow('no share sheet');
+  });
 });
 
 describe('Send to developer (T-065)', () => {

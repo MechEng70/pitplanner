@@ -16,9 +16,31 @@ function writeCacheFile(name: string, text: string): File {
   return file;
 }
 
+/**
+ * expo-sharing keeps one share at a time: a second call while the sheet is still opening (a second tap on
+ * Share plan or Export my data) rejects with SharingInProgressException, whose code expo-modules-core infers
+ * from the class name. The first call's sheet is the share, so this one is not a failure. Known by its code;
+ * the message is a fallback for a build where the code is missing.
+ */
+export const SHARE_IN_PROGRESS_CODE = 'ERR_SHARING_IN_PROGRESS';
+const SHARE_IN_PROGRESS_MESSAGE = 'Another share request is being processed now.';
+
+export function isShareInProgress(e: unknown): boolean {
+  if (typeof e !== 'object' || e === null) return false;
+  const { code, message } = e as { code?: unknown; message?: unknown };
+  return (
+    code === SHARE_IN_PROGRESS_CODE || (typeof message === 'string' && message.includes(SHARE_IN_PROGRESS_MESSAGE))
+  );
+}
+
+/** Any error but the in-progress one is passed on; the screens show it and log it. */
 export async function shareTextFile(name: string, text: string, mimeType: string, title: string): Promise<void> {
   const file = writeCacheFile(name, text);
-  await Sharing.shareAsync(file.uri, { mimeType, dialogTitle: title });
+  try {
+    await Sharing.shareAsync(file.uri, { mimeType, dialogTitle: title });
+  } catch (e) {
+    if (!isShareInProgress(e)) throw e;
+  }
 }
 
 /** Gear's "Export my data" (T-036): the pitplanner-data file through the share sheet. */

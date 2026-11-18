@@ -35,6 +35,7 @@ import {
 } from '@/components/kit';
 import { buildDataFile, dataFileName, MAX_CHARS, readDataFile, type DataCheck } from '@/lib/dataFile';
 import { grantDebugPass } from '@/lib/debugPass';
+import { errorText } from '@/lib/eventLog';
 import { fmtMonthDay, fmtTemp, type Units } from '@/lib/format';
 import { hasHopper, smokerTypeInfo } from '@/lib/gear';
 import { rateRows, ratesSummary } from '@/lib/historyView';
@@ -105,7 +106,7 @@ export function GearScreen({
   /** The export's time and the reader's "now"; tests pass a fixed one. */
   now?: () => number;
 }) {
-  const { state, setUnits, restoreData } = useStore();
+  const { state, setUnits, restoreData, logEvent } = useStore();
   const { gear, units } = state;
   const [open, setOpen] = useState<Open>(null);
   const [status, refresh] = useAlarmStatus(permissions, onResume);
@@ -127,11 +128,16 @@ export function GearScreen({
     const at = now();
     const { gear: g, units: u, rates, totalHours, rateLocks, records, flags } = state;
     const text = buildDataFile({ gear: g, units: u, rates, totalHours, rateLocks, records, flags }, at, version);
-    const failed = () => notice(EXPORT_FAILED.title, EXPORT_FAILED.body);
+    // Written to the event log too, so it is not silent in a release build. A second tap while the sheet is
+    // still opening is not a failure: shareTextFile drops that one.
+    const failed = (e: unknown) => {
+      logEvent('error', `data export failed: ${errorText(e)}`);
+      notice(EXPORT_FAILED.title, EXPORT_FAILED.body);
+    };
     try {
       shareDataFile(dataFileName(at), text).catch(failed);
-    } catch {
-      failed();
+    } catch (e) {
+      failed(e);
     }
   };
 
