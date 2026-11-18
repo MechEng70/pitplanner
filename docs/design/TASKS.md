@@ -2535,6 +2535,12 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   normal release (not a prerelease) so 0.2.0's update check (`/releases/latest`) sees it.
 - **Added to the acceptance by Jason, 2026-11-16 (from T-016):** a locked reboot on his phone with the release
   build: a step that comes due while the phone is still locked rings before unlock.
+  **Checked off by Jason, Wed 2026-11-18 (T-037 rehearsal, 0.3.0-beta.2):** rebooted 12:29 PM and left locked;
+  the 12:40 PM step alarm was back and delivered at 12:40:01 PM while still locked (Android's alarm
+  statistics, read 12:50 PM); no crash of the release app. Nothing was heard until he unlocked at 12:43 PM,
+  when every app's notifications sounded: "a device issue not an app issue" (his judgment; on this OnePlus
+  nothing from any app shows or sounds before the first unlock). Not read yet: the ring log's 12:40 PM
+  record (alert posted or not), from that night's debug file. Details: `docs/t037-checklist.md`.
 - **Acceptance:** release `v0.3.0` with APK and SHA-256; `snyk:monitor` ran; Jason's phone upgraded with gear,
   rates and history intact (or the notice says what was not kept).
   The emulator upgrade test checks the imported cookers, rates, plan and history on the actual Gear, Plan and

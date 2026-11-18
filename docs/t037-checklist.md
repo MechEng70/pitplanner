@@ -79,6 +79,11 @@ Seen during the rehearsal, to settle in the readout:
     4:20, 4:25, 4:40, 4:52, 4:55, 5:00 PM. Against the table, Oven to 170F moved 3:25 to 3:30 PM and Check
     tenderness 3:40 to 3:45 PM. Likely from the Done at 12:44 PM on the wrap check (4 minutes late); not
     checked in the code yet.
+  **Jason's decision, 12:55 PM: checked off as working.** "It may have shown it but until the phone is
+  unlocked nothing (any apps I have) shows until the device is unlocked. So it is a device issue not an app
+  issue." Pass on this phone means: the alarm is back and delivered on time while the phone is still locked
+  (shown above), and it sounds at the unlock. Still read tonight, as a check and not a gate: the ring log's
+  12:40 PM record (when it rang, and that the alert was posted).
 
 ## The plan to load (Friday night)
 
@@ -195,7 +200,7 @@ not moving). Answer each alert within a couple of minutes. Never open the dev bu
 | 9:10 AM | Brisket on the smoker | Unlock. **Done** in the app. Lock |  9:10 AM | | |
 | 12:25 PM | nothing | Plug the phone in. Claude saves the battery history to a file on the computer: `adb shell dumpsys batterystats --history` (read-only, after Jason's yes). Unplug. Plugging in ends deep idle for that moment, by design: a reboot can drop the newest history entries (seen on the emulator, 2026-11-17), and this keeps the morning's | | | |
 | 12:30 PM | nothing | **Reboot** the phone, 10 minutes before the wrap check. Do not unlock it afterwards | | | |
-| 12:40 PM | Check the brisket (wrap) | It must ring while the phone is still locked after the reboot. Note the time. Unlock. Tap **Not yet**, keep serve |  12:40 PM | | |
+| 12:40 PM | Check the brisket (wrap) | It must ring while the phone is still locked after the reboot (Jason, 2026-11-18, after the rehearsal: this phone sounds nothing before the first unlock; pass is the alarm delivered on time while locked, read from the ring log afterwards, and the sound at the unlock). Note the time. Unlock. Tap **Not yet**, keep serve |  12:40 PM | | |
 | about 12:55 PM | Check the brisket again | **Done**. Then Cook options, **Undo** that Done | | | |
 | about 1:05 PM | Check the brisket a third time (10 min after the Undo) | **Done**. Lock | | | |
 | 1:30 PM | nothing | Cook options, **Pit went out**. Lock | | | |
