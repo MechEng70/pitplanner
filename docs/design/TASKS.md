@@ -2971,6 +2971,19 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   the app can). The LAN cleartext rule and the non-admin registry-read record stay. Depends on T-042 and
   T-044 only. The help text presents the dedicated user as an audit trail and a one-step cutoff, never as
   restricted access (HA-INTEGRATION 4.1).
+- **Jason, Wed 2026-11-18 (after step 0, where his private file held a bare host name and the check script
+  stopped on it): "didn't know that you needed the entire http or https, we need to make sure that it checks
+  for that. before the connect button is clicked."** So the connect screen checks the address as it is
+  typed, before Connect can be tapped. What is already built for this on branch `a4d0fb0875a099229`
+  (`src/lib/ha/address.ts`, T-044): with no scheme typed the app adds one itself (https for a remote host,
+  http on port 8123 for a host on the home network), and anything it cannot use comes back with a reason
+  (spaces, another scheme, http to a host that is not on the home network, and so on). Only the test script
+  needed the full form, not the app. To build in this task: run that check on every change of the field;
+  Connect stays greyed out until the address is usable; the screen shows what it will connect to or what
+  is wrong. **Open, his call (new text on the screen, so his wording and a look at the mockup first):**
+  (a) add the scheme for the user and show the full address under the field (the main session's pick, and
+  what the built logic does), or (b) refuse an address without http or https and ask the user to type it.
+  This is also the first of T-044's seven open choices ("scheme when none typed").
 - **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** sign in to `ha.glithero.icu` as the `pitplanner` HA user; refresh token in `expo-secure-store`.
