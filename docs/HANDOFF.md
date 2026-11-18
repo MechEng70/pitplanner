@@ -62,7 +62,9 @@ What the twenty-sixth session did (Wednesday morning, docs only, `84b29cf` and t
   debug event log, in `PlanTab` and `GearScreen` or in `shareTextFile`; (2) the start guard: clear it in a
   finally and write "cook started" to the log only after the save succeeds (keep "two quick taps start one
   cook" green: the clearing is for a start that did not go through, my reading). Then the parked 0.3.0
-  branches as listed in the twenty-fourth session's section 2.
+  branches as listed in the twenty-fourth session's section 2. **Then, after the last merge and before
+  Monday's release (Jason, 2026-11-18): the owed `turkey` device test on the emulator at 115% and 130%**
+  (Thanksgiving is Thursday 2026-11-26; `docs/after-readout-checklist.md`, "Turkey for Thanksgiving").
 - **For 0.3.1 (Jason):** the failed-start message "Couldn't start the cook. Try again."; a layout change for
   the two buttons hidden at 130% (shown to him first; the sheet-buttons branch covers neither); T-084, a
   prompt when the plan is edited during a cook (his wording; SPEC is silent, the cook keeps its own copy).

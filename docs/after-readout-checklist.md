@@ -155,6 +155,16 @@ Branches only until the readout passes; then merge one at a time, the gate after
       (`shared`, `shared-soon`); scroll to Alerts in `gear` at 130%; scroll a button clear of the pinned footer
       before tapping it (`setup`'s test alert, `cook-finished`'s Keep). Then rerun those five, plus
       `followups` and `turkey`, at 115% and 130%.
+- [ ] **Turkey for Thanksgiving (Jason, Wed 2026-11-18): the owed `turkey` device test on Sunday
+      2026-11-22, after the merges and before Monday's release.** Emulator, 115% and 130%:
+      `DEVICE_SCALES="1.15 1.3" tools/device/run.sh --only turkey` (a build first if a merged branch changed
+      anything native, else `--no-build`). It does not wait for the rig fixes above: `turkey` was never a
+      rig failure, it did not get its turn in the full pass of 2026-11-17, and its only run so far is 115%
+      on 2026-11-15. What passes is in `tools/device/README.md` (a new 12.0 lb whole turkey: fire 9:55 AM,
+      off heat 4:15 PM, serve 5:00 PM; rest stops at 20 min; 0.50 hr/lb with no "Unusual rate"; at 220F the
+      Conflicts tile reads 1 and the sheet says the turkey needs 225F or hotter). Run it on `main` as it
+      will ship, so after the last merge. A fail here is looked at before the release is cut: Thanksgiving
+      is Thursday 2026-11-26 and 0.3.0 is the build testers will plan it with.
 - [ ] **For Jason, from that pass at 130%:** Setup's "Send a test alert in 10 sec" and Cook finished's
       Use / Keep buttons are hidden under the pinned buttons until scrolled (`tools/device/out/1.3/
       setup-alerts.png`, `cook-finished-rate.png`). Leave, or change the layout?
