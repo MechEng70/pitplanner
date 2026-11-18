@@ -4051,6 +4051,10 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   (`docs/t037-checklist.md`, "What today did not test, and where each is covered already"): these three are
   covered by Jest only, or only as far as the button being on screen.
 - **Status:** backlog, 0.3.1.
+- **SPEC section 13, as edited by Jason on 2026-11-18,** names this task for the phone check of "Adjust, Pit
+  went out, Not yet and End cook all re-plan and reschedule alarms with no duplicates" ("0.3.0: covered by
+  Jest; phone check in 0.3.1 (T-086)"). So besides the rig tests below, this task ends with those four
+  tapped once on his phone, with the alarm list read after each (his steps, his yes for each read).
 - **Goal:** three additions to the device rig (`tools/device/run.sh`, emulator, the mockup cook at 115% and
   130%), each ending with a read of the phone's alarm list:
   1. **Not yet** at a check step (Cook options, "Not yet, check again in 30 min"): Next up reads 30 minutes
@@ -4064,5 +4068,38 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   a step is a stable-controls target. No app code.
 - **Depends on:** the rig fixes of the full pass of 2026-11-17 (a button scrolled clear of the pinned
   footer before it is tapped).
-- **Real phone:** no.
+- **Real phone:** yes, for the phone check SPEC names (above); the rig tests themselves are emulator only.
+
+### T-087 Light theme, with a setting that follows the phone
+- **Jason (Wed 2026-11-18): backlog, 0.3.x or 0.4.0, mockups first.** Asked as a report only; nothing built.
+- **Status:** backlog. No work before his OK on light mockups.
+- **What the code looks like today (counted 2026-11-18, tests left out):** the colours are in one shared
+  palette, not typed into the screens. `src/theme/tokens.ts` holds all 33 hex values (33 distinct) and two
+  `rgba()` scrims; no other file in `src/` or `app/` has a hex colour. `tailwind.config.js` builds the
+  NativeWind classes from that file and `src/theme/navTheme.ts` reads it. The app is dark only by design:
+  no file uses a `dark:` class, and `app.config.ts` sets `userInterfaceStyle: 'dark'`.
+- **What a light theme has to change:**
+  1. **Design first:** a light value for each of the 33 colours and the lane and status colours, with
+     contrast checked, and light mockups of the main screens for his approval (the 20 mockups and their 21
+     sources are dark).
+  2. **The palette becomes two palettes.** Classes can switch without touching the 28 screens and
+     components that use `className`, if Tailwind's colours become variables set once at the root by scheme.
+  3. **Direct uses switch at their call sites:** 22 files import the tokens and use a colour directly 79
+     times (icons, the lane chart, ripples, borders). Those values are fixed when the file loads, so each
+     use moves to a hook. Mechanical, but every one is touched.
+  4. **The setting:** Gear, App group: Follow the phone, Dark, Light. New UI, so a mockup and his wording;
+     stored with the other settings (no schema change expected, to confirm).
+  5. **Outside React:** `userInterfaceStyle` to automatic (a native config change, so a new build), the
+     splash and window background, the navigation theme, the status and navigation bar icons. The alert's
+     accent colour in Kotlin can stay.
+  6. **Checks:** `tokens.test.ts` (it pins the dark values to the 0.2.0 kit), the device rig's fit and
+     fidelity checks at 115% and 130% in both themes, and the user guide pictures.
+- **Rough size (the main session's estimate, not measured):** about four working sessions: one for the
+  palette and mockups with his review, one or two for the palette, variables and the 79 call sites, one for
+  the setting and the native side, one for the device pass in both themes. Most of the risk is in the
+  design and the device checks, not the code.
+- **Version:** his call between a 0.3.x release and 0.4.0. ROADMAP keeps 0.3.x for bug fixes with two named
+  exceptions, and 0.4.0 is Home Assistant phase 1; this would be a third exception or ride with 0.4.0.
+- **Files (when built):** `src/theme/tokens.ts`, `tailwind.config.js`, `src/theme/navTheme.ts`, a new theme
+  hook, the 22 files that use a colour directly, `app.config.ts`, Gear's App group, SPEC, mockups.
 

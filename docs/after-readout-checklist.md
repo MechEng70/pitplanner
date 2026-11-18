@@ -5,18 +5,16 @@
 - **Part 1 (INSTALL.md on his wife's phone) is not run before the release.** She gets 0.3.0 when he sends it,
   not beta.2. The steps are kept for that day: read 0.3.0 where they say 0.3.0-beta.2, and step 3 is
   INSTALL.md's own step 1 (the releases page), not a Drive link.
-- **INSTALL.md wording fixes still go in before Monday 2026-11-23.** With no walk-through before the release
-  they come from what is already known (the guide audit of 2026-11-18 found one gap: the "Oven hold raised
-  to 140F, the safe minimum." line a 0.2.0 import can add is not in INSTALL.md) and from Jason. To ask him:
-  which other fixes he has in mind.
+- **INSTALL.md: one fix for Monday, done 2026-11-18 (Jason: "That's the only fix for Monday").** The "Oven
+  hold raised to 140F, the safe minimum." line a 0.2.0 import can add is now in INSTALL.md.
 - **Part 2 (the two-phone share test, his wife's phone to his and back) moves to 0.3.1.** The share guard
   it was waiting for is on a parked branch for beta.3.
 - **The Samsung tester's locked-reboot request moves to 0.3.1.** For 0.3.0 the locked restart is tested on
   Jason's OnePlus and on the emulator only.
 - **The release no longer waits for this checklist.** "When both parts pass" below is as first written.
-  Two texts now disagree with the plan and are his to settle: SPEC's definition of done lists "Share plan
-  round-trips between two phones", and the release notes' check list has a draft line for alarms "not
-  tested on a Samsung" (its words were to be settled with him).
+  Settled by Jason the same evening: SPEC's definition of done now puts the two-phone round trip in 0.3.1
+  and marks the Adjust, Pit went out, Not yet line "0.3.0: covered by Jest; phone check in 0.3.1 (T-086)";
+  the release notes carry his line on restarts being tested on a OnePlus with Android 16 only.
 - **The order now** (HANDOFF, top section): readout Thursday 2026-11-19; the parked branches merged by Friday
   2026-11-20 noon, the gate after each; the beta.3 build, the emulator locked reboot, the `turkey` test,
   beta.3 on his phone; release Monday 2026-11-23 unless he says earlier. Where this file says "Sunday" or

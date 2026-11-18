@@ -79,9 +79,10 @@ Assistant address is replaced by an example in the tracked docs. User guide: tex
 **Waiting on Jason:** the 15 questions on the Home Assistant mockups and five more kept from the deleted
 duplicate; six sign-in choices (T-044); wording for the connect error and a `.local` test on his phone
 (T-045); the "Kamad" chip; brine options; T-084 and T-085 wording; the open user guide wording (T-066);
-which INSTALL.md wording fixes he has in mind for Monday; whether the 0.3.0 notes say alarms after a locked
-restart were not tested on a Samsung, and the words; SPEC's definition of done still lists the two-phone
-share round trip.
+a light theme (T-087, mockups first). Settled the same evening: INSTALL.md got its one fix (the oven hold
+line); the release notes carry his line on restarts ("only tested on a OnePlus with Android 16"); SPEC's
+definition of done puts the two-phone round trip in 0.3.1 and the Adjust, Pit went out, Not yet line reads
+"0.3.0: covered by Jest; phone check in 0.3.1 (T-086)".
 
 **The overnight check is started (5:36 PM read):** four alarms pending on his phone, Thursday 5:30:00,
 5:45:00, 5:57:00 and 6:05:00 AM, each once, nothing else of the app's; he unplugs for the night. The reads

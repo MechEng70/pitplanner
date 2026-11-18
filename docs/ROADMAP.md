@@ -93,6 +93,9 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
 - **The Samsung tester's locked-reboot check** (parity P4, T-072; Jason, 2026-11-18; moved to 0.3.1). Why:
   alarms after a restart with the phone still locked are proven on a OnePlus and the emulator only.
   Blocked on: asking the tester.
+- **T-087** Light theme with a setting that follows the phone (Jason, 2026-11-18; backlog, 0.3.x or 0.4.0,
+  his call; it would be a third exception here). Why: the app is dark only. Blocked on: light mockups and
+  his OK. Size and counts in its TASKS entry.
 - **T-082** (if it slips) Temp step question on Setup's smoker card and in Gear.
   Why: nothing lets the user change a catalog smoker's step.
   Blocked on: Jason's OK on the PNGs, then the merge after Sunday's readout. Planned for 0.3.0 on Monday
