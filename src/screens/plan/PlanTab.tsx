@@ -170,10 +170,19 @@ export function PlanTab({
   useEffect(() => {
     if (!cooking) starting.current = false;
   }, [cooking]);
+  // A start whose save throws did not go through: no cook exists, so the guard is cleared and the next tap
+  // tries again (before this, Start cook did nothing until a restart). Only then, never after a start that
+  // worked: that would reopen the double-tap window. The error goes to the event log; the screen shows nothing.
   const begin = (input: PlanInput, plan: Plan) => {
     if (cooking) return;
     starting.current = true;
-    setCook(newCook(input, plan, now()));
+    try {
+      setCook(newCook(input, plan, now()));
+    } catch (e) {
+      starting.current = false;
+      logEvent('error', `cook not started: ${errorText(e)}`);
+      return;
+    }
     onCookStarted();
   };
   const startCook = async (plan: Plan) => {
