@@ -68,9 +68,14 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
   (`a8c0f87e3e0ab96ed`) covers neither screen. Why: a button the user cannot see. Blocked on: the new layout
   shown to Jason first.
 - **No task.** A failed start says so (Jason, 2026-11-18; 0.3.1): "Couldn't start the cook. Try again."
-  Why: today nothing is shown, and Start cook then does nothing until the app is restarted (the double-tap
-  guard stays set). Blocked on: the report to Jason that a failed start leaves no partial state, before
-  anything is built (first read: `docs/after-readout-checklist.md`, "A start that fails shows nothing").
+  Why: today nothing is shown. The other half is not 0.3.1: after a failed start the double-tap guard stays
+  set and Start cook does nothing until the app is restarted; that fix (and the "cook started" log line
+  written only after the save) goes into 0.3.0 in Sunday's fix window with the share guard (Jason,
+  2026-11-18; `docs/after-readout-checklist.md`, "A start that fails shows nothing"). Blocked on: nothing
+  after that fix; the words are his.
+- **T-084** Plan edited while a cook runs (Jason, 2026-11-18; 0.3.1): the running cook does not change and
+  nothing says so; a prompt, his wording. Why: he changed the smoker temp on Plan and expected the cook to
+  follow. Blocked on: his words.
 - **T-078** Lock-screen taps re-plan with the app closed (headless JS).
   Why: other alarms keep old times until the app opens (T-076 limit).
   Blocked on: a half-day spike on the emulator, then a report to Jason before any build. Also his answer on

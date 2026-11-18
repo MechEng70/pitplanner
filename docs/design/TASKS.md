@@ -2460,7 +2460,13 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   screen's test alert rings and leaves the stored list. Two rig fixes, none in the app: the test read the
   stored list where it was before Send to developer (T-065) went above it; a fresh image has no font scale
   to put back. The real cook is still Jason's.
-- **Status:** todo (Jason, hands-on)
+- **Ready for Saturday (Wed 2026-11-18, moved from Friday by Jason):** the checklist's table is done to step
+  15 on his phone (0.3.0-beta.2 / 300302). Saturday's cook is started and sits on the phone three nights:
+  13 alarms pending, each time once, the first Fire the smoker Sat 8:50 AM, then Brisket on the smoker
+  9:10 AM, the last 5:00 PM; nothing before 8:30 AM; nothing left from a 250F cook he started and discarded
+  first. The times column of `docs/t037-checklist.md` is filled from that read. One tap only on Share plan
+  and Export my data until the share guard is merged.
+- **Status:** todo (Jason, hands-on): Saturday's cook, then Sunday's readout.
 - **Goal:** a full cook (brisket, wings, breasts) on the dev build with every alarm on time with the screen off,
   including after a reboot mid-cook; Adjust, Pit went out, Not yet and End cook leave no duplicate alarms.
 - **Files:** `docs/alarm-testing.md`, `docs/HANDOFF.md`.
@@ -3835,3 +3841,26 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   labelled as his, corrected by learning.
 - **Files (when it is built):** `data/foods.json`, `engine/rules.test.ts`, `engine/plan.test.ts`,
   `FoodPick.test.tsx`, SPEC sections 3 and 4, plus whatever the fixed-temp rule and the check shape touch.
+
+
+### T-084 Plan edited while a cook runs: say that the cook does not change
+
+- **Found by Jason on his phone, 2026-11-18 (0.3.0-beta.2):** with a cook running at 250F he changed the plan
+  to 225F. The running cook did not change and the app said nothing. He ended and discarded the cook and
+  started again.
+- **What SPEC says:** nothing on this. Its only line about Plan during a cook is "While a cook is running,
+  Start cook on Plan is greyed out." (section 3, the Start cook line). Changes to a running cook are the
+  Cook tab's (Adjust, Not yet, Pit went out, Undo, the alert's +15; section 5), and each of those re-plans
+  and sets the alarms again.
+- **What the app does (read, 2026-11-18):** the Plan tab is the draft and stays fully editable during a
+  cook; only Start cook is disabled (`src/screens/plan/PlanScreen.tsx:220`). The running cook is its own
+  stored copy of the input and the plan (`ActiveCook`, `src/lib/cook.ts`), so a draft edit cannot reach it.
+  That part is as designed; the gap is that nothing tells the user.
+- **Jason's lean (2026-11-18):** a prompt when the plan is edited during a cook, the wording from him, in
+  0.3.1. Nothing is built before his words: it is new UI, and neither SPEC nor the mockups have it.
+- **Version:** 0.3.1. **Status:** todo, after Sunday's readout. Docs only so far.
+- **Open for Jason:** the words; whether the prompt shows on the first edit only or on every edit; whether
+  it is a sheet with OK or a line on Plan while a cook runs; whether any edit should be offered to the
+  running cook (today the smoker temp and the menu of a running cook cannot be changed at all).
+- **Files (when it is built):** `src/screens/plan/PlanTab.tsx`, `src/screens/plan/PlanScreen.tsx`, their
+  tests (screen tests first), SPEC section 3, a mockup or his OK on a picture first.

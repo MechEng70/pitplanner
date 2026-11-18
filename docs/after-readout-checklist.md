@@ -127,6 +127,12 @@ Branches only until the readout passes; then merge one at a time, the gate after
       step. Not run on 2026-11-17 (his order).
 - [ ] **A start that fails shows nothing.** **Jason, 2026-11-18: it gets a message in 0.3.1, "Couldn't start
       the cook. Try again." Before building: confirm a failed start leaves no partial state, and report.**
+      **Second decision the same morning, after the report below: the start-guard fix goes in Sunday's fix
+      window with the share guard, regression test first: clear the guard in a finally, and write the
+      "cook started" log line only after the save succeeds. The message stays in 0.3.1.** For the build
+      (main session's note, not his words): the guard must still hold between a start that worked and the
+      first redraw, or two quick taps start two cooks; the test "two quick taps start one cook and set the
+      alarms once" (`src/screens/plan/StartCook.test.tsx:114`) has to stay green, so the clearing is for a start that did not go through.
       First read of the code, 2026-11-18 (read only, nothing run, no test written):
       - `newCook` throwing (`src/screens/plan/PlanTab.tsx:175`): nothing is stored and no alarm is set.
       - The store's save throwing (`src/lib/store.tsx`, `saveCook`): the write is one transaction
@@ -199,3 +205,6 @@ Branches only until the readout passes; then merge one at a time, the gate after
       log line is written where the store is in reach: decide at the build, with how the rejection is told
       apart from others). Part 2 above runs after this is merged; single taps only until then. A device
       check that taps twice belongs with it.
+- [ ] **Plan edited while a cook runs (found by Jason on his phone, 2026-11-18):** the running cook does not
+      change and nothing says so. SPEC is silent on it. His lean: a prompt, his wording, 0.3.1. Task T-084
+      in `docs/design/TASKS.md`.

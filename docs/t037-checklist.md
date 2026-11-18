@@ -101,40 +101,45 @@ running 0.2.0 cook is therefore not proven on the phone; it is covered on the em
 | 9 | Claude | `adb -s <phone> shell dumpsys alarm` for the app and `dumpsys package` again (read only: each alarm of the running cook once, 18 of them, the first Fire the smoker at Saturday 8:55 AM; exact alarms still granted: the line to read is `android.permission.USE_EXACT_ALARM: granted=true`. The phone is Android 16, API 36, and the manifest of `modules/pit-alarms` declares `SCHEDULE_EXACT_ALARM` only up to API 32, so the app relies on `USE_EXACT_ALARM` and there is no `appops` line for step 9). The running cook is the one started on beta.1 on 2026-11-17 at 2:53 PM (serve Sat Nov 21 5:00 PM, 250F, five foods), not a 0.2.0 cook; Jason keeps it until this step | Tue 2026-11-17 7:10 PM, serial `5ece07c1`: 18 alarms pending, each time once, the first Sat 8:55:00 AM, the last Sat 5:00 PM; 0.3.0-beta.2 / 300302; `USE_EXACT_ALARM: granted=true`; no alarm of the dev build pending. Again Wed 2026-11-18 7:47 AM: no alarm pending for the app or the dev build; 0.3.0-beta.2 / 300302; `USE_EXACT_ALARM: granted=true`; notifications granted |
 | 10 | Jason | Open the running cook, End cook, Discard. (Its first alarm is Saturday 8:55 AM, so no ring is waited for at this step.) **Then the beta.2 check on the phone, not before this step** (Jason, 2026-11-17: no start, end, start on the phone while that cook runs): without closing the app, Start cook, End cook, Discard, then Start cook again: the second start must work (in beta.1 it did nothing until the app was restarted). End cook and Discard once more, so nothing is pending for step 11. This is the last step before Saturday's plan is loaded | Tue 2026-11-17, about 7:17 PM: "yes it worked" (Jason): the second start worked without restarting the app |
 | 11 | Claude | `adb -s <phone> shell dumpsys alarm` for the app (read only: nothing pending, so none of that cook's Saturday alarms is left: the first was Fire the smoker at 8:55 AM) | Tue 2026-11-17 7:18 PM: no alarm pending for the app or the dev build; the removal history shows the cancels at 7:17:10 PM |
-| 12 | Jason | Settings: notifications on; battery not restricted; on the app's battery usage page, allow background activity | |
-| 13 | Jason | Gear, 5 taps on the version line: it reads 0.3.0-beta.2 | |
-| 14 | Jason | Load Saturday's plan (above). Start cook. (No need to swipe the app away first on beta.2: Start cook after an ended cook is fixed, `d2fdccc`. Only beta.1 needed it.) If a sheet "Alerts may not ring" shows, tap **Start anyway** and note it here: ____ (in beta.1 and beta.2 its second button, Start cook, is pushed off the right edge at larger font sizes; known, fixed after the readout; it should not show if step 12's settings are on). Write the times in the table below | |
-| 15 | Claude | `adb -s <phone> shell dumpsys alarm` for the app (read only): no Pit Planner alarm before 8:30 AM Saturday; the first is Fire the smoker at 8:50 AM. If any alarm is earlier, stop and tell Jason before he unplugs. Then unplug | |
+| 12 | Jason | Settings: notifications on; battery not restricted; on the app's battery usage page, allow background activity | Wed 2026-11-18, before 7:58 AM: done (Jason) |
+| 13 | Jason | Gear, 5 taps on the version line: it reads 0.3.0-beta.2 | Wed 2026-11-18: reads 0.3.0-beta.2 (Jason) |
+| 14 | Jason | Load Saturday's plan (above). Start cook. (No need to swipe the app away first on beta.2: Start cook after an ended cook is fixed, `d2fdccc`. Only beta.1 needed it.) If a sheet "Alerts may not ring" shows, tap **Start anyway** and note it here: ____ (in beta.1 and beta.2 its second button, Start cook, is pushed off the right edge at larger font sizes; known, fixed after the readout; it should not show if step 12's settings are on). Write the times in the table below | Wed 2026-11-18, before 7:58 AM: done (Jason). The plan first came up at 250F, left from the old plan; he started a cook at 250F, changed the plan to 225F, saw the running cook did not change, ended and discarded it, and started again at 225F. The Cook tab shows Fire the smoker to 225F, ready Sat Nov 21 5:00 PM. He did not report an "Alerts may not ring" sheet. The times column below is filled from step 15's read |
+| 15 | Claude | `adb -s <phone> shell dumpsys alarm` for the app (read only): no Pit Planner alarm before 8:30 AM Saturday; the first is Fire the smoker at 8:50 AM. If any alarm is earlier, stop and tell Jason before he unplugs. Then unplug | Wed 2026-11-18 7:58 AM, after his yes: 13 alarms pending for the app, each time once, all Sat Nov 21: 8:50 AM, 9:10 AM, 12:40 PM, 3:15, 3:25, 3:40, 4:05, 4:20, 4:25, 4:40, 4:52, 4:55 and 5:00 PM. Nothing before 8:30 AM Saturday, none of the dev build. Nothing is left of the discarded 250F cook: its own times (9:45 AM, 10:05 AM, 1:10 PM, 3:20 PM) are not there. 14 steps ring in 13 alarms: two steps share 4:40 PM |
 
 ## Saturday
+
+"Your phone's time" is filled in from the phone on Wednesday 2026-11-18, 7:58 AM (step 15's read of the
+app's alarms): the times as started, before any change on the day. The names come from the engine run with
+the same plan, which gives the same 13 times. From Pit went out on, each time moves with serve: write the new
+serve time where the table asks.
 
 Between steps: screen off, locked, unplugged, lying still (the phone only goes into deep idle when it is
 not moving). Answer each alert within a couple of minutes. Never open the dev build.
 
 | Fixture time | What rings | What you do | Your phone's time | Rang at | OK |
 |---|---|---|---|---|---|
-| 8:50 AM | Fire the smoker to 225F | **Done** on the lock screen | | | |
-| 9:10 AM | Brisket on the smoker | Unlock. **Done** in the app. Lock | | | |
+| 8:50 AM | Fire the smoker to 225F | **Done** on the lock screen |  8:50 AM | | |
+| 9:10 AM | Brisket on the smoker | Unlock. **Done** in the app. Lock |  9:10 AM | | |
 | 12:25 PM | nothing | Plug the phone in. Claude saves the battery history to a file on the computer: `adb shell dumpsys batterystats --history` (read-only, after Jason's yes). Unplug. Plugging in ends deep idle for that moment, by design: a reboot can drop the newest history entries (seen on the emulator, 2026-11-17), and this keeps the morning's | | | |
 | 12:30 PM | nothing | **Reboot** the phone, 10 minutes before the wrap check. Do not unlock it afterwards | | | |
-| 12:40 PM | Check the brisket (wrap) | It must ring while the phone is still locked after the reboot. Note the time. Unlock. Tap **Not yet**, keep serve | | | |
+| 12:40 PM | Check the brisket (wrap) | It must ring while the phone is still locked after the reboot. Note the time. Unlock. Tap **Not yet**, keep serve |  12:40 PM | | |
 | about 12:55 PM | Check the brisket again | **Done**. Then Cook options, **Undo** that Done | | | |
 | about 1:05 PM | Check the brisket a third time (10 min after the Undo) | **Done**. Lock | | | |
 | 1:30 PM | nothing | Cook options, **Pit went out**. Lock | | | |
 | 1:45 PM | nothing | **Back up to temp**, choose Move serve. Write the new serve time: ________. Every time below moves with it | | | |
 | 2:30 PM | nothing | **Adjust** on Next up: later by 10 min, Move serve. Write the new serve time: ________ | | | |
-| 3:15 PM + moves | Wings on the smoker | **Done** on the lock screen | | | |
-| 3:25 PM + moves | Oven to 170F for holding | **Done** on the lock screen | | | |
-| 3:40 PM + moves | Check tenderness (brisket pull) | **Done** on the lock screen | | | |
-| 4:05 PM + moves | Turn the smoker up to 400F | Unlock, **Done** in the app. Then swipe the app away from recent apps (app closed). Lock | | | |
-| 4:20 PM + moves | Wings crisp at 400F | **+15 min** on the lock screen. Keep the app closed until Fire the griddle rings. See "The +15 tap" below | | | |
-| 4:25 PM + moves | Fire the griddle | It must ring at the time it had before the +15 tap. Note the time. **Done** on the lock screen. Then open the app: read the notice and the new serve time: ________. Lock | | | |
+| 3:15 PM + moves | Wings on the smoker | **Done** on the lock screen |  3:15 PM | | |
+| 3:25 PM + moves | Oven to 170F for holding | **Done** on the lock screen |  3:25 PM | | |
+| 3:40 PM + moves | Check tenderness (brisket pull) | **Done** on the lock screen |  3:40 PM | | |
+| 4:05 PM + moves | Turn the smoker up to 400F | Unlock, **Done** in the app. Then swipe the app away from recent apps (app closed). Lock |  4:05 PM | | |
+| 4:20 PM + moves | Wings crisp at 400F | **+15 min** on the lock screen. Keep the app closed until Fire the griddle rings. See "The +15 tap" below |  4:20 PM | | |
+| 4:25 PM + moves | Fire the griddle | It must ring at the time it had before the +15 tap. Note the time. **Done** on the lock screen. Then open the app: read the notice and the new serve time: ________. Lock |  4:25 PM | | |
 | 15 min after the +15 tap | Wings crisp, again | Note the time. **Done** on the lock screen | | | |
-| as the app shows | Chicken breasts on the griddle | **Done** on the lock screen | | | |
-| as the app shows | Slice or plate the brisket | **Done** on the lock screen | | | |
-| as the app shows | Pull chicken breasts | **Done** on the lock screen | | | |
-| as the app shows | Pull wings | **Done** on the lock screen | | | |
-| as the app shows | Time to serve | **Done**, then **Discard this cook** | | | |
+| as the app shows | Chicken breasts on the griddle | **Done** on the lock screen |  4:40 PM | | |
+| as the app shows | Slice or plate the brisket | **Done** on the lock screen |  4:40 PM (one alert with the chicken breasts) | | |
+| as the app shows | Pull chicken breasts | **Done** on the lock screen |  4:52 PM | | |
+| as the app shows | Pull wings | **Done** on the lock screen |  4:55 PM | | |
+| as the app shows | Time to serve | **Done**, then **Discard this cook** |  5:00 PM | | |
 | after | | Gear, 5 taps on the version line, Send to developer. If you can, do not charge the phone to full before Sunday's readout | | | |
 
 ### The +15 tap with the app closed: what 0.3.0 should do (the pass line)

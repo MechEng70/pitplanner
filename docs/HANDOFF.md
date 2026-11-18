@@ -1,9 +1,67 @@
-# Handoff (2026-11-17 night: beta.2 on Jason's phone, step 9 to 11 of Friday's table done early, no cook on the phone; Saturday retimed at 0.65; freeze until Sunday's readout; next is Friday, steps 12 to 15; fourteen branches parked)
+# Handoff (2026-11-18 morning: the table is done to step 15, Saturday's cook is running on Jason's phone on beta.2 and sits three nights; the share failure is a second tap, not a blocker; freeze until Sunday's readout; next is Saturday's cook, then the readout; fourteen branches parked)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## Restart, twenty-sixth session (written Tuesday 2026-11-17, 7:30 PM; read this first)
+## Restart, twenty-seventh session (written Wednesday 2026-11-18, 8:00 AM; read this first)
+
+**State.** `main` is clean (only `.claude/` untracked); the commits not pushed are listed by
+`git log origin/main..main` (docs only; Jason pushes or asks). No code changed in the twenty-sixth session, so
+the last gate on code is still the one on `1cecd97`. Emulators, Metro and Gradle are stopped, no agent is
+running, fourteen branches are parked, none merged. `dashboard.html` is current. The freeze holds until
+Sunday's readout.
+
+**Saturday's cook is running on Jason's phone** (0.3.0-beta.2 / 300302, started Wed 2026-11-18 before
+7:58 AM, three nights early by his choice): serve Sat Nov 21 5:00 PM, smoker 225F, brisket 10 lb, wings,
+chicken breasts. Read at 7:58 AM: 13 alarms, each time once, 8:50 AM, 9:10 AM, 12:40 PM, 3:15, 3:25, 3:40,
+4:05, 4:20, 4:25, 4:40, 4:52, 4:55 and 5:00 PM; nothing before 8:30 AM. Nothing was read from the phone
+after that. He does not end that cook, start another, or open the dev build before Saturday. One tap only
+on Share plan and Export my data.
+
+**Next: Saturday 2026-11-21, the Saturday table of `docs/t037-checklist.md`.** The cook is Jason's; Claude
+is needed once, at 12:25 PM, for one read-only adb line after his yes (the battery history to a file), then
+he reboots at 12:30 PM. Sunday 2026-11-22: the readout (filter both logs to Saturday: they also hold
+Tuesday's and Wednesday's starts and discards), then the fix window and `docs/after-readout-checklist.md`.
+Monday 2026-11-23: release 0.3.0.
+
+What the twenty-sixth session did (Wednesday morning, docs only, `84b29cf` and the commit after it):
+
+- **The Friday table ran on Wednesday** (Jason's order). Steps 9 (nothing pending, `USE_EXACT_ALARM:
+  granted=true`) and 8 (one tap, the file is in Drive) again, then 12 to 15. At step 14 the plan came up at
+  250F: he started at 250F, discarded, and started again at 225F; nothing of the 250F cook is left. The
+  checklist's "Your phone's time" column is filled from step 15's read; the step names come from an engine
+  run with the gear and rates of Tuesday's debug file, which gives the same 13 times (14 steps: two share
+  4:40 PM).
+- **Tuesday's Share plan failure: the cause is a second tap while the share sheet opens.** `expo-sharing`
+  refuses a second open request and the app shows "Couldn't share" for any rejection; the sheet from the
+  first tap works. Seen on the emulator (beta.2 release APK) and on his phone (his double tap, one chooser
+  start in the log, no error line), for Share plan and Export my data. Not phone-specific, not a blocker,
+  no beta.3. That Tuesday's failure was a double tap is not proven (no log from then). Details and the fix
+  he specified: `docs/after-readout-checklist.md`, "Share plan failed on the phone".
+- **For Sunday's fix window, after the readout, each with a failing test first (Jason):** (1) the share
+  guard: ignore only the "another share request is being processed" rejection, log any other error to the
+  debug event log, in `PlanTab` and `GearScreen` or in `shareTextFile`; (2) the start guard: clear it in a
+  finally and write "cook started" to the log only after the save succeeds (keep "two quick taps start one
+  cook" green: the clearing is for a start that did not go through, my reading). Then the parked 0.3.0
+  branches as listed in the twenty-fourth session's section 2.
+- **For 0.3.1 (Jason):** the failed-start message "Couldn't start the cook. Try again."; a layout change for
+  the two buttons hidden at 130% (shown to him first; the sheet-buttons branch covers neither); T-084, a
+  prompt when the plan is edited during a cook (his wording; SPEC is silent, the cook keeps its own copy).
+- **After-readout checklist, his answers:** step 3, beta.2 reaches his wife's phone by a Drive link to the
+  APK; step 12, wording fixes into INSTALL.md before Monday, app changes to 0.3.1; step 20, her phone to
+  his is in the test with a one-food plan of her own. Part 2 runs after the share guard is merged.
+
+Rules added:
+
+- **A read he approved can be run earlier in the same list** when it is read only and saves him a trip to
+  the phone; say so in the same message (step 5 before step 3 on Wednesday). My practice, not his words.
+- **Alarm times come from the phone, step names do not:** `dumpsys alarm` shows times only. Names need the
+  debug file or an engine run; say which.
+
+To start the next session, Jason clears the conversation and says: "Read CLAUDE.md, then docs/HANDOFF.md and
+follow its top section, 'Restart, twenty-seventh session'."
+
+## Restart, twenty-sixth session (written Tuesday 2026-11-17, 7:30 PM)
 
 **State.** `main` is clean (only `.claude/` untracked); the commits not pushed are listed by
 `git log origin/main..main` (docs only; Jason pushes or asks). No code changed in the twenty-fifth session, so
