@@ -395,7 +395,7 @@ clamps off-screen bounds, so "inside" alone passes a 24 px sliver), Setup and Ge
 
 | Branch id | Head | Holds |
 |---|---|---|
-| `a4d0fb0875a099229` | `a0244b6` | **T-044** HA auth logic, pure (`src/lib/ha/`, 111 tests); seven open decisions; step 0 open |
+| `a4d0fb0875a099229` | `a0244b6` | **T-044** HA auth logic, pure (`src/lib/ha/`, 111 tests); six open decisions (scheme when none typed decided 2026-11-18: as built); step 0 passed 2026-11-18 (`docs/ha-entities.md`) |
 | `a9241eb3e2b1eb08c` | `f0c1b98` | **T-042** HA mockups (proposal, 20 pictures, 15 questions). Jason's first reaction: likes it, especially the connect flow; not an approval |
 | `a18cf3154316a2542` | `68eff4b` | **Fish** thickness mockups (proposal; T-071, 0.5.0) |
 | `a06dd404e2acfae2a` | `a654dd4` | **Fish** candidate sources. First question at review: sources Q5 (no source times a smoker or griddle by thickness) |
@@ -422,8 +422,12 @@ clamps off-screen bounds, so "inside" alone passes a 24 px sliver), Setup and Ge
 
 ### 4. Decisions waiting on Jason (one line each)
 
-- T-044: seven choices (scheme when none typed, http to a remote host, port 8123, what counts as home
-  network, IPv6, timeout, a refused token staying refused).
+- T-044: six choices open (http to a remote host, port 8123, what counts as home network, IPv6, timeout, a
+  refused token staying refused). The seventh, scheme when none typed, is decided (Jason, 2026-11-18): the
+  app adds it, as built, and the connect screen shows "Will connect to https://ha.example.com" (the real
+  address) under the field before Connect. Owed with it (TASKS T-045): a `.local` address tested on his
+  phone before the screen offers one; his wording, on the mockup first, for the error after a failed first
+  connect when the app added the scheme (type the full address with `http://` or `https://`).
 - T-042: the 15 questions in its README, after step 0.
 - Fish: sources Q5 first (thickness as a timer, or an estimate with a 145F probe check); then the 12 mockup
   questions.

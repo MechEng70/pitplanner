@@ -2954,7 +2954,8 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Step 0 done, Wed 2026-11-18:** all six calls of HA-INTEGRATION 8.1 pass with a token of the non-admin
   `pitplanner` user (both registry lists included); results in `docs/ha-entities.md`, "Token call checks".
   Not tested: deleting the token at Home Assistant on Disconnect. The logic itself is built on parked branch
-  `a4d0fb0875a099229` (111 tests, seven open choices for Jason), not merged.
+  `a4d0fb0875a099229` (111 tests, seven choices for Jason: the first, "scheme when none typed", decided
+  2026-11-18 as built, see T-045; six open), not merged.
 - **Status:** todo
 - **Goal:** address normalize, authorize URL with a state nonce, callback check, token exchange, refresh on 401,
   revoke, all with an injected `fetch`.
@@ -2980,10 +2981,30 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   (spaces, another scheme, http to a host that is not on the home network, and so on). Only the test script
   needed the full form, not the app. To build in this task: run that check on every change of the field;
   Connect stays greyed out until the address is usable; the screen shows what it will connect to or what
-  is wrong. **Open, his call (new text on the screen, so his wording and a look at the mockup first):**
-  (a) add the scheme for the user and show the full address under the field (the main session's pick, and
-  what the built logic does), or (b) refuse an address without http or https and ask the user to type it.
-  This is also the first of T-044's seven open choices ("scheme when none typed").
+  is wrong. The choice put to him: (a) add the scheme for the user and show the full address under the
+  field (what the built logic does), or (b) refuse an address without http or https.
+- **Decided (Jason, Wed 2026-11-18, about 2:40 PM): (a), as built.** This also settles the first of T-044's
+  seven choices ("scheme when none typed"); six stay open.
+  - **The line under the field, his wording:** "Will connect to https://ha.example.com", with the real
+    address in place of the example. Shown before Connect is tapped; Connect is greyed out until the
+    address is usable.
+  - **What is typed and what the app uses** (the built rule in `src/lib/ha/address.ts`):
+
+    | Typed | The app uses |
+    |---|---|
+    | `ha.example.com` (a name that is not on the home network) | `https://ha.example.com` |
+    | `192.168.1.20` (a home network address) | `http://192.168.1.20:8123` |
+    | `homeassistant.local` (a home network name) | `http://homeassistant.local:8123` |
+    | anything starting with `http://` or `https://` | exactly what was typed, no port added |
+
+    The name stays a name: `homeassistant.local` is never turned into an IP address (the main session's
+    first version of this table had that wrong; Jason corrected it).
+  - **Owed before the screen offers a `.local` address: test one on Jason's phone** (does the phone find
+    `homeassistant.local` from inside the app, on his home network). Not tested anywhere yet.
+  - **When the first connect fails and the app added the scheme:** the error tells the user to type the full
+    address with `http://` or `https://`. **Wording owed to Jason, shown on the mockup first** (the
+    2026-11-17 mockups have "nothing answers at the address" as `ha-22-connect--unreachable.png`; this is
+    a second case of it). Needs the screen to know the scheme was added by the app, not typed.
 - **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
 - **Goal:** sign in to `https://ha.example.com` as the `pitplanner` HA user; refresh token in `expo-secure-store`.
