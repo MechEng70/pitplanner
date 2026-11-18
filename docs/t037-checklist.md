@@ -110,6 +110,8 @@ Seen during the rehearsal, to settle in the readout:
   wings 5:10 PM; Serve 5:15 PM. The table's actions stay, at these times.
 - **3:45 PM and 4:00 PM (Jason):** Oven to 170F rang at 3:45 PM and Check tenderness at 4:00 PM, both at
   the times the Cook tab showed after the +15; Done on the lock screen for both.
+- **4:20 PM (Jason):** Turn the smoker up to 400F rang at 4:20 PM; Done in the app, then the app swiped
+  away from recent apps and the phone locked. From here the app is closed.
 
 ## The plan to load (Friday night)
 
