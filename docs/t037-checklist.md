@@ -38,6 +38,16 @@ anything else.
 Results of the rehearsal go in a table of their own at the end of this file; Saturday's table stays blank
 for Saturday.
 
+Seen during the rehearsal, to settle in the readout:
+
+- **9:10 AM (Jason):** Fire the smoker was answered with Done on the lock screen at 8:50 AM. After the in-app
+  Done for Brisket on the smoker at 9:10 AM, the app showed something about Fire the smoker that he had to
+  tap OK or Done on. Not known yet which it was. By the code there are two candidates: the notice banner
+  the app shows for a tap made on an alert ("Fire the smoker to 225F: done at 8:50 AM from the alert.", with
+  OK; as designed), or the step still open in the app with Done (the lock-screen tap not applied; a bug).
+  Tonight's debug file settles it: the event log's "done" line for the fire step reads 8:50 AM in the first
+  case and about 9:10 AM in the second.
+
 ## The plan to load (Friday night)
 
 Ready by Saturday 5:00 PM. Smoker 225F.
