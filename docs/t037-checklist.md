@@ -358,4 +358,49 @@ and the cookers identical before and after, so the rates were not touched. The p
 
 **Different from Saturday's table:** Done where the table has Not yet at 12:40 PM; the +15 at 3:15 PM on
 Wings on the smoker and Done at Wings crisp; an extra Done in the app at 12:53:37 PM on the brisket's end of
-smoke step. **Still to read:** the phone's alarm list, Doze history and battery history (after his yes).
+smoke step.
+
+**The three reads at 5:23 PM** (after Jason's yes; read only; saved outside the repo).
+
+- **Alarm list:** no alarm of the app, or of the dev build, is pending. The removal history shows the last
+  cancels at 5:15:42 PM (Done on Time to serve).
+- **Battery history, Doze:** the phone was in deep idle (`device_idle=full`) when 8 of the 14 alerts fired:
+  8:50 AM, 12:40, 3:15, 3:30, 3:45, 4:00, 4:35 and 4:55 PM. It was not for 9:10 AM, 4:20, 4:40, 5:07, 5:10
+  and 5:15 PM. That is the same eight the ring log's own flag marks, so the flag can be trusted. **A limit:**
+  the stretches of deep idle right before those rings were short, from 21 seconds (3:15 PM) to 6 minutes
+  (3:30 PM); the longest stretch of the day, 2:04 to 2:31 PM, had no alert in it. A ring out of hours of
+  deep idle was not in today's run. Saturday's first alert, 8:50 AM after a night, is closer to that.
+- **Battery history, power:** 100% at 8:17 AM when unplugged, 74% at 5:18 PM. The phone was on USB power
+  7:30 to 8:17 AM, 12:26 to 12:28 PM and 12:48 to 12:56 PM (the reads), and 3:16 to 3:21 PM.
+- **Doze state at the read:** active, screen on, charging. Nothing more to read from it.
+
+### What today did not test
+
+1. **+15 min with the app closed.** Today's +15 met an app still alive in the background, which applied it
+   at once. "The alert rings again 15 minutes after the tap and no other alarm moves until the app is
+   opened" is proven on the emulator only.
+2. **Not yet, Undo, Pit went out, Back up to temp with Move serve, and Adjust.** None was tapped today.
+   (Not yet was the table's action at 12:40 PM; Done was tapped.)
+3. **Two alerts waiting at once.** Every alert was answered before the next one rang, so Android never had
+   two to group. (The 4:55 PM alert was one alert for two steps, which is a different thing.)
+
+### Why Oven to 170F and Check tenderness moved 5 minutes after the 12:44 PM Done, and slice and serve did not
+
+From the code, and it matches SPEC.
+
+1. The Done on Check the brisket (wrap) came from the alert at 12:44:41 PM, 4 minutes 41 seconds after the
+   step's 12:40 PM. A Done from an alert never asks: it keeps serve when the holds can take the change
+   (`applyActions` and `keepServeIfCovered`, `src/lib/cook.ts`).
+2. The engine counts the lateness in 5 minute steps, to the nearest step, so 4 minutes 41 seconds is 5
+   (`roundMin` in `engine/live.ts`). That food's phases from the done one on move by that much, and so
+   does its finish (`markStepDone`): the brisket's pull, "Check tenderness", went from 3:40 to 3:45 PM.
+3. Oven to 170F is not its own time. It is 15 minutes before the first food that will be held comes off
+   (`OVEN_LEAD_MIN` in `engine/plan.ts`), so it followed the pull, from 3:25 to 3:30 PM.
+4. Serve was kept, so the brisket's hold got 5 minutes shorter instead (`extraHoldMin` in `markStepDone`).
+   Slice or plate the brisket is counted back from serve, not from the pull, so it stayed at 4:40 PM, and
+   serve stayed at 5:00 PM. The wings and the breasts were not touched.
+
+SPEC section 5 says the same three things: a Done on a check step moves that food's later phases by the
+difference; with serve kept, the hold absorbs it; and times set by these changes round to 5 minutes. One
+thing to know: because of the rounding to the nearest 5, a Done 2 minutes 30 seconds to 7 minutes 29 seconds
+late counts as 5 minutes, and one less than 2 minutes 30 seconds late moves nothing.
