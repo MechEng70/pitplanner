@@ -1,6 +1,6 @@
 {
   "name": "pit-planner",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "Pit Planner: cook-day scheduling for smokers and griddles (Android, Expo + React Native)",
