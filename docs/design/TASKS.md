@@ -1659,6 +1659,33 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   plan-main), live cook (same as cook-live), lock-screen alert (same slot), Cook finished rate card
   (seed=finished-blend, or reuse the parked one). Order: setup; empty; mockup, clash; gear; history; shared;
   tomorrow; cooking, followups; finished-blend; the lock-screen step last.
+- **16 pictures shot and in the guide, Wed 2026-11-18 (Jason: "shoot the 16 today between rings").** In
+  `docs/guide/`, named by slot, shown 320 px wide. Emulator, dev build, 115%, seeded data only, status bar
+  cropped, each looked at before the commit. From the rig run (`setup,plan,plan-sheets,food-details,cook,
+  gear,history,shared,followups`, all PASS at 115%): setup-welcome, setup-cookers, setup-picker, plan-empty,
+  plan-add-food, plan-food-details, plan-temp-menu, plan-conflicts, history-main, history-cook, shared-plan,
+  debug-send. Retaken by hand with the rig's helpers: plan-main (seed=tomorrow, so Start cook is live; the
+  mockup seed's Sat Nov 14 is past and greys it out), start-check, cook-live (every alert permission on, no
+  red banner), gear-main as two pictures (top, and the end with the version line). **The version line reads
+  0.3.0 because Metro was started with `APP_VERSION=0.3.0` for these pictures; the build is the dev build.**
+  The battery allowlist entry was taken off the emulator again afterwards. `docs/fidelity/rn-debug-send.png`
+  is replaced with the same new picture (the app's address). **Left:** lock-screen-alert (needs the new
+  rig step and a release build); the 5 slots on `worktree-agent-af96b15db6f617be3` (they point at the
+  2026-11-15/16 fidelity PNGs; today's run also made fresh `setup-alerts`, `cook-options`,
+  `cook-finished-rate` and `gear-griddle`, cook-banner needs the `live-warnings` test); the README's 4.
+  **Seen in the pictures, for Jason (not fixed, the freeze holds):** (1) in the smoker picker at 115% the
+  chip reads "Kamad", the last letter of Kamado is cut off; (2) with the Alerts may not ring sheet open, a
+  24 px sliver of Plan's Start cook button shows at the right edge of the screen beside Start anyway, and
+  it is tappable (`cook-start.xml`: "Start cook" at x 1056 to 1080).
+  **Correction, same day:** (2) is not new. It is the sheet's own second button pushed off the right edge
+  at 115%, already fixed on parked branch `a8c0f87e3e0ab96ed` (HANDOFF, parked branches, row 2). Retake
+  `docs/guide/start-check.png` after that branch is merged.
+- **The lock-screen alert picture, Wed 2026-11-18, 2:20 PM:** `docs/guide/lock-screen-alert.png`, in the
+  guide. Emulator, the 0.3.0-beta.2 release app, a real cook started at 2:17 PM (wings, Start at): the
+  alerts for Fire the smoker and Wings on, opened in the notification panel of the locked emulator, the
+  smoker alert expanded to show Done and +15 min; cropped to the alert card. The test emulator has its lock
+  screen switched off, so it was switched on for the picture and off again; the cook was discarded
+  (no alarm of the app left pending). Left for the guide: the branch's 5 slots, the README's 4.
 - **Depends on:** the 0.3.0 screens, T-065.
 
 ### T-022 Cook options (13) and keep or move serve
@@ -2151,6 +2178,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** see T-031.
 
 ### T-031 Share between two phones (Gmail, Drive)
+- **Moved to 0.3.1 (Jason, Wed 2026-11-18 evening): "No other phones are tested for 0.3.0."** The two-phone
+  test, his wife's phone to his and back (`docs/after-readout-checklist.md`, Part 2), is not run before
+  0.3.0. SPEC's definition of done still lists "Share plan round-trips between two phones"; his to settle.
+  What 0.3.0 has: the single-phone stand-in below, the emulator `shared` test, and the share guard on a
+  parked branch for beta.3.
 - **Single-phone stand-in (2026-11-16, Jason's phone, dev build):** a plan shared from the dev build and
   emailed to himself opened the Shared plan sheet when the dev build was already running. On a cold start
   it said "Could not read that file.": the Expo dev launcher takes the intent first and the read permission
@@ -2212,6 +2244,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - The dev build ("Pit Planner dev") checks too, once a day, as built (Jason, 2026-11-15). Nothing to change.
 
 ### T-033 Release docs: notes, install guide, releasing checklist
+- **Changed (Jason, Wed 2026-11-18 evening):** INSTALL.md is not followed on his wife's phone before the
+  release; she gets 0.3.0 when he sends it, not beta.2. INSTALL.md wording fixes still go in before Monday
+  2026-11-23 (known so far: the "Oven hold raised to 140F, the safe minimum." import line is missing; which
+  others he has in mind is to ask). The Samsung tester's locked-reboot request moves to 0.3.1; whether the
+  0.3.0 notes say alarms after a locked restart were not tested on a Samsung, and in what words, is his call.
 - **Answers put in (2026-11-15, eighteenth session):** INSTALL.md has the contact address (the one the debug
   screen uses) and a line on betas; RELEASING.md says testers get betas, describes the update check as built
   (T-032) in place of the "Not built yet" note, and names where the contact address lives. TECH-DESIGN now
@@ -2254,7 +2291,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   needs you" in Robolectric. P3 run on the phone. P4 at T-037 on the tester's Samsung. No parity decision
   is waiting on him.
 - **Status:** review written 2026-11-15 (nineteenth session), `docs/parity.md`; open rows wait for Jason's
-  decisions (section 1a), the full device pass at 115% and 130% is not run
+  decisions (section 1a). **The full device pass at 115% and 130% was run on Tue 2026-11-17** (HANDOFF,
+  "The full device pass (T-034)"): 23 of 25 tests finished before the computer ran low on memory; 17 pass at
+  both sizes, 6 fail on test rig faults (no app regression), `followups` and `turkey` did not get a result.
+  The reruns wait for the rig fixes; `turkey` runs with beta.3. As first written here: the full device pass
+  at 115% and 130% is not run
 - **Goal:** every SPEC screen and failure mode that 0.2.0 handled works in the Expo build.
 - **Files:** `docs/parity.md` (checklist: SPEC 3 screens, SPEC 5 live rules, SPEC 7 failure modes 1-15, mockups
   01-20 with fidelity PNG links).
@@ -2472,6 +2513,26 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Real phone:** no (Jason, 2026-11-15: emulator only).
 
 ### T-037 Saturday cook on the Expo build (SPEC definition of done)
+- **Done on the rehearsal of Wed 2026-11-18 (Jason, that evening: "T-037 closes on today's rehearsal; I
+  don't load Saturday's plan"), with the overnight check added when it is read.** On his phone,
+  0.3.0-beta.2: 14 alerts, each rang once and within 1.6 seconds of its time; the alert after the locked
+  reboot was posted before the first unlock (the phone itself stays silent until unlocked, his judgment,
+  now shown by the ring log); 8 of the 14 fired with the phone in deep idle; taps made with the app swiped
+  away were applied with their own times; after Discard no alarm was left and history and rates were
+  untouched. Not run on a phone, with where each is covered by tests: `docs/t037-checklist.md`, "What today
+  did not test". The overnight check (first ring 5:30 AM Thu 2026-11-19 out of a night of deep idle) is in
+  the same file. Readout Thursday 2026-11-19. No Saturday cook.
+- **Overnight check: PASS (Jason, Thu 2026-11-19). Readout done the same day; T-037 passes for 0.3.0 and
+  the freeze on `main` ends.** Pass line as reworded by Jason: "ring within 1 min after the phone spent
+  hours in deep idle overnight." Alarms set the evening before came through about 7 hours of deep idle (4
+  hours unbroken, 1:11:25 to 5:11:26 AM); the 5:30 AM alert rang at 5:30:01.085 AM, 1.085 seconds late; the
+  other three first rings and the six repeats were each under 0.06 seconds late; no alarm of the app left
+  after Discard. The first wording ("while the phone was in deep idle") could not be met on this phone:
+  `min_time_to_alarm=+1h0m0s0ms`, so Android leaves deep idle when a `setAlarmClock` alarm is under 1 hour
+  away (idling history "normal ... (alarm)" at 5:11:27 and 5:59:28 AM; the phone was in light idle at the
+  ring). The phone was unplugged at 6:51 PM; the cook was restarted at 7:18 PM with the same plan (Jason
+  showing a friend). Table, evidence and the readout: `docs/t037-checklist.md`, "Overnight check" and
+  "Readout".
 - **Checklist:** `docs/t037-checklist.md` (the plan to load, Friday's upgrade over 0.2.0 with T-038's phone
   check, Saturday's taps with fixture times, the +15 pass line, Sunday's readout). Brisket 10 lb so the
   first ring is 7:50 AM (Jason: nothing before 7:30 AM).
@@ -2502,7 +2563,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   9:10 AM, the last 5:00 PM; nothing before 8:30 AM; nothing left from a 250F cook he started and discarded
   first. The times column of `docs/t037-checklist.md` is filled from that read. One tap only on Share plan
   and Export my data until the share guard is merged.
-- **Status:** todo (Jason, hands-on): Saturday's cook, then Sunday's readout.
+- **Status:** **done** on the rehearsal of 2026-11-18 (Jason); the overnight check of 2026-11-19 is added to `docs/t037-checklist.md` when read; readout Thursday 2026-11-19. Was: todo (Jason, hands-on): Saturday's cook, then Sunday's readout.
 - **Goal:** a full cook (brisket, wings, breasts) on the dev build with every alarm on time with the screen off,
   including after a reboot mid-cook; Adjust, Pit went out, Not yet and End cook leave no duplicate alarms.
 - **Files:** `docs/alarm-testing.md`, `docs/HANDOFF.md`.
@@ -2924,6 +2985,11 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   the token with one call; (4) a 401 means signed out; (5) no token reaches a logger. The authorize URL,
   nonce, code exchange, refresh and revoke below are not built.
 - **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
+- **Step 0 done, Wed 2026-11-18:** all six calls of HA-INTEGRATION 8.1 pass with a token of the non-admin
+  `pitplanner` user (both registry lists included); results in `docs/ha-entities.md`, "Token call checks".
+  Not tested: deleting the token at Home Assistant on Disconnect. The logic itself is built on parked branch
+  `a4d0fb0875a099229` (111 tests, seven choices for Jason: the first, "scheme when none typed", decided
+  2026-11-18 as built, see T-045; six open), not merged.
 - **Status:** todo
 - **Goal:** address normalize, authorize URL with a state nonce, callback check, token exchange, refresh on 401,
   revoke, all with an injected `fetch`.
@@ -2940,9 +3006,42 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   the app can). The LAN cleartext rule and the non-admin registry-read record stay. Depends on T-042 and
   T-044 only. The help text presents the dedicated user as an audit trail and a one-step cutoff, never as
   restricted access (HA-INTEGRATION 4.1).
+- **Jason, Wed 2026-11-18 (after step 0, where his private file held a bare host name and the check script
+  stopped on it): "didn't know that you needed the entire http or https, we need to make sure that it checks
+  for that. before the connect button is clicked."** So the connect screen checks the address as it is
+  typed, before Connect can be tapped. What is already built for this on branch `a4d0fb0875a099229`
+  (`src/lib/ha/address.ts`, T-044): with no scheme typed the app adds one itself (https for a remote host,
+  http on port 8123 for a host on the home network), and anything it cannot use comes back with a reason
+  (spaces, another scheme, http to a host that is not on the home network, and so on). Only the test script
+  needed the full form, not the app. To build in this task: run that check on every change of the field;
+  Connect stays greyed out until the address is usable; the screen shows what it will connect to or what
+  is wrong. The choice put to him: (a) add the scheme for the user and show the full address under the
+  field (what the built logic does), or (b) refuse an address without http or https.
+- **Decided (Jason, Wed 2026-11-18, about 2:40 PM): (a), as built.** This also settles the first of T-044's
+  seven choices ("scheme when none typed"); six stay open.
+  - **The line under the field, his wording:** "Will connect to https://ha.example.com", with the real
+    address in place of the example. Shown before Connect is tapped; Connect is greyed out until the
+    address is usable.
+  - **What is typed and what the app uses** (the built rule in `src/lib/ha/address.ts`):
+
+    | Typed | The app uses |
+    |---|---|
+    | `ha.example.com` (a name that is not on the home network) | `https://ha.example.com` |
+    | `192.168.1.20` (a home network address) | `http://192.168.1.20:8123` |
+    | `homeassistant.local` (a home network name) | `http://homeassistant.local:8123` |
+    | anything starting with `http://` or `https://` | exactly what was typed, no port added |
+
+    The name stays a name: `homeassistant.local` is never turned into an IP address (the main session's
+    first version of this table had that wrong; Jason corrected it).
+  - **Owed before the screen offers a `.local` address: test one on Jason's phone** (does the phone find
+    `homeassistant.local` from inside the app, on his home network). Not tested anywhere yet.
+  - **When the first connect fails and the app added the scheme:** the error tells the user to type the full
+    address with `http://` or `https://`. **Wording owed to Jason, shown on the mockup first** (the
+    2026-11-17 mockups have "nothing answers at the address" as `ha-22-connect--unreachable.png`; this is
+    a second case of it). Needs the screen to know the scheme was added by the app, not typed.
 - **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
-- **Goal:** sign in to `ha.glithero.icu` as the `pitplanner` HA user; refresh token in `expo-secure-store`.
+- **Goal:** sign in to `https://ha.example.com` as the `pitplanner` HA user; refresh token in `expo-secure-store`.
 - Requirement added by Jason, 2026-11-16: the HA token store is excluded from backups.
 - **Files:** `src/screens/gear/HaConnect.tsx`, `src/lib/ha/session.ts`, `src/platform/links.ts`,
   `plugins/withNetworkSecurity.js` (LAN cleartext only when chosen), tests.
@@ -3961,4 +4060,60 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   whether an early tap is flagged too.
 - **Status:** backlog. **Files (when it is built):** `src/lib/finish.ts`, `src/lib/cook.ts`, the Cook
   finished screen and their tests (screen tests first), SPEC sections 5 and the rates lines, a mockup.
+
+### T-086 Rig tests on the emulator for Not yet, Back up to temp with Move serve, and the Adjust tap
+- **Jason (Wed 2026-11-18): 0.3.1 backlog.** From the T-037 rehearsal's list of what was not tested
+  (`docs/t037-checklist.md`, "What today did not test, and where each is covered already"): these three are
+  covered by Jest only, or only as far as the button being on screen.
+- **Status:** backlog, 0.3.1.
+- **SPEC section 13, as edited by Jason on 2026-11-18,** names this task for the phone check of "Adjust, Pit
+  went out, Not yet and End cook all re-plan and reschedule alarms with no duplicates" ("0.3.0: covered by
+  Jest; phone check in 0.3.1 (T-086)"). So besides the rig tests below, this task ends with those four
+  tapped once on his phone, with the alarm list read after each (his steps, his yes for each read).
+- **Goal:** three additions to the device rig (`tools/device/run.sh`, emulator, the mockup cook at 115% and
+  130%), each ending with a read of the phone's alarm list:
+  1. **Not yet** at a check step (Cook options, "Not yet, check again in 30 min"): Next up reads 30 minutes
+     later, serve is kept, and `dumpsys alarm` shows that food's alarms at the moved times, each once,
+     nothing left at the old times.
+  2. **Back up to temp with Move serve:** Pit went out, Back up to temp, choose Move serve, Apply: the
+     banner goes, serve reads later, the other foods moved with it, and the alarm list matches.
+  3. **The Adjust tap** on the Next up card: it opens Cook options (today the rig only checks the button is
+     there).
+- **Files:** `tools/device/run.sh`, `tools/device/README.md` (the test table), `tools/device/targets.tsv` if
+  a step is a stable-controls target. No app code.
+- **Depends on:** the rig fixes of the full pass of 2026-11-17 (a button scrolled clear of the pinned
+  footer before it is tapped).
+- **Real phone:** yes, for the phone check SPEC names (above); the rig tests themselves are emulator only.
+
+### T-087 Light theme, with a setting that follows the phone
+- **Jason (Wed 2026-11-18): backlog, mockups first.** Asked as a report only; nothing built.
+- **Version, decided by Jason the same evening: "after 0.4.0, as its own small release."**
+- **Status:** backlog. Not before 0.4.0 ships; then no work before his OK on light mockups.
+- **What the code looks like today (counted 2026-11-18, tests left out):** the colours are in one shared
+  palette, not typed into the screens. `src/theme/tokens.ts` holds all 33 hex values (33 distinct) and two
+  `rgba()` scrims; no other file in `src/` or `app/` has a hex colour. `tailwind.config.js` builds the
+  NativeWind classes from that file and `src/theme/navTheme.ts` reads it. The app is dark only by design:
+  no file uses a `dark:` class, and `app.config.ts` sets `userInterfaceStyle: 'dark'`.
+- **What a light theme has to change:**
+  1. **Design first:** a light value for each of the 33 colours and the lane and status colours, with
+     contrast checked, and light mockups of the main screens for his approval (the 20 mockups and their 21
+     sources are dark).
+  2. **The palette becomes two palettes.** Classes can switch without touching the 28 screens and
+     components that use `className`, if Tailwind's colours become variables set once at the root by scheme.
+  3. **Direct uses switch at their call sites:** 22 files import the tokens and use a colour directly 79
+     times (icons, the lane chart, ripples, borders). Those values are fixed when the file loads, so each
+     use moves to a hook. Mechanical, but every one is touched.
+  4. **The setting:** Gear, App group: Follow the phone, Dark, Light. New UI, so a mockup and his wording;
+     stored with the other settings (no schema change expected, to confirm).
+  5. **Outside React:** `userInterfaceStyle` to automatic (a native config change, so a new build), the
+     splash and window background, the navigation theme, the status and navigation bar icons. The alert's
+     accent colour in Kotlin can stay.
+  6. **Checks:** `tokens.test.ts` (it pins the dark values to the 0.2.0 kit), the device rig's fit and
+     fidelity checks at 115% and 130% in both themes, and the user guide pictures.
+- **Rough size (the main session's estimate, not measured):** about four working sessions: one for the
+  palette and mockups with his review, one or two for the palette, variables and the 79 call sites, one for
+  the setting and the native side, one for the device pass in both themes. Most of the risk is in the
+  design and the device checks, not the code.
+- **Files (when built):** `src/theme/tokens.ts`, `tailwind.config.js`, `src/theme/navTheme.ts`, a new theme
+  hook, the 22 files that use a colour directly, `app.config.ts`, Gear's App group, SPEC, mockups.
 

@@ -193,7 +193,7 @@ A change that makes a smoker conflict the plan did not have at Start cook, or a 
 
 - `npm test` passes (engine).
 - On Jason's phone: a full Saturday cook (brisket, wings, breasts) runs end to end with every alarm firing on time with the screen off, including after a reboot mid-cook. For 0.3.0 this is a staged cook with no food (Jason, 2026-11-16): the full-length real timeline on the release build, the phone locked, unplugged and idle between steps, with Adjust, Pit went out, Not yet, one Undo and one reboot used on purpose, ended with Discard so the cook rates are not touched; the alarm ring log (T-068) and the phone's idle history show each step rang within a minute of plan.
-- Adjust, Pit went out, Not yet and End cook all re-plan and reschedule alarms with no duplicates.
+- Adjust, Pit went out, Not yet and End cook all re-plan and reschedule alarms with no duplicates. 0.3.0: covered by Jest; phone check in 0.3.1 (T-086).
 - The test alert from setup fires in Doze.
-- Share plan round-trips between two phones.
+- (0.3.1, moved by Jason on 2026-11-18: no other phones are tested for 0.3.0) Share plan round-trips between two phones.
 - F/C and lb/kg switch everywhere without changing stored values.

@@ -1,9 +1,145 @@
-# Handoff (2026-11-18 morning: the table is done to step 15, Saturday's cook is running on Jason's phone on beta.2 and sits three nights; the share failure is a second tap, not a blocker; freeze until Sunday's readout; next is Saturday's cook, then the readout; fourteen branches parked)
+# Handoff (2026-11-18 evening: T-037 is closed on the rehearsal, no Saturday cook; beta.3 by Friday noon from the parked branches, one merge and one full gate at a time; an overnight check on beta.2 runs tonight; readout Thursday; release 0.3.0 Monday)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## Restart, twenty-seventh session (written Wednesday 2026-11-18, 8:00 AM; read this first)
+## Restart, twenty-seventh session (written Wednesday 2026-11-18, 5:50 PM; read this first)
+
+**Rule (Jason, 2026-11-18, 2:40 PM).** Before saying a task, mockup or design doesn't exist, check the parked
+branches and `.claude/worktrees` as well as `main`: the tables under "Parked branches" below,
+`git branch --list` and the worktree folders. A Status line of `todo` in TASKS on `main` does not mean
+nothing is built. Why: that afternoon the main session told Jason the Home Assistant screens were not
+mocked and no sign-in code existed, from `main` alone; both were on parked branches from 2026-11-17, and an
+agent then made a duplicate set of mockups.
+
+**State (Wednesday 2026-11-18, 5:55 PM, end of the twenty-sixth session).** `main` is clean (only `.claude/`
+untracked). **Not pushed: the commits from `24dfb2a` on (26 of them; `git log origin/main..main`
+lists them). All are docs only** (docs, SPEC, CLAUDE.md, `.gitignore`); Jason pushes or
+asks. No app code changed on `main`, so the last gate on code is still the one on `1cecd97`. Emulators,
+Metro and Gradle are stopped; no agent is running. The freeze on `main` holds until Thursday's readout.
+`dashboard.html` is current and trimmed to one screen (local, never committed); after any edit to it, load
+it in headless Chrome and report the page error count, which must be 0 (CLAUDE.md, Models and agents).
+**His phone: unplugged for the night, 0.3.0-beta.2, the overnight check's cook running with four alarms
+(the 5:36 PM read). Do nothing on the phone without a list and his yes.**
+
+**Thursday 2026-11-19, in order.**
+
+1. **By 7:30 AM, Jason:** End cook, Discard this cook; then Gear, 5 taps on the version line, Send to
+   developer. He puts the debug file where the session can read it (read it in place, never commit it,
+   delete it when he says).
+2. **Then he plugs the phone in. Say first that it is about 2 minutes, list the reads, and wait for his
+   yes:** `adb -s 5ece07c1 shell dumpsys alarm` (nothing of the app's left), `dumpsys deviceidle`,
+   `dumpsys batterystats --history`; each saved under `tools/device/out/` (git-ignored). The ring log is in
+   the debug file.
+3. **Read the overnight check:** the 5:30 AM ring within 1 minute while the phone was in deep idle
+   (the ring log's `idle` flag, checked against `device_idle=full` in the battery history; on the rehearsal
+   the two agreed on all 14). Unanswered alerts repeat every 10 minutes, so repeats in the log are expected.
+   Write the result into `docs/t037-checklist.md` ("Overnight check", the table and "Result") and TASKS T-037.
+4. **The readout,** from the rehearsal's reads and the overnight check; then the freeze on `main` ends.
+5. **The beta.3 merges,** item 4 below, one at a time.
+
+**Thursday morning: steps 1 to 4 are done. Overnight check: PASS (Jason). The readout is done, T-037
+passes for 0.3.0, and the freeze on `main` has ended (Jason, Thu 2026-11-19).** The 5:30 AM alert rang
+1.085 seconds late after about 7 hours of deep idle (4 hours unbroken, 1:11:25 to 5:11:26 AM); the phone
+was in light idle at the ring because Android leaves deep idle when an alarm clock is under 1 hour away
+(`min_time_to_alarm=+1h`). Pass line reworded by Jason for any future check: "ring within 1 min after the
+phone spent hours in deep idle overnight." Detail and the readout table: `docs/t037-checklist.md`,
+"Overnight check" and "Readout". Reads: `tools/device/out/t037-overnight-2026-11-19/`. The debug file was
+deleted at his word. Nothing more on the phone without a list and his yes. Next: step 5, the beta.3
+merges, one at a time; he reviews after merge 1.
+
+**Jason's decisions, 5:45 PM: "beta.3, and no Saturday cook. T-037 closes on today's rehearsal; I don't load
+Saturday's plan."**
+
+1. **T-037 is done on the rehearsal of 2026-11-18** (0.3.0-beta.2 on his phone): 14 alerts, each once, each
+   within 1.6 seconds; results, the three evening reads, what was not tested and where tests cover it, in
+   `docs/t037-checklist.md`. The phone reads are in `tools/device/out/t037-rehearsal-2026-11-18/`
+   (git-ignored; they name other apps, never commit them).
+2. **Overnight check on beta.2, tonight** (`docs/t037-checklist.md`, "Overnight check"): Chicken breasts, 4,
+   griddle, Start at Thu Nov 19 5:30 AM; four alerts, 5:30, 5:45, 5:57, 6:05 AM. He enters it and taps Start
+   cook once; after his yes the alarm list is read; he unplugs until morning; by 7:30 AM he discards and does
+   Send to developer; after his yes the ring log, `dumpsys deviceidle` and the battery history are read.
+   Pass: the 5:30 AM ring within 1 minute while the phone was in deep idle. **Where this stands is in that
+   section's table: read it before doing anything on the phone.**
+3. **Readout Thursday 2026-11-19**, from the rehearsal's reads and the overnight check.
+4. **beta.3: merges by Friday 2026-11-20 noon, in this order, the full gate (`npm run check`) alone after
+   each, its counts reported. Anything not merged and gated by noon goes to 0.3.1.** No merge before the
+   readout. `main` has moved (docs) since every branch was cut, so each merge starts by bringing the branch
+   up to `main`.
+
+   | # | Branch | Holds | pit-alarms | Restore code | `cook.ts` |
+   |---|---|---|---|---|---|
+   | 1 | `a8775a2ca28f2344f` (3 commits) | Share guard and start guard | no | no | no (it changes `saveCook` in `src/lib/store.tsx`, the save every cook change goes through, plus `shareFile.ts`, `PlanTab.tsx`, `GearScreen.tsx` export only) |
+   | 2 | `a0ce7915c8c901c69` (6 commits) | T-082 temp step question, with its mockups branch `a1211e2e2ed4313e1`, the SPEC Units text, and the emulator Setup and Gear looks at 115% and 130% | no | no | no (it changes `engine/plan.ts`, `engine/temps.ts`, `engine/units.ts`, `src/lib/gear.ts`, Setup, the picker, `TempMenu`, `CookerSheets`) |
+   | 3 | `a8c0f87e3e0ab96ed` (3 commits) | Sheet buttons off the right edge at 115% | no | no (it changes the "Replace your data?" sheet's buttons in `GearScreen.tsx`, not `src/db/restore.ts`) | no (`CookOptions.tsx`, `StartCheckSheet.tsx`) |
+   | 4 | `a162a9d40e02d7402` (7 commits) | Plural food names and capitals | no | no | no (`src/lib/cookView.ts`, not `cook.ts`; also `data/foods.json`, `engine/labels.ts`, `engine/plan.ts`, `engine/rules.ts`, `sharedPlan.ts`, six screens) |
+   | 5 | `a9b7f7e3f7806b35c` | Release notes | no | no | no (docs only) |
+   | 6 | `a6d5ad9a3b663d00e` | README (create `docs/DEVELOPING.md` at merge) | no | no | no (docs only) |
+   | 7 | `af96b15db6f617be3` | Guide pictures (5 slots; 17 are on `main` already; `start-check.png` is retaken after merge 3) | no | no | no (docs only) |
+
+   **After merge 1, an emulator check (Jason, 2026-11-18): start a cook, tap Not yet, then `dumpsys alarm`
+   shows the moved times.** Why: cancelling and setting the alarms runs from `saveCook` itself: its last
+   line calls `sync()`, which queues `syncAlarms` (replace the phone's whole set) after the save and the
+   state update, and merge 1 changes `saveCook` (the "cook started" log line moves to after the save; the
+   `sync()` call is not touched, and a save that throws reaches neither `commit` nor `sync`, before or after
+   the change). How: test emulator, dev build, 115% (`--no-build`, nothing native changed); end any cook
+   (`pitplanner://dev/alarm?cook=end`), open the mockup cook (`pitplanner://dev/plan?seed=cooking`, Next up
+   is the brisket's wrap check); save `adb -s emulator-5554 shell dumpsys alarm` and list the dev build's
+   pending alarms; Cook options, "Not yet, check again in 30 min"; list them again. Pass: the brisket's
+   check is 30 minutes later with its later steps, the other foods' alarms are where they were, the count
+   is the same, every time once, nothing left at an old time, and the event log has one "set N" line for
+   it. Then the gate, as for every merge.
+
+   Checked 2026-11-18 5:30 PM from each branch's file list against `main`. Known conflicts are listed under
+   "Parked branches" below (T-082 and the capitals fix both change `TempMenu.tsx` and `engine/plan.ts`;
+   merges 1 and 3 both change `GearScreen.tsx`, `StartCook.test.tsx` and `GearData.test.tsx`; the two code
+conflicts the earlier session listed are `TempMenu.tsx` and `CookerSheets.test.tsx` between T-082 and the
+plural fix, and `src/lib/gear.test.ts` for T-082).
+5. **Then:** the beta.3 build (Jason runs the release command), the emulator locked reboot on beta.3
+   (`tools/device/locked-reboot.sh`), the `turkey` test on the emulator at 115% and 130%, then beta.3 on his
+   phone. **Release 0.3.0 Monday 2026-11-23 unless he says earlier.** **No other phones are tested for 0.3.0
+   (Jason, 5:50 PM):** the two-phone share test and the Samsung tester's locked-reboot request move to
+   0.3.1; his wife gets 0.3.0 when he sends it, not beta.2; INSTALL.md wording fixes still go in before
+   Monday (`docs/after-readout-checklist.md`, top). New 0.3.1 backlog: T-086, rig tests for Not yet, Back up
+   to temp with Move serve and the Adjust tap.
+
+**Also from today, in the docs:** Home Assistant step 0 passed (`docs/ha-entities.md`); his login is in a
+private file outside the repo (`~/.config/pitplanner/ha.env`; never print or copy it); the app adds the
+scheme when none is typed and the connect screen says "Will connect to ..." (TASKS T-045); the real Home
+Assistant address is replaced by an example in the tracked docs. User guide: text audited, 17 pictures in
+`docs/guide/` (TASKS T-066). New backlog: T-084, T-085. The `turkey` test: `docs/after-readout-checklist.md`.
+
+**Waiting on Jason.**
+
+- The Home Assistant mockup review: the 15 questions in the proposal on branch `a9241eb3e2b1eb08c`, plus
+  the 5 kept from the deleted duplicate (the "(deleted)" row under "Parked branches").
+- T-044's six open choices (http to a remote host, port 8123, what counts as home network, IPv6, timeout, a
+  refused token staying refused).
+- The connect-error wording, on the mockup first: the first connect fails and the app added the scheme, so
+  it tells him to type the full address with `http://` or `https://` (T-045).
+- A throwaway Home Assistant token, to test deleting the token at Home Assistant on Disconnect (the delete
+  call would end the token in use, so step 0 did not try it; `docs/ha-entities.md`).
+- A `.local` address tested on his phone before the connect screen offers one (T-045).
+- The bug report card in Claude Code, still to review and send.
+- After the readout: the "Kamad" chip cut off at 115%; the brine options that change nothing the user sees;
+  wording for T-084 and T-085; the open user guide wording (TASKS T-066); the disk cleanup list.
+
+**Settled the same evening, already in the docs:** the light theme (T-087) comes after 0.4.0 as its own
+small release, mockups first; INSTALL.md got its one fix (the oven hold line, with the 60C note kept); the
+release notes carry his line on restarts ("only tested on a OnePlus with Android 16"); SPEC's definition of
+done puts the two-phone round trip in 0.3.1 and the Adjust, Pit went out, Not yet line reads "0.3.0: covered
+by Jest; phone check in 0.3.1 (T-086)".
+
+**The overnight check is started (5:36 PM read):** four alarms pending on his phone, Thursday 5:30:00,
+5:45:00, 5:57:00 and 6:05:00 AM, each once, nothing else of the app's; the phone is unplugged for the night (Jason, about 5:50 PM). The reads
+of the day, the midday ones too, are in `tools/device/out/t037-rehearsal-2026-11-18/`.
+
+**To start the next session,** Jason clears the conversation and says: "Read CLAUDE.md, then docs/HANDOFF.md
+and follow its top section, 'Restart, twenty-seventh session'." Thursday morning he adds that the overnight
+cook is discarded, where the debug file is, and that the phone is plugged in.
+
+## Earlier on Wednesday 2026-11-18 (written 8:00 AM; superseded where the section above differs)
+
 
 **State.** `main` is clean (only `.claude/` untracked); the commits not pushed are listed by
 `git log origin/main..main` (docs only; Jason pushes or asks). No code changed in the twenty-sixth session, so
@@ -55,7 +191,9 @@ What the twenty-sixth session did (Wednesday morning, docs only, `84b29cf` and t
   debug event log, in `PlanTab` and `GearScreen` or in `shareTextFile`; (2) the start guard: clear it in a
   finally and write "cook started" to the log only after the save succeeds (keep "two quick taps start one
   cook" green: the clearing is for a start that did not go through, my reading). Then the parked 0.3.0
-  branches as listed in the twenty-fourth session's section 2.
+  branches as listed in the twenty-fourth session's section 2. **Then, after the last merge and before
+  Monday's release (Jason, 2026-11-18): the owed `turkey` device test on the emulator at 115% and 130%**
+  (Thanksgiving is Thursday 2026-11-26; `docs/after-readout-checklist.md`, "Turkey for Thanksgiving").
 - **For 0.3.1 (Jason):** the failed-start message "Couldn't start the cook. Try again."; a layout change for
   the two buttons hidden at 130% (shown to him first; the sheet-buttons branch covers neither); T-084, a
   prompt when the plan is edited during a cook (his wording; SPEC is silent, the cook keeps its own copy).
@@ -70,8 +208,8 @@ Rules added:
 - **Alarm times come from the phone, step names do not:** `dumpsys alarm` shows times only. Names need the
   debug file or an engine run; say which.
 
-To start the next session, Jason clears the conversation and says: "Read CLAUDE.md, then docs/HANDOFF.md and
-follow its top section, 'Restart, twenty-seventh session'."
+(The line for starting the next session is at the end of the top section, "Restart, twenty-seventh session",
+written 5:50 PM.)
 
 ## Restart, twenty-sixth session (written Tuesday 2026-11-17, 7:30 PM)
 
@@ -363,6 +501,13 @@ UI, needs his words). A device check that starts two cooks in one app launch bel
 | 5 | `a6d5ad9a3b663d00e` | `7022bde` (2 commits) | **README** for the public page. At merge: create `docs/DEVELOPING.md` from the developer content the old README held (stack, Capacitor history, "What's here", the Develop section, links to RELEASING and the mockups page); the README's last line links it |
 | 6 | `af96b15db6f617be3` | `25a2820` | **User guide pictures:** 5 of 22 slots filled. Add the 17 new pictures and the README's 4 before merging |
 
+**Added Wed 2026-11-18 (built that afternoon with Jason's OK, on branches, not merged; the freeze holds):**
+
+| Branch id | Head | Holds |
+|---|---|---|
+| `a8775a2ca28f2344f` | `5129346` (`7d60f2e`, `70e2035`, `5129346`) | **Share guard and start guard. Third commit, 2:40 PM (Jason's decision): the guard also covers Send to developer's fallback and the error screen's Export my data**, through one helper `openShareSheet` in `shareFile.ts`, now the only `Sharing.shareAsync` call; 10 tests added, each in-progress test seen failing first; the agent's run: Jest 937 of 937 in 86 suites, ESLint clean on its 4 files. Files of the third commit: `src/platform/shareFile.ts`, `shareFile.test.ts`, `src/screens/debug/DebugScreen.test.tsx`, `src/screens/shared/MigrationError.test.tsx`. The main session read the three code diffs; the gate waits for the fix window. The numbers further on in this cell are the first two commits'. (As looked at before that commit: Send to developer and the error screen's export, looked at 2026-11-18, report only: Send to developer normally goes through the app's own `pitShare.sendFile`, a plain `startActivity` with no one-at-a-time state, so not the call that rejects; only its fallback and `shareFilesAsTar`, the database-could-not-be-opened export, call `Sharing.shareAsync` directly and are not guarded here. Covering both: move the guarded call into one small helper in `shareFile.ts` and use it at the two call sites, a test each. A double tap on either was not tried), each with tests written failing first. Share: `shareTextFile` swallows only expo-sharing's in-progress rejection (code `ERR_SHARING_IN_PROGRESS`, the message as fallback; the code is read from the Kotlin source, not seen on a phone); any other share or export error keeps its sheet and is logged. Start: `begin` clears the guard only when `setCook` throws and logs "cook not started: ..." (an addition the agent made; no UI change); `saveCook` logs "cook started" after the save. Its own runs: Jest 927 of 927, ESLint clean on its 9 files; typecheck fails in the worktree only for the missing generated `expo-env.d.ts`. The main session has not read the diff or run the gate yet. Touches `PlanTab.tsx`, `GearScreen.tsx`, `store.tsx`, `shareFile.ts`. Not covered: `reportSharer`'s fallback and `shareFilesAsTar` call `Sharing.shareAsync` directly (Send to developer, database export) |
+| (deleted) | `0e5349d` | **A second set of Home Assistant mockups, made by mistake on 2026-11-18 and deleted the same day with Jason's yes** (branch `a26afdf287cc86f59`): the main session had told him the screens were not mocked; they were (branch `a9241eb3e2b1eb08c`, 2026-11-17, 20 pictures, 15 questions). Five questions it raised that the first set's 15 do not have, kept for his review of T-042: (1) the User row needs one more Home Assistant call (who the token belongs to) that is not in the 8.1 list: add it to the T-044 step 0 checks, or drop the row; (2) Rescan: re-read and reopen "Here's what we found" with the saved ticks, or only refresh, with a separate "Change probes" row; (3) a probe already on another food: shown with that food's name and not pickable, or picking it moves it; (4) Connect errors: a banner above the button, or on the field; (5) the Gear row's second line once connected ("Not connected", "Connected, 4 probes") |
+
 Known conflicts: `src/screens/plan/TempMenu.tsx` (T-082 and the capitals fix, different lines),
 `src/screens/gear/CookerSheets.test.tsx` (T-082 and the plural fix: pattern on lines 154 and 161),
 `src/lib/gear.test.ts` (T-082; the catalog branch avoided it), `SPEC.md`/TASKS text is applied by the main
@@ -381,7 +526,7 @@ clamps off-screen bounds, so "inside" alone passes a 24 px sliver), Setup and Ge
 
 | Branch id | Head | Holds |
 |---|---|---|
-| `a4d0fb0875a099229` | `a0244b6` | **T-044** HA auth logic, pure (`src/lib/ha/`, 111 tests); seven open decisions; step 0 open |
+| `a4d0fb0875a099229` | `a0244b6` | **T-044** HA auth logic, pure (`src/lib/ha/`, 111 tests); six open decisions (scheme when none typed decided 2026-11-18: as built); step 0 passed 2026-11-18 (`docs/ha-entities.md`) |
 | `a9241eb3e2b1eb08c` | `f0c1b98` | **T-042** HA mockups (proposal, 20 pictures, 15 questions). Jason's first reaction: likes it, especially the connect flow; not an approval |
 | `a18cf3154316a2542` | `68eff4b` | **Fish** thickness mockups (proposal; T-071, 0.5.0) |
 | `a06dd404e2acfae2a` | `a654dd4` | **Fish** candidate sources. First question at review: sources Q5 (no source times a smoker or griddle by thickness) |
@@ -408,8 +553,12 @@ clamps off-screen bounds, so "inside" alone passes a 24 px sliver), Setup and Ge
 
 ### 4. Decisions waiting on Jason (one line each)
 
-- T-044: seven choices (scheme when none typed, http to a remote host, port 8123, what counts as home
-  network, IPv6, timeout, a refused token staying refused).
+- T-044: six choices open (http to a remote host, port 8123, what counts as home network, IPv6, timeout, a
+  refused token staying refused). The seventh, scheme when none typed, is decided (Jason, 2026-11-18): the
+  app adds it, as built, and the connect screen shows "Will connect to https://ha.example.com" (the real
+  address) under the field before Connect. Owed with it (TASKS T-045): a `.local` address tested on his
+  phone before the screen offers one; his wording, on the mockup first, for the error after a failed first
+  connect when the app added the scheme (type the full address with `http://` or `https://`).
 - T-042: the 15 questions in its README, after step 0.
 - Fish: sources Q5 first (thickness as a timer, or an estimate with a 145F probe check); then the 12 mockup
   questions.

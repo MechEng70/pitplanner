@@ -1,5 +1,26 @@
 # After Sunday's readout: INSTALL.md on his wife's phone (T-033), then the two-phone share test (T-031)
 
+**Changed by Jason, Wednesday 2026-11-18, about 5:50 PM: no other phones are tested for 0.3.0.**
+
+- **Part 1 (INSTALL.md on his wife's phone) is not run before the release.** She gets 0.3.0 when he sends it,
+  not beta.2. The steps are kept for that day: read 0.3.0 where they say 0.3.0-beta.2, and step 3 is
+  INSTALL.md's own step 1 (the releases page), not a Drive link.
+- **INSTALL.md: one fix for Monday, done 2026-11-18 (Jason: "That's the only fix for Monday").** The "Oven
+  hold raised to 140F, the safe minimum." line a 0.2.0 import can add is now in INSTALL.md, with "(In
+  Celsius it reads 60C.)", which he kept.
+- **Part 2 (the two-phone share test, his wife's phone to his and back) moves to 0.3.1.** The share guard
+  it was waiting for is on a parked branch for beta.3.
+- **The Samsung tester's locked-reboot request moves to 0.3.1.** For 0.3.0 the locked restart is tested on
+  Jason's OnePlus and on the emulator only.
+- **The release no longer waits for this checklist.** "When both parts pass" below is as first written.
+  Settled by Jason the same evening: SPEC's definition of done now puts the two-phone round trip in 0.3.1
+  and marks the Adjust, Pit went out, Not yet line "0.3.0: covered by Jest; phone check in 0.3.1 (T-086)";
+  the release notes carry his line on restarts being tested on a OnePlus with Android 16 only.
+- **The order now** (HANDOFF, top section): readout Thursday 2026-11-19; the parked branches merged by Friday
+  2026-11-20 noon, the gate after each; the beta.3 build, the emulator locked reboot, the `turkey` test,
+  beta.3 on his phone; release Monday 2026-11-23 unless he says earlier. Where this file says "Sunday" or
+  "after the readout" for a fix or a check, that is now Thursday and Friday.
+
 Done together on Sunday afternoon, 2026-11-22, once the readout has passed; the release is Monday
 2026-11-23. Jason decided this on 2026-11-17. Her phone has
 0.2.0 now. It gets 0.3.0-beta.2 as an upgrade over it, by following `docs/INSTALL.md` exactly as written.
@@ -10,7 +31,7 @@ phone is marked **yes**: it needs Jason's yes first, on the day, one action at a
 followed with no step that confuses her, and a plan goes through Gmail and through Drive and opens the Shared
 plan sheet with the right menu.
 
-## Part 1: INSTALL.md on her phone (T-033)
+## Part 1: INSTALL.md on her phone (T-033): not run before the release; she gets 0.3.0 when Jason sends it
 
 Jason present, her phone in his hands or hers, on wifi.
 
@@ -32,7 +53,7 @@ Jason present, her phone in his hands or hers, on wifi.
 If the install fails, INSTALL.md says: do not uninstall the app. Stop and email pitplanapp@gmail.com with the
 version and what the phone said.
 
-## Part 2: two-phone share (T-031)
+## Part 2: two-phone share (T-031): moved to 0.3.1 (Jason, 2026-11-18)
 
 Jason's phone with 0.3.0-beta.2 (the release build, not the dev build) and her phone with 0.3.0-beta.2 from
 Part 1. A plan on his phone that has at least two foods.
@@ -155,6 +176,18 @@ Branches only until the readout passes; then merge one at a time, the gate after
       (`shared`, `shared-soon`); scroll to Alerts in `gear` at 130%; scroll a button clear of the pinned footer
       before tapping it (`setup`'s test alert, `cook-finished`'s Keep). Then rerun those five, plus
       `followups` and `turkey`, at 115% and 130%.
+- [ ] **Turkey for Thanksgiving (Jason, Wed 2026-11-18): the owed `turkey` device test.** **Moved the
+      same evening with the beta.3 decision:** it runs after the beta.3 build and the emulator locked reboot
+      on beta.3, and before beta.3 goes on his phone (so Friday 2026-11-20, not Sunday). As first set: on
+      Sunday 2026-11-22, after the merges and before Monday's release. Emulator, 115% and 130%:
+      `DEVICE_SCALES="1.15 1.3" tools/device/run.sh --only turkey` (a build first if a merged branch changed
+      anything native, else `--no-build`). It does not wait for the rig fixes above: `turkey` was never a
+      rig failure, it did not get its turn in the full pass of 2026-11-17, and its only run so far is 115%
+      on 2026-11-15. What passes is in `tools/device/README.md` (a new 12.0 lb whole turkey: fire 9:55 AM,
+      off heat 4:15 PM, serve 5:00 PM; rest stops at 20 min; 0.50 hr/lb with no "Unusual rate"; at 220F the
+      Conflicts tile reads 1 and the sheet says the turkey needs 225F or hotter). Run it on `main` as it
+      will ship, so after the last merge. A fail here is looked at before the release is cut: Thanksgiving
+      is Thursday 2026-11-26 and 0.3.0 is the build testers will plan it with.
 - [ ] **For Jason, from that pass at 130%:** Setup's "Send a test alert in 10 sec" and Cook finished's
       Use / Keep buttons are hidden under the pinned buttons until scrolled (`tools/device/out/1.3/
       setup-alerts.png`, `cook-finished-rate.png`). Leave, or change the layout?
@@ -163,7 +196,10 @@ Branches only until the readout passes; then merge one at a time, the gate after
       "Start over?", "Alerts may not ring"; `GearScreen.tsx`, `CookOptions.tsx`, `StartCheckSheet.tsx` and
       their tests) and does not touch Cook finished or Setup. The new layout is shown to Jason before it is
       built.
-- [ ] **User guide pictures (T-066):** 5 of 22 slots are filled on a branch; shoot the other 17 on the
+- [ ] **User guide pictures (T-066): 16 of the 17 done Wed 2026-11-18** (`docs/guide/`, in the guide; the
+      debug-send picture in `docs/fidelity/` is replaced too). Left: the lock-screen alert, the branch's 5,
+      the README's 4. Two things seen in the pictures are in TASKS T-066 (the "Kamad" chip, a sliver of
+      Start cook beside the check sheet). As first written: 5 of 22 slots are filled on a branch; shoot the other 17 on the
       emulator at 115% from seeded test data only, check each for personal data before committing. Replace
       `docs/fidelity/rn-debug-send.png` with a picture showing the app's address (the old one shows Jason's
       old email address; no history rewrite, his decision).

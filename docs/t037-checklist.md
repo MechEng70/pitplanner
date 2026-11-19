@@ -1,5 +1,11 @@
 # T-037 staged cook: checklist (Saturday 2026-11-21, 0.3.0-beta.2)
 
+**Closed on the rehearsal (Jason, Wednesday 2026-11-18, about 5:45 PM): "beta.3, and no Saturday cook. T-037
+closes on today's rehearsal; I don't load Saturday's plan."** T-037 is done on the rehearsal of 2026-11-18
+("Rehearsal results" near the end of this file), with the overnight check ("Overnight check" at the end)
+added when it is read. Everything below about Saturday 2026-11-21 and Sunday's readout is kept as written
+and is not run. The readout is Thursday 2026-11-19, from the rehearsal's reads and the overnight check.
+
 No food. The full-length real timeline on Jason's phone, to prove every alarm rings on time with the phone
 locked, unplugged and idle, through a reboot and every kind of change. It ends with Discard, so the cook
 rates are not touched. Pass: every ring within 1 minute of its planned time, nothing lost at the reboot,
@@ -84,6 +90,43 @@ Seen during the rehearsal, to settle in the readout:
   issue." Pass on this phone means: the alarm is back and delivered on time while the phone is still locked
   (shown above), and it sounds at the unlock. Still read tonight, as a check and not a gate: the ring log's
   12:40 PM record (when it rang, and that the alert was posted).
+- **3:15 PM (Jason): Wings on the smoker rang, and he tapped +15 min on the alert**, where the table asks
+  for Done. So the +15 tap with the app closed is being run here, on Wings on the smoker, and not at 4:20 PM
+  on Wings crisp. By "The +15 tap with the app closed" below, expected, not read from the phone: the wings
+  alert rings again 15 minutes after his tap (about 3:30 PM, the same minute as Oven to 170F, so two alerts
+  that Android may group); no other alarm moves while the app stays closed (Oven to 170F 3:30 PM and Check
+  tenderness 3:45 PM ring at their times); when he opens the app (the 4:05 PM step) it applies the tap,
+  shows one notice, and moves serve later with the other foods if the wings' hold cannot take 15 minutes.
+  After that the remaining times are the app's new ones, not the table's.
+- **3:30 PM (Jason): the wings alert rang again; no Oven to 170F alert.** He tapped Done on the wings alert.
+  On the Cook tab afterwards, Oven to 170F is set for 3:45 PM and the banner reads (his words, read aloud):
+  "Wings on the smoker on a wire rack, moved 15 minutes from the alert. Serve moved to 5:15. The other
+  foods moved with it. Wings on the smoker on a wire rack, done at 3:30 p.m. from the alert." That is the
+  notice the pass line describes: the +15 applied, serve moved from 5:00 to 5:15 PM, the other foods moved
+  with it, then the Done. **Not known yet: when the app applied the +15.** If it was only when he opened
+  the app after 3:30 PM, the oven alarm should still have rung at its old time, 3:30 PM, and it did not;
+  if the app was still alive in the background and applied the tap at 3:15 PM, the alarms were set again
+  then and 3:45 PM is right. Tonight's event log has the time of the "moved 15 min" line and of the alarm
+  set. From here the Cook tab's times are the schedule for today.
+- **The schedule after the +15, read off the Cook tab by Jason at about 3:35 PM** (each is 15 minutes
+  later than the alarm list read from the phone at 12:50 PM): Oven to 170F 3:45 PM; Check tenderness
+  4:00 PM; Turn the smoker up to 400F 4:20 PM; Wings crisp at 400F 4:35 PM; Fire the griddle 4:40 PM;
+  Chicken breasts on the griddle and Slice or plate the brisket, both 4:55 PM (he first said 4:45 for the
+  breasts, then "4:45 or 4:55"; 4:55 is what the 15 minute move gives); Pull chicken breasts 5:07 PM; Pull
+  wings 5:10 PM; Serve 5:15 PM. The table's actions stay, at these times.
+- **3:45 PM and 4:00 PM (Jason):** Oven to 170F rang at 3:45 PM and Check tenderness at 4:00 PM, both at
+  the times the Cook tab showed after the +15; Done on the lock screen for both.
+- **4:20 PM (Jason):** Turn the smoker up to 400F rang at 4:20 PM; Done in the app, then the app swiped
+  away from recent apps and the phone locked. From here the app is closed.
+- **4:22 PM (Jason): "I tapped done."** Said 13 minutes before Wings crisp at 400F was due (4:35 PM), in
+  answer to the question Done or +15 on that step. Not clear yet whether an alert for Wings crisp rang
+  early, or he means the 4:20 PM step, or that Done is his choice for 4:35 PM. Asked.
+  **Settled, 4:23 PM (Jason):** nothing rang early. Wings crisp is due at 4:35 PM; the app is swiped away
+  and the phone is locked.
+- **4:35 PM and 4:40 PM (Jason):** Wings crisp at 400F rang at 4:35 PM and Fire the griddle at 4:40 PM,
+  with the app swiped away and the phone locked; Done on the lock screen for both. (The table asks for +15
+  on Wings crisp; that test was run at 3:15 PM on Wings on the smoker, so "Fire the griddle rings at the
+  time it had before the +15 tap" is not run on this step today. Saturday's table still has it.)
 
 ## The plan to load (Friday night)
 
@@ -271,3 +314,250 @@ lock screen before opening the app. With two alerts waiting, Android may group t
 "Planned" is the time in force when it rang (after Not yet, Pit went out, Adjust and +15 it is the
 re-planned time). Android wakes the phone out of deep idle just before an alarm-clock alarm, so the idle
 column says whether the phone was in deep idle in the stretch before the ring, not at the ring.
+
+## Rehearsal results, Wednesday 2026-11-18 (0.3.0-beta.2 on Jason's phone)
+
+From the two debug files Jason sent at 5:17 PM (one before Discard, one after; read in place and deleted
+afterwards at his word, never in the repo): the phone's ring log and the app's event log. Times are the
+phone's. "Idle" is the ring log's own flag for the phone being in idle mode when the alarm fired; the Doze
+and battery history reads are a separate check.
+
+| Step | Due | Rang | Late | Idle | Answer |
+|---|---|---|---|---|---|
+| Fire the smoker to 225F | 8:50:00 AM | 8:50:00 | 0.4 s | yes | Done on the lock screen, 8:50:27 |
+| Brisket on the smoker | 9:10:00 AM | 9:10:00 | 0.0 s | no (screen on) | Done in the app, 9:10:26 |
+| Check the brisket (wrap) | 12:40:00 PM | 12:40:01 | 1.6 s | yes | 10.6 min after the reboot, before the first unlock; **the alert was posted**. Done on the alert 12:44:41, applied when the app was opened at 12:49:03 |
+| Wings on the smoker | 3:15:00 PM | 3:15:00 | 0.1 s | yes | **+15 min** on the alert, 3:15:10; applied at once, serve 5:00 to 5:15 PM |
+| Wings on the smoker, again | 3:30:00 PM | 3:30:01 | 1.4 s | yes | Done on the lock screen, 3:30:10 |
+| Oven to 170F | 3:45:00 PM | 3:45:00 | 0.1 s | yes | Done on the lock screen, 3:45:05 |
+| Check tenderness (brisket pull) | 4:00:00 PM | 4:00:00 | 0.2 s | yes | Done on the lock screen, 4:00:09 |
+| Turn the smoker up to 400F | 4:20:00 PM | 4:20:00 | 0.1 s | no | Done in the app, 4:21:22; then the app swiped away |
+| Wings crisp at 400F | 4:35:00 PM | 4:35:01 | 1.3 s | yes | App closed. Done on the alert 4:35:05, applied 4:57:28 |
+| Fire the griddle | 4:40:00 PM | 4:40:00 | 0.0 s | no | App closed. Done on the alert 4:40:04, applied 4:57:28 |
+| Chicken breasts on the griddle, Slice or plate the brisket (one alert) | 4:55:00 PM | 4:55:00 | 0.0 s | yes | App closed. Done on the alert 4:55:11, applied 4:57:28 |
+| Pull chicken breasts | 5:07:00 PM | 5:07:01 | 1.3 s | no | Done on the lock screen, 5:07:08 |
+| Pull wings | 5:10:00 PM | 5:10:00 | 0.0 s | no | Done on the lock screen, 5:10:07 |
+| Time to serve | 5:15:00 PM | 5:15:01 | 1.2 s | no | Done 5:15:42; Discard 5:17:45 |
+
+**Against the pass line.** 14 alerts, each rang once, every one within 1.6 seconds of its time (the line
+is 1 minute); none repeated (each was answered inside 10 minutes); nothing was lost at the reboot. After
+Discard: no alarm and no repeat stored, the running cook gone, and cook history, its items, the saved rates
+and the cookers identical before and after, so the rates were not touched. The permissions all read on.
+
+**What the logs settle.**
+
+- **12:40 PM after the locked reboot:** the alert was posted at 12:40:01.6, before the unlock at 12:43 PM.
+  So the app did its part and the silence until the unlock is the phone, as Jason judged.
+- **8:50 AM:** the Done from the lock screen is logged at 8:50:27, so the banner he saw at 9:10 AM was the
+  notice, as designed.
+- **No Oven to 170F at 3:30 PM was right.** The app was still alive in the background at 3:15 PM, so it
+  applied the +15 ten seconds after the ring, moved serve to 5:15 PM and set the ten alarms again; the wings
+  alert at 3:30 PM is a plain alarm at the new time, not a snooze repeat.
+- **The +15 with the app closed (the table's 4:20 PM step) was therefore not what ran today.** Today's +15
+  met a live app. The case "the wings alert rings 15 minutes after the tap and no other alarm moves until
+  the app is opened" is still only proven on the emulator; Saturday's table has it with the app swiped away.
+- **Taps with the app swiped away** (4:35, 4:40, 4:55 PM) were kept on the phone and applied with their own
+  tap times when the app next ran, at 4:57:28 PM. The event log has no "fired" lines for those three (the
+  app was not running); the phone's ring log has them.
+- **For T-085:** every step that feeds a cook rate was answered within 26 seconds of its ring (brisket on
+  9:10:26, brisket pull 4:00:09; wings on 3:30:10, wings pull 5:10:07; breasts on 4:55:11, pull 5:07:08).
+
+**Different from Saturday's table:** Done where the table has Not yet at 12:40 PM; the +15 at 3:15 PM on
+Wings on the smoker and Done at Wings crisp; an extra Done in the app at 12:53:37 PM on the brisket's end of
+smoke step.
+
+**The three reads at 5:23 PM** (after Jason's yes; read only; saved outside the repo).
+
+- **Alarm list:** no alarm of the app, or of the dev build, is pending. The removal history shows the last
+  cancels at 5:15:42 PM (Done on Time to serve).
+- **Battery history, Doze:** the phone was in deep idle (`device_idle=full`) when 8 of the 14 alerts fired:
+  8:50 AM, 12:40, 3:15, 3:30, 3:45, 4:00, 4:35 and 4:55 PM. It was not for 9:10 AM, 4:20, 4:40, 5:07, 5:10
+  and 5:15 PM. That is the same eight the ring log's own flag marks, so the flag can be trusted. **A limit:**
+  the stretches of deep idle right before those rings were short, from 21 seconds (3:15 PM) to 6 minutes
+  (3:30 PM); the longest stretch of the day, 2:04 to 2:31 PM, had no alert in it. A ring out of hours of
+  deep idle was not in today's run. Saturday's first alert, 8:50 AM after a night, is closer to that.
+- **Battery history, power:** 100% at 8:17 AM when unplugged, 74% at 5:18 PM. The phone was on USB power
+  7:30 to 8:17 AM, 12:26 to 12:28 PM and 12:48 to 12:56 PM (the reads), and 3:16 to 3:21 PM.
+- **Doze state at the read:** active, screen on, charging. Nothing more to read from it.
+
+### What today did not test, and where each is covered already
+
+"Emulator" means the device rig (`tools/device/run.sh`) on the dev build unless it says by hand. "Jest" and
+"Kotlin" are unit and screen tests in the gate. Nothing in this list has been done on a real phone.
+
+1. **+15 min with the app closed.** Today's +15 met an app still alive in the background, which applied it
+   at once.
+   - Kotlin: `ReceiversTest.plus15OnTheNotificationQueuesTheActionAndRingsAgainIn15Minutes` (the tap is
+     kept and the alert rings again in 15 minutes with no app running); `RingLogTest.aPlus15RingIsMarked
+     SnoozeAndSoAreItsRepeats`.
+   - Jest: `src/lib/cook.test.ts`, "+15 min tapped on the lock screen can make a conflict", "four +15 taps
+     on the brisket pull: serve 5:30 PM", "the notice says serve moved and that the other foods moved with
+     it"; `src/lib/alertTaps.test.ts` (a kept tap is applied once).
+   - Emulator: by hand only, 2026-11-17 (dev build, the app's process killed; "The +15 tap with the app
+     closed" above). **No rig test, and not on a release build.**
+2. **Not yet, Undo, Pit went out, Back up to temp with Move serve, and Adjust.** None was tapped today.
+   - **Not yet:** Jest: `CookOptions.test.tsx` "Not yet at a check step", `src/lib/cook.test.ts` "Not yet
+     at a pull: that food comes off 30 min later", `engine/cook.test.ts` (two tests). **Emulator: not
+     covered.**
+   - **Undo:** Jest: `src/lib/cook.test.ts` "undo the most recent Done" (five tests). Emulator: `followups`
+     (Done, then Undo puts Next up back); it passed at 115% on 2026-11-18.
+   - **Pit went out:** Jest: `CookOptions.test.tsx` "Pit went out stops the clock", `engine/cookState.test.ts`
+     "PitDown". Emulator: `cook-options` (the banner shows and the steps hold).
+   - **Back up to temp with Move serve:** Jest: `CookOptions.test.tsx` "Back up to temp asks keep or move;
+     Move serve re-times the steps and replaces the alarms once". Emulator: `cook-options` gets the keep or
+     move question and taps Apply on the choice already selected; **Move serve itself is not covered on a
+     device.**
+   - **Adjust:** Jest: `CookOptions.test.tsx` "Adjust opens it too" and "Running behind or ahead";
+     `engine/live.test.ts` T16. Emulator: `cook` checks the Adjust button is there; **tapping it is not
+     covered on a device.**
+3. **Two alerts waiting at once.** Every alert was answered before the next one rang.
+   - Seen by hand on the emulator, 2026-11-18 2:20 PM, release beta.2: two alerts under one Pit Planner
+     card, each opening to its own Done and +15 min (`docs/guide/lock-screen-alert.png`). Neither button
+     was tapped there.
+   - Jest: `src/lib/alertTaps.test.ts` and `applyActions` in `src/lib/cook.test.ts` apply several kept taps
+     in order. **Tapping Done on two waiting alerts on a device: not covered.**
+
+### Why Oven to 170F and Check tenderness moved 5 minutes after the 12:44 PM Done, and slice and serve did not
+
+From the code, and it matches SPEC.
+
+1. The Done on Check the brisket (wrap) came from the alert at 12:44:41 PM, 4 minutes 41 seconds after the
+   step's 12:40 PM. A Done from an alert never asks: it keeps serve when the holds can take the change
+   (`applyActions` and `keepServeIfCovered`, `src/lib/cook.ts`).
+2. The engine counts the lateness in 5 minute steps, to the nearest step, so 4 minutes 41 seconds is 5
+   (`roundMin` in `engine/live.ts`). That food's phases from the done one on move by that much, and so
+   does its finish (`markStepDone`): the brisket's pull, "Check tenderness", went from 3:40 to 3:45 PM.
+3. Oven to 170F is not its own time. It is 15 minutes before the first food that will be held comes off
+   (`OVEN_LEAD_MIN` in `engine/plan.ts`), so it followed the pull, from 3:25 to 3:30 PM.
+4. Serve was kept, so the brisket's hold got 5 minutes shorter instead (`extraHoldMin` in `markStepDone`).
+   Slice or plate the brisket is counted back from serve, not from the pull, so it stayed at 4:40 PM, and
+   serve stayed at 5:00 PM. The wings and the breasts were not touched.
+
+SPEC section 5 says the same three things: a Done on a check step moves that food's later phases by the
+difference; with serve kept, the hold absorbs it; and times set by these changes round to 5 minutes. One
+thing to know: because of the rounding to the nearest 5, a Done 2 minutes 30 seconds to 7 minutes 29 seconds
+late counts as 5 minutes, and one less than 2 minutes 30 seconds late moves nothing.
+
+## Overnight check, Wednesday night to Thursday morning 2026-11-19 (beta.2, no food)
+
+Jason's order (2026-11-18, about 5:45 PM): a short plan whose first ring is 5:30 AM Thursday and whose serve
+is by 7:15 AM; he starts it tonight with one tap; the alarm list is read over adb after his yes; then the
+phone is unplugged until morning; he discards by 7:30 AM and does Send to developer; then the ring log and
+`dumpsys deviceidle` are read, after his yes. **Pass: the 5:30 AM ring within 1 minute while the phone was
+in deep idle.** It answers the limit in the rehearsal's reads: no ring there came out of hours of deep idle.
+
+**Pass line reworded (Jason, Thu 2026-11-19), for this check and any future one: "ring within 1 min after
+the phone spent hours in deep idle overnight."** The first wording could not be met on this phone: its
+`dumpsys deviceidle` has `min_time_to_alarm=+1h0m0s0ms`, so Android leaves deep idle when a `setAlarmClock`
+alarm is under 1 hour away (the same rule the emulator showed in T-016, TASKS). "Result" below has the
+night's evidence.
+
+**The plan** (from the engine with the phone's own gear and rates, 2026-11-18 5:30 PM): one food, **Chicken
+breasts, 4, on the griddle, pounded, no brine**; **Start at Thursday Nov 19, 5:30 AM**. Four alerts:
+
+| Time | Alert |
+|---|---|
+| 5:30 AM | Fire the griddle |
+| 5:45 AM | Chicken breasts on the griddle |
+| 5:57 AM | Pull chicken breasts |
+| 6:05 AM | Serve |
+
+(Wings alone would serve at 7:35 AM, past his 7:15 AM. The engine also makes "Prep the chicken breasts" at
+5:15 AM; it has no alarm and the app does not show it.)
+
+**What Jason enters:** on Plan, open Brisket and tap Remove; open Chicken wings and tap Remove; leave Chicken
+breasts as it is (4, griddle, pounded). Tap Start at, then the date and time: Thu Nov 19, 5:30 AM. Plan
+should then show the breasts at 5:45 AM and serve at 6:05 AM. One tap on Start cook.
+
+**To know before the night:** an alert nobody answers rings again every 10 minutes, six times, then "Cook
+needs you". Four alerts left alone ring on and off from 5:30 AM to about 7:05 AM. Done on an alert stops
+that alert only. The phone must be unplugged all night: a phone on a charger does not go into deep idle.
+
+| # | Who | What | Done |
+|---|---|---|---|
+| 1 | Jason | Enter the plan above and tap Start cook once. Say what Plan and Cook show | Wed 5:35 PM: brisket and wings removed, breasts as they were, Start at Thu 5:30 AM; Plan showed the breasts at 5:45 AM and serve at 6:05 AM; Start cook tapped once (Jason) |
+| 2 | Claude | After his yes: `adb -s <phone> shell dumpsys alarm` (read only). Expect four alarms of the app, Thursday 5:30, 5:45, 5:57 and 6:05 AM, each once, nothing else | Wed 5:36:07 PM, after his yes: four alarms of the app pending, Thu 5:30:00, 5:45:00, 5:57:00 and 6:05:00 AM, each once; nothing else of the app's, nothing of the dev build's; Android's next alarm clock for the phone is Thu 5:30:00 AM |
+| 3 | Jason | Unplug. Phone locked, not on a charger, until morning | Wed about 5:50 PM: unplugged for the night (Jason) |
+| 4 | Jason | By 7:30 AM: End cook, Discard this cook. Gear, 5 taps on the version line, Send to developer | Thu: discarded and sent (Jason, that morning). The debug file's event log: Done tapped on the four alerts 6:08:58 to 6:09:10 AM, cook ended 6:10:56 AM, file made 6:11:04 AM; no cook stored, no alarm listed, history still its one earlier row, `problems` empty |
+| 5 | Claude | After his yes: read the ring log from the debug file, `dumpsys deviceidle` and the battery history (read only) | Thu 7:17:22 AM, after his yes: `dumpsys alarm`, `dumpsys deviceidle`, `dumpsys batterystats --history`, read only, saved in `tools/device/out/t037-overnight-2026-11-19/` (git-ignored). Ring log read from the debug file in place (not copied, not committed) |
+
+**Result: PASS (Jason, Thursday 2026-11-19, after reviewing the 7:17 AM reads).** Against the reworded
+line, "ring within 1 min after the phone spent hours in deep idle overnight": the alarms set the evening
+before came through about 7 hours of deep idle (4 hours unbroken, 1:11:25 to 5:11:26 AM), Android left deep
+idle for them as designed, the first ring was 1.085 seconds late, every later first ring and repeat was
+under 0.06 seconds late, and nothing was left behind.
+
+Against the first wording ("while the phone was in deep idle") it was not met, and could not be: the 5:30
+AM alert rang at 5:30:01.085 AM with the phone in light idle (the ring log's `idle` flag is false and the
+battery history shows `device_idle=light` from 5:29:51 AM; the two agree on all 10 records of the night),
+18 minutes 34 seconds after the phone left deep idle. Android left deep idle because the alarm was under 1
+hour away: `min_time_to_alarm=+1h0m0s0ms` in `dumpsys deviceidle`; its idling history has "normal ...
+(alarm)" at 5:11:27 and 5:59:28 AM; the battery history at 5:11:26 AM has the `DeviceIdleController.deep`
+wakeup with `active=1000:"alarm"`. Note (Claude): the rehearsal's 8 rings with `device_idle=full` came
+after deep idle stretches of 6 minutes or less, entered inside the hour before an alarm, so on this phone
+the rule shows when a long stretch ends, as here, not at every entry. It does not change the result.
+
+All times Thursday AM, from the ring log (`rings.records` in the debug file); "Late" for a repeat is
+against its own time, 10 minutes after the ring before it. `idle` is Android's deep idle flag
+(`PowerManager.isDeviceIdleMode`) read just before the alert is posted.
+
+| Alert | Ring | Planned | Rang | Late | `idle` flag | Battery history then | Screen |
+|---|---|---|---|---|---|---|---|
+| Fire the griddle | first | 5:30:00 | 5:30:01.085 | 1.085 s | false | light, since 5:29:51 | off |
+| Fire the griddle | repeat 1 | 5:40:01 | 5:40:01.135 | 0.050 s | false | light | off |
+| Chicken breasts on the griddle | first | 5:45:00 | 5:45:00.057 | 0.057 s | false | off, 5:44:27 to 5:45:32 | off |
+| Fire the griddle | repeat 2 | 5:50:01 | 5:50:01.164 | 0.029 s | false | light | off |
+| Chicken breasts on the griddle | repeat 1 | 5:55:00 | 5:55:00.097 | 0.040 s | false | light | off |
+| Pull chicken breasts | first | 5:57:00 | 5:57:00.056 | 0.056 s | false | light | off |
+| Fire the griddle | repeat 3 | 6:00:01 | 6:00:01.176 | 0.012 s | false | off, since 5:59:27 | on |
+| Serve | first | 6:05:00 | 6:05:00.052 | 0.052 s | false | light, since 6:04:27 | off |
+| Chicken breasts on the griddle | repeat 2 | 6:05:00 | 6:05:00.118 | 0.021 s | false | light | off |
+| Pull chicken breasts | repeat 1 | 6:07:00 | 6:07:00.089 | 0.033 s | false | light | off |
+
+- **Four alerts, each rang first at its time, once; six repeats, each 10 minutes after the ring before it,**
+  until Done was tapped on all four (6:08:58 to 6:09:10 AM). Every record says `posted: true`. Android's
+  own count for the app since Wednesday's 12:29 PM reboot agrees: 16 first rings (12 on the rehearsal after
+  the reboot, 4 here) and 6 repeats.
+- **Nothing of the app's is left** (`dumpsys alarm`, 7:17:22 AM): none of its alarms among the 193 pending;
+  it appears only in the removal history (cancelled 6:08:58 to 6:09:10 AM) and the counts. The phone's
+  next alarm clock is another app's, Fri 6:00 AM. The debug file agrees (`alarms` empty, no stored cook).
+- **The night in the battery history** (it starts Wed 6:05:05 PM): deep idle 6:59:34 to 7:02:13 PM,
+  7:34:34 to 7:36:36 PM, 7:59:38 to 8:01:49 PM, 8:39:35 to 8:50:56 PM, then 10:09:38 to 11:09:39 PM (1 hour),
+  11:10:29 PM to 1:10:29 AM (2 hours), 1:11:25 to 5:11:26 AM (4 hours). The 4-hour stretch ended on the idle
+  controller's own timer (`DeviceIdleController.deep`). From 5:11:26 to 6:08:58 AM the phone was only ever
+  in light idle or out of idle; it next reached deep idle at 6:59:37 AM. It left and stayed out of deep
+  idle for the alarms (reason "alarm" in the idling history at 5:11:27 and 5:59:28 AM). Battery 100% to 74%.
+- **What it does show:** the four alarms set at 7:18 PM came through about 7 hours of deep idle, the last 4
+  hours unbroken and ending 18.5 minutes before the first ring, and all four rang within 1.1 seconds.
+  **What it does not show:** a ring fired while `device_idle=full`. The rehearsal has 8 of those, none
+  out of hours of deep idle.
+- **Two things differ from rows 1 to 3 above; neither matters (Jason, Thu 2026-11-19).** The unplug time
+  was 6:51 PM. The restart at 7:18 PM was Jason showing a friend; he entered the same plan again, and the
+  rings matched it. From the reads: (1) The battery history shows the phone on a charger
+  (`plug=ac`) from its first line at Wed 6:05:05 PM, full at 6:14:44 PM, unplugged at 6:51:11 PM, then off
+  the charger until Thu 7:12:03 AM. Before 6:05 PM is not in this history. (2) The event log shows the cook
+  of the 5:36 PM read was ended at 7:17:40 PM; a 19-event cook (14 alarms, serve Thu 3:00 PM) was started
+  at 7:17:56 PM and ended at 7:18:29 PM; the overnight cook was started again at 7:18:37 PM (5 events, serve
+  6:05 AM, "set 4, exact"). So the cook that rang is the 7:18 PM one, and its alarm list was not read over
+  adb; the ring log shows its four alarms at 5:30, 5:45, 5:57 and 6:05 AM.
+
+## Readout, Thursday 2026-11-19 (from the rehearsal's reads and the overnight check)
+
+**T-037 passes for 0.3.0, on 0.3.0-beta.2 on Jason's phone (a OnePlus, Android 16). The freeze on `main`
+ends (Jason, Thu 2026-11-19); the beta.3 merges start, one at a time, the full gate alone after each.**
+
+| Line | Result | From |
+|---|---|---|
+| Every ring within 1 minute of its time | Yes. 18 alerts (14 on the rehearsal, 4 overnight), the latest 1.6 seconds; the 6 overnight repeats each under 0.06 seconds | Both ring logs |
+| Nothing lost at the reboot | Yes. The 12:40 PM alert was posted 10.6 minutes after the locked reboot, before the first unlock | Rehearsal |
+| Nothing twice | Yes. Each alert rang first once. Repeats came only overnight, where nobody answered for 10 minutes, as designed | Both ring logs |
+| Ring within 1 min after the phone spent hours in deep idle overnight | Yes. 5:30:01.085 AM, 1.085 seconds late, after about 7 hours of deep idle, 4 hours unbroken | Overnight ring log, battery history, idling history |
+| Taps with the app swiped away | Yes. Three Done taps kept and applied with their own times | Rehearsal |
+| After Discard | Yes, both days: no alarm of the app pending. Rehearsal: history, rates and cookers identical before and after. Overnight: no cook stored, history still its one earlier row | `dumpsys alarm`, debug files |
+| Permissions | All four on, both days | Debug files |
+
+**Not shown on a phone, unchanged:** the list under "What today did not test" (+15 min with the app closed;
+Not yet, Undo, Pit went out, Back up to temp with Move serve, Adjust; two alerts answered at once). They
+are covered by Jest, Kotlin and emulator tests as listed there; the phone check is T-086 in 0.3.1. One
+phone only, a OnePlus with Android 16. No ring fired after hours of deep idle with the phone still in deep
+idle: Android leaves deep idle ahead of an alarm clock.
