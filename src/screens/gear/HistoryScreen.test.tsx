@@ -415,6 +415,16 @@ describe('editing a cook (failure mode 14)', () => {
     expect(within(card('Brisket')).getByLabelText('Cooks 1 logged')).toBeOnTheScreen();
   });
 
+  // Jason, 2026-11-17: a food name keeps its own capitals mid-sentence ("st. louis ribs" was wrong). No food with
+  // its own capitals has a rate today, so the brisket's saved name stands in for one. Brisket: test above.
+  test('Leave out of rates names the food with its own capitals', async () => {
+    const rec = saturday();
+    const items = rec.items.map((it, i) => (i === 0 ? { ...it, name: 'St. Louis ribs' } : it));
+    await show({ records: [{ ...rec, items }] });
+    const sheet = await openEdit();
+    expect(sheet.getByRole('checkbox', { name: 'Leave St. Louis ribs out of rates' })).toBeOnTheScreen();
+  });
+
   test('weight, count, smoker temp and notes are saved; the date, lateness and plan stay', async () => {
     const { repos } = await show();
     const sheet = await openEdit();

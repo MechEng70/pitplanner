@@ -190,9 +190,11 @@ export function StoreProvider({ repos, clock = Date.now, alarms, children }: Pro
       });
     };
     const saveCook = (cook: ActiveCook | null) => {
-      logEvent('cook', describeCookChange(latest.current.cook, cook));
+      const change = describeCookChange(latest.current.cook, cook);
       if (cook) repos.activeCook.save(cook, clock());
       else repos.activeCook.clear(clock());
+      // Logged once saved: a save that throws changed nothing, so "cook started" is never logged for it.
+      logEvent('cook', change);
       commit({ cook });
       sync();
     };

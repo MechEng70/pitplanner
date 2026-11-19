@@ -143,6 +143,8 @@ export type CookerMove =
 export interface CookerGap {
   foodName: string;
   cooker: string;
+  /** The food's name is plural ("St. Louis ribs need a smoker", Jason 2026-11-17); absent for a singular one. */
+  plural?: true;
 }
 
 /**
@@ -172,7 +174,8 @@ export function mapToCookers(
     const missing = missingCookers(food, m, cookers);
     const found = firstDoableMethod(food, cookers);
     if (!found) {
-      if (missing.length) gaps.push({ foodName: food.name, cooker: missing[0]! });
+      if (missing.length)
+        gaps.push({ foodName: food.name, cooker: missing[0]!, ...(food.plural ? { plural: true as const } : {}) });
       return it;
     }
     const alt = resolveMethod(food, found);

@@ -121,20 +121,35 @@ test('Field shows its label, control and note', async () => {
 });
 
 describe('Chips keep their width when selected (T-017 PR-3)', () => {
+  const types = ['All', 'Pellet', 'Kamado', 'Offset', 'Drum', 'Gravity', 'Electric'].map(label => ({
+    id: label.toLowerCase(),
+    label,
+  }));
   const weightOf = (node: { props: { style?: unknown } }) =>
     StyleSheet.flatten(node.props.style as never) as { fontWeight?: string };
 
-  test('every chip is sized by an unseen copy of its label in the selected weight', async () => {
+  // Regression (T-066, 2026-11-19): at 115% the smoker picker's chip read "Kamad". The chip was sized by the
+  // medium copy alone, and in Roboto the regular "Kamado" is a hair wider than the medium one, so the label
+  // that shows broke onto a second, hidden line. Neither weight is always the wider: the chip is sized by both.
+  test('every chip is sized by unseen copies of its label in both weights, so no label is cut off', async () => {
     await render(<Chips label="Plan from" value="a" onChange={() => {}} options={opts} />);
     for (const o of opts) {
-      // Two copies: the unseen one that sizes the chip (always medium) and the one that shows.
+      // Three copies: the two unseen ones that size the chip (medium, then regular) and the one that shows.
       const copies = screen.getAllByText(o.label, { includeHiddenElements: true });
-      expect(copies).toHaveLength(2);
+      expect(copies).toHaveLength(3);
       expect(weightOf(copies[0]!).fontWeight).toBe('500');
-      expect(weightOf(copies[1]!).fontWeight).toBe(o.id === 'a' ? '500' : '400');
+      expect(weightOf(copies[1]!).fontWeight).toBe('400');
+      expect(weightOf(copies[2]!).fontWeight).toBe(o.id === 'a' ? '500' : '400');
       // Only one of them is there for a screen reader or a text query.
       expect(screen.getAllByText(o.label)).toHaveLength(1);
     }
+  });
+
+  test('a scrolling row sizes its chips the same way', async () => {
+    await render(<Chips scroll label="Smoker type" value="all" onChange={() => {}} options={types} />);
+    const copies = screen.getAllByText('Kamado', { includeHiddenElements: true });
+    expect(copies.map(c => weightOf(c).fontWeight)).toEqual(['500', '400', '400']);
+    expect(screen.getAllByText('Kamado')).toHaveLength(1);
   });
 });
 

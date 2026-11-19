@@ -5,6 +5,7 @@
 // either; the caller ends the cook and goes to Plan. "Back to the cook" (T-063; not in the mockup, approved by
 // Jason, 2026-11-15) shows only while a Done on Serve can still be taken back; `onBack` does it.
 import { useState } from 'react';
+import { inSentence } from '../../../engine/labels';
 import {
   Chips,
   Button,
@@ -170,7 +171,7 @@ function RateCard({
         {r.kind === 'waiting' ? (
           <>
             <Text variant="bodyL" weight="500">
-              Your {r.foodName.toLowerCase()} rate stays
+              Your {inSentence(r.foodName)} rate stays
             </Text>
             <Text variant="bodyM" relaxed>
               Plans keep your <Num>{after}</Num>. {r.cooksLogged} of {r.learnAfter} logged cooks before it adjusts. Lock

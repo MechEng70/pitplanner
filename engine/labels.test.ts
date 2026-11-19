@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { itemLabels, longHold } from './labels.ts';
+import { agree, itemLabels, longHold } from './labels.ts';
 import { buildPlan } from './plan.ts';
 import { markStepDone } from './live.ts';
 import { alarmsFromPlan, keyedEvents } from './alarms.ts';
@@ -252,4 +252,24 @@ test('long hold, one food: the inline note is not used (the caller adds the full
     longHold([{ name: 'brisket', holdMin: 310, limitMin: 240, holdNoteInline: KEEP }]),
     'Long hold: brisket 5 hr 10 min, limit 4 hr.',
   );
+});
+
+// Jason, 2026-11-17: "Chicken breasts needs a griddle." The food's own flag says its name is plural, never
+// its spelling ("brisket" and "breasts").
+test('agree: the plural foods in the data are the four with plural names, and nothing else', () => {
+  const foods = rules.foods as { id: string; plural?: unknown }[];
+  assert.deepEqual(
+    foods
+      .filter(f => f.plural)
+      .map(f => f.id)
+      .sort(),
+    ['bbribs', 'breasts', 'stlribs', 'wings'],
+  );
+  assert.ok(foods.every(f => f.plural === undefined || f.plural === true));
+});
+
+test('agree: the plural word for a plural food, the singular one otherwise', () => {
+  assert.equal(agree(true, 'needs', 'need'), 'need');
+  assert.equal(agree(false, 'needs', 'need'), 'needs');
+  assert.equal(agree(undefined, 'it', 'them'), 'it');
 });

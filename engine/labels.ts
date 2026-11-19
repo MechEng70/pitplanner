@@ -3,6 +3,14 @@ import type { Rules } from './rules.ts';
 import type { ItemInput } from './types.ts';
 import { durationText } from './units.ts';
 
+/**
+ * The word that agrees with a food as subject or as "it" (Jason, 2026-11-17): `agree(food.plural, 'needs',
+ * 'need')`, `agree(food.plural, 'it', 'them')`. `plural` is the food's own flag in data/foods.json, never a
+ * guess from the spelling ("brisket", "breasts"). Two of the same food read as their food does: "11.5 lb
+ * brisket needs", "2 lb chicken wings need".
+ */
+export const agree = (plural: boolean | undefined, one: string, many: string): string => (plural ? many : one);
+
 /** "Brisket" -> "brisket", "Baby back ribs" -> "baby back ribs"; "St. Louis ribs" keeps its capitals. */
 export const inSentence = (name: string) => (/^St\. /.test(name) ? name : name.charAt(0).toLowerCase() + name.slice(1));
 

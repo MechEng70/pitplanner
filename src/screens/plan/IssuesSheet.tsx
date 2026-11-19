@@ -1,6 +1,6 @@
 // Conflicts sheet (opens from the Conflicts tile): every warning of the plan, warnings before notes, each
 // with the fixes that apply. A port of legacy/src/screens/plan/IssuesSheet.tsx.
-import { itemLabels } from '../../../engine/labels';
+import { inSentence, itemLabels } from '../../../engine/labels';
 import type { Cookers, ItemInput, Plan } from '../../../engine/types';
 import { Button, Card, Fill, Row, Sheet, Stack, Text, useSheet, Warn } from '@/components/kit';
 import { tx, type Units } from '@/lib/format';
@@ -39,7 +39,7 @@ function Issues({ plan, items, cookers, units, onMoveToGriddle, onEdit, onChange
   const known = (it: ItemInput) => {
     try {
       const label = labels.get(it.id);
-      const name = label ? tx(label, units) : food(it.foodId).name.toLowerCase();
+      const name = label ? tx(label, units) : inSentence(food(it.foodId).name);
       return { it, name, cooker: method(it.foodId, it.methodId).cooker };
     } catch {
       return null;

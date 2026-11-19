@@ -21,6 +21,34 @@ export function showTemp(f: number, unit: TempUnit, setPoint = false): string {
   return `${setPoint ? Math.round(c / SET_POINT_STEP_C) * SET_POINT_STEP_C : Math.round(c)}C`;
 }
 
+/** The stored F of the four Celsius choices, 5C, 10C, 15C and 25C (T-082). */
+export const CELSIUS_STEPS_F = [9, 18, 27, 45];
+
+/**
+ * A Celsius step (T-082, Jason 2026-11-17): the display unit decides, as steps are stored in F only. In
+ * Celsius display a stored 9F, 18F, 27F or 45F step is 5C, 10C, 15C or 25C: its grid counts in C
+ * (engine/temps.ts) and its set points read as exact C. In Fahrenheit display every step is an F step, and in
+ * Celsius display any other step stays an F step. So switching units changes the meaning of those four steps
+ * (a stored step unit is planned for 0.3.x).
+ */
+export const isCelsiusStep = (stepF: number | null | undefined, unit: TempUnit): boolean =>
+  unit === 'C' && stepF != null && CELSIUS_STEPS_F.includes(stepF);
+
+/** A step in the display unit: "5F", "5C" for 9F. A step is a difference, so C is step * 5/9 with no offset. */
+export function showStep(stepF: number, unit: TempUnit): string {
+  return unit === 'F' ? `${stepF}F` : `${+((stepF * 5) / 9).toFixed(1)}C`;
+}
+
+/**
+ * A smoker set point in the display unit, given the smoker's step (null: it has fixed settings). With a Celsius
+ * step it reads as the grid's exact C (85C, 90C, 95C), whole degrees off the grid. A dial smoker's settings are
+ * real marks, so they read to the whole degree too (105C, not 106C; Jason, 2026-11-17). Any other smoker keeps
+ * showTemp's 2C set point rounding.
+ */
+export function showSetPoint(f: number, unit: TempUnit, stepF: number | null | undefined): string {
+  return !stepF || isCelsiusStep(stepF, unit) ? showTemp(f, unit) : showTemp(f, unit, true);
+}
+
 export function showWeight(lb: number, unit: WeightUnit): string {
   return unit === 'lb' ? `${+lb.toFixed(2)} lb` : `${+lbToKg(lb).toFixed(2)} kg`;
 }
