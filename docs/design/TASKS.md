@@ -1416,6 +1416,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
      banner (exact alarms are off).
 
 ### T-064 A cook is never lost without the user choosing it
+- **Done: shipped in 0.3.0, released Thu 2026-11-19 (Jason: "release with them as built").** Save and Discard on Cook finished came with T-023, with their own regression tests.
 - **Status line settled 2026-11-19 (the release notes' check list asked for it): built.** Save and Discard
   on Cook finished came with T-023 and have their own regression tests (`FinishScreen.test.tsx`: a saved
   cook is only removed or changed by Remove on Cook history; after Discard the history is exactly what it
@@ -1594,6 +1595,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Tests:** unit tests for what goes into the file; RNTL for the action.
 
 ### T-068 A log of every alarm ring, kept on the Android side
+- **Done: shipped in 0.3.0, released Thu 2026-11-19 (Jason: "release with them as built").** The one ring owed on a real phone is done: the ring log was read from his phone on 2026-11-18 (14 rings) and 2026-11-19 (10 records).
 - **Version (Jason, 2026-11-16, later the same day):** moved into 0.3.0, before the beta.1 build (it is the
   record the staged Saturday cook, T-037, is read from). Was 0.5.0. Failing tests first; JUnit/Robolectric
   for the store and its cap, Jest for the report.
@@ -1620,6 +1622,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Real phone:** yes, one ring with the app closed.
 
 ### T-066 User README with screenshots
+- **Done: shipped in 0.3.0, released Thu 2026-11-19 (Jason: "release with them as built").** All 22 guide pictures and the README's four are in. The guide's open wording and the ring log sentence for section 11 are T-099 (0.3.1).
 - **Jason (2026-11-17):** 0.3.0. The text is merged (`docs/USER-GUIDE.md`, 22 screenshot slots). The
   screenshots come from the fidelity PNGs after the device checks; if they are not ready for Monday's
   release (2026-11-23) they go to 0.3.1.
@@ -2188,6 +2191,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** see T-031.
 
 ### T-031 Share between two phones (Gmail, Drive)
+- **Moved to 0.3.1 (Jason, 2026-11-18): no second phone was tested for 0.3.0. Opening a shared plan (T-030) shipped in 0.3.0; the release notes' known limits say the two-phone share is untested.** His wife's phone is not part of any test (Jason, 2026-11-19), so which second phone is used is his to say.
 - **Moved to 0.3.1 (Jason, Wed 2026-11-18 evening): "No other phones are tested for 0.3.0."** The two-phone
   test, his wife's phone to his and back (`docs/after-readout-checklist.md`, Part 2), is not run before
   0.3.0. SPEC's definition of done still lists "Share plan round-trips between two phones"; his to settle.
@@ -2254,6 +2258,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - The dev build ("Pit Planner dev") checks too, once a day, as built (Jason, 2026-11-15). Nothing to change.
 
 ### T-033 Release docs: notes, install guide, releasing checklist
+- **Done: shipped in 0.3.0, released Thu 2026-11-19 (Jason: "release with them as built").** The install walk-through on a second phone is dropped: his wife's phone is not part of any test (Jason, 2026-11-19).
 - **Changed (Jason, Wed 2026-11-18 evening):** INSTALL.md is not followed on his wife's phone before the
   release; she gets 0.3.0 when he sends it, not beta.2. INSTALL.md wording fixes still go in before Monday
   2026-11-23 (known so far: the "Oven hold raised to 140F, the safe minimum." import line is missing; which
@@ -2290,6 +2295,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   install prompts in INSTALL.md are written from stock Android, not checked on a phone.
 
 ### T-034 Parity review
+- **Done: shipped in 0.3.0, released Thu 2026-11-19 (Jason: "release with them as built").** The test rig faults found in the 2026-11-17 device pass are T-100 (0.3.1).
 - **Jason's review answer 10 (2026-11-16):** the ribs history card (a food not by weight with saved total
   hours) is fine as built; drop "by-weight" from the SPEC wording about Cook history rate cards (row T7).
 - **Parity 1b tests (2026-11-16):** 12 of T6-T19 closed (`*.parity.test.ts(x)`, `src/lib/dst.parity.test.ts`, Kotlin `ParityTest.kt`); T16 with another agent, T18 open as a finding (`docs/parity.md` 1b).
@@ -2382,6 +2388,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** none.
 
 ### T-036 Data export
+- **Done: shipped in 0.3.0, released Thu 2026-11-19 (Jason: "release with them as built").** Export my data and Restore from a file were done on his phone on beta.3 (2026-11-19: "Restored 3 cookers, 2 cook rates, and 1 cook").
 - **Screen decided (Jason, 2026-11-16; proposal `docs/proposals/2026-11-16-data-export-ui.md`, option 1):**
   - Two rows under Cook rates in "Your numbers" on Gear. **SPEC's Gear section and mockup 16 get the rows
     before any code.**
@@ -2598,9 +2605,12 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   file is the same); tag `v0.3.0` on `53566f8`, the commit he built. Before publishing, on the release file:
   the upgrade from the real 0.2.0 on the test emulator (`PASS  upgrade from 0.2.0`) and the locked reboot
   (PASS 6 of 6); on his phone, installed over beta.3, Gear shows 0.3.0 and the brisket rate is still 0.65.
-  **One check left (RELEASING section 8), his:** on his wife's phone, still on 0.2.0, Gear shows Update
-  available for 0.3.0 and it opens the download. It is the first real check of the update offer.
-  `npm run snyk:monitor` is owed on 2026-12-01, not before.
+  **The update offer (RELEASING section 8), checked on an emulator, not on a phone (Jason, 2026-11-19: his
+  wife's phone is not part of any test):** the real 0.2.0 on the Android 15 test emulator
+  (`pitplanner-api35`, 11:04 AM, against the live release) shows on Gear "Update available. Version 0.3.0.
+  Download it in your browser, then open it to install.", linking to
+  `https://github.com/MechEng70/pitplanner/releases/download/v0.3.0/pitplanner-0.3.0.apk`, which answers 200
+  with 106,098,517 bytes. **T-038 is done.** `npm run snyk:monitor` is owed on 2026-12-01, not before.
 - **Phone check, first half done early (2026-11-17, Jason's yes to each adb line):** beta.1 installed over
   0.2.0 on his phone (0.2.0 / 200 before, 0.3.0-beta.1 / 300301 after, same signing key); the full-import
   notice showed; he checked Gear, Cook rates, Cook history and Plan against the 2026-11-15 copy of his 0.2.0
@@ -3461,6 +3471,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 
 
 ### T-074 Alert and label wording: the Serve alert, the stepper, the shift buttons
+- **Done: shipped in 0.3.0, released Thu 2026-11-19 (Jason: "release with them as built").** Merged and gated; not seen on a device: T-094 (0.3.1).
 - **Status:** merged onto `main` 2026-11-16 and gated; not seen on a device.
   Approved by Jason, 2026-11-16 (his answers to `docs/proposals/2026-11-16-open-decisions.md`, items 3 and 4,
   "as one small task").
@@ -3504,6 +3515,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   list, like the timeline).
 
 ### T-075 Tri-tip with no griddle: smoke, then sear on the smoker
+- **Done: shipped in 0.3.0, released Thu 2026-11-19 (Jason: "release with them as built").** Seen on the emulator at 115%; his look at the pictures is T-097 (0.3.1).
 - **Status:** merged onto `main` 2026-11-16 and gated; waits on the device checks. Small, in 0.3.0.
 - **Jason's decisions on the built task (2026-11-16):** the warning, final: Tri-tip's sear needs a griddle.
   Add one in Gear, or pick "Smoke, then sear on the smoker" in Food details. Method order (griddle sear,
@@ -3567,6 +3579,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** Food details for tri-tip with no griddle at 115%; the import box.
 
 ### T-076 Serve moves for one food: the others follow
+- **Done: shipped in 0.3.0, released Thu 2026-11-19 (Jason: "release with them as built").** The notice was read on the emulator; a picture and his look are T-098 (0.3.1).
 - **Status:** merged onto `main` 2026-11-16 and gated (engine 193, Jest 792, gate self-tests 153). Not seen
   on a device. Must-fix for 0.3.0 (Jason, 2026-11-16).
 - **Fault:** the lock screen and the app give identical plans; the fault is in the engine. `extendCook` and
@@ -3767,6 +3780,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Real phone:** yes, the OnePlus and a tester's Samsung.
 
 ### T-079 A lock-screen tap is never lost from the queue
+- **Done: shipped in 0.3.0, released Thu 2026-11-19 (Jason: "release with them as built").** Merged and gated; not seen on a device: T-095 (0.3.1).
 - **Status:** built 2026-11-16 on branch `worktree-agent-a9423a4e850d2999f`, unit-tested, Kotlin tests not run
   through Gradle, not gated (`npm run check` not run). In 0.3.0 (Jason, 2026-11-16). App bug, found by reading
   2026-11-16.
@@ -3846,6 +3860,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing (Jason):** a probe in hot water against the Chef iQ app's reading.
 
 ### T-081 Live cook: header line, wings pull wording, banner line break
+- **Done: shipped in 0.3.0, released Thu 2026-11-19 (Jason: "release with them as built").** The device run passes; his look at the two re-shot pictures is T-096 (0.3.1).
 - **Sources (Jason, 2026-11-16, after the fixes):** the USDA FSIS Safe Minimum Internal Temperature Chart,
   which he confirmed in his browser (the site refuses automated access), is cited in `data/foods.json` for
   the done temp of wings and breasts (all poultry 165F) and of brisket and tri-tip's griddle-sear and
@@ -3886,6 +3901,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing:** re-shoot `docs/fidelity/rn-12-live-warned.png` and `rn-12-live-conflict.png` at 115%.
 
 ### T-082 Temp step question on Setup's smoker card and in Gear
+- **Done: shipped in 0.3.0, released Thu 2026-11-19 (Jason: "release with them as built").** His look was done on his phone on beta.3 (2026-11-19).
 - **Merged onto branch `beta3` Thu 2026-11-19 (merge 2 for beta.3, with the mockups branch; no conflicts;
   gate passed: engine 241, Jest 976). Not on `main` yet: `main` waits for Jason's /ultrareview of `beta3`.
   Done the same day on `beta3`: the SPEC lines (`0eb5c31`), the rig lines (`a2e1b40`; `setup` and `gear`
@@ -4228,4 +4244,57 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   2026-11-19 held none; Jason's terminal showed them during the beta.3 build's gate).
 - **The task:** `npm run check` counts the `console.error` lines across all suites and reports the count
   with the totals, in the terminal and in a captured log alike. A count, not a failure.
+
+### T-094 See T-074's alert and label wording on a device
+- **Carried from 0.3.0 (Jason, 2026-11-19): 0.3.1.** T-074 shipped merged and gated, not seen on a device.
+- **Status:** backlog, 0.3.1.
+- **The task:** on the emulator's release build (and his phone if he wants), see what T-074 changed: the
+  Serve alert ("Time to serve" with the menu), the stepper labels, and the Earlier and Later shift buttons;
+  pictures for him.
+
+### T-095 See T-079 on a device: a lock-screen tap is never lost from the queue
+- **Carried from 0.3.0 (Jason, 2026-11-19): 0.3.1.** T-079 shipped merged and gated (`361159a`), not seen
+  on a device.
+- **Status:** backlog, 0.3.1. Goes well with T-086 (rig tests) and T-078 (taps with the app closed).
+
+### T-096 Jason's look at the two re-shot Live cook pictures (T-081)
+- **Carried from 0.3.0 (Jason, 2026-11-19): 0.3.1.** `docs/fidelity/rn-12-live-warned.png` and
+  `rn-12-live-conflict.png`: the header line, the banner's line break, the wings pull wording.
+- **Status:** backlog, 0.3.1. His look only; a change he asks for becomes its own task.
+
+### T-097 Jason's look at the tri-tip "Smoke, then sear on the smoker" pictures (T-075)
+- **Carried from 0.3.0 (Jason, 2026-11-19): 0.3.1.** Seen on the emulator at 115%; the pictures were in his
+  stacked review and not answered.
+- **Status:** backlog, 0.3.1. His look only.
+
+### T-098 A picture of the "Serve moved" notice, and Jason's look (T-076)
+- **Carried from 0.3.0 (Jason, 2026-11-19): 0.3.1.** The notice was read on the emulator ("Serve moved to
+  10:30 AM. The other foods moved with it."); no picture was taken.
+- **Status:** backlog, 0.3.1.
+
+### T-099 User guide: the open wording, and the alarm ring log in section 11 (T-066)
+- **Carried from 0.3.0 (Jason, 2026-11-19): 0.3.1.** The open wording findings are under T-066. Section 11
+  says nothing about the alarm ring log on the debug screen (his call: leave for 0.3.1). The guide also
+  says twice, a paragraph apart, to use "Not listed? Enter it yourself" for a smoker that is not listed.
+- **Status:** backlog, 0.3.1. His wording.
+
+### T-100 Device rig fixes: the 2026-11-17 pass, the button rule, the locked-reboot guard
+- **Carried from 0.3.0 (the after-readout checklist's rig items): 0.3.1.** No app change.
+- **Status:** backlog, 0.3.1. T-086 waits on it.
+- **What:** date the legacy-import fixture's running cook from the clock; wait for the MediaStore row before
+  opening a pushed plan file (`shared`, `shared-soon`); scroll to Alerts in `gear` at 130%; scroll a button
+  clear of the pinned footer before tapping it (`setup`'s test alert, `cook-finished`'s Keep); then rerun
+  those five at 115% and 130%. Jason's rig rule: a tapped button is inside the screen and at least a
+  quarter of the screen wide (for the three confirm sheets first, then every tapped button). The
+  locked-reboot test's 20 minute guard stops about 3 starts in 10: bring serve nearer or move the guard to
+  22 minutes, and correct the comment. Seen again on 2026-11-19: `setup` and `gear` fail at 130% on these
+  rig faults, and pass at 115%.
+
+### T-101 Device test: update the release app with a cook running
+- **Carried from 0.3.0 (Jason, 2026-11-17; the after-readout checklist): 0.3.1.**
+- **Status:** backlog, 0.3.1.
+- **What:** install a newer release APK over a running cook and read `dumpsys alarm` without opening the
+  app: every alarm still to come is registered again (`RestoreReceiver` on `MY_PACKAGE_REPLACED`). Also the
+  0.2.0 window: install over a running 0.2.0 cook, do not open the app, and a step must ring before the
+  first open; that ring has never been run.
 

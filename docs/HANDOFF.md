@@ -1,9 +1,121 @@
-# Handoff (2026-11-18 evening: T-037 is closed on the rehearsal, no Saturday cook; beta.3 by Friday noon from the parked branches, one merge and one full gate at a time; an overnight check on beta.2 runs tonight; readout Thursday; release 0.3.0 Monday)
+# Handoff (2026-11-19: 0.3.0 is released and nothing of 0.3.0 is open; owed: snyk monitor on 2026-12-01, the public roadmap T-091, then the 0.3.1 backlog)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## Restart, twenty-seventh session (written Wednesday 2026-11-18, 5:50 PM; read this first)
+## Restart, twenty-eighth session (written Thursday 2026-11-19, 11:08 AM; read this first)
+
+**Pit Planner 0.3.0 was released today, Thursday 2026-11-19, 11:01 AM.** Published by Jason as a normal
+GitHub release (not a pre-release), marked Latest: https://github.com/MechEng70/pitplanner/releases/tag/v0.3.0 .
+Tag `v0.3.0` on `53566f8`, the commit he built. One file, `pitplanner-0.3.0.apk`, version code 300999,
+106,098,517 bytes, SHA-256 `cf2641b68a232ce09a490d05caa0b7adb700f050f5dfeeee7b5cef84049cc9c2` (GitHub's
+digest of the uploaded file is the same). 0.3.0 is on his phone: he installed it himself over beta.3.
+
+**What passed.**
+
+- **The overnight check** (beta.2, his phone, Wed night to Thu morning): alarms set the evening before came
+  through about 7 hours of deep idle; the 5:30 AM alert rang 1.085 seconds late. PASS by his decision, with
+  the pass line reworded (`docs/t037-checklist.md`, "Overnight check").
+- **The rehearsal** (beta.2, his phone, Wed 2026-11-18): 14 alerts, each once, each within 1.6 seconds,
+  through a locked reboot. T-037 passes for 0.3.0 (`docs/t037-checklist.md`, "Readout").
+- **The locked reboot on the 0.3.0 file** (`tools/device/locked-reboot.sh`, emulator `pitplanner-lock`):
+  PASS 6 of 6; the step due at 10:55:00 rang while still locked. The same on beta.3 that morning.
+- **The upgrade from the real 0.2.0 to the 0.3.0 file** (`tools/device/upgrade020.sh`, test emulator):
+  `PASS  upgrade from 0.2.0`; cookers, the saved rate, the plan draft, units and two past cooks came over,
+  nothing quarantined. The screens were not looked at by hand.
+- **`turkey` at 115% and 130%** (dev build with the released code): PASS at both; reviewed by Jason.
+  Pictures: `tools/device/out/turkey-2026-11-19/`.
+- **The review agent** (read-only, in place of /ultrareview, which bills as usage on this account): the code
+  diffs of merge 1 and `main..beta3`; no high finding; its two real findings were already 0.3.1 items.
+- **Jason's phone pass on beta.3:** steps 1 to 10 passed, nothing wrong at 115%.
+- **The update offer, on an emulator** (the real 0.2.0 on `pitplanner-api35`, against the live release,
+  11:04 AM): Gear shows "Update available. Version 0.3.0. Download it in your browser, then open it to
+  install.", linking to the release's APK, which answers 200 with the right size.
+- **The gate** on every merge, on the beta.3 build and on the 0.3.0 build: engine 253, gate self-test 154,
+  Jest 997 in 86 suites, Kotlin 117, Semgrep and Snyk clean (one Snyk retry after a Snyk 500).
+
+**State.** `main` holds the release and this close-out; the docs commits made after the 0.3.0 push are not
+on GitHub until Jason pushes (`git log origin/main..main`). No branch but `main` and the seven parked
+worktree branches below. No agent is running; emulators, Metro and the Gradle daemons are stopped.
+`dashboard.html` shows 0.3.0 as released with nothing in progress and 0.3.1 as next (local, never committed;
+its old copies are in `tools/device/out/dashboard-backups/`). **His phone has 0.3.0. Nothing is done on it
+without a list and his yes. His wife's phone is not part of any test (Jason, 2026-11-19).**
+
+What is on the emulators (test data only): `pitplanner` (Android 16) has the dev build and the 0.3.0
+release app with the upgrade test's imported data; `pitplanner-lock` has 0.3.0 with the locked-reboot
+test's cook; `pitplanner-api35` has the real 0.2.0 with the upgrade test's setup data. Uninstalling any of
+them needs his yes each time.
+
+**Owed, in this order.**
+
+1. **2026-12-01: `npm run snyk:monitor`, once.** Held until then for Snyk's monthly limit. Not before.
+2. **T-091: the public roadmap on GitHub** (docs only): a Mermaid timeline at the top of `docs/ROADMAP.md`
+   or the README (he picks); the content is agreed word for word in TASKS T-091.
+3. **The 0.3.1 backlog, in ROADMAP's order** (`docs/ROADMAP.md`, "0.3.x"; the order is his to change):
+   the Celsius step items (store the step's unit, 1C / 2C / 5C / 10C choices, the 1C to 4C manual-form
+   bug); wings at 400F on a smoker that tops out lower; per-ABI APKs; the items carried from 0.3.0 (T-094
+   to T-101: two device looks, three of his looks at pictures, the user guide wording, the rig fixes, the
+   update-with-a-cook-running device test); plural names, the rest; sheet footer buttons in the kit; the
+   lane chart label; buttons hidden under the pinned footer at 130%; a failed start says so; T-084 (plan
+   edited while a cook runs); T-085 (late taps and learned rates); T-078 (taps with the app closed, a spike
+   first); T-086 (rig tests for Not yet, Move serve, Adjust; waits on T-100); T-089 (remove the brine
+   options); T-092 (StartCook's double-tap tests); T-093 (the gate's console.error count); T-088 (the
+   smoker conflict banner offers a fix); T-031 (the two-phone share; the second phone is to be named); the
+   Samsung tester's locked-reboot check. Later: T-057 (Snyk build-tool findings, by 2027-02-01), 0.4.0
+   (Home Assistant), T-087 (light theme), 0.5.0 (fish, Chef iQ, T-090).
+
+**0.3.0, reconciled (2026-11-19).** Nothing of 0.3.0 is open. In TASKS the twelve tasks that shipped as
+built are marked done (T-033, T-034, T-036, T-064, T-066, T-068, T-074, T-075, T-076, T-079, T-081, T-082),
+T-038 is done, and T-031 is moved to 0.3.1. Each open look or device check became its own 0.3.1 item:
+T-094 (T-074 on a device), T-095 (T-079 on a device), T-096 (his look, T-081's pictures), T-097 (his look,
+T-075's pictures), T-098 (a picture and his look, T-076), T-099 (user guide wording and the ring log
+sentence), T-100 (the rig fixes, the button rule, the locked-reboot guard), T-101 (update with a cook
+running). `docs/after-readout-checklist.md` has every box ticked with where it went; its Part 1 (INSTALL.md
+on his wife's phone) is dropped.
+
+**Waiting on Jason** (none of it blocks anything today): the Home Assistant mockup review (15 questions
+plus 5) and T-044's six choices; the connect-error wording and a `.local` test (T-045); a throwaway Home
+Assistant token; his wording for T-084, T-085, T-088 and T-099; what happens to saved plans when the brine
+options go (T-089); T-090's questions, with the new one (a hand-entered smoker is not in Pick your smoker
+afterward); which second phone for T-031; the disk cleanup list; the bug report card in Claude Code;
+whether to take his real Home Assistant address out of the public history (it is gone from the files since
+2026-11-18 but still in older commits on GitHub; that needs a history rewrite and a force push).
+
+**Parked branches** (worktree `.claude/worktrees/agent-<id>`, branch `worktree-agent-<id>`; none is merged;
+details in the tables under "Parked branches" further down): `a5e4bcdedac780e57` per-ABI APKs;
+`a161bd82cecaed287` smoker catalog sourcing; `a00d9697f70d1c24c` wings under 400F options;
+`a4d0fb0875a099229` T-044 Home Assistant sign-in logic; `a9241eb3e2b1eb08c` T-042 Home Assistant mockups;
+`a18cf3154316a2542` fish thickness mockups; `a06dd404e2acfae2a` fish sources.
+
+**Rules and traps from today.**
+
+- **The dashboard** is about what is next: status, the release bars, Today, "Testing needed from you" in
+  detail, Waiting on Jason. Update it at every milestone and every agent start and stop; its time comes
+  from `date`; the keeper removes what is done and never removes task rows (the bars count them). CLAUDE.md
+  has the rule.
+- **A real release needs an empty `git status`.** Put nothing untracked in the repo (`.claude/worktrees/`
+  is ignored since `c49dd99`).
+- **Commands for Jason's terminal stay short.** A long one-liner broke at `--notes-file` when pasted and
+  ran half. Give lines under about 100 characters, one per block.
+- **0.2.0 asks GitHub for `/releases/latest` and drops "-beta.N" when comparing.** A beta posted without
+  `--prerelease` would be offered to every 0.2.0 user. The 0.3.0 app goes by the tag name.
+- **A gate log captured to a file holds no console output from passing suites** (T-093). Jason's terminal
+  showed six "overlapping act()" errors the session never saw (T-092).
+- **The first gate after the computer restarts can fail step 4 with Jest 5 second timeouts** (empty Jest
+  cache). Run it again, unchanged.
+- **React Native layout, found on the emulator and not by Jest:** a `minWidth` is added to an equal share,
+  not a floor; the first `flexBasis` a view gets is kept, a later one does nothing; a class and a style for
+  the same property do not mix safely. `Segmented` is sized by `width`. Look at the screen after any
+  layout change.
+- **`pgrep -f` and `pkill -f` match their own command line.** Put a bracket in the pattern
+  (`tools/[r]elease.sh`).
+- **/ultrareview is off on this account.** A read-only Sonnet agent with a narrow brief did the review.
+- **Do not touch the repo while Jason's release build runs** (its clean prebuild can stop on a dirty tree).
+
+**To start the next session,** Jason clears the conversation and says: "Read CLAUDE.md, then
+docs/HANDOFF.md and follow its top section, 'Restart, twenty-eighth session'."
+
+## Restart, twenty-seventh session (written Wednesday 2026-11-18, 5:50 PM; superseded by the section above)
 
 **Rule (Jason, 2026-11-18, 2:40 PM).** Before saying a task, mockup or design doesn't exist, check the parked
 branches and `.claude/worktrees` as well as `main`: the tables under "Parked branches" below,
@@ -204,8 +316,9 @@ him.** After the table above:
     tasks marked built, their open looks carried to 0.3.1 (ROADMAP, 0.3.x, "Carried from 0.3.0"); the
     README keeps the four pictures the session picked. **His yes: uninstall the beta.2 release app from the
     test emulator and run the 0.2.0 upgrade test on the 0.3.0 file after his build, then the locked reboot
-    on the 0.3.0 file; report both before he publishes.** He checks the update offer on his wife's phone
-    (0.2.0) after publishing.
+    on the 0.3.0 file; report both before he publishes.** (He first said he would check the update offer on
+    his wife's phone; changed the same day: her phone is not part of any test, the check was run on an
+    emulator.)
   - **No app code changed since the beta.3 build:** the commits after the pushed `edfbeba` (`8327394`,
     `ce0eb2d`, `17076d9`) touch `docs/` and CLAUDE.md only. The 0.3.0 commit changes the version in
     `package.json` and `package-lock.json` and nothing else in the app.
@@ -216,7 +329,8 @@ him.** After the table above:
   the build's SHA-256; the release text is the notes file with the SHA line and the full INSTALL link; tag
   `v0.3.0` on `53566f8`. `main` was pushed first (`83b2bd9`). His first paste of the publish command broke
   across two lines at `--notes-file` and published nothing; the command was then given as three short lines.
-  **Left, his:** the update offer on his wife's phone (0.2.0). **Owed 2026-12-01:** `npm run snyk:monitor`.
+  **The update offer** was then checked on an emulator, not on a phone (the top section has it). **Owed
+  2026-12-01:** `npm run snyk:monitor`.
   **Next work is 0.3.1** (ROADMAP, 0.3.x; start with "Carried from 0.3.0").
 - **0.3.0 is built and tested (10:55 AM, Thu 2026-11-19); publishing is his, one command at a time.**
   `release/pitplanner-0.3.0.apk`, version code 300999, SHA-256
@@ -233,8 +347,8 @@ him.** After the table above:
   - **His phone:** he installed 0.3.0 over beta.3 himself; Gear shows 0.3.0 and the brisket rate is still
     0.65 (Jason, about 10:38 AM).
   - **Left:** he pushes `main`, tags `v0.3.0` on `53566f8` and pushes the tag, then publishes with
-    `gh release create` as a normal release (not `--prerelease`), one APK. After that he checks the update
-    offer on his wife's phone (0.2.0): the first real check of it. `npm run snyk:monitor` is owed on
+    `gh release create` as a normal release (not `--prerelease`), one APK. The update offer is checked after
+    that (done on an emulator, the top section has it). `npm run snyk:monitor` is owed on
     2026-12-01, not before.
 - **User guide (Jason, 2026-11-19):** the alerts section now says "The other foods' alarms catch up when
   you open the app."

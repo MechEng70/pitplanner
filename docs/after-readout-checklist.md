@@ -1,5 +1,11 @@
 # After Sunday's readout: INSTALL.md on his wife's phone (T-033), then the two-phone share test (T-031)
 
+**Closed out Thursday 2026-11-19: 0.3.0 is released and nothing in this file is open.** Every box below is
+ticked with what happened to it: done in 0.3.0, or moved to 0.3.1 or later with the item that now holds it.
+Part 1 (INSTALL.md on his wife's phone) is dropped: her phone is not part of any test (Jason, 2026-11-19).
+Part 2 (the two-phone share) is T-031 in 0.3.1, with the second phone still to be named. The step tables of
+both parts are kept as written and are not run.
+
 **Changed by Jason, Wednesday 2026-11-18, about 5:50 PM: no other phones are tested for 0.3.0.**
 
 - **Part 1 (INSTALL.md on his wife's phone) is not run before the release.** She gets 0.3.0 when he sends it,
@@ -96,24 +102,24 @@ deletes. Nothing is deleted before his yes.
 
 Branches only until the readout passes; then merge one at a time, the gate after each.
 
-- [ ] **Replace button off-screen (real bug, must be in 0.3.0 on Monday).** In Gear, Restore from a file,
+- [x] **Closed out 2026-11-19 (0.3.0 released): Done, shipped in 0.3.0 (merge 3; seen by Jason on his phone, 2026-11-19). The device check of the button's bounds is T-100.** As written: **Replace button off-screen (real bug, must be in 0.3.0 on Monday).** In Gear, Restore from a file,
       "Replace your data?" at 115%: Replace is pushed off the right edge, only a sliver shows
       (`tools/device/out/checks-2026-11-17/t036-restore-confirm.png`). Opus agent, failing test first, on a
       branch. At merge: add a device check to the `gear` test (Replace's bounds fully inside the screen and
       clear of Cancel), run `gear` at 115% and 130%, Jason's look.
-- [ ] **Plural food names.** "Chicken breasts needs a griddle." must read "need", and "it" must read "them";
+- [x] **Closed out 2026-11-19 (0.3.0 released): Done, shipped in 0.3.0 for the plan and shared-plan warnings and "are behind" (merge 4). The rest is in ROADMAP, 0.3.x, "Plural food names, the rest".** As written: **Plural food names.** "Chicken breasts needs a griddle." must read "need", and "it" must read "them";
       every sentence with a food as its subject. Opus agent, failing test first, on a branch. At merge: SPEC
       and the device test lines that quote the old words.
-- [ ] **Lane chart, for his decision (report only, nothing fixed):** the tri-tip's short smoke bar shows only
+- [x] **Closed out 2026-11-19 (0.3.0 released): Moved to 0.3.1: ROADMAP, 0.3.x, "Lane chart label". His decision is still open.** As written: **Lane chart, for his decision (report only, nothing fixed):** the tri-tip's short smoke bar shows only
       "s" (the label does not fit). The picture `t075-lanes-climb.png` was taken after the finding-3 fix; it
       shows the 2:50 to 3:15 PM share note because that is the next stretch at the start of the cook, and
       that plan has no clash during the climb (the brisket is off at 3:40 PM, before the climb). A picture
       of the climb clash note itself needs a cook where the brisket runs late: take one on the emulator.
-- [ ] **Cook finished at 115%:** checked on the emulator on 2026-11-17: the rate card scrolls fully into
+- [x] **Closed out 2026-11-19 (0.3.0 released): Closed: nothing to fix. His phone pass on beta.3 found nothing wrong at 115% (2026-11-19).** As written: **Cook finished at 115%:** checked on the emulator on 2026-11-17: the rate card scrolls fully into
       view above the buttons (card text ends at 889 px, the notes field follows, Save to history starts at
       1430 px; picture `cook-finished-scrolled.png`). As opened, its last lines sit under the fade over the
       pinned buttons. Nothing to fix unless Jason wants the card whole without scrolling.
-- [ ] **`.gitignore`:** add `.claude/worktrees/` and `.claude/settings.local.json` with the first merge after
+- [x] **Closed out 2026-11-19 (0.3.0 released): Done 2026-11-19 (`c49dd99`).** As written: **`.gitignore`:** add `.claude/worktrees/` and `.claude/settings.local.json` with the first merge after
       the readout; confirm `git status` no longer shows them. (Checked 2026-11-17: `.claude/` holds only
       `worktrees/`; nothing else is there to ignore or track.)
 - [x] **Start cook dead after one cook (found by Jason on his phone, 2026-11-17): fixed on `main`, `d2fdccc`,
@@ -123,20 +129,20 @@ Branches only until the readout passes; then merge one at a time, the gate after
       double-tap guard in `src/screens/plan/PlanTab.tsx` is never cleared after a cook starts, so Start cook
       does nothing after that cook ends until the app is restarted. Failing Jest test first (start, end,
       start again, mounted throughout), the fix, a device check that starts two cooks in one app launch.
-- [ ] **Sheet buttons in "Start over?" and "Alerts may not ring"** (same bug as Replace: the second button a
+- [x] **Closed out 2026-11-19 (0.3.0 released): Done, shipped in 0.3.0 (merge 3). Start over seen by Jason on his phone; Alerts may not ring seen on the emulator (`docs/guide/start-check.png`).** As written: **Sheet buttons in "Start over?" and "Alerts may not ring"** (same bug as Replace: the second button a
       24 px sliver at the right edge at 115%). Fixed on the Replace branch, each with a failing test first;
       all three merge together and must be in 0.3.0 on Monday. Device checks at merge (115% and 130%): in
       `cook-options` for Start over, in `cook` for the alert sheet, in `gear` for Replace.
-- [ ] **Rig rule (Jason, 2026-11-17):** a button a device test taps must be inside the screen AND at least a
+- [x] **Closed out 2026-11-19 (0.3.0 released): Moved to 0.3.1: T-100.** As written: **Rig rule (Jason, 2026-11-17):** a button a device test taps must be inside the screen AND at least a
       quarter of the screen wide (Android clamps off-screen bounds to the edge, so "inside the screen" alone
       passes a 24 px sliver). Use it for the three sheets at merge, then for every tapped button in every
       device test.
-- [ ] **Rig: the locked-reboot test's 20 minute guard (2026-11-17).** `tools/device/locked-reboot.sh` stops
+- [x] **Closed out 2026-11-19 (0.3.0 released): Moved to 0.3.1: T-100. Both runs on 2026-11-19 got past the guard.** As written: **Rig: the locked-reboot test's 20 minute guard (2026-11-17).** `tools/device/locked-reboot.sh` stops
       with "the next step is more than 20 minutes away" on about 3 starts in 10. Its plan's first alarm is 45
       minutes before serve, serve is 63 to 68 minutes out, so that alarm is 16.5 to 21.5 minutes from the
       start of the cook. The comment above the plan assumes the prep step 60 minutes before serve rings; prep
       steps have no alarm. Fix: bring serve nearer or move the guard to 22 minutes, and correct the comment.
-- [ ] **New device test: update the release app with a cook running (Jason, 2026-11-17).** Install a newer
+- [x] **Closed out 2026-11-19 (0.3.0 released): Moved to 0.3.1: T-101.** As written: **New device test: update the release app with a cook running (Jason, 2026-11-17).** Install a newer
       release APK over a running cook and read `dumpsys alarm` without opening the app: every alarm still to
       come is registered again. `pit-alarms` does this in `RestoreReceiver` on `MY_PACKAGE_REPLACED`
       (`Receivers.kt:107`), proven by Robolectric tests and once by hand on his phone (beta.1 to beta.2).
@@ -146,7 +152,7 @@ Branches only until the readout passes; then merge one at a time, the gate after
       window was shown on alpha.3 (`docs/alarm-testing.md`, "Upgrade with a live cook"); a ring before the
       first open has never been run, and `upgrade020.sh check` opens the app at once, so it needs its own
       step. Not run on 2026-11-17 (his order).
-- [ ] **A start that fails shows nothing.** **Fix merged to `main` Thu 2026-11-19 (merge 1 for beta.3, `eb490f8`), gate passed; not yet seen on a phone (beta.3).** **Jason, 2026-11-18: it gets a message in 0.3.1, "Couldn't start
+- [x] **Closed out 2026-11-19 (0.3.0 released): The guard fix shipped in 0.3.0 (merge 1). The message for a failed start is 0.3.1: ROADMAP, 0.3.x, "A failed start says so".** As written: **A start that fails shows nothing.** **Fix merged to `main` Thu 2026-11-19 (merge 1 for beta.3, `eb490f8`), gate passed; not yet seen on a phone (beta.3).** **Jason, 2026-11-18: it gets a message in 0.3.1, "Couldn't start
       the cook. Try again." Before building: confirm a failed start leaves no partial state, and report.**
       **Second decision the same morning, after the report below: the start-guard fix goes in Sunday's fix
       window with the share guard, regression test first: clear the guard in a finally, and write the
@@ -171,7 +177,7 @@ Branches only until the readout passes; then merge one at a time, the gate after
       - From the "Alerts may not ring" sheet, Start anyway calls the same start from a button press, not
         from a promise, so a throw there takes a different route. What a release build does with it was not
         checked.
-- [ ] **Device rig fixes from the full pass of 2026-11-17** (HANDOFF section 5): date the legacy-import
+- [x] **Closed out 2026-11-19 (0.3.0 released): Moved to 0.3.1: T-100. `turkey` was run and passed at 115% and 130% on 2026-11-19.** As written: **Device rig fixes from the full pass of 2026-11-17** (HANDOFF section 5): date the legacy-import
       fixture's running cook from the clock; wait for the MediaStore row before opening a pushed plan file
       (`shared`, `shared-soon`); scroll to Alerts in `gear` at 130%; scroll a button clear of the pinned footer
       before tapping it (`setup`'s test alert, `cook-finished`'s Keep). Then rerun those five, plus
@@ -190,7 +196,7 @@ Branches only until the readout passes; then merge one at a time, the gate after
       Conflicts tile reads 1 and the sheet says the turkey needs 225F or hotter). Run it on `main` as it
       will ship, so after the last merge. A fail here is looked at before the release is cut: Thanksgiving
       is Thursday 2026-11-26 and 0.3.0 is the build testers will plan it with.
-- [ ] **For Jason, from that pass at 130%:** Setup's "Send a test alert in 10 sec" and Cook finished's
+- [x] **Closed out 2026-11-19 (0.3.0 released): Moved to 0.3.1 by his decision of 2026-11-18: ROADMAP, 0.3.x, "Buttons hidden under the pinned footer at 130%".** As written: **For Jason, from that pass at 130%:** Setup's "Send a test alert in 10 sec" and Cook finished's
       Use / Keep buttons are hidden under the pinned buttons until scrolled (`tools/device/out/1.3/
       setup-alerts.png`, `cook-finished-rate.png`). Leave, or change the layout?
       **Jason, 2026-11-18: change the layout, in 0.3.1** (`docs/ROADMAP.md`). The parked sheet-buttons branch
@@ -198,20 +204,20 @@ Branches only until the readout passes; then merge one at a time, the gate after
       "Start over?", "Alerts may not ring"; `GearScreen.tsx`, `CookOptions.tsx`, `StartCheckSheet.tsx` and
       their tests) and does not touch Cook finished or Setup. The new layout is shown to Jason before it is
       built.
-- [ ] **User guide pictures (T-066): 16 of the 17 done Wed 2026-11-18** (`docs/guide/`, in the guide; the
+- [x] **Closed out 2026-11-19 (0.3.0 released): Done, shipped with 0.3.0: all 22 guide slots and the README's four have pictures.** As written: **User guide pictures (T-066): 16 of the 17 done Wed 2026-11-18** (`docs/guide/`, in the guide; the
       debug-send picture in `docs/fidelity/` is replaced too). Left: the lock-screen alert, the branch's 5,
       the README's 4. Two things seen in the pictures are in TASKS T-066 (the "Kamad" chip, a sliver of
       Start cook beside the check sheet). As first written: 5 of 22 slots are filled on a branch; shoot the other 17 on the
       emulator at 115% from seeded test data only, check each for personal data before committing. Replace
       `docs/fidelity/rn-debug-send.png` with a picture showing the app's address (the old one shows Jason's
       old email address; no history rewrite, his decision).
-- [ ] **Smoker catalog:** retry the rate-limited makers' sites; the ten entries whose name covers several
+- [x] **Closed out 2026-11-19 (0.3.0 released): Moved to after 0.3.0, no version set: it waits on his testers' exact models and the makers' sites (parked branch `a161bd82cecaed287`).** As written: **Smoker catalog:** retry the rate-limited makers' sites; the ten entries whose name covers several
       versions are left out of this pass (Big Green Egg, Weber WSM, Pit Barrel, Masterbuilt electric,
       Z Grills 700, recteq Bullseye, Weber Searwood, Oklahoma Joe's Highland, Old Country Brazos, Pit Boss
       850); Jason sends his testers' exact models later.
-- [ ] **`CLAUDE.md`, Models and agents:** an agent that needs a file outside its list stops and asks first.
+- [x] **Closed out 2026-11-19 (0.3.0 released): Done 2026-11-19: the rule is in CLAUDE.md.** As written: **`CLAUDE.md`, Models and agents:** an agent that needs a file outside its list stops and asks first.
 
-- [ ] **Share plan failed on the phone (Jason, Tue 2026-11-17 about 7:20 PM, 0.3.0-beta.2):** **Fix merged to `main` Thu 2026-11-19 (merge 1 for beta.3, `eb490f8`), gate passed; not yet seen on a phone (beta.3).** With no cook
+- [x] **Closed out 2026-11-19 (0.3.0 released): Done, shipped in 0.3.0 (merge 1). Two fast taps on Share and on Export my data passed on his phone, beta.3, 2026-11-19.** As written: **Share plan failed on the phone (Jason, Tue 2026-11-17 about 7:20 PM, 0.3.0-beta.2):** **Fix merged to `main` Thu 2026-11-19 (merge 1 for beta.3, `eb490f8`), gate passed; not yet seen on a phone (beta.3).** With no cook
       running, right after step 10 of `docs/t037-checklist.md` (start, end, discard, start, end, discard),
       Share on Plan showed "Couldn't share. The plan was not shared. Try again." The share sheet opened first; the message
       came after it (Jason). Gear's Export my data the same evening "seemed like it did" work (Jason). Both
@@ -243,7 +249,7 @@ Branches only until the readout passes; then merge one at a time, the gate after
       log line is written where the store is in reach: decide at the build, with how the rejection is told
       apart from others). Part 2 above runs after this is merged; single taps only until then. A device
       check that taps twice belongs with it.
-- [ ] **Plan edited while a cook runs (found by Jason on his phone, 2026-11-18):** the running cook does not
+- [x] **Closed out 2026-11-19 (0.3.0 released): Moved to 0.3.1: T-084.** As written: **Plan edited while a cook runs (found by Jason on his phone, 2026-11-18):** the running cook does not
       change and nothing says so. SPEC is silent on it. His lean: a prompt, his wording, 0.3.1. Task T-084
       in `docs/design/TASKS.md`.
 - [x] **Decided by Jason, Thu 2026-11-19: leave the brine options as they are for 0.3.0; the release notes'

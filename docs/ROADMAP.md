@@ -1,5 +1,8 @@
 # Pit Planner: roadmap after 0.3.0
 
+**0.3.0 was released on Thursday 2026-11-19** (https://github.com/MechEng70/pitplanner/releases/tag/v0.3.0).
+Nothing of 0.3.0 is open: what was left is done or is an item below.
+
 One page of what comes after 0.3.0, for Jason to triage after Sunday's readout. Written 2026-11-17.
 `docs/design/TASKS.md` stays the source of truth: if this page and TASKS disagree, TASKS wins. No task numbers
 were created for this page.
@@ -45,13 +48,18 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
   Dropping x86 is safe; dropping 32-bit ARM waits on his testers' phone models. R8 minify is on; resource
   shrinking is off and worth under 1 MB. Why: download size. Blocked on: the testers' phone models; nothing
   before the freeze.
-- **No task.** Carried from 0.3.0 (Jason, 2026-11-19: "release with them as built; carry any open 'your
-  look' notes to 0.3.1"). 0.3.0 shipped with twelve tasks merged and gated but marked built, not done:
-  T-033, T-034, T-036, T-064, T-066, T-068, T-074, T-075, T-076, T-079, T-081, T-082. The looks still open
-  in their notes: T-074 (alert and label wording) and T-079 (a lock-screen tap lost from the queue) not
-  seen on a device; T-081 his look at the two re-shot Live cook pictures; T-075 and T-076 pictures in his
-  stacked review; the user guide's open wording (T-066), and its section 11 saying nothing about the alarm
-  ring log on the debug screen (Jason, 2026-11-19: leave for 0.3.1).
+- **Carried from 0.3.0 (Jason, 2026-11-19).** 0.3.0 shipped with every task done; twelve were merged and
+  gated with a look or a device check still open, and each of those is now its own item:
+  - **T-094** See T-074's alert and label wording on a device. Why: shipped not seen on a device.
+  - **T-095** See T-079 (a lock-screen tap never lost from the queue) on a device. Why: the same.
+  - **T-096** His look at the two re-shot Live cook pictures (T-081).
+  - **T-097** His look at the tri-tip smoke-then-sear pictures (T-075).
+  - **T-098** A picture of the "Serve moved" notice and his look (T-076).
+  - **T-099** User guide: the open wording, and the alarm ring log in section 11 (T-066). Blocked on: his
+    wording.
+  - **T-100** Device rig fixes: the 2026-11-17 pass, the button rule, the locked-reboot guard. Why: `setup`
+    and `gear` fail at 130% on rig faults, not on the app. T-086 waits on it.
+  - **T-101** Device test: update the release app with a cook running, and the 0.2.0 window.
 - **No task.** Plural food names, the rest (Jason, 2026-11-17; 0.3.1): a plural flag on the planned item so
   the lane and hold notes agree ("Chicken wings hold 20 min", "Chicken wings come off before the pit climbs");
   it changes what a running cook saves, so cooks saved before keep the old wording. With it: singular forms
@@ -111,15 +119,12 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
 - **T-088** A smoker conflict made mid-cook by Not yet: the banner offers a fix, pull early into the hold
   or turn up later (Jason, 2026-11-19; 0.3.1). Why: the banner names the conflict and offers only OK.
   Blocked on: his wording and a mockup.
-- **T-031** (the two-phone part) Share between his wife's phone and his, both ways (Jason, 2026-11-18; moved
-  from 0.3.0 to 0.3.1: no other phones are tested for 0.3.0). Blocked on: 0.3.0 on her phone.
+- **T-031** (the two-phone part) Share a plan between two real phones, both ways (Jason, 2026-11-18; moved
+  from 0.3.0 to 0.3.1: no other phones were tested for 0.3.0). Blocked on: which second phone; his wife's
+  phone is not part of any test (Jason, 2026-11-19).
 - **The Samsung tester's locked-reboot check** (parity P4, T-072; Jason, 2026-11-18; moved to 0.3.1). Why:
   alarms after a restart with the phone still locked are proven on a OnePlus and the emulator only.
   Blocked on: asking the tester.
-- **T-082** (if it slips) Temp step question on Setup's smoker card and in Gear.
-  Why: nothing lets the user change a catalog smoker's step.
-  Blocked on: Jason's OK on the PNGs, then the merge after Sunday's readout. Planned for 0.3.0 on Monday
-  2026-11-23. If it slips it ships as 0.3.1.
 
 ## 0.4.0
 
