@@ -5,9 +5,10 @@ import { useMemo, useState } from 'react';
 import { inSentence } from '../../../engine/labels';
 import { buildPlan, onHeatSpan } from '../../../engine/plan';
 import { settableTemps } from '../../../engine/temps';
+import { showSetPoint, showStep } from '../../../engine/units';
 import type { Plan, PlanInput, SmokerProfile } from '../../../engine/types';
 import { type Anchor, Button, Check, ChevronUp, Inset, Menu, MenuRow, Num, SelectField, Text } from '@/components/kit';
-import { fmtTemp, fmtTempRange, fmtTime, fmtWeight, type Units } from '@/lib/format';
+import { fmtTempRange, fmtTime, fmtWeight, type Units } from '@/lib/format';
 import { countText, food, rules } from '@/lib/rules';
 import { colors } from '@/theme/tokens';
 
@@ -35,7 +36,7 @@ export function TempMenu({
   const [all, setAll] = useState(() => input.pitTempF < trusted[0] || input.pitTempF > trusted[1]);
   const rows = useMemo(
     () =>
-      settableTemps(smoker, all ? undefined : trusted).map(t => {
+      settableTemps(smoker, all ? undefined : trusted, units.temp).map(t => {
         if (input.items.length === 0) return { t, at: null };
         try {
           const p = buildPlan(rules, { ...input, pitTempF: t });
@@ -45,14 +46,16 @@ export function TempMenu({
         }
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `trusted` is a constant from the rules file.
-    [smoker, all, input],
+    [smoker, all, input, units.temp],
   );
-  const full = settableTemps(smoker);
+  const full = settableTemps(smoker, undefined, units.temp);
   const selected = rows.findIndex(r => r.t === input.pitTempF);
 
   const step = smoker.tempStepF;
-  // A step is a temperature difference, so Celsius is step * 5/9 with no offset.
-  const stepText = step ? (units.temp === 'F' ? `${step}F` : `${+((step * 5) / 9).toFixed(1)}C`) : null;
+  const stepText = step ? showStep(step, units.temp) : null;
+  // The display unit decides the grid (T-082): in Celsius a 5C-25C step's set points read as exact C (85C,
+  // 90C); any other smoker keeps the 2C rounding.
+  const shown = (f: number) => showSetPoint(f, units.temp, step);
 
   return (
     <Menu
@@ -64,7 +67,7 @@ export function TempMenu({
         <SelectField
           open
           label="Smoker temp"
-          value={<Num>{fmtTemp(input.pitTempF, units, true)}</Num>}
+          value={<Num>{shown(input.pitTempF)}</Num>}
           trailing={<ChevronUp size={20} color={colors.accent} />}
           onPress={onClose}
         />
@@ -100,7 +103,7 @@ export function TempMenu({
             selected={t === input.pitTempF}
             check={<Check size={18} color={colors.accent} />}
             onPress={() => onPick(t)}
-            label={<Num>{fmtTemp(t, units, true)}</Num>}
+            label={<Num>{shown(t)}</Num>}
             trailing={
               at != null ? (
                 <Text tone={rough ? 'warn' : undefined}>

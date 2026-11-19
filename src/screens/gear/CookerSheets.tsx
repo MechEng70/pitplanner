@@ -1,17 +1,33 @@
 // Cooker sheets opened from Gear (a port of legacy/src/screens/gear/CookerSheets.tsx): Griddle (mockup 18),
-// Oven (mockup 19), and for the smoker the Setup picker with its manual form (mockup 02, T-024). Nothing is
-// saved until Save; closing a sheet changes nothing, and closing one opened from Add a cooker adds nothing.
-// Remove is there only for a saved cooker that leaves another one behind, and never for the last cooker
+// Oven (mockup 19), and Smoker (T-082: the model and the temp step; with no smoker yet, the Setup picker with
+// its manual form, mockup 02, T-024). Nothing is saved until Save; closing a sheet changes nothing, and
+// closing one opened from Add a cooker adds nothing. Remove is there only for a saved cooker that leaves another one behind, and never for the last cooker
 // that can cook (0.2.0: the griddle goes only while there is a smoker; the smoker is replaced, not removed).
 import { useState } from 'react';
-import type { Cookers, GriddleProfile, OvenProfile } from '../../../engine/types';
+import type { Cookers, GriddleProfile, OvenProfile, SmokerProfile } from '../../../engine/types';
 import { cToF, fToC } from '../../../engine/units';
-import { Button, Chips, Field, Fill, InputField, Num, Sheet, Stack, Stepper, Text, useSheet } from '@/components/kit';
+import {
+  Button,
+  Chips,
+  ChevronRight,
+  Field,
+  Fill,
+  InputField,
+  Num,
+  SelectField,
+  Sheet,
+  Stack,
+  Stepper,
+  Text,
+  useSheet,
+} from '@/components/kit';
 import { fmtTemp, type Units } from '@/lib/format';
-import { defaultGriddle, defaultOven, OVEN_HOLD_MIN_F } from '@/lib/gear';
+import { defaultGriddle, defaultOven, hasTempStep, OVEN_HOLD_MIN_F } from '@/lib/gear';
 import { useStore } from '@/lib/store';
 import { SmokerPicker } from '@/screens/setup/SmokerPicker';
+import { StepQuestion } from '@/screens/setup/StepQuestion';
 import type { CookerKind } from '@/screens/shared/AddCooker';
+import { colors } from '@/theme/tokens';
 
 const SIZES = [17, 22, 28, 36];
 const BURNERS = [1, 2, 3, 4];
@@ -27,14 +43,12 @@ const YES_NO = [
 export function CookerSheets({ kind, onClose }: { kind: CookerKind; onClose: () => void }) {
   const { state, setGear } = useStore();
   const { gear, units } = state;
+  const saveSmoker = (smoker: SmokerProfile) => setGear({ ...gear, smoker });
   if (kind === 'smoker')
-    return (
-      <SmokerPicker
-        selectedId={gear.smoker?.id}
-        units={units}
-        onClose={onClose}
-        onPick={smoker => setGear({ ...gear, smoker })}
-      />
+    return gear.smoker ? (
+      <SmokerSheet initial={gear.smoker} units={units} onClose={onClose} onSave={saveSmoker} />
+    ) : (
+      <SmokerPicker units={units} onClose={onClose} onPick={saveSmoker} />
     );
   if (kind === 'griddle')
     return (
@@ -60,6 +74,39 @@ function without(gear: Cookers, k: CookerKind): Cookers {
   const rest = { ...gear };
   delete rest[k];
   return rest;
+}
+
+/**
+ * Smoker (T-082, proposal 16-gear-step): the model, which opens the picker, and the temp step question. A new
+ * model or step is kept in the sheet and saved only on Save smoker. Hopper and grate stay in Setup (answer 8A).
+ */
+export function SmokerSheet({
+  initial,
+  units,
+  onSave,
+  onClose,
+}: {
+  initial: SmokerProfile;
+  units: Units;
+  onSave: (s: SmokerProfile) => void;
+  onClose: () => void;
+}) {
+  const [s, setS] = useState(initial);
+  const [picking, setPicking] = useState(false);
+  return (
+    <Sheet title="Smoker" onClose={onClose} footer={<Actions what="smoker" onSave={() => onSave(s)} />}>
+      <SelectField
+        label="Model"
+        value={s.name}
+        onPress={() => setPicking(true)}
+        trailing={<ChevronRight color={colors.text2} />}
+      />
+      {hasTempStep(s.type) ? <StepQuestion smoker={s} units={units} onChange={setS} /> : null}
+      {picking ? (
+        <SmokerPicker selectedId={s.id} units={units} onClose={() => setPicking(false)} onPick={setS} />
+      ) : null}
+    </Sheet>
+  );
 }
 
 /** Griddle details (mockup 18). A griddle still called "Griddle" shows an empty Name with that placeholder. */

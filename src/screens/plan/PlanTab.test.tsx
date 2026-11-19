@@ -9,8 +9,28 @@ import { defaultOptions, method, rules } from '@/lib/rules';
 import { parsePitPlan } from '@/lib/sharedPlan';
 import { fakeAlarms, fakeResume, fakeShare, type FakeShare } from '@/platform/fakes';
 import { toPitPlan } from '@/lib/pitPlanFile';
+import { EVENT_LOG_KEY, parseEventLog } from '@/lib/eventLog';
+import { sharePlanFile } from '@/platform/share';
 import { NOW, storeWrapper, testRepos } from '@/test/store';
 import { PlanTab } from './PlanTab';
+
+/** expo-sharing under the real sharePlanFile: opens the sheet, or rejects with this. */
+let mockShareFails: Error | null = null;
+jest.mock('expo-sharing', () => ({
+  shareAsync: async () => {
+    if (mockShareFails) throw mockShareFails;
+  },
+}));
+jest.mock('expo-file-system', () => ({
+  Paths: { cache: 'CACHE' },
+  File: class {
+    uri = 'file:///CACHE/cook.pitplan';
+    create() {}
+    writeSync() {}
+  },
+}));
+// The native module is not in Jest.
+jest.mock('../../../modules/pit-share', () => ({ pitShare: {} }));
 
 const gear: Cookers = { smoker: saturday.cookers.smoker!, griddle: defaultGriddle(), oven: defaultOven() };
 const brisket = saturday.items[0]!;
@@ -353,6 +373,57 @@ describe('Share plan (T-029)', () => {
     await fireEvent.press(button('Share plan'));
     expect(share.sharePlanFile).toHaveBeenCalledTimes(1);
     expect(screen.getByLabelText("Couldn't share")).toBeOnTheScreen();
+  });
+
+  // After-readout checklist, "Share plan failed on the phone": a second tap while the sheet is still opening
+  // made expo-sharing reject it, and "Couldn't share" showed on top of a share that worked.
+  describe('through the real share path (expo-sharing faked)', () => {
+    const errors = (repos: Awaited<ReturnType<typeof show>>) =>
+      (repos.kv.get(EVENT_LOG_KEY, parseEventLog) ?? []).filter(e => e.kind === 'error').map(e => e.text);
+    const real = () => ({ ...fakeShare(), sharePlanFile });
+    afterEach(() => {
+      mockShareFails = null;
+    });
+
+    test('a share that works shows nothing and logs no error', async () => {
+      const repos = await show([brisket], real());
+      await fireEvent.press(button('Share plan'));
+      await act(async () => {});
+      expect(screen.queryByLabelText("Couldn't share")).toBeNull();
+      expect(errors(repos)).toEqual([]);
+    });
+
+    test('the "another share request is being processed" rejection shows no failure and logs nothing', async () => {
+      mockShareFails = Object.assign(new Error('Another share request is being processed now.'), {
+        code: 'ERR_SHARING_IN_PROGRESS',
+      });
+      const repos = await show([brisket], real());
+      await fireEvent.press(button('Share plan'));
+      await act(async () => {});
+      expect(screen.queryByLabelText("Couldn't share")).toBeNull();
+      expect(errors(repos)).toEqual([]);
+    });
+
+    test('any other error still says so and is written to the event log', async () => {
+      mockShareFails = Object.assign(new Error('No Activity found'), { code: 'ERR_SHARING_FAILED' });
+      const repos = await show([brisket], real());
+      await fireEvent.press(button('Share plan'));
+      await act(async () => {});
+      expect(screen.getByLabelText("Couldn't share")).toBeOnTheScreen();
+      expect(errors(repos)).toEqual(['plan share failed: Error: No Activity found']);
+    });
+  });
+
+  test('a share service that throws at once is written to the event log too', async () => {
+    const share = fakeShare();
+    share.sharePlanFile = jest.fn(() => {
+      throw new Error('no module');
+    });
+    const repos = await show([brisket], share);
+    await fireEvent.press(button('Share plan'));
+    expect(screen.getByLabelText("Couldn't share")).toBeOnTheScreen();
+    const log = repos.kv.get(EVENT_LOG_KEY, parseEventLog) ?? [];
+    expect(log.filter(e => e.kind === 'error').map(e => e.text)).toEqual(['plan share failed: Error: no module']);
   });
 });
 

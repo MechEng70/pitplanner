@@ -27,6 +27,11 @@
 - Agents: the cheapest model that can do the job well. Fable for design judgment, tricky native or debugging
   work, security decisions. Opus for implementation from a clear spec, tests, refactors, code review. Sonnet or
   Haiku for mechanical work (the dashboard keeper, doc edits, log scraping).
+- The dashboard keeper, before reporting done: load `dashboard.html` in headless Chrome and report the page
+  error count, which must be 0. "It parses" (`node --check`) is not enough: a missing comma between two rows
+  parses and then stops the page's script (2026-11-18). One way to count:
+  `google-chrome --headless=new --disable-gpu --virtual-time-budget=4000 --enable-logging=stderr --v=1 --dump-dom "file://$PWD/dashboard.html" 2>&1 >/dev/null | grep -c 'CONSOLE:[0-9]*\] "Uncaught'`.
+  The main session checks the count again before telling Jason the page is updated.
 - Run independent tasks in parallel, each in its own worktree off local `main`: no emulator, no gate in the
   worktree, stop with a report.
 - Never run two agents that edit the same file; sequence those.

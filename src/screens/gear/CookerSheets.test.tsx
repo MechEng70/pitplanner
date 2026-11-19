@@ -14,6 +14,7 @@ import { cookGear, cookInput } from '@/test/cook';
 import { NOW, storeWrapper, testRepos } from '@/test/store';
 import { CookerSheets } from './CookerSheets';
 import { GearScreen } from './GearScreen';
+import { TempMenu } from '@/screens/plan/TempMenu';
 
 beforeEach(() => jest.useFakeTimers());
 afterEach(() => {
@@ -324,17 +325,25 @@ describe('Oven (mockup 19)', () => {
   });
 });
 
-describe('Smoker: the picker and manual form of Setup', () => {
-  test('the smoker row opens the picker with the saved model marked; a verified model replaces it', async () => {
+// T-082 changed these three: the smoker row used to open the picker straight away and a pick was saved at
+// once. Now the row opens the Smoker sheet, its Model field opens the picker, and only Save smoker saves.
+describe('Smoker: the picker and manual form of Setup, from the Smoker sheet', () => {
+  test('Model opens the picker with the saved model marked; a verified model replaces it on Save', async () => {
     // A smoker saved with the Pit Boss 820 (a catalog model, verified or not) keeps its stored profile.
     const { repos } = await show({
       gear: { ...cookGear, smoker: { ...cookGear.smoker!, id: 'pitboss-820', name: 'Pit Boss 820' } },
     });
     await fireEvent.press(row(/^Pit Boss 820/));
+    await press('Smoker', 'button', 'Model');
     expect(sheet('Pick your smoker').getByRole('option', { name: 'Pit Boss 820' })).toBeSelected();
     await fireEvent.press(sheet('Pick your smoker').getByRole('option', { name: nameOf(verified) }));
     await settle();
     noSheet('Pick your smoker');
+    expect(within(sheet('Smoker').getByRole('button', { name: 'Model' })).getByText(nameOf(verified))).toBeTruthy();
+    expect(repos.cookers.load().smoker!.id).toBe('pitboss-820'); // nothing saved before Save smoker
+    await press('Smoker', 'button', 'Save smoker');
+    await settle();
+    noSheet('Smoker');
     const saved = repos.cookers.load();
     expect(saved.smoker).toMatchObject({
       id: verified.id,
@@ -347,18 +356,33 @@ describe('Smoker: the picker and manual form of Setup', () => {
     expect(row(new RegExp(`^${nameOf(verified)}`))).toBeOnTheScreen();
   });
 
-  test('closing the picker keeps the smoker', async () => {
+  test('closing the picker keeps the smoker; closing the Smoker sheet after a pick saves nothing', async () => {
     const { repos } = await show();
     await fireEvent.press(row(/^Pit Boss Sportsman 850/));
+    await press('Smoker', 'button', 'Model');
     await press('Pick your smoker', 'button', 'Close');
     await settle();
     noSheet('Pick your smoker');
+    expect(sheet('Smoker').getByRole('button', { name: 'Model' })).toBeTruthy();
+    await press('Smoker', 'button', 'Model');
+    await fireEvent.press(sheet('Pick your smoker').getByRole('option', { name: 'Big Green Egg' }));
+    const form = sheet('Big Green Egg');
+    await fireEvent.changeText(form.getByLabelText('Lowest temp (F)'), '200');
+    await fireEvent.changeText(form.getByLabelText('Highest temp (F)'), '700');
+    await fireEvent.changeText(form.getByLabelText('Temp step (F)'), '25');
+    await press('Big Green Egg', 'button', 'Save smoker');
+    await settle();
+    expect(within(sheet('Smoker').getByRole('button', { name: 'Model' })).getByText('Big Green Egg')).toBeTruthy();
+    await press('Smoker', 'button', 'Close');
+    await settle();
+    noSheet('Smoker');
     expect(repos.cookers.load()).toEqual(cookGear);
   });
 
   test('a model without checked specs opens the manual form blank and saves only what is typed', async () => {
     const { repos } = await show();
     await fireEvent.press(row(/^Pit Boss Sportsman 850/));
+    await press('Smoker', 'button', 'Model');
     await fireEvent.press(sheet('Pick your smoker').getByRole('option', { name: nameOf(unverified) }));
     const form = nameOf(unverified);
     for (const label of ['Lowest temp (F)', 'Highest temp (F)', 'Temp step (F)', 'Main grate (sq in)'])
@@ -370,6 +394,9 @@ describe('Smoker: the picker and manual form of Setup', () => {
     await fireEvent.changeText(sheet(form).getByLabelText('Highest temp (F)'), '450');
     await fireEvent.changeText(sheet(form).getByLabelText('Temp step (F)'), '5');
     await press(form, 'button', 'Save smoker');
+    await settle();
+    expect(repos.cookers.load()).toEqual(cookGear);
+    await press('Smoker', 'button', 'Save smoker');
     await settle();
     const s = repos.cookers.load().smoker!;
     expect(s).toMatchObject({ id: unverified.id, name: form, minTempF: 150, maxTempF: 450, tempStepF: 5 });
@@ -398,5 +425,145 @@ describe('Smoker: the picker and manual form of Setup', () => {
     expect(s.hopperLb).toBeCloseTo(19.84, 2);
     expect(repos.cookers.load().griddle).toEqual(cookGear.griddle);
     expect(within(row(/^Backyard pellet/)).getByText(text('Pellet smoker, 9 kg hopper'))).toBeOnTheScreen();
+  });
+});
+
+// T-082 (Jason, 2026-11-17; proposal picture 16-gear-step): the smoker row opens a small Smoker sheet.
+describe('Smoker sheet: the model and the temp step', () => {
+  const QUESTION = 'What steps does your smoker set in?';
+  const radios = () => within(sheet('Smoker').getByLabelText(QUESTION)).getAllByRole('radio');
+  const label = (r: { props: Record<string, unknown> }) =>
+    (r.props.accessibilityLabel ?? r.props['aria-label']) as string;
+  const selected = () =>
+    radios()
+      .filter(r => r.props.accessibilityState?.checked ?? r.props['aria-checked'])
+      .map(label);
+  const choose = (name: string) =>
+    fireEvent.press(within(sheet('Smoker').getByLabelText(QUESTION)).getByRole('radio', { name }));
+  const withStep = (tempStepF: number | null, more = {}): Cookers => ({
+    ...cookGear,
+    smoker: { ...cookGear.smoker!, tempStepF, ...more },
+  });
+
+  test('the row opens it: Model, the question with the saved step, Save smoker; no hopper, grate or Remove', async () => {
+    await show();
+    await fireEvent.press(row(/^Pit Boss Sportsman 850/));
+    noSheet('Pick your smoker');
+    expect(
+      within(sheet('Smoker').getByRole('button', { name: 'Model' })).getByText('Pit Boss Sportsman 850'),
+    ).toBeTruthy();
+    expect(sheet('Smoker').getByText(QUESTION)).toBeOnTheScreen();
+    expect(radios().map(label)).toEqual(['5F', '10F', '15F', '25F', 'Other']);
+    expect(selected()).toEqual(['5F']);
+    expect(sheet('Smoker').queryByLabelText('Hopper (lb)')).toBeNull();
+    expect(sheet('Smoker').queryByLabelText('Main grate (sq in)')).toBeNull();
+    expect(sheet('Smoker').queryByRole('button', { name: 'Remove smoker' })).toBeNull();
+    expect(sheet('Smoker').getByRole('button', { name: 'Save smoker' })).toBeEnabled();
+  });
+
+  test('a new step is saved only on Save smoker; closing first changes nothing', async () => {
+    const { repos } = await show();
+    await fireEvent.press(row(/^Pit Boss Sportsman 850/));
+    await choose('25F');
+    expect(selected()).toEqual(['25F']);
+    await press('Smoker', 'button', 'Close');
+    await settle();
+    expect(repos.cookers.load()).toEqual(cookGear);
+    await fireEvent.press(row(/^Pit Boss Sportsman 850/));
+    expect(selected()).toEqual(['5F']);
+    await choose('25F');
+    expect(repos.cookers.load()).toEqual(cookGear);
+    await press('Smoker', 'button', 'Save smoker');
+    await settle();
+    noSheet('Smoker');
+    expect(repos.cookers.load()).toEqual({ ...cookGear, smoker: { ...cookGear.smoker!, tempStepF: 25 } });
+    expect(repos.cookers.load().griddle).toEqual(cookGear.griddle);
+  });
+
+  test('Other opens the two-field sheet over it; what is saved there is kept until Save smoker', async () => {
+    const { repos } = await show();
+    await fireEvent.press(row(/^Pit Boss Sportsman 850/));
+    await choose('Other');
+    const other = sheet('Pit Boss Sportsman 850');
+    await fireEvent.changeText(other.getByLabelText('Dial settings (F)'), '180, 225, 250');
+    await fireEvent.press(other.getByRole('button', { name: 'Save smoker' }));
+    await settle();
+    noSheet('Pit Boss Sportsman 850');
+    expect(selected()).toEqual(['Other']);
+    expect(sheet('Smoker').getByText('Has fixed settings: 180, 225, 250F.')).toBeOnTheScreen();
+    expect(repos.cookers.load()).toEqual(cookGear);
+    await press('Smoker', 'button', 'Save smoker');
+    await settle();
+    expect(repos.cookers.load().smoker).toMatchObject({ tempStepF: null, tempPresetsF: [180, 225, 250] });
+  });
+
+  test('a saved step that is none of the four shows Other and says what is saved', async () => {
+    await show({ gear: withStep(20) });
+    await fireEvent.press(row(/^Pit Boss Sportsman 850/));
+    expect(selected()).toEqual(['Other']);
+    expect(sheet('Smoker').getByText('Sets in 20F steps.')).toBeOnTheScreen();
+    // The Other sheet opens with it (Jason, 2026-11-17, the branch read).
+    await choose('Other');
+    expect(sheet('Pit Boss Sportsman 850').getByLabelText('Temp step (F)').props.value).toBe('20');
+  });
+
+  // Jason, 2026-11-17 (the branch read): a step typed in Celsius that is none of the four is Other with its
+  // line, as in Fahrenheit (20C is stored as 36F).
+  test('Celsius: a typed 20C step shows Other and says what is saved', async () => {
+    await show({ gear: withStep(36), units: METRIC });
+    await fireEvent.press(row(/^Pit Boss Sportsman 850/));
+    expect(selected()).toEqual(['Other']);
+    expect(sheet('Smoker').getByText('Sets in 20C steps.')).toBeOnTheScreen();
+  });
+
+  test('Celsius: a stored 9F shows 5C', async () => {
+    await show({ gear: withStep(9), units: METRIC });
+    await fireEvent.press(row(/^Pit Boss Sportsman 850/));
+    expect(radios().map(label)).toEqual(['5C', '10C', '15C', '25C', 'Other']);
+    expect(selected()).toEqual(['5C']);
+  });
+
+  test('Celsius: the 5F step shows none and stays unless a choice is made', async () => {
+    const { repos } = await show({ units: METRIC });
+    await fireEvent.press(row(/^Pit Boss Sportsman 850/));
+    expect(selected()).toEqual([]);
+    expect(sheet('Smoker').queryByText(/^Sets in|^Has fixed/)).toBeNull();
+    await press('Smoker', 'button', 'Save smoker');
+    await settle();
+    expect(repos.cookers.load()).toEqual(cookGear);
+    await fireEvent.press(row(/^Pit Boss Sportsman 850/));
+    await choose('10C');
+    await press('Smoker', 'button', 'Save smoker');
+    await settle();
+    expect(repos.cookers.load().smoker!.tempStepF).toBe(18);
+  });
+
+  test('no question for a kamado', async () => {
+    await show({ gear: withStep(25, { id: 'bge', name: 'Big Green Egg', type: 'kamado', hopperLb: null }) });
+    await fireEvent.press(row(/^Big Green Egg/));
+    expect(sheet('Smoker').getByRole('button', { name: 'Model' })).toBeTruthy();
+    expect(sheet('Smoker').queryByLabelText(QUESTION)).toBeNull();
+  });
+
+  test('the saved step drives the temp menu', async () => {
+    const { repos } = await show();
+    await fireEvent.press(row(/^Pit Boss Sportsman 850/));
+    await choose('25F');
+    await press('Smoker', 'button', 'Save smoker');
+    await settle();
+    const smoker = repos.cookers.load().smoker!;
+    await render(
+      <TempMenu
+        smoker={smoker}
+        input={{ ...cookInput, cookers: repos.cookers.load() }}
+        plan={null}
+        anchor={{ x: 16, y: 150, width: 328, height: 60 }}
+        units={{ temp: 'F', weight: 'lb' }}
+        onPick={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+    const shown = screen.getAllByRole('option').map(o => String(within(o).getByText(/^\d+F$/).props.children));
+    expect(shown).toEqual(['200F', '225F', '250F', '275F', '300F']);
   });
 });

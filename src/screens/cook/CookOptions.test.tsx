@@ -319,6 +319,25 @@ describe('Start over (Jason, 2026-11-15, T-064)', () => {
     expect(history).toHaveLength(1);
     expect(repos.history.list()).toEqual(history);
   });
+
+  // Regression (T-036 follow-up; device dump at 115%, 2026-11-15: Start over at [1056,2088][1080,2256], a 24 px
+  // sliver at the right edge). The kit's footer is a row; `block` is `w-full` (width 100%) and React Native's
+  // flexShrink defaults to 0, so two block buttons in it are each as wide as the row. RNTL has no layout, so
+  // this checks the classes Yoga lays the row out from, not pixels: each button shares the row, Keep cooking first.
+  test('Keep cooking and Start over share the footer row instead of each taking all of it', async () => {
+    await show();
+    await act1(/^Start over/);
+    const footer = within(within(screen.getByLabelText('Start over?')).getByTestId('footer'));
+    const classes = (name: string) => String(footer.getByRole('button', { name }).props.className).split(' ');
+    for (const name of ['Keep cooking', 'Start over']) {
+      expect(classes(name)).not.toContain('w-full');
+      expect(classes(name)).toEqual(expect.arrayContaining(['min-w-0', 'flex-1']));
+    }
+    expect(footer.getAllByRole('button')).toEqual([
+      footer.getByRole('button', { name: 'Keep cooking' }),
+      footer.getByRole('button', { name: 'Start over' }),
+    ]);
+  });
 });
 
 describe('End cook', () => {

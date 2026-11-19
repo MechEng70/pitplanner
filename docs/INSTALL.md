@@ -70,6 +70,9 @@ moves your old data across and shows this notice once, with one of three lines:
 - **"Your old data couldn't be brought over. Set up your smoker in Gear to start."** The old data could not
   be read. Set up your smoker again in Gear.
 
+If your oven's holding temperature in 0.2.0 was set below 140F, the notice has one more line: **"Oven hold
+raised to 140F, the safe minimum."** Nothing to do. (In Celsius it reads 60C.)
+
 Tap OK to close it.
 
 ## If something goes wrong
