@@ -2,6 +2,7 @@
 // cooker can be set to (SPEC failure mode 12), 200-300F to start with, and each row says what that temp does
 // to the plan: the fire time (Ready by) or the serve time (Start at).
 import { useMemo, useState } from 'react';
+import { inSentence } from '../../../engine/labels';
 import { buildPlan, onHeatSpan } from '../../../engine/plan';
 import { settableTemps } from '../../../engine/temps';
 import { showSetPoint, showStep } from '../../../engine/units';
@@ -127,5 +128,5 @@ function timesFor(plan: Plan | null, units: Units): string {
   const f = food(first.input.foodId);
   const qty =
     f.quantity.kind === 'weight' ? fmtWeight(first.input.quantity, units) : countText(f, first.input.quantity);
-  return ` Times for ${qty} ${f.name.toLowerCase()}.`;
+  return ` Times for ${qty} ${inSentence(f.name)}.`;
 }

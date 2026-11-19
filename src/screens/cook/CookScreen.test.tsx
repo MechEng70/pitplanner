@@ -235,7 +235,33 @@ describe('Done', () => {
     expect(screen.getByText('At 3:15 PM')).toBeOnTheScreen();
   });
 
-  // A Done that is 5 min or more early or late asks keep or move: CookOptions.test.tsx.
+  // A Done that is 5 min or more early or late asks keep or move: CookOptions.test.tsx (brisket "is ahead",
+  // "is behind", pinned there).
+
+  // Jason, 2026-11-17: the question agrees with a food whose name is plural ("Chicken wings are ahead").
+  test('early on a food with a plural name: "are ahead"', async () => {
+    const { clock } = await show(cookAt(AT_1023));
+    clock.now = AT_1023 + 70 * MIN; // 11:33 AM: the brisket's wrap, on time
+    await act(() => jest.advanceTimersByTime(30_000));
+    await fireEvent.press(button('Done'));
+    await act(async () => {});
+    // The wings go on at 3:15 PM: Done now is hours early.
+    await fireEvent.press(button('Done'));
+    expect(
+      screen.getByText('Chicken wings are ahead. Keep serve time and change the hold, or move serve?'),
+    ).toBeOnTheScreen();
+  });
+
+  test('late on a food with a plural name: "are behind"', async () => {
+    const at = Date.UTC(2026, 10, 14, 20, 14); // 3:14 PM, the wings due at 3:15 PM
+    const { clock } = await show(cookAt(at), at);
+    clock.now = at + 11 * MIN; // 3:25 PM, 10 min late
+    await act(() => jest.advanceTimersByTime(30_000));
+    await fireEvent.press(button('Done'));
+    expect(
+      screen.getByText('Chicken wings are behind. Keep serve time and change the hold, or move serve?'),
+    ).toBeOnTheScreen();
+  });
 
   test('after the last step there is no Next up card, and the cook is still there', async () => {
     const at = Date.UTC(2026, 10, 14, 22, 5);

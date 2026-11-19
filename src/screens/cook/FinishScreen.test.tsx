@@ -114,6 +114,16 @@ describe('Cook finished (mockup 15)', () => {
     expect(screen.getByRole('link', { name: 'Buy me a bag of pellets' })).toBeOnTheScreen();
   });
 
+  // Jason, 2026-11-17: a food name keeps its own capitals mid-sentence ("st. louis ribs" was wrong). No food
+  // with its own capitals has a rate in the data today, so the brisket's planned name stands in for one.
+  test('the rate line keeps a food name its own capitals', async () => {
+    const c = doneOnTime(cookAt(AT_1023));
+    const items = c.plan.items.map(i => (i.input.id === 'b' ? { ...i, name: 'St. Louis ribs' } : i));
+    await show({ ...c, plan: { ...c.plan, items } }, SERVE);
+    await endCook();
+    expect(screen.getByText('Your St. Louis ribs rate stays')).toBeOnTheScreen();
+  });
+
   // Jason, 2026-11-15: plain words, and the user agrees or not.
   test('with no saved rate the card says the food finished early and what the next plan uses, with the choice', async () => {
     const c = doneOnTime(cookAt(AT_1023));

@@ -82,6 +82,21 @@ describe('smoker temp menu (mockup 06)', () => {
     expect(screen.getByText('Pit Boss Sportsman 850 sets in 5F steps. Times for 12 lb brisket.')).toBeOnTheScreen();
   });
 
+  // Jason, 2026-11-17: "Times for 3 racks st. louis ribs." lost the food's own capitals.
+  test('the intro names the food with its own capitals', async () => {
+    await show({ ...saturday, items: [{ id: 'r', foodId: 'stlribs', methodId: '221', quantity: 3 }] });
+    expect(
+      screen.getByText('Pit Boss Sportsman 850 sets in 5F steps. Times for 3 racks St. Louis ribs.'),
+    ).toBeOnTheScreen();
+  });
+
+  test('the intro for wings alone', async () => {
+    await show({ ...saturday, items: [{ id: 'w', foodId: 'wings', methodId: 'smokeCrisp', quantity: 2 }] });
+    expect(
+      screen.getByText('Pit Boss Sportsman 850 sets in 5F steps. Times for 2 lb chicken wings.'),
+    ).toBeOnTheScreen();
+  });
+
   test('the opened field shows the current temp and closes the menu', async () => {
     const { onClose } = await show();
     const field = screen.getByRole('button', { name: 'Smoker temp' });
