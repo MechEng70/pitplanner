@@ -209,6 +209,24 @@ him.** After the table above:
   - **No app code changed since the beta.3 build:** the commits after the pushed `edfbeba` (`8327394`,
     `ce0eb2d`, `17076d9`) touch `docs/` and CLAUDE.md only. The 0.3.0 commit changes the version in
     `package.json` and `package-lock.json` and nothing else in the app.
+- **0.3.0 is built and tested (10:55 AM, Thu 2026-11-19); publishing is his, one command at a time.**
+  `release/pitplanner-0.3.0.apk`, version code 300999, SHA-256
+  `cf2641b68a232ce09a490d05caa0b7adb700f050f5dfeeee7b5cef84049cc9c2` (checked again by the session), cert
+  and app config ok; he ran the build on commit `53566f8` (the tag `v0.3.0` goes there). The release notes
+  have the SHA, no draft note and no check list (`ec1b7c9`), and their INSTALL link is a full address so it
+  works in the GitHub release text.
+  - **Upgrade from the real 0.2.0 on the test emulator** (`tools/device/upgrade020.sh setup`, then `check`
+    on the 0.3.0 file; the beta.2 release app was uninstalled there first with his yes): `PASS  upgrade from
+    0.2.0`. The notice said everything came over; cookers griddle, oven, smoker (Pit Boss 820); brisket
+    0.75; one plan draft item; units F and lb; two past cooks; nothing quarantined; both `.imported` copies
+    kept. The screens were not looked at by hand on the emulator.
+  - **Locked reboot on the 0.3.0 file:** PASS 6 of 6, first run; the 10:55:00 step rang while locked.
+  - **His phone:** he installed 0.3.0 over beta.3 himself; Gear shows 0.3.0 and the brisket rate is still
+    0.65 (Jason, about 10:38 AM).
+  - **Left:** he pushes `main`, tags `v0.3.0` on `53566f8` and pushes the tag, then publishes with
+    `gh release create` as a normal release (not `--prerelease`), one APK. After that he checks the update
+    offer on his wife's phone (0.2.0): the first real check of it. `npm run snyk:monitor` is owed on
+    2026-12-01, not before.
 - **User guide (Jason, 2026-11-19):** the alerts section now says "The other foods' alarms catch up when
   you open the app."
 - **Next:** his review of the findings above; `beta3` onto `main`, then remove the merged
