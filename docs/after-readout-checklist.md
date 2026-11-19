@@ -146,7 +146,7 @@ Branches only until the readout passes; then merge one at a time, the gate after
       window was shown on alpha.3 (`docs/alarm-testing.md`, "Upgrade with a live cook"); a ring before the
       first open has never been run, and `upgrade020.sh check` opens the app at once, so it needs its own
       step. Not run on 2026-11-17 (his order).
-- [ ] **A start that fails shows nothing.** **Jason, 2026-11-18: it gets a message in 0.3.1, "Couldn't start
+- [ ] **A start that fails shows nothing.** **Fix merged to `main` Thu 2026-11-19 (merge 1 for beta.3, `eb490f8`), gate passed; not yet seen on a phone (beta.3).** **Jason, 2026-11-18: it gets a message in 0.3.1, "Couldn't start
       the cook. Try again." Before building: confirm a failed start leaves no partial state, and report.**
       **Second decision the same morning, after the report below: the start-guard fix goes in Sunday's fix
       window with the share guard, regression test first: clear the guard in a finally, and write the
@@ -209,7 +209,7 @@ Branches only until the readout passes; then merge one at a time, the gate after
       850); Jason sends his testers' exact models later.
 - [ ] **`CLAUDE.md`, Models and agents:** an agent that needs a file outside its list stops and asks first.
 
-- [ ] **Share plan failed on the phone (Jason, Tue 2026-11-17 about 7:20 PM, 0.3.0-beta.2):** with no cook
+- [ ] **Share plan failed on the phone (Jason, Tue 2026-11-17 about 7:20 PM, 0.3.0-beta.2):** **Fix merged to `main` Thu 2026-11-19 (merge 1 for beta.3, `eb490f8`), gate passed; not yet seen on a phone (beta.3).** With no cook
       running, right after step 10 of `docs/t037-checklist.md` (start, end, discard, start, end, discard),
       Share on Plan showed "Couldn't share. The plan was not shared. Try again." The share sheet opened first; the message
       came after it (Jason). Gear's Export my data the same evening "seemed like it did" work (Jason). Both

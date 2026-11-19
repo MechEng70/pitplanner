@@ -45,8 +45,23 @@ was in light idle at the ring because Android leaves deep idle when an alarm clo
 (`min_time_to_alarm=+1h`). Pass line reworded by Jason for any future check: "ring within 1 min after the
 phone spent hours in deep idle overnight." Detail and the readout table: `docs/t037-checklist.md`,
 "Overnight check" and "Readout". Reads: `tools/device/out/t037-overnight-2026-11-19/`. The debug file was
-deleted at his word. Nothing more on the phone without a list and his yes. Next: step 5, the beta.3
-merges, one at a time; he reviews after merge 1.
+deleted at his word. Nothing more on the phone without a list and his yes.
+
+**Merge 1 is done (Thu 2026-11-19, 7:27 AM): `main` at `eb490f8`, not pushed; stopped for Jason's review
+before merge 2.** Branch `a8775a2ca28f2344f` brought up to `main` (docs only, no conflicts), merged, its
+worktree and branch removed. Gate: the first run failed step 4 with 12 Jest 5 s timeouts, each the first
+test of its suite (the computer had been restarted 16 minutes before, so the Jest cache was empty: the gate
+note in "START HERE", item 7); the second run, nothing changed, passed all six steps: engine 229, gate
+self-test 154, Jest 937 in 86 suites, Kotlin 117 (pit-alarms 68, pit-legacy 9, pit-share 40), Semgrep,
+Snyk. **The emulator Not yet check passed** (test emulator, dev build, 115%, 7:33 to 7:34 AM; reads in
+`tools/device/out/notyet-merge1-2026-11-19/`): 11 alarms before and 11 after, each time once; Check the
+brisket 8:50 to 9:20 AM, Check tenderness (the brisket's pull) 12:55 to 1:25 PM, and Oven to 170F 12:40 to
+1:10 PM (it is set 15 minutes before the first held food comes off, so it follows the pull); the other
+eight where they were; nothing left at 8:50 AM, 12:40 or 12:55 PM; serve stays 2:15 PM; the event log has
+"plan changed: 18 events" then one "set 11, exact". The app also showed "Smoker conflict: brisket at 225F
+and chicken wings at 400F at the same time." (the pull is now after the wings' turn-up at 1:20 PM). The
+emulator shows "Alerts are off. Steps may not ring." on Cook; not looked into. Emulator and Metro are
+stopped. Next: his review, then merge 2 (`a0ce7915c8c901c69`, T-082).
 
 **Jason's decisions, 5:45 PM: "beta.3, and no Saturday cook. T-037 closes on today's rehearsal; I don't load
 Saturday's plan."**
@@ -69,7 +84,7 @@ Saturday's plan."**
 
    | # | Branch | Holds | pit-alarms | Restore code | `cook.ts` |
    |---|---|---|---|---|---|
-   | 1 | `a8775a2ca28f2344f` (3 commits) | Share guard and start guard | no | no | no (it changes `saveCook` in `src/lib/store.tsx`, the save every cook change goes through, plus `shareFile.ts`, `PlanTab.tsx`, `GearScreen.tsx` export only) |
+   | 1, **merged Thu 2026-11-19, `eb490f8`** | `a8775a2ca28f2344f` (3 commits) | Share guard and start guard | no | no | no (it changes `saveCook` in `src/lib/store.tsx`, the save every cook change goes through, plus `shareFile.ts`, `PlanTab.tsx`, `GearScreen.tsx` export only) |
    | 2 | `a0ce7915c8c901c69` (6 commits) | T-082 temp step question, with its mockups branch `a1211e2e2ed4313e1`, the SPEC Units text, and the emulator Setup and Gear looks at 115% and 130% | no | no | no (it changes `engine/plan.ts`, `engine/temps.ts`, `engine/units.ts`, `src/lib/gear.ts`, Setup, the picker, `TempMenu`, `CookerSheets`) |
    | 3 | `a8c0f87e3e0ab96ed` (3 commits) | Sheet buttons off the right edge at 115% | no | no (it changes the "Replace your data?" sheet's buttons in `GearScreen.tsx`, not `src/db/restore.ts`) | no (`CookOptions.tsx`, `StartCheckSheet.tsx`) |
    | 4 | `a162a9d40e02d7402` (7 commits) | Plural food names and capitals | no | no | no (`src/lib/cookView.ts`, not `cook.ts`; also `data/foods.json`, `engine/labels.ts`, `engine/plan.ts`, `engine/rules.ts`, `sharedPlan.ts`, six screens) |
