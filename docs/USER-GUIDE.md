@@ -48,7 +48,7 @@ a griddle to continue. You can change all of this later in Gear.
 
 <img src="guide/setup-picker.png" alt="The smoker picker with the search box and the type chips" width="320">
 
-In the smoker picker, search by brand or model, or use the chips (All, Pellet, Kamado, Offset, Drum, Gravity,
+In the smoker picker, search by brand or model, or use the chips (All, Pellet, Kamado, Drum, Gravity, Offset,
 Electric). If your smoker is not in the list, tap Not listed? Enter it yourself and fill in its details. When
 the app knows your model, it fills in the hopper size and the grate area for you. You can edit both.
 

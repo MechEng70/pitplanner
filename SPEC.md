@@ -46,7 +46,7 @@ Artboard names refer to the mockup canvas.
 
 ### First launch
 1. **Setup: what do you cook on** (`Setup`). Smoker model via the picker, hopper and grate filled from the model when verified. Griddle and Oven switches. "Add another cooker".
-2. **Smoker picker** (`Picker`). Search plus type chips (All, Pellet, Kamado, Offset, Drum, Gravity, Electric). Grouped list from `data/cookers.json`. "Not listed? Enter it yourself" opens a manual form (type, min/max temp, temp step or preset list, hopper, grate).
+2. **Smoker picker** (`Picker`). Search plus type chips (All, Pellet, Kamado, Drum, Gravity, Offset, Electric). Grouped list from `data/cookers.json`. "Not listed? Enter it yourself" opens a manual form (type, min/max temp, temp step or preset list, hopper, grate).
 3. **Setup: alerts** (`Perms`). Notifications (POST_NOTIFICATIONS, Android 13+), Alarms and reminders (exact alarm access), No battery limits (ignore battery optimizations). Live status per row. "Send a test alert in 10 sec" must use the real alarm path. Under the rows, a plain line for phones that delay alerts to save battery ("Alerts late or missing? Check the battery settings for Pit Planner in your phone's settings."); no link to an outside site (Jason, 2026-11-15).
 
 ### Plan tab
