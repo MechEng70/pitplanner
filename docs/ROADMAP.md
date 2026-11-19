@@ -45,6 +45,13 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
   Dropping x86 is safe; dropping 32-bit ARM waits on his testers' phone models. R8 minify is on; resource
   shrinking is off and worth under 1 MB. Why: download size. Blocked on: the testers' phone models; nothing
   before the freeze.
+- **No task.** Carried from 0.3.0 (Jason, 2026-11-19: "release with them as built; carry any open 'your
+  look' notes to 0.3.1"). 0.3.0 shipped with twelve tasks merged and gated but marked built, not done:
+  T-033, T-034, T-036, T-064, T-066, T-068, T-074, T-075, T-076, T-079, T-081, T-082. The looks still open
+  in their notes: T-074 (alert and label wording) and T-079 (a lock-screen tap lost from the queue) not
+  seen on a device; T-081 his look at the two re-shot Live cook pictures; T-075 and T-076 pictures in his
+  stacked review; the user guide's open wording (T-066), and its section 11 saying nothing about the alarm
+  ring log on the debug screen (Jason, 2026-11-19: leave for 0.3.1).
 - **No task.** Plural food names, the rest (Jason, 2026-11-17; 0.3.1): a plural flag on the planned item so
   the lane and hold notes agree ("Chicken wings hold 20 min", "Chicken wings come off before the pit climbs");
   it changes what a running cook saves, so cooks saved before keep the old wording. With it: singular forms

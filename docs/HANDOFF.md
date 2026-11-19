@@ -197,6 +197,15 @@ him.** After the table above:
   - **New question, with T-090 (0.5.0):** a hand-entered smoker does not appear in Pick your smoker
     afterward. Should it, and how does that tie to sending it to the developer? Read the code later; no
     work now.
+  - **His calls before the build (2026-11-19):** the old "set your own step" line is out of the release
+    notes; the user guide keeps one sentence for unlisted smokers ("If your smoker isn't listed, pick 'Not
+    listed? Enter it yourself.'"); the release notes' known limits say the two-phone share has not been
+    tested on two real phones; the ring log in guide section 11 waits for 0.3.1; 0.3.0 ships with twelve
+    tasks marked built, their open looks carried to 0.3.1 (ROADMAP, 0.3.x, "Carried from 0.3.0"); the
+    README keeps the four pictures the session picked. **His yes: uninstall the beta.2 release app from the
+    test emulator and run the 0.2.0 upgrade test on the 0.3.0 file after his build, then the locked reboot
+    on the 0.3.0 file; report both before he publishes.** He checks the update offer on his wife's phone
+    (0.2.0) after publishing.
   - **No app code changed since the beta.3 build:** the commits after the pushed `edfbeba` (`8327394`,
     `ce0eb2d`, `17076d9`) touch `docs/` and CLAUDE.md only. The 0.3.0 commit changes the version in
     `package.json` and `package-lock.json` and nothing else in the app.
