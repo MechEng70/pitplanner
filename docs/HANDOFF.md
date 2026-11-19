@@ -133,7 +133,8 @@ him.** After the table above:
   known since 2026-11-17 (the full device pass's table: Alerts below the first screen on Gear; the test
   alert button under the pinned buttons on Setup); the T-082 lines pass there too.
 - **Dashboard (Jason, 2026-11-19):** what is next, not a tracker: status, the release bars, Today, Waiting
-  on Jason (rule in CLAUDE.md). The page from before is at `.claude/dashboard-before-prune-2026-11-19.html`.
+  on Jason (rule in CLAUDE.md). The page from before is at
+  `tools/device/out/dashboard-backups/dashboard-before-prune-2026-11-19.html` (moved there on 2026-11-19).
 - **The release notes' "Check before release" list** still has an item to add a Gear line for the temp step
   question now that T-082 is merged; not added (wording is his at the release cut).
 - **/ultrareview is off on this account (it bills as usage). In its place (Jason, 2026-11-19): one read-only
@@ -701,7 +702,10 @@ clamps off-screen bounds, so "inside" alone passes a 24 px sliver), Setup and Ge
   `pitplanner` user. Jason keeps the token in `~/keys`: read it from there into a variable, never echo it,
   never write it to a file, a log or the repo. Record pass or fail in `docs/ha-entities.md`.
 - **Disk cleanup** after the readout, after his approval of the inventory (measure again first).
-- **`.gitignore`:** add `.claude/worktrees/` and `.claude/settings.local.json` with the first merge after the
+- **`.gitignore`:** done 2026-11-19, before the 0.3.0 build: `.claude/worktrees/` and
+  `.claude/settings.local.json` are ignored and `git status` is empty. It had to be: the release script
+  refuses a real release when `git status` shows anything, and the untracked `.claude/` counted. As first
+  written: add `.claude/worktrees/` and `.claude/settings.local.json` with the first merge after the
   readout; confirm `git status` no longer shows them (`.claude/` holds only `worktrees/` today).
 - **`CLAUDE.md`, Models and agents:** add "an agent that needs a file outside its list stops and asks first"
   (he said yes, after the freeze).

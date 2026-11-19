@@ -40,3 +40,7 @@ docs/screenshots/
 # Home Assistant test login (lives in ~/.config/pitplanner/, never in the repo). A copy here must never be committed.
 ha.env
 *.env
+
+# Agent worktrees (copies of this repo on other branches) and Claude Code's local settings.
+.claude/worktrees/
+.claude/settings.local.json
