@@ -55,6 +55,7 @@ export interface ChipOpt {
 /**
  * Single-select chips. The pill is 40 dp (28 dp when `small`) inside a 48 dp touch target; the press shade
  * sits on the pill, not the target (ui.css .chip-hit). `scroll` keeps them on one line that scrolls sideways.
+ * A chip is as wide as its label needs in either weight: a label is never cut off, at any font scale.
  */
 export function Chips({
   options,
@@ -93,13 +94,20 @@ export function Chips({
               o.disabled && 'border-dashed',
             )}
           >
-            {/* The selected label is medium weight and wider. An unseen copy in that weight sizes every
-                chip, selected or not, so selecting one moves nothing (T-017 PR-3). */}
+            {/* The selected label is medium weight. Unseen copies in both weights size every chip,
+                selected or not, so selecting one moves nothing (T-017 PR-3) and no label is cut off:
+                neither weight is always the wider (in Roboto the regular "Kamado" is wider than the
+                medium one, and at 115% the chip read "Kamad"). The regular copy adds width only. */}
             <View>
               <View aria-hidden importantForAccessibility="no-hide-descendants" style={styles.unseen}>
                 <Text variant={small ? 'caption' : 'body'} weight="500">
                   {o.label}
                 </Text>
+                <View style={styles.widthOnly}>
+                  <Text variant={small ? 'caption' : 'body'} weight="400">
+                    {o.label}
+                  </Text>
+                </View>
               </View>
               <View style={styles.over}>
                 <Text
@@ -397,6 +405,7 @@ export function Field({ label, note, children }: { label: string; note?: React.R
 
 const styles = StyleSheet.create({
   unseen: { opacity: 0 },
+  widthOnly: { height: 0, overflow: 'hidden' },
   // The label's own box is the chip's full width, so its bounds do not change with its weight either.
   over: { ...StyleSheet.absoluteFill, justifyContent: 'center' },
   hint: { fontSize: chipHintSize, lineHeight: Math.round(chipHintSize * lineHeightRatio) },

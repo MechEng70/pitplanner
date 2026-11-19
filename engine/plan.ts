@@ -15,7 +15,7 @@ import type {
   TimingModel,
 } from './types.ts';
 import { isSettable } from './temps.ts';
-import { inSentence, itemLabels, longHold } from './labels.ts';
+import { agree, inSentence, itemLabels, longHold } from './labels.ts';
 import {
   firstDoableMethod,
   resolveMethod as mergeShared,
@@ -364,7 +364,8 @@ function noGriddle(rules: Rules, input: PlanInput, it: PlannedItem, name: string
     return NO_GRIDDLE_PICK_METHOD.replace('{food}', name)
       .replace('{step}', step.short.toLowerCase())
       .replace('{method}', other.label);
-  return `${name} needs a griddle. Add one in Gear or move it to the smoker.`;
+  const pl = food?.plural;
+  return `${name} ${agree(pl, 'needs', 'need')} a griddle. Add one in Gear or move ${agree(pl, 'it', 'them')} to the smoker.`;
 }
 
 /**
@@ -417,6 +418,9 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
   const nm = (it: PlannedItem) => it.label ?? it.name;
   /** The food mid-sentence: "brisket", "11.5 lb brisket", "St. Louis ribs". */
   const inS = (it: PlannedItem) => it.label ?? inSentence(it.name);
+  /** The word that agrees with the food as subject or "it": "Brisket needs", "Chicken wings need" (labels.ts). */
+  const say = (it: PlannedItem, one: string, many: string) =>
+    agree(rules.foods.find(f => f.id === it.input.foodId)?.plural, one, many);
 
   const [lo, hi] = rules.tempModel.trustedRangeF;
   if (pit < lo || pit > hi)
@@ -428,7 +432,10 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
 
   const smoker = input.cookers.smoker;
   if (smoker) {
-    if (!isSettable(smoker, pit))
+    // The plan does not know the display unit (T-082: it decides whether a 9, 18, 27 or 45F step is read in
+    // C), so it warns only for a temp that is off the grid either way. Decided: the warning stays as built
+    // for 0.3.0 (Jason, 2026-11-17); a stored step unit in 0.3.x is the real fix.
+    if (!isSettable(smoker, pit, 'F') && !isSettable(smoker, pit, 'C'))
       warnings.push({ code: 'TEMP_NOT_SETTABLE', level: 'warn', message: `${smoker.name} cannot be set to ${pit}F.` });
   }
   // A missing cooker is said once per food, however many of its steps need it (T-075).
@@ -438,7 +445,7 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
       warnings.push({
         code: 'NO_SMOKER',
         level: 'warn',
-        message: `${nm(it)} needs a smoker. Add one in Gear.`,
+        message: `${nm(it)} ${say(it, 'needs', 'need')} a smoker. Add one in Gear.`,
         itemIds: [it.input.id],
       });
     if (needs.has('griddle') && !input.cookers.griddle)
@@ -475,7 +482,8 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
         code: 'TEMP_BELOW_FOOD_MIN',
         level: 'warn',
         itemIds: [it.input.id],
-        message: `${nm(it)} needs the smoker at ${min}F or hotter. It is set to ${Math.min(...low)}F.`,
+        // "It" is the smoker, whatever the food.
+        message: `${nm(it)} ${say(it, 'needs', 'need')} the smoker at ${min}F or hotter. It is set to ${Math.min(...low)}F.`,
       });
   }
 
@@ -489,7 +497,7 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
         code: 'SIZE_OVER_RECOMMENDED',
         level: 'info',
         itemIds: [it.input.id],
-        message: `${nm(it)} is ${it.input.quantity} lb. ${size.text}`,
+        message: `${nm(it)} ${say(it, 'is', 'are')} ${it.input.quantity} lb. ${size.text}`,
       });
   }
 
@@ -526,14 +534,14 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
         level: it.holdsPoorly ? 'warn' : 'info',
         itemIds: [it.input.id],
         // One warning per food (the Conflicts sheet lists them, Food details shows a food's own).
-        message: `${longHold([{ name: inS(it), holdMin: hold, limitMin: it.holdLimitMin }])}${it.holdsPoorly ? ' Move it to the griddle or start it later.' : ''}${it.holdNote ? ` ${it.holdNote}` : ''}`,
+        message: `${longHold([{ name: inS(it), holdMin: hold, limitMin: it.holdLimitMin }])}${it.holdsPoorly ? ` Move ${say(it, 'it', 'them')} to the griddle or start ${say(it, 'it', 'them')} later.` : ''}${it.holdNote ? ` ${it.holdNote}` : ''}`,
       });
     if (hold < it.restFloorMin - 0.5)
       warnings.push({
         code: 'REST_SHORT',
         level: 'warn',
         itemIds: [it.input.id],
-        message: `${nm(it)} only gets ${Math.max(0, Math.round(hold))} min of rest, under the ${it.restFloorMin} min minimum.`,
+        message: `${nm(it)} only ${say(it, 'gets', 'get')} ${Math.max(0, Math.round(hold))} min of rest, under the ${it.restFloorMin} min minimum.`,
       });
     else if (hold < it.restMin - 0.5)
       warnings.push({
@@ -679,7 +687,7 @@ export function derive(rules: Rules, input: PlanInput, items: PlannedItem[], ser
       add({
         at: serveAt - it.sliceMin * MIN,
         kind: 'slice',
-        label: `Slice or plate the ${it.name.toLowerCase()}.`,
+        label: `Slice or plate the ${inSentence(it.name)}.`,
         itemId: it.input.id,
         alarm: true,
       });

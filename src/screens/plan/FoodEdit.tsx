@@ -8,6 +8,7 @@
 // - The values the user saves for later (rate, total hours, the hint flag) go through the store.
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { View, type HostInstance, type LayoutChangeEvent } from 'react-native';
+import { inSentence } from '../../../engine/labels';
 import { buildPlan, onHeatSpan, rateHintFor } from '../../../engine/plan';
 import type { CookerKind, Cookers, ItemInput, PlanInput, TimingModel } from '../../../engine/types';
 import { missingCookers, smokerReachF, smokerTooCool } from '../../../engine/rules';
@@ -548,7 +549,7 @@ function Timing({
       {model === 'perPound' || model === 'totalHours' ? (
         <View className="-mx-4">
           <CheckRow
-            title={`Use for future ${f.name.toLowerCase()} on ${where}`}
+            title={`Use for future ${inSentence(f.name)} on ${where}`}
             checked={remember}
             onChange={setRemember}
             subtitle={remember ? 'Saved when you tap Save. Change it in Gear, Cook rates.' : 'Only this cook.'}

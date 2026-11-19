@@ -40,7 +40,9 @@ if [ -n "$VERSION" ] && ! [[ "$VERSION" =~ -(alpha|beta|rc)\.[0-9]+$ ]]; then
   exit 2
 fi
 V="${VERSION:-$PKG_VERSION}"
-CODE=$(node -e 'import("./plugins/version.ts").then(m => console.log(m.versionCode(process.argv[1])))' "$V") || exit 2
+# As a string: console.log colours a number when FORCE_COLOR is set (`node --test` sets it on a terminal),
+# and the colour codes would end up in the versionCode.
+CODE=$(node -e 'import("./plugins/version.ts").then(m => console.log(String(m.versionCode(process.argv[1]))))' "$V") || exit 2
 APK="release/pitplanner-$V.apk"
 BT="${RELEASE_BUILD_TOOLS:-$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)}"
 

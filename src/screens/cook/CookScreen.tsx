@@ -17,6 +17,7 @@
 // never talks to the alarm service.
 import { useEffect, useState } from 'react';
 import { View, useWindowDimensions } from 'react-native';
+import { agree } from '../../../engine/labels';
 import {
   BandNote,
   Banner,
@@ -50,6 +51,7 @@ import {
   overline,
 } from '@/lib/cookView';
 import { fmtDuration, fmtTemp, fmtTime, tx } from '@/lib/format';
+import { rules } from '@/lib/rules';
 import { useStore } from '@/lib/store';
 import { allGranted, type AppLinks, type PermissionService } from '@/platform/types';
 import { AlertChecks, useAlarmStatus } from '@/screens/shared/AlertChecks';
@@ -144,12 +146,15 @@ function LiveCook({
     if (!r.ask) return setCook(r.cook);
     // 5 min or more early or late: nothing is saved until Keep serve or Move serve is picked.
     const d = r.ask.deltaMin;
-    const name = plan.items.find(i => i.input.id === next.event.itemId)?.name ?? 'This step';
+    const item = plan.items.find(i => i.input.id === next.event.itemId);
+    const name = item?.name ?? 'This step';
+    // "Chicken wings are behind" (Jason, 2026-11-17): the food's own plural flag in the rules.
+    const be = agree(item && rules.foods.find(f => f.id === item.input.foodId)?.plural, 'is', 'are');
     setOpen({
       title: `${fmtDuration(Math.abs(d))} ${d > 0 ? 'later' : 'earlier'} than planned`,
       body: (
         <Text>
-          {name} {d > 0 ? 'is behind' : 'is ahead'}. Keep serve time and change the hold, or move serve?
+          {name} {be} {d > 0 ? 'behind' : 'ahead'}. Keep serve time and change the hold, or move serve?
         </Text>
       ),
       keep: r.ask.keepServe,

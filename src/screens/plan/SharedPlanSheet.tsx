@@ -3,6 +3,7 @@
 // in a .pitplan), so the first line says "Someone", as 0.2.0 did. Mapping to the receiver's cookers and the
 // serve date are pure (src/lib/sharedPlan.ts); the time comes in through `now`.
 import { useMemo, useState } from 'react';
+import { agree } from '../../../engine/labels';
 import type { CookerKind, ItemInput } from '../../../engine/types';
 import { Button, Card, Chips, Field, InfoBox, Num, SelectField, Sheet, Stack, Text, useSheet } from '@/components/kit';
 import { fmtDay, fmtTemp, fmtTime, fmtWeight, tx } from '@/lib/format';
@@ -148,7 +149,7 @@ export function SharedPlanSheet({ shared, pickDateTime, now, onClose, onUse }: P
             {[
               moves.length > 0 ? `${willDo(moves)}, or add a ${NAMES[k]} in Gear.` : '',
               gaps.length > 0
-                ? `${names(gaps)} ${gaps.length === 1 ? 'needs' : 'need'} a ${NAMES[k]}. Add one in Gear.`
+                ? `${names(gaps)} ${agree(gaps.length > 1 || gaps[0]!.plural, 'needs', 'need')} a ${NAMES[k]}. Add one in Gear.`
                 : '',
             ]
               .filter(Boolean)

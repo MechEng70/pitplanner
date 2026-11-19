@@ -6,15 +6,35 @@ import type { Cookers } from '../../../engine/types';
 import { SHEET_OUT_MS } from '@/components/kit/sheet';
 import { newCook } from '@/lib/cook';
 import { buildDataFile, dataFileName, MAX_CHARS, type DataInput } from '@/lib/dataFile';
+import { EVENT_LOG_KEY, parseEventLog } from '@/lib/eventLog';
 import { saturday } from '@/lib/fixtures/saturday';
 import { defaultGriddle } from '@/lib/gear';
 import type { CookRecord } from '@/lib/history';
 import { rules } from '@/lib/rules';
 import { fakeAlarms, fakeFilePicker, fakeFileShare, fakeResume } from '@/platform/fakes';
-import type { PickedFile } from '@/platform/types';
+import { shareDataFile } from '@/platform/shareFile';
+import type { PickedFile, ShareFile } from '@/platform/types';
 import { cookGear } from '@/test/cook';
 import { NOW, storeWrapper, testRepos } from '@/test/store';
 import { GearScreen } from './GearScreen';
+
+/** expo-sharing under the real shareDataFile: opens the sheet, or rejects with this. */
+let mockShareFails: Error | null = null;
+jest.mock('expo-sharing', () => ({
+  shareAsync: async () => {
+    if (mockShareFails) throw mockShareFails;
+  },
+}));
+jest.mock('expo-file-system', () => ({
+  Paths: { cache: 'CACHE' },
+  File: class {
+    uri = 'file:///CACHE/pitplanner-data.json';
+    create() {}
+    writeSync() {}
+  },
+}));
+// The native module is not in Jest.
+jest.mock('../../../modules/pit-share', () => ({ pitShare: {} }));
 
 beforeEach(() => jest.useFakeTimers());
 afterEach(() => jest.useRealTimers());
@@ -65,7 +85,11 @@ const one: DataInput = {
 const fileText = (d: DataInput, over: Record<string, unknown> = {}) =>
   JSON.stringify({ ...JSON.parse(buildDataFile(d, NOW, '0.3.0')), ...over });
 
-async function show({ picked, cooking = false }: { picked?: PickedFile; cooking?: boolean } = {}) {
+async function show({
+  picked,
+  cooking = false,
+  shareFile,
+}: { picked?: PickedFile; cooking?: boolean; shareFile?: ShareFile } = {}) {
   const { repos } = testRepos();
   repos.cookers.save(cookGear, NOW);
   repos.rates.setRate('brisket', 0.75, NOW);
@@ -81,7 +105,7 @@ async function show({ picked, cooking = false }: { picked?: PickedFile; cooking?
       alarms={alarms}
       onResume={fakeResume().onResume}
       onDebug={jest.fn()}
-      shareDataFile={share.share}
+      shareDataFile={shareFile ?? share.share}
       pickDataFile={picker.pick}
       now={() => NOW}
     />,
@@ -154,6 +178,44 @@ describe('Export my data', () => {
     await fireEvent.press(sheet.getByRole('button', { name: 'OK' }));
     await settle();
     expect(screen.queryByLabelText("Couldn't export")).toBeNull();
+  });
+
+  // After-readout checklist, "Share plan failed on the phone": a second tap while the sheet is still opening
+  // made expo-sharing reject it, and "Couldn't export" showed on top of a share that worked.
+  describe('through the real share path (expo-sharing faked)', () => {
+    const errors = (repos: Awaited<ReturnType<typeof show>>['repos']) =>
+      (repos.kv.get(EVENT_LOG_KEY, parseEventLog) ?? []).filter(e => e.kind === 'error').map(e => e.text);
+    afterEach(() => {
+      mockShareFails = null;
+    });
+
+    test('an export that works shows nothing and logs no error', async () => {
+      const { repos } = await show({ shareFile: shareDataFile });
+      await fireEvent.press(exportRow());
+      await flush();
+      expect(screen.queryByLabelText("Couldn't export")).toBeNull();
+      expect(errors(repos)).toEqual([]);
+    });
+
+    test('the "another share request is being processed" rejection shows no failure and logs nothing', async () => {
+      mockShareFails = Object.assign(new Error('Another share request is being processed now.'), {
+        code: 'ERR_SHARING_IN_PROGRESS',
+      });
+      const { repos } = await show({ shareFile: shareDataFile });
+      await fireEvent.press(exportRow());
+      await flush();
+      expect(screen.queryByLabelText("Couldn't export")).toBeNull();
+      expect(errors(repos)).toEqual([]);
+    });
+
+    test('any other error still says so and is written to the event log', async () => {
+      mockShareFails = Object.assign(new Error('No Activity found'), { code: 'ERR_SHARING_FAILED' });
+      const { repos } = await show({ shareFile: shareDataFile });
+      await fireEvent.press(exportRow());
+      await flush();
+      expect(screen.getByLabelText("Couldn't export")).toBeOnTheScreen();
+      expect(errors(repos)).toEqual(['data export failed: Error: No Activity found']);
+    });
   });
 });
 
@@ -299,6 +361,27 @@ describe('Restore from a file', () => {
     await settle();
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(data()).toEqual(before);
+  });
+
+  // Regression (T-036, emulator at 115%, 2026-11-17): Cancel took the whole footer width and Replace started
+  // past the right edge of the screen. The kit's footer is a row; `block` is `w-full` (width 100%) and React
+  // Native's flexShrink defaults to 0, so two block buttons in it are each as wide as the row. RNTL has no
+  // layout, so this checks the classes Yoga lays the row out from, not pixels: each button shares the row
+  // (flex-1, may shrink below its text with min-w-0) instead of taking all of it, Cancel first.
+  test('Cancel and Replace share the footer row instead of each taking all of it', async () => {
+    await show({ picked: { text: fileText(many) } });
+    await restore();
+    const footer = within(confirmSheet().getByTestId('footer'));
+    const classes = (name: string) => String(footer.getByRole('button', { name }).props.className).split(' ');
+    for (const name of ['Cancel', 'Replace']) {
+      expect(classes(name)).not.toContain('w-full');
+      expect(classes(name)).toEqual(expect.arrayContaining(['min-w-0', 'flex-1']));
+    }
+    const buttons = footer.getAllByRole('button');
+    expect(buttons).toEqual([
+      footer.getByRole('button', { name: 'Cancel' }),
+      footer.getByRole('button', { name: 'Replace' }),
+    ]);
   });
 
   test('a cooked food the app does not know survives a round trip', async () => {

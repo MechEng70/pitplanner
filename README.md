@@ -26,6 +26,10 @@ Cook finished: the new rate is offered, and you choose whether to use it.
 Android only for now. Steps are in [docs/INSTALL.md](docs/INSTALL.md), and the file is on the
 [Releases page](https://github.com/MechEng70/pitplanner/releases).
 
+Good to know: if the phone restarts during a cook, unlock it once. The app puts its alarms back by itself, but
+on some phones (seen on a OnePlus) no alert sounds until the first unlock after a restart. More in the
+[user guide](docs/USER-GUIDE.md), section 10.
+
 ## What's in 0.3.0
 
 - A rebuilt app on the same three tabs, with text that follows your font size
