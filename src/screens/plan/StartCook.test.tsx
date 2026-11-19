@@ -1,9 +1,12 @@
 // Start cook from Plan (T-021): the alert check, one cook and one alarm set per tap, and a running cook that
 // is never replaced (T-064).
 import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
+import { Pressable, Text } from 'react-native';
 import { SHEET_OUT_MS } from '@/components/kit/sheet';
 import { fakeAlarms, fakeResume } from '@/platform/fakes';
 import { AT_1023, cookAt, cookGear, cookMenu } from '@/test/cook';
+import { EVENT_LOG_KEY, parseEventLog } from '@/lib/eventLog';
+import { useStore } from '@/lib/store';
 import { storeWrapper, testRepos } from '@/test/store';
 import { PlanTab } from './PlanTab';
 
@@ -27,16 +30,31 @@ async function show(opts: { cooking?: boolean } = {}) {
   const resume = fakeResume();
   const onCookStarted = jest.fn();
   await render(
-    <PlanTab
-      pickDateTime={jest.fn(async () => null)}
-      permissions={alarms}
-      onResume={resume.onResume}
-      onCookStarted={onCookStarted}
-      now={() => NOW}
-    />,
+    <>
+      <PlanTab
+        pickDateTime={jest.fn(async () => null)}
+        permissions={alarms}
+        onResume={resume.onResume}
+        onCookStarted={onCookStarted}
+        now={() => NOW}
+      />
+      <DropCook />
+    </>,
     { wrapper: storeWrapper(r.repos, () => NOW, alarms) },
   );
   return { repos: r.repos, alarms, resume, onCookStarted };
+}
+/**
+ * The cook ending from another screen while Plan stays mounted, as the tabs keep it: End cook then Save to
+ * history or Discard this cook, and Start over, all end in the store's setCook(null).
+ */
+function DropCook() {
+  const { setCook } = useStore();
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel="drop the cook (test)" onPress={() => setCook(null)}>
+      <Text>drop</Text>
+    </Pressable>
+  );
 }
 const button = (name: string | RegExp) => screen.getByRole('button', { name });
 const replaced = (calls: string[]) => calls.filter(c => c.startsWith('replaceAll')).length;
@@ -58,6 +76,42 @@ test('with every alert permission on, Start cook saves the cook, sets its alarms
   expect(button('Start cook')).toBeDisabled();
 });
 
+// Regression (found by Jason on his phone, 0.3.0-beta.1, 2026-11-17): the guard against a double tap was
+// never cleared after a cook started, so once that cook had ended Start cook looked normal and did nothing
+// until the app was restarted.
+test('after a cook has ended, Start cook starts the next one without the app being restarted', async () => {
+  const { repos, alarms, onCookStarted } = await show();
+  await fireEvent.press(button('Start cook'));
+  await flush();
+  expect(repos.activeCook.load()).not.toBeNull();
+  expect(onCookStarted).toHaveBeenCalledTimes(1);
+
+  await fireEvent.press(button('drop the cook (test)'));
+  await flush();
+  expect(repos.activeCook.load()).toBeNull();
+  expect(button('Start cook')).toBeEnabled();
+  const before = replaced(alarms.calls);
+
+  await fireEvent.press(button('Start cook'));
+  await flush();
+  expect(repos.activeCook.load()).not.toBeNull();
+  expect(onCookStarted).toHaveBeenCalledTimes(2);
+  expect(replaced(alarms.calls)).toBe(before + 1);
+
+  // And a third time, with two quick taps: still one cook, one alarm set.
+  await fireEvent.press(button('drop the cook (test)'));
+  await flush();
+  const again = replaced(alarms.calls);
+  const start = button('Start cook');
+  await act(async () => {
+    fireEvent.press(start);
+    fireEvent.press(start);
+  });
+  await flush();
+  expect(onCookStarted).toHaveBeenCalledTimes(3);
+  expect(replaced(alarms.calls)).toBe(again + 1);
+});
+
 test('two quick taps start one cook and set the alarms once', async () => {
   const { alarms, onCookStarted } = await show();
   const start = button('Start cook');
@@ -68,6 +122,53 @@ test('two quick taps start one cook and set the alarms once', async () => {
   await flush();
   expect(replaced(alarms.calls)).toBe(1);
   expect(onCookStarted).toHaveBeenCalledTimes(1);
+});
+
+// Regression (after-readout checklist, "A start that fails shows nothing"): when saving the new cook threw,
+// no cook existed but the double-tap guard stayed set, so Start cook did nothing until the app was restarted;
+// and the event log said "cook started" for a cook that was never saved.
+describe('a start whose save fails', () => {
+  const started = (repos: Awaited<ReturnType<typeof show>>['repos']) =>
+    (repos.kv.get(EVENT_LOG_KEY, parseEventLog) ?? []).filter(e => e.text.startsWith('cook started'));
+  async function failedStart() {
+    const r = await show();
+    const save = jest.spyOn(r.repos.activeCook, 'save').mockImplementationOnce(() => {
+      throw new Error('disk full');
+    });
+    await fireEvent.press(button('Start cook'));
+    await flush();
+    expect(save).toHaveBeenCalledTimes(1);
+    return r;
+  }
+  afterEach(() => jest.restoreAllMocks());
+
+  test('no cook, no alarms, no Cook tab, and the next tap on Start cook starts it without a restart', async () => {
+    const { repos, alarms, onCookStarted } = await failedStart();
+    expect(repos.activeCook.load()).toBeNull();
+    expect(replaced(alarms.calls)).toBe(0);
+    expect(onCookStarted).not.toHaveBeenCalled();
+    expect(button('Start cook')).toBeEnabled();
+
+    await fireEvent.press(button('Start cook'));
+    await flush();
+    expect(repos.activeCook.load()!.startedAt).toBe(NOW);
+    expect(replaced(alarms.calls)).toBe(1);
+    expect(onCookStarted).toHaveBeenCalledTimes(1);
+  });
+
+  test('the event log has no "cook started" line for it, and the error is written there instead', async () => {
+    const { repos } = await failedStart();
+    expect(started(repos)).toEqual([]);
+    const errors = (repos.kv.get(EVENT_LOG_KEY, parseEventLog) ?? []).filter(e => e.kind === 'error');
+    expect(errors.map(e => e.text)).toEqual(['cook not started: Error: disk full']);
+  });
+
+  test('a start that is saved is logged as started once', async () => {
+    const { repos } = await failedStart();
+    await fireEvent.press(button('Start cook'));
+    await flush();
+    expect(started(repos)).toHaveLength(1);
+  });
 });
 
 describe('an alert permission is missing (failure mode 9)', () => {
