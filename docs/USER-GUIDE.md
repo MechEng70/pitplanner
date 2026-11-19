@@ -32,9 +32,13 @@ The first time you open the app, Setup asks three short things. Nothing is saved
 
 <!-- SCREENSHOT: setup-welcome | Setup step 1, Welcome to Pit Planner, units chosen, status bar cropped -->
 
+<img src="guide/setup-welcome.png" alt="Setup step 1: Welcome to Pit Planner, with the temperature and weight units" width="320">
+
 **Welcome to Pit Planner.** Pick Fahrenheit or Celsius, and Pounds or Kilograms. Tap Continue.
 
 <!-- SCREENSHOT: setup-cookers | Setup step 2, What do you cook on, smoker, griddle and oven rows, status bar cropped -->
+
+<img src="guide/setup-cookers.png" alt="Setup step 2: What do you cook on, with a smoker picked, a griddle and an oven" width="320">
 
 **What do you cook on?** Tap the Smoker card to pick your model. Turn on Griddle if you have one. Turn on
 Oven for holding if you will hold food warm in the oven. Tap Add another cooker for more. You need a smoker or
@@ -42,9 +46,14 @@ a griddle to continue. You can change all of this later in Gear.
 
 <!-- SCREENSHOT: setup-picker | The smoker picker with search and type chips, status bar cropped -->
 
+<img src="guide/setup-picker.png" alt="The smoker picker with the search box and the type chips" width="320">
+
 In the smoker picker, search by brand or model, or use the chips (All, Pellet, Kamado, Offset, Drum, Gravity,
 Electric). If your smoker is not in the list, tap Not listed? Enter it yourself and fill in its details. When
 the app knows your model, it fills in the hopper size and the grate area for you. You can edit both.
+
+If your smoker's temps go up in different steps than the app shows, pick "Not listed? Enter it yourself" and
+set your own step.
 
 <!-- SCREENSHOT: setup-alerts | Setup step 3, Make sure alerts get through, three rows and the test button, status bar cropped -->
 
@@ -67,10 +76,14 @@ Plan is the first tab. Here you build the menu and see the times.
 
 <!-- SCREENSHOT: plan-empty | Plan with nothing on the menu, What are we cooking, Add food button, status bar cropped -->
 
+<img src="guide/plan-empty.png" alt="Plan with nothing on the menu and the Add food button" width="320">
+
 With nothing on the menu, Plan says "What are we cooking?" Tap Add food. Once you have a saved cook, a Cook a
 past plan again button also shows. See section 7.
 
 <!-- SCREENSHOT: plan-main | Plan with the Saturday menu, three foods, tiles at the bottom, 115% font, status bar cropped -->
+
+<img src="guide/plan-main.png" alt="Plan with three foods, the Add food button, the three tiles and Start cook" width="320">
 
 ### Serve time
 
@@ -85,11 +98,15 @@ Tap the day and time to change it. Tap the calendar icon to pick a date and time
 
 <!-- SCREENSHOT: plan-add-food | The Add food sheet with the search box and the Beef, Pork, Chicken groups, status bar cropped -->
 
+<img src="guide/plan-add-food.png" alt="The Add food sheet with the search box and the food groups" width="320">
+
 Tap Add food. Search for a food or scroll the groups. Tap a food to open its details.
 
 ### Food details
 
 <!-- SCREENSHOT: plan-food-details | Food details for a brisket, with the result bar pinned at the bottom, status bar cropped -->
+
+<img src="guide/plan-food-details.png" alt="Food details for a brisket, with the fire, off heat and serve times above Add to plan" width="320">
 
 The food details screen shows what you can change for that food:
 
@@ -116,6 +133,8 @@ run faster. Set your own rate or total hours if you know them.
 
 <!-- SCREENSHOT: plan-temp-menu | The Smoker temp menu open, each row with its fire time, status bar cropped -->
 
+<img src="guide/plan-temp-menu.png" alt="The Smoker temp menu open, each row with its fire time" width="320">
+
 Tap the Smoker temp field. A menu lists the temperatures your smoker can be set to. Each row shows the fire
 time you would get with that temperature. Pick one. The menu starts with the usual range, 200F to 300F. Tap
 the Show button at the bottom to see every temperature. Times outside the usual range are marked as a rough
@@ -124,6 +143,8 @@ guess.
 ### The tiles and Conflicts
 
 <!-- SCREENSHOT: plan-conflicts | The Conflicts sheet with a warning and its fix buttons, status bar cropped -->
+
+<img src="guide/plan-conflicts.png" alt="The Conflicts sheet with a smoker conflict and its fix buttons" width="320">
 
 Under the menu, tiles show the fire time, the pellets (or charcoal) the cook needs, and Conflicts. Conflicts
 shows None when the plan fits your cookers. When it shows a number, tap it. The sheet lists each problem in
@@ -146,11 +167,15 @@ tap Start anyway and keep an eye on the clock. While a cook is running, Start co
 
 <!-- SCREENSHOT: start-check | The Alerts may not ring sheet with the permission rows, status bar cropped -->
 
+<img src="guide/start-check.png" alt="The Alerts may not ring sheet with the three permission rows and Start anyway" width="320">
+
 The Cook tab opens. With no cook running, the Cook tab says "No cook running" and gives you a Go to Plan button.
 
 ### Live cook
 
 <!-- SCREENSHOT: cook-live | Live cook with the Next up card, lane chart and next steps, 115% font, status bar cropped -->
+
+<img src="guide/cook-live.png" alt="Live cook with the Next up card, Done and Adjust, and the chart with one lane for each food" width="320">
 
 The Live cook screen is titled Cooking. Under the title it shows the smoker temp and the serve time. A chip on
 the right says On plan, Behind or Ahead. The three dots open Cook options.
@@ -162,7 +187,7 @@ food first.
 - Done: tap when you have done the step. The app re-plans from what really happened.
 - Adjust: opens Cook options, for when the food is not ready.
 
-Below the card is a chart with one lane for each cooker, from the first step to serve. A line shows now. Under
+Below the card is a chart with one lane for each food, from the first step to serve. A line shows now. Under
 the chart you see the next three steps. Tap Full timeline to see every step, with the done ones dimmed.
 
 When you tap Done on a step five minutes or more early or late, a sheet asks what to do about serve time:
@@ -170,8 +195,7 @@ When you tap Done on a step five minutes or more early or late, a sheet asks wha
 - Keep serve: the hold time (the time the food rests warm) changes instead.
 - Move serve: serve time changes. The other foods move with it.
 
-Each choice shows what it does to the hold. Tap Apply. When the app moved serve, a note on Live cook says so,
-for example "Serve moved to 5:40 PM. The other foods moved with it." Tap OK to clear it.
+Each choice shows what it does to the hold. Tap Apply. The plan and the serve time change at once.
 
 ### Warning banners
 
@@ -184,19 +208,29 @@ Banners sit at the top of Live cook.
 - "Pit out since (time). Steps are on hold." with Back up to temp. See section 4.
 - An amber banner when a change causes a smoker conflict the plan did not have before, or makes a hold
   longer than the food should wait. It says what changed. It does not ring. Tap OK to hide it.
+- An amber banner after you tapped Done or +15 min on an alert, for example "Check the brisket: done at
+  12:44 PM from the alert." If serve had to move, it adds "Serve moved to 5:40 PM." Tap OK to hide it.
 
 ### The alert on your lock screen
 
 <!-- SCREENSHOT: lock-screen-alert | The step alert on the lock screen with the Done and +15 min buttons, status bar cropped -->
 
+<img src="guide/lock-screen-alert.png" alt="Two step alerts opened on a locked phone, one with its Done and +15 min buttons" width="320">
+
 Each step rings as a real alarm, even with the phone asleep or locked. The alert has two buttons:
 
-- Done: the same as Done in the app.
+- Done: marks the step done at the time you tap. The app does not ask about serve time here. It keeps serve
+  if it can, or else moves serve later, never earlier.
 - +15 min: pushes that step back 15 minutes.
 
-Tap the alert itself to open the app. The buttons work with the app closed. If you do not answer, the alert
+Tap the alert itself to open the app. The buttons work with the app closed. When you next open the app, a
+banner on Live cook says what your tap did. If you do not answer, the alert
 rings again every 10 minutes, up to six more times, and then sends a last "Cook needs you" alert. The Live
 cook screen shows the step as overdue.
+
+**If the phone restarts during a cook, unlock it once.** Pit Planner puts its alarms back by itself after a
+restart. But on some phones (seen on a OnePlus) no app's alert sounds until the first unlock after a restart.
+A step that comes due before you unlock stays silent until you do.
 
 ## 4. Cook options
 
@@ -246,6 +280,9 @@ Gear is the third tab. It holds your cookers and settings.
 
 <!-- SCREENSHOT: gear-main | Gear with Cookers, Your numbers and App groups and the version line, status bar cropped -->
 
+<img src="guide/gear-main.png" alt="Gear: the Cookers and Your numbers groups" width="320">
+<img src="guide/gear-main-end.png" alt="Gear scrolled down: the App group and the version line" width="320">
+
 **Cookers.** Your smoker, griddle and oven. Tap one to edit it.
 
 <!-- SCREENSHOT: gear-griddle | The Griddle sheet with name, size, burners and dome, status bar cropped -->
@@ -282,6 +319,8 @@ The last line shows the app version.
 
 <!-- SCREENSHOT: history-main | Cook history with a rate card, the list of cooks and the help line, status bar cropped -->
 
+<img src="guide/history-main.png" alt="Cook history with a rate card, one saved cook and the help line" width="320">
+
 To reach Cook history, open the Gear tab and tap Cook rates, under Your numbers.
 
 At the top, a card for each food you have cooked, or have saved a rate for, shows:
@@ -298,6 +337,8 @@ Under Cooks, each saved cook shows its day, the foods and whether it ran on plan
 actual times and your notes.
 
 <!-- SCREENSHOT: history-cook | One saved cook open with Edit, Cook again and Remove from history, status bar cropped -->
+
+<img src="guide/history-cook.png" alt="One saved cook open, with planned and actual times, notes, Edit, Cook again and Remove from history" width="320">
 
 - Cook again puts that menu on Plan with a new serve time. If Plan already has food, the first tap says "This
   replaces the plan you have now. Tap Cook again to go on." Tap again to do it.
@@ -318,6 +359,8 @@ Open shared plan sheet.
 
 <!-- SCREENSHOT: shared-plan | The Open shared plan sheet with the sender's menu and the Serve on choice, status bar cropped -->
 
+<img src="guide/shared-plan.png" alt="The Open shared plan sheet with the menu, the Serve on choice and Use this plan" width="320">
+
 It shows the sender's menu and serve time. Then:
 
 - Serve on: pick the day. If the sender's time has passed or is less than an hour away, the app suggests
@@ -328,7 +371,7 @@ It shows the sender's menu and serve time. Then:
   move to another cooker, or asks you to add the cooker in Gear.
 
 Times are worked out for your gear and your cook rates, not the sender's. Tap Use this plan. It replaces the
-plan you have now. If the plan has conflicts, the Conflicts sheet opens.
+plan you have now. If moving a food to one of your cookers causes a conflict, the Conflicts sheet opens.
 
 If the file cannot be opened, the app says so: too big, or could not be read.
 
@@ -351,6 +394,8 @@ Steps to try, in order:
    makers delay or stop alerts to save battery.
 4. During a cook, check Live cook for a banner. "Alerts are off" means a permission was turned off. Tap Fix.
    "Alarms could not be set" means the phone refused the alarms. Tap Try again.
+5. Did the phone restart (an update overnight, a dead battery)? Unlock it once. On some phones no alert
+   sounds until the first unlock after a restart.
 
 If steps 1 to 3 do not fix it, send a report. See section 11.
 
@@ -367,6 +412,8 @@ The screen shows the developer's email address, pitplanapp@gmail.com. Tap the ad
 address is not filled in for you, type it.
 
 <!-- SCREENSHOT: debug-send | The Alarm tests screen at Send to developer with the address and the Send button, status bar cropped -->
+
+<img src="guide/debug-send.png" alt="The Alarm tests screen at Send to developer, with the address the file goes to" width="320">
 
 The file holds the app version, your Android version, the phone model, font size and time zone. It also holds
 your alert permissions, the alarms the app has stored, the app's data (cookers, plan, running cook, history,

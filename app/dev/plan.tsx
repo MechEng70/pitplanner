@@ -1,7 +1,7 @@
 // Plan seed (T-017, dev builds only): puts a known menu on the plan and opens the Plan tab, for the device
 // tests and for comparing with the mockups while Setup, Add food and food details are not ported yet. Not a
 // screen of the app.
-//   pitplanner://dev/plan?seed=mockup   mockup 05: Pit Boss 820, griddle and oven; brisket (0.75 hr/lb saved),
+//   pitplanner://dev/plan?seed=mockup   mockup 05: Pit Boss Sportsman 850, griddle and oven; brisket (0.75 hr/lb saved),
 //                                       wings and chicken breasts for Sat Nov 14, 2026, 5:00 PM Eastern
 //   pitplanner://dev/plan?seed=empty    the same cookers, nothing on the menu (mockup 04, no past cook)
 //   pitplanner://dev/plan?seed=past     as empty, plus one past cook, so Cook a past plan again shows
@@ -17,8 +17,8 @@
 //                                       400F, so Live cook shows the smoker conflict banner (T-069)
 //   pitplanner://dev/plan?seed=warned   the same, plus the wings on 30 min early and the breasts on 25 min early,
 //                                       each with Keep serve: the banner has the conflict and two long holds (T-069)
-//   pitplanner://dev/plan?seed=finished mockup 15: the mockup cook with every step done but Serve, which is due in
-//                                       about a minute (brisket off 25 min early, breasts 3 min late); opens the
+//   pitplanner://dev/plan?seed=finished mockup 15: the mockup cook with every step done but Serve, which is due at
+//                                       the next 5 minute mark (brisket off 25 min early, breasts 3 min late); opens the
 //                                       Cook tab: Done on Serve leads to Cook finished. The saved 0.75 hr/lb
 //                                       has no logged cooks yet, so the rate card says the rate stays. The
 //                                       support link shows again (it shows once, on a first cook).
@@ -109,9 +109,11 @@ function serveAt(seed: string, now: number): number {
     d.setHours(17, 0, 0, 0);
     return d.getTime();
   }
-  // On a 5 minute mark, as a serve time picked on Plan would be.
-  // Serve is the one step left, due in 30 to 90 seconds: Done on it reads as served on time.
-  if (seed === 'finished' || seed === 'finished-blend') return Math.floor((now + 1.5 * MIN) / MIN) * MIN;
+  // On a 5 minute mark, as a serve time picked on Plan would be: off the mark the plan's on-heat minutes grow
+  // by the distance to it, so Cook finished would read "Planned 9 hr 2 min" (seen 2026-11-17).
+  // Serve is the one step left, due at the next mark at least 30 seconds away (30 seconds to 5.5 minutes
+  // out). The device tests open the link 30 to 90 seconds before a mark, so Done reads as served on time.
+  if (seed === 'finished' || seed === 'finished-blend') return Math.ceil((now + 0.5 * MIN) / (5 * MIN)) * 5 * MIN;
   if (seed === 'cooking') return Math.ceil((now + COOKING_BEFORE_SERVE_MIN * MIN) / (5 * MIN)) * 5 * MIN;
   if (seed === 'conflict' || seed === 'warned')
     return Math.ceil((now + WARNED_BEFORE_SERVE_MIN * MIN) / (5 * MIN)) * 5 * MIN;

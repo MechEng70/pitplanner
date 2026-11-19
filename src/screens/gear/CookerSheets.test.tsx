@@ -24,7 +24,7 @@ const settle = () => act(() => jest.advanceTimersByTime(SHEET_OUT_MS));
 
 const METRIC: Units = { temp: 'C', weight: 'kg' };
 const unverified = cookers.smokers.find(s => !s.verified)!;
-const verified = cookers.smokers.find(s => s.verified && s.id !== 'pitboss-820')!;
+const verified = cookers.smokers.find(s => s.id === 'pitboss-sportsman-850')!;
 const nameOf = (s: { brand: string; model: string }) => `${s.brand} ${s.model}`.trim();
 
 /** The plan the store's gear gives for the Saturday menu (brisket, wings, breasts): what Plan would build. */
@@ -326,7 +326,10 @@ describe('Oven (mockup 19)', () => {
 
 describe('Smoker: the picker and manual form of Setup', () => {
   test('the smoker row opens the picker with the saved model marked; a verified model replaces it', async () => {
-    const { repos } = await show({ gear: { ...cookGear, smoker: { ...cookGear.smoker!, id: 'pitboss-820' } } });
+    // A smoker saved with the Pit Boss 820 (a catalog model, verified or not) keeps its stored profile.
+    const { repos } = await show({
+      gear: { ...cookGear, smoker: { ...cookGear.smoker!, id: 'pitboss-820', name: 'Pit Boss 820' } },
+    });
     await fireEvent.press(row(/^Pit Boss 820/));
     expect(sheet('Pick your smoker').getByRole('option', { name: 'Pit Boss 820' })).toBeSelected();
     await fireEvent.press(sheet('Pick your smoker').getByRole('option', { name: nameOf(verified) }));
@@ -346,7 +349,7 @@ describe('Smoker: the picker and manual form of Setup', () => {
 
   test('closing the picker keeps the smoker', async () => {
     const { repos } = await show();
-    await fireEvent.press(row(/^Pit Boss 820/));
+    await fireEvent.press(row(/^Pit Boss Sportsman 850/));
     await press('Pick your smoker', 'button', 'Close');
     await settle();
     noSheet('Pick your smoker');
@@ -355,7 +358,7 @@ describe('Smoker: the picker and manual form of Setup', () => {
 
   test('a model without checked specs opens the manual form blank and saves only what is typed', async () => {
     const { repos } = await show();
-    await fireEvent.press(row(/^Pit Boss 820/));
+    await fireEvent.press(row(/^Pit Boss Sportsman 850/));
     await fireEvent.press(sheet('Pick your smoker').getByRole('option', { name: nameOf(unverified) }));
     const form = nameOf(unverified);
     for (const label of ['Lowest temp (F)', 'Highest temp (F)', 'Temp step (F)', 'Main grate (sq in)'])

@@ -762,7 +762,7 @@ test_plan_sheets() {
   if dump >"$dir/sheets-temp.xml"; then
     open=$(node check.mjs center "$dir/sheets-temp.xml" "Smoker temp")
     [ -n "$before" ] && [ "$before" = "$open" ] || plan_miss "the opened field over the field (was $before, is $open)"
-    has_text "$dir/sheets-temp.xml" "Pit Boss 820 sets in 5F steps. Times for 12 lb brisket." || plan_miss "the menu's intro"
+    has_text "$dir/sheets-temp.xml" "Pit Boss Sportsman 850 sets in 5F steps. Times for 12 lb brisket." || plan_miss "the menu's intro"
     for want in 215F 220F 225F 230F; do grep -qE "text=\"$want\"" "$dir/sheets-temp.xml" || plan_miss "the $want row"; done
     grep -qE 'text="fire.6:20.AM"' "$dir/sheets-temp.xml" || plan_miss "fire 6:20 AM on the 225F row"
     grep -qE 'text="Show.180-500F"|content-desc="Show.180-500F"' "$dir/sheets-temp.xml" || plan_miss "Show 180-500F"
@@ -1263,11 +1263,11 @@ test_setup() {
         says "$dir/setup-picker.xml" "$want" || plan_miss "$want (smoker picker)"
       done
       shot "$dir/setup-picker.png"
-      tap "Pit Boss 820" 1 | tee -a "$REPORT"
+      tap "Pit Boss Sportsman 850" 1 | tee -a "$REPORT"
       sleep 1
     else plan_miss "the smoker picker"; fi
     if look "$dir/setup-smoker.xml"; then
-      for want in "Pellet smoker" "Hopper and grate filled from the model" "Model" "Pit Boss 820" "Hopper (lb)" "Main grate (sq in)" 'text="21"' 'text="593"'; do
+      for want in "Pellet smoker" "Hopper and grate filled from the model" "Model" "Pit Boss Sportsman 850" "Hopper (lb)" "Main grate (sq in)" 'text="21"' 'text="593"'; do
         says "$dir/setup-smoker.xml" "$want" || plan_miss "$want (smoker card after the pick)"
       done
       grep -q 'content-desc="Continue"[^>]*enabled="true"' "$dir/setup-smoker.xml" || plan_miss "Continue on once a smoker is chosen"
@@ -1286,7 +1286,7 @@ test_setup() {
       sleep 1
     else plan_miss "the Add a cooker sheet"; fi
     if look "$dir/setup-3cookers.xml" && grep -q 'content-desc="Griddle"[^>]*checked="true"' "$dir/setup-3cookers.xml"; then
-      log "    cookers: Pit Boss 820 picked and filled in, the griddle added from Add a cooker"
+      log "    cookers: Pit Boss Sportsman 850 picked and filled in, the griddle added from Add a cooker"
     else plan_miss "the griddle switched on after Add a cooker"; fi
     A shell input swipe 540 700 540 1700 200
     sleep 1
@@ -1308,7 +1308,7 @@ test_setup() {
     shot "$dir/setup-alerts-sent.png"
     A shell input keyevent KEYCODE_BACK
     sleep 1
-    if look "$dir/setup-back.xml" && says "$dir/setup-back.xml" "What do you cook on?" && says "$dir/setup-back.xml" "Pit Boss 820" &&
+    if look "$dir/setup-back.xml" && says "$dir/setup-back.xml" "What do you cook on?" && says "$dir/setup-back.xml" "Pit Boss Sportsman 850" &&
       grep -q 'content-desc="Griddle"[^>]*checked="true"' "$dir/setup-back.xml"; then
       log "    back: one step back, the smoker and the griddle still chosen"
     else plan_miss "the cookers step with its choices after the phone's back button"; fi
@@ -1356,6 +1356,7 @@ test_cook_finished() {
     tap "Close" 1 | tee -a "$REPORT"
   else plan_miss "the Full timeline sheet"; fi
 
+  wait_mark
   open_route "dev/plan?seed=finished"
   if look "$dir/finish-serve.xml" && [[ "$(next_title "$dir/finish-serve.xml")" == Serve* ]]; then
     tap "Done" 1 | tee -a "$REPORT"
@@ -1392,6 +1393,7 @@ test_cook_finished() {
     else plan_miss "Cook history after Save to history"; fi
   else plan_miss "Cook finished after Done on Serve"; fi
 
+  wait_mark
   open_route "dev/plan?seed=finished-blend"
   tap "Done" 1 | tee -a "$REPORT"
   sleep 1
@@ -1436,10 +1438,18 @@ test_gear() {
   fresh_seed mockup || { db_back; result "FAIL  gear $s: app did not open on an empty database"; return; }
   tap "Gear" 1 | tee -a "$REPORT"
   if look "$dir/gear.xml" && on_tab "$dir/gear.xml" "Gear"; then
-    for want in "Cookers" "Pit Boss 820" "Pellet smoker, 21 lb hopper" "Griddle" "36 in, 4 burners" "Oven" "Holding at 170F" \
-      "Your numbers" "Cook rates" "App" "Alerts" "Units" "Fahrenheit, pounds"; do
+    for want in "Cookers" "Pit Boss Sportsman 850" "Pellet smoker, 21 lb hopper" "Griddle" "36 in, 4 burners" "Oven" "Holding at 170F" \
+      "Your numbers" "Cook rates" "Export my data" "Restore from a file" "App" "Alerts"; do
       says "$dir/gear.xml" "$want" || plan_miss "$want (Gear)"
     done
+    # Since T-036's two rows, Units is below the first screen at 115%: scroll to it for its own check.
+    on_screen "Units"
+    if look "$dir/gear-low.xml"; then
+      for want in "Units" "Fahrenheit, pounds"; do
+        says "$dir/gear-low.xml" "$want" || plan_miss "$want (Gear, scrolled to Units)"
+      done
+    else plan_miss "Gear scrolled to Units"; fi
+    on_screen "Cookers" UP
     says "$dir/gear.xml" "Add a cooker" && plan_miss "no Add a cooker row with all three cookers"
     log "    Gear: cook rates \"$(grep -oE 'text="[^"]*hr/lb[^"]*"' "$dir/gear.xml.txt" | head -n 1 | sed -E 's/^text="|"$//g')\", alerts \"$(grep -oE 'text="(All set|Needs a fix|Checking)[^"]*"' "$dir/gear.xml.txt" | head -n 1 | sed -E 's/^text="|"$//g')\""
     shot "$dir/gear.png"
@@ -1504,26 +1514,21 @@ test_gear() {
     else plan_miss "the oven gone and Add a cooker showing after Remove oven"; fi
   else plan_miss "the Oven sheet"; fi
 
-  # The seed's smoker is not from the catalog, so no row is marked yet: pick a catalog model, see it on Gear
-  # and marked in the picker, then pick the Pit Boss 820 from the catalog.
-  on_screen "Pit Boss 820" UP
-  tap "Pit Boss 820" 1 | tee -a "$REPORT"
+  # The seed's smoker is the catalog's Sportsman 850, the one verified Pit Boss (the 820 is not verified since
+  # 2026-11-17 and opens the fill-in form): the row opens the picker with that model marked; picking it again
+  # goes back to Gear with the row as it was.
+  on_screen "Pit Boss Sportsman 850" UP
+  tap "Pit Boss Sportsman 850" 1 | tee -a "$REPORT"
   sleep 1
   if look "$dir/gear-smoker.xml" && says "$dir/gear-smoker.xml" "Pick your smoker" && says "$dir/gear-smoker.xml" "Not listed? Enter it yourself"; then
-    tap "Pit Boss Sportsman 850" 1 | tee -a "$REPORT"
-    sleep 1
-    look "$dir/gear-smoker-picked.xml" && has_text "$dir/gear-smoker-picked.xml" "Pit Boss Sportsman 850" && ! says "$dir/gear-smoker-picked.xml" "Pick your smoker" ||
-      plan_miss "Pit Boss Sportsman 850 on the smoker row after the pick"
-    tap "Pit Boss Sportsman 850" 1 | tee -a "$REPORT"
-    sleep 1
-    if look "$dir/gear-smoker-marked.xml" && grep -q 'content-desc="Pit Boss Sportsman 850"[^>]*selected="true"' "$dir/gear-smoker-marked.xml"; then
-      log "    the smoker row opens the picker; a picked model shows on the row and is marked in the picker"
-    else plan_miss "the picked model marked in the picker"; fi
+    if grep -q 'content-desc="Pit Boss Sportsman 850"[^>]*selected="true"' "$dir/gear-smoker.xml"; then
+      log "    the smoker row opens the picker with the saved model marked"
+    else plan_miss "the saved model marked in the picker"; fi
     shot "$dir/gear-smoker.png"
-    tap "Pit Boss 820" 1 | tee -a "$REPORT"
+    tap "Pit Boss Sportsman 850" 1 | tee -a "$REPORT"
     sleep 1
-    look "$dir/gear-smoker-back.xml" && says "$dir/gear-smoker-back.xml" "Pellet smoker, 21 lb hopper" && has_text "$dir/gear-smoker-back.xml" "Pit Boss 820" ||
-      plan_miss "Pit Boss 820 back on the smoker row"
+    look "$dir/gear-smoker-back.xml" && says "$dir/gear-smoker-back.xml" "Pellet smoker, 21 lb hopper" && has_text "$dir/gear-smoker-back.xml" "Pit Boss Sportsman 850" && ! says "$dir/gear-smoker-back.xml" "Pick your smoker" ||
+      plan_miss "Pit Boss Sportsman 850 back on the smoker row"
   else plan_miss "the smoker picker from the smoker row"; fi
 
   on_screen "Alerts"
@@ -1540,6 +1545,7 @@ test_gear() {
     tap "Close" 1 | tee -a "$REPORT"
   else plan_miss "the Alerts sheet"; fi
 
+  on_screen "Units"
   tap "Units" 1 | tee -a "$REPORT"
   sleep 1
   if look "$dir/gear-units.xml" && says "$dir/gear-units.xml" "Temperature" && says "$dir/gear-units.xml" "Kilograms"; then
@@ -1548,8 +1554,10 @@ test_gear() {
     tap "Kilograms" 1 | tee -a "$REPORT"
     tap "Close" 1 | tee -a "$REPORT"
     sleep 1
-    on_screen "Pit Boss 820" UP
-    if look "$dir/gear-metric.xml" && says "$dir/gear-metric.xml" "Celsius, kilograms" && says "$dir/gear-metric.xml" "Holding at 76C" &&
+    on_screen "Units"
+    look "$dir/gear-metric-units.xml" && says "$dir/gear-metric-units.xml" "Celsius, kilograms" || plan_miss "Celsius, kilograms on the Units row"
+    on_screen "Pit Boss Sportsman 850" UP
+    if look "$dir/gear-metric.xml" && says "$dir/gear-metric.xml" "Holding at 76C" &&
       says "$dir/gear-metric.xml" "Pellet smoker, 9.5 kg hopper"; then
       log "    Units: in Celsius and kilograms the rows read Holding at 76C and 9.5 kg hopper"
     else plan_miss "Celsius, kilograms; Holding at 76C; 9.5 kg hopper on Gear"; fi
@@ -1567,7 +1575,7 @@ test_gear() {
   if look "$dir/gear-history.xml" && says "$dir/gear-history.xml" "Cook history"; then
     A shell input keyevent KEYCODE_BACK
     sleep 1
-    if look "$dir/gear-history-back.xml" && says "$dir/gear-history-back.xml" "Your numbers" && says "$dir/gear-history-back.xml" "Fahrenheit, pounds"; then
+    if look "$dir/gear-history-back.xml" && says "$dir/gear-history-back.xml" "Your numbers" && says "$dir/gear-history-back.xml" "Cook rates"; then
       log "    Cook rates opens Cook history; the phone's back button returns to Gear"
     else plan_miss "Gear after back from Cook history"; fi
   else plan_miss "Cook history from Cook rates"; fi
@@ -1586,7 +1594,7 @@ test_history() {
   if ! is_emulator; then result "SKIP  history $s: emulator only"; return; fi
   fresh_seed history || { db_back; result "FAIL  history $s: app did not open on an empty database"; return; }
   if look "$dir/history.xml" && says "$dir/history.xml" "Cook history"; then
-    for want in "Brisket on Pit Boss 820" "hr/lb" "0.75" "yours" "logged" "Total" "None" "not set"; do
+    for want in "Brisket on Pit Boss Sportsman 850" "hr/lb" "0.75" "yours" "logged" "Total" "None" "not set"; do
       says "$dir/history.xml" "$want" || plan_miss "$want (Cook history)"
     done
     on_tab "$dir/history.xml" "Gear" || plan_miss "Gear as the open tab under Cook history"
@@ -1836,6 +1844,19 @@ hdr_at() {
   bt=$(grep -oE '="(Alerts are off|Smoker conflict:)[^"]*"[^>]*bounds="\[[0-9]+,[0-9]+\]' "$1.txt" | head -n 1 | grep -oE '[0-9]+\]$' | tr -d ']')
   [ -n "$sb" ] && [ -n "$bt" ] && echo "$sb $bt"
 }
+# Wait until the device clock is 30 to 90 seconds before a 5 minute mark. The finished seeds serve at the next
+# mark at least 30 seconds away: opened now, Serve is due in 30 to 90 seconds and the planned minutes on Cook
+# finished are the same on every run (off the mark they grow with the clock).
+wait_mark() {
+  local now left
+  while :; do
+    now=$(A shell date +%s | tr -d '\r')
+    left=$((300 - now % 300))
+    if [ "$left" -ge 30 ] && [ "$left" -le 90 ]; then break; fi
+    sleep 5
+  done
+  log "    opened $left s before a 5 minute mark"
+}
 test_live_warnings() {
   local s="$1" dir="$2" ok=1
   if ! is_emulator; then result "SKIP  live-warnings $s: emulator only"; return; fi
@@ -2010,6 +2031,7 @@ test_followups() {
     tap "Close" 1 | tee -a "$REPORT"
   else plan_miss "an Undo row in Cook options after Done"; fi
 
+  wait_mark
   open_route "dev/plan?seed=finished"
   if look "$dir/back-serve.xml" && [[ "$(next_title "$dir/back-serve.xml")" == Serve* ]]; then
     tap "Done" 1 | tee -a "$REPORT"

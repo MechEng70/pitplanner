@@ -10,6 +10,10 @@ tag `v0.2.0` rebuilds it.
 - What's new in 0.3.0 (draft, not released yet): [docs/release-notes/0.3.0.md](docs/release-notes/0.3.0.md)
 - Cutting a release: [docs/RELEASING.md](docs/RELEASING.md)
 
+Good to know: if the phone restarts during a cook, unlock it once. The app puts its alarms back by itself, but
+on some phones (seen on a OnePlus) no alert sounds until the first unlock after a restart. More in the
+[user guide](docs/USER-GUIDE.md), section 10.
+
 ## What's here
 
 - `SPEC.md`: what v1 does, decisions, screens, alarm design, failure-mode table, definition of done.

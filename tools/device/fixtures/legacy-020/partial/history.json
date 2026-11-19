@@ -12,7 +12,7 @@
     "log": {
      "foodId": "brisket",
      "methodId": "smoke",
-     "smokerId": "pb820",
+     "smokerId": "pitboss-sportsman-850",
      "quantity": 12,
      "pitTempF": 225,
      "minutesOnHeat": 565,
@@ -37,7 +37,7 @@
     "log": {
      "foodId": "brisket",
      "methodId": "smoke",
-     "smokerId": "pb820",
+     "smokerId": "pitboss-sportsman-850",
      "quantity": 12,
      "pitTempF": 250,
      "minutesOnHeat": 550
@@ -50,7 +50,7 @@
     "log": {
      "foodId": "wings",
      "methodId": "smoke",
-     "smokerId": "pb820",
+     "smokerId": "pitboss-sportsman-850",
      "quantity": 24,
      "pitTempF": 250,
      "minutesOnHeat": 85,

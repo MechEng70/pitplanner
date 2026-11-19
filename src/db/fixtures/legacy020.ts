@@ -11,7 +11,13 @@ import { rules } from '../../lib/rules.ts';
 
 export const legacyGear: Cookers = { smoker: saturday.cookers.smoker!, griddle: defaultGriddle(), oven: defaultOven() };
 
-const brisketLog = { foodId: 'brisket', methodId: 'smoke', smokerId: 'pb820', quantity: 12, pitTempF: 225 };
+const brisketLog = {
+  foodId: 'brisket',
+  methodId: 'smoke',
+  smokerId: saturday.cookers.smoker!.id,
+  quantity: 12,
+  pitTempF: 225,
+};
 export const legacyRecords: CookRecord[] = [
   {
     // Saved before 0.2.0 kept the serve lateness: no lateMin.
@@ -43,7 +49,7 @@ export const legacyRecords: CookRecord[] = [
         log: {
           foodId: 'wings',
           methodId: 'smoke',
-          smokerId: 'pb820',
+          smokerId: saturday.cookers.smoker!.id,
           quantity: 24,
           pitTempF: 250,
           minutesOnHeat: 85,

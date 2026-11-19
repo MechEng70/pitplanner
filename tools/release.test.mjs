@@ -99,6 +99,23 @@ test('--verify passes a right APK even when the badging dump is long (no SIGPIPE
   assert.match(r.stdout, /app config ok: version 0.3.0-alpha.1, versionCode 300001/);
 });
 
+// Regression (2026-11-17, the first release run from a terminal, 0.3.0-beta.2): on a terminal `node --test`
+// sets FORCE_COLOR for its test files, and console.log colours a number, so the versionCode came back wrapped
+// in colour codes. The gate failed here in a terminal while passing everywhere else, and a release run with
+// FORCE_COLOR set would have refused its own APK after the whole build.
+test('regression: with colour forced (the gate run in a terminal) the versionCode is plain digits', () => {
+  const env = { ...process.env, FORCE_COLOR: '1' };
+  const dry = spawnSync('tools/release.sh', ['--dry-run', '--version', '9.8.7-alpha.1'], { encoding: 'utf8', env });
+  assert.equal(dry.status, 0, dry.stderr);
+  assert.match(dry.stdout, /^release 9\.8\.7-alpha\.1, versionCode 90807001, /m);
+  const r = spawnSync('tools/release.sh', ['--verify', apkWith(appConfig()), '--version', '0.3.0-alpha.1'], {
+    encoding: 'utf8',
+    env: { ...env, RELEASE_BUILD_TOOLS: stubTools(GOOD, BADGING) },
+  });
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stdout, /app config ok: version 0.3.0-alpha.1, versionCode 300001/);
+});
+
 test('--verify fails on the wrong certificate or version', () => {
   assert.match(verify(stubTools('00'.repeat(32), BADGING)).stderr, /WRONG CERT/);
   assert.match(verify(stubTools(GOOD, BADGING.replace("'300001'", "'300'"))).stderr, /WRONG PACKAGE OR VERSION/);

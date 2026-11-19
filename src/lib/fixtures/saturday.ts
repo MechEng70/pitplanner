@@ -7,9 +7,10 @@ export const saturday: PlanInput = {
   at: Date.UTC(2026, 10, 14, 22, 0),
   pitTempF: 225,
   cookers: {
+    // Jason's smoker: the catalog's Pit Boss Sportsman 850, as smokerFromCatalog gives it (saturday.test.ts).
     smoker: {
-      id: 'pb820',
-      name: 'Pit Boss 820',
+      id: 'pitboss-sportsman-850',
+      name: 'Pit Boss Sportsman 850',
       type: 'pellet',
       tempStepF: 5,
       minTempF: 180,

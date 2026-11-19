@@ -26,7 +26,7 @@ describe('Cook history: a food with only saved total hours (T7)', () => {
     await show(r => r.rates.setTotalHours('stlribs', 5.5, NOW));
     const ribs = within(card('St. Louis ribs'));
     expect(ribs.getByText('St. Louis ribs')).toBeOnTheScreen();
-    expect(ribs.queryByText(/ on Pit Boss 820$/)).toBeNull();
+    expect(ribs.queryByText(/ on Pit Boss Sportsman 850$/)).toBeNull();
     expect(ribs.getByLabelText('Total 5.5 hr yours')).toBeOnTheScreen();
     expect(ribs.queryByLabelText(/^hr\/lb /)).toBeNull();
     expect(ribs.queryByLabelText(/^Cooks /)).toBeNull();

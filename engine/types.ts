@@ -8,7 +8,7 @@ export interface SmokerProfile {
   id: string;
   name: string;
   type: 'pellet' | 'kamado' | 'drum' | 'gravity' | 'offset' | 'electric' | 'other';
-  tempStepF: number | null; // 5 for Jason's Pit Boss 820; null when the cooker uses a fixed list
+  tempStepF: number | null; // 5 for Jason's Pit Boss Sportsman 850; null when the cooker uses a fixed list
   tempPresetsF?: number[]; // used when tempStepF is null
   minTempF: number;
   maxTempF: number;

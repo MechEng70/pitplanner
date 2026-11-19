@@ -36,7 +36,7 @@ const saturday = (): CookRecord => ({
       log: {
         foodId: 'brisket',
         methodId: 'smoked',
-        smokerId: 'pb820',
+        smokerId: 'pitboss-sportsman-850',
         quantity: 12,
         pitTempF: 225,
         minutesOnHeat: 515,
@@ -50,7 +50,7 @@ const saturday = (): CookRecord => ({
       log: {
         foodId: 'wings',
         methodId: 'smokeCrisp',
-        smokerId: 'pb820',
+        smokerId: 'pitboss-sportsman-850',
         quantity: 2,
         pitTempF: 225,
         minutesOnHeat: 90,
@@ -61,7 +61,14 @@ const saturday = (): CookRecord => ({
       name: 'Chicken breasts',
       plannedMin: 20,
       actualMin: 20,
-      log: { foodId: 'breasts', methodId: 'griddle', smokerId: 'pb820', quantity: 4, pitTempF: 225, minutesOnHeat: 20 },
+      log: {
+        foodId: 'breasts',
+        methodId: 'griddle',
+        smokerId: 'pitboss-sportsman-850',
+        quantity: 4,
+        pitTempF: 225,
+        minutesOnHeat: 20,
+      },
     },
   ],
 });
@@ -80,7 +87,7 @@ const earlier = (): CookRecord => ({
       log: {
         foodId: 'brisket',
         methodId: 'smoked',
-        smokerId: 'pb820',
+        smokerId: 'pitboss-sportsman-850',
         quantity: 10,
         pitTempF: 250,
         minutesOnHeat: 470,
@@ -128,7 +135,7 @@ const card = (label: string) => screen.getByRole('button', { name: label });
 /** The brisket rate the planner uses now, as the card shows it. */
 function brisketRate(repos: Repos): { text: string; cooks: number; source: string | null } {
   const { rates, totalHours, rateLocks } = repos.rates.load();
-  const row = rateRows(rules, logsOf(repos.history.list()), 'pb820', rates, totalHours, rateLocks).find(
+  const row = rateRows(rules, logsOf(repos.history.list()), 'pitboss-sportsman-850', rates, totalHours, rateLocks).find(
     r => r.foodId === 'brisket',
   )!;
   return { text: rateText(row.hrPerLb!, LB), cooks: row.cooks, source: row.source };
@@ -166,7 +173,7 @@ describe('the screen (mockup 20)', () => {
     const rate = brisketRate(repos);
     expect(rate).toMatchObject({ cooks: 2, source: 'learned' });
     const brisket = within(card('Brisket'));
-    expect(brisket.getByText('Brisket on Pit Boss 820')).toBeOnTheScreen();
+    expect(brisket.getByText('Brisket on Pit Boss Sportsman 850')).toBeOnTheScreen();
     expect(brisket.getByLabelText(`hr/lb ${rate.text} learned`)).toBeOnTheScreen();
     expect(brisket.getByLabelText('Cooks 2 logged')).toBeOnTheScreen();
     expect(brisket.getByLabelText('Total None not set')).toBeOnTheScreen();
