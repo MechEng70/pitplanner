@@ -264,6 +264,13 @@ function Action({
 }
 
 /**
+ * The sheet footer is a row, and `block` alone is `w-full` with React Native's flexShrink 0: two of them are
+ * each as wide as the row and the second starts off screen (seen at 115%). As ui.css `.sheet-foot .btn.block`,
+ * the two share the row in equal halves. Repeated in GearScreen and StartCheckSheet until the kit does it (0.3.1).
+ */
+const SHARE_ROW = 'w-auto min-w-0 flex-1';
+
+/**
  * Start over asks first (Jason, 2026-11-15, T-064: 0.2.0 dropped the running cook at once, with no question
  * and nothing saved).
  */
@@ -276,10 +283,10 @@ export function StartOverSheet({ onStartOver, onClose }: { onStartOver: () => vo
         <Closing>
           {close => (
             <>
-              <Button kind="text" block onPress={() => close()}>
+              <Button kind="text" block className={SHARE_ROW} onPress={() => close()}>
                 <Text>Keep cooking</Text>
               </Button>
-              <Button block onPress={() => close(onStartOver)}>
+              <Button block className={SHARE_ROW} onPress={() => close(onStartOver)}>
                 <Text>Start over</Text>
               </Button>
             </>

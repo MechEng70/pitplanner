@@ -363,6 +363,27 @@ describe('Restore from a file', () => {
     expect(data()).toEqual(before);
   });
 
+  // Regression (T-036, emulator at 115%, 2026-11-17): Cancel took the whole footer width and Replace started
+  // past the right edge of the screen. The kit's footer is a row; `block` is `w-full` (width 100%) and React
+  // Native's flexShrink defaults to 0, so two block buttons in it are each as wide as the row. RNTL has no
+  // layout, so this checks the classes Yoga lays the row out from, not pixels: each button shares the row
+  // (flex-1, may shrink below its text with min-w-0) instead of taking all of it, Cancel first.
+  test('Cancel and Replace share the footer row instead of each taking all of it', async () => {
+    await show({ picked: { text: fileText(many) } });
+    await restore();
+    const footer = within(confirmSheet().getByTestId('footer'));
+    const classes = (name: string) => String(footer.getByRole('button', { name }).props.className).split(' ');
+    for (const name of ['Cancel', 'Replace']) {
+      expect(classes(name)).not.toContain('w-full');
+      expect(classes(name)).toEqual(expect.arrayContaining(['min-w-0', 'flex-1']));
+    }
+    const buttons = footer.getAllByRole('button');
+    expect(buttons).toEqual([
+      footer.getByRole('button', { name: 'Cancel' }),
+      footer.getByRole('button', { name: 'Replace' }),
+    ]);
+  });
+
   test('a cooked food the app does not know survives a round trip', async () => {
     const lamb = cook('lamb-1', NOW - 2 * DAY, 'lamb', 'spit');
     const { repos, share } = await show({ picked: { text: fileText({ ...one, records: [lamb] }) } });

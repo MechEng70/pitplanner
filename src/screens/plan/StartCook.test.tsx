@@ -227,6 +227,36 @@ describe('an alert permission is missing (failure mode 9)', () => {
     expect(screen.getByLabelText('Alerts may not ring')).toBeOnTheScreen();
   });
 
+  // Regression (T-036 follow-up): the same shape as Replace your data?, whose Replace button sat off screen at
+  // 115%. The kit's footer is a row; `block` is `w-full` (width 100%) and React Native's flexShrink defaults to
+  // 0, so two block buttons in it are each as wide as the row. RNTL has no layout, so this checks the classes
+  // Yoga lays the row out from, not pixels: each button shares the row, Start anyway first.
+  const footerOf = (sheet: ReturnType<typeof within>) => within(sheet.getByTestId('footer'));
+  const classesIn = (footer: ReturnType<typeof within>, name: string) =>
+    String(footer.getByRole('button', { name }).props.className).split(' ');
+
+  test('Start anyway and Start cook share the footer row instead of each taking all of it', async () => {
+    const footer = footerOf((await blocked()).sheet);
+    for (const name of ['Start anyway', 'Start cook']) {
+      expect(classesIn(footer, name)).not.toContain('w-full');
+      expect(classesIn(footer, name)).toEqual(expect.arrayContaining(['min-w-0', 'flex-1']));
+    }
+    expect(footer.getAllByRole('button')).toEqual([
+      footer.getByRole('button', { name: 'Start anyway' }),
+      footer.getByRole('button', { name: 'Start cook' }),
+    ]);
+  });
+
+  test('once fixed, Start cook is alone in the footer and still fills the row', async () => {
+    const { alarms, resume, sheet } = await blocked();
+    alarms.granted = { ...alarms.granted, batteryUnrestricted: true };
+    await act(() => resume.resume());
+    const footer = footerOf(sheet);
+    expect(footer.getAllByRole('button')).toEqual([footer.getByRole('button', { name: 'Start cook' })]);
+    // Fills the row: grows into it (flex-1) or is as wide as it (w-full).
+    expect(classesIn(footer, 'Start cook').some(c => c === 'flex-1' || c === 'w-full')).toBe(true);
+  });
+
   test('a status that cannot be read counts as missing', async () => {
     const { repos, alarms } = await show();
     alarms.status = async () => {
