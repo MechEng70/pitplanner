@@ -32,16 +32,24 @@ export function StartCheckSheet({
   );
 }
 
+/**
+ * The sheet footer is a row, and `block` alone is `w-full` with React Native's flexShrink 0: two of them are
+ * each as wide as the row and the second starts off screen (seen at 115%). As ui.css `.sheet-foot .btn.block`,
+ * the two share the row in equal halves; alone, Start cook grows to fill it. Repeated in GearScreen and
+ * CookOptions until the kit does it (0.3.1).
+ */
+const SHARE_ROW = 'w-auto min-w-0 flex-1';
+
 function Footer({ ok, onStart }: { ok: boolean; onStart: () => void }) {
   const { close } = useSheet();
   return (
     <>
       {ok ? null : (
-        <Button kind="text" block onPress={() => close(onStart)}>
+        <Button kind="text" block className={SHARE_ROW} onPress={() => close(onStart)}>
           <Text>Start anyway</Text>
         </Button>
       )}
-      <Button block disabled={!ok} onPress={() => close(onStart)}>
+      <Button block className={SHARE_ROW} disabled={!ok} onPress={() => close(onStart)}>
         <Text>Start cook</Text>
       </Button>
     </>

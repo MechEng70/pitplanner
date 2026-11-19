@@ -27,6 +27,21 @@
 - Agents: the cheapest model that can do the job well. Fable for design judgment, tricky native or debugging
   work, security decisions. Opus for implementation from a clear spec, tests, refactors, code review. Sonnet or
   Haiku for mechanical work (the dashboard keeper, doc edits, log scraping).
+- The dashboard keeper, before reporting done: load `dashboard.html` in headless Chrome and report the page
+  error count, which must be 0. "It parses" (`node --check`) is not enough: a missing comma between two rows
+  parses and then stops the page's script (2026-11-18). One way to count:
+  `google-chrome --headless=new --disable-gpu --virtual-time-budget=4000 --enable-logging=stderr --v=1 --dump-dom "file://$PWD/dashboard.html" 2>&1 >/dev/null | grep -c 'CONSOLE:[0-9]*\] "Uncaught'`.
+  The main session checks the count again before telling Jason the page is updated.
+- The dashboard is about what is next, not a tracker of everything (Jason, 2026-11-19). Top of the page, in
+  order: the status line, "Releases at a glance" (the bars; they count `D.tasks`, so keep every task row),
+  "Today" (today's to-dos in order, `D.today`), "Waiting on Jason". Below, collapsed: Agents, the roads,
+  Time and tokens, Now in detail. No lists of found items, device results, sessions or all tasks. The
+  keeper removes an item as soon as it is done or settled; the record stays in TASKS, HANDOFF and git.
+  At every update the keeper also reads each release's next steps (`D.roads.list[].next`, `D.road`) and
+  each task row's status against what is done, and fixes what is stale (Jason, 2026-11-19: "Tonight" was
+  still shown the morning after).
+- Update `dashboard.html` every time an agent starts and every time one stops (Jason, 2026-11-19). Its
+  `updated` time comes from the clock (`date`), never typed.
 - Run independent tasks in parallel, each in its own worktree off local `main`: no emulator, no gate in the
   worktree, stop with a report.
 - Never run two agents that edit the same file; sequence those.

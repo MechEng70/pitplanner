@@ -1,5 +1,5 @@
 {
-  "$comment": "Pit Planner cooking rules. Times are minutes at a 225F pit unless noted. 'pit' means the smoker set point chosen on the Plan screen. Rates are planning estimates, not doneness: probe temp and tenderness decide when food is done.",
+  "$comment": "Pit Planner cooking rules. Times are minutes at a 225F pit unless noted. 'pit' means the smoker set point chosen on the Plan screen. Rates are planning estimates, not doneness: probe temp and tenderness decide when food is done. plural: true marks a food whose name is plural (Chicken breasts), so a sentence with it as subject agrees: 'Chicken breasts need a griddle', 'move them' (Jason, 2026-11-17). Set by hand, never guessed from the spelling.",
   "version": 1,
   "tempModel": {
     "$comment": "Cook time multiplier vs 225F: factor = base ^ ((T - 225) / 25). 0.85 per 25F fits the published 225/250/275 rates. Outside trustedRange the app shows a warning instead of a confident time.",
@@ -121,6 +121,7 @@
     {
       "id": "stlribs",
       "name": "St. Louis ribs",
+      "plural": true,
       "group": "Pork",
       "quantity": { "kind": "count", "unit": "racks", "label": "Racks", "default": 3, "min": 1, "max": 6, "step": 1 },
       "methods": [
@@ -149,6 +150,7 @@
     {
       "id": "bbribs",
       "name": "Baby back ribs",
+      "plural": true,
       "group": "Pork",
       "quantity": { "kind": "count", "unit": "racks", "label": "Racks", "default": 2, "min": 1, "max": 6, "step": 1 },
       "methods": [
@@ -201,6 +203,7 @@
     {
       "id": "breasts",
       "name": "Chicken breasts",
+      "plural": true,
       "group": "Chicken",
       "sources": [
         { "cite": "USDA FSIS, Safe Minimum Internal Temperature Chart (https://www.fsis.usda.gov/food-safety/safe-food-handling-and-preparation/food-safety-basics/safe-temperature-chart), given by Jason and confirmed by him in his browser, 2026-11-16", "covers": ["doneTemp"], "scope": "covers", "says": "All poultry: 165F (73.9C)." }
@@ -231,6 +234,7 @@
     {
       "id": "wings",
       "name": "Chicken wings",
+      "plural": true,
       "group": "Chicken",
       "sources": [
         { "cite": "USDA FSIS, Safe Minimum Internal Temperature Chart (https://www.fsis.usda.gov/food-safety/safe-food-handling-and-preparation/food-safety-basics/safe-temperature-chart), given by Jason and confirmed by him in his browser, 2026-11-16", "covers": ["doneTemp"], "scope": "covers", "says": "All poultry: 165F (73.9C)." }

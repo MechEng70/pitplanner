@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { alarmsFromPlan } from '../../../engine/alarms';
 import { buildPlan } from '../../../engine/plan';
 import { newCook } from '@/lib/cook';
@@ -7,12 +7,34 @@ import { rules } from '@/lib/rules';
 import { DEVELOPER_EMAIL, REPORT_HOLDS, REPORT_HOLDS_NOT, type DebugReport } from '@/lib/debugReport';
 import { EVENT_LOG_KEY } from '@/lib/eventLog';
 import { fakeAlarms, fakeClipboard, fakeDevice, fakeReportShare } from '@/platform/fakes';
+import { reportSharer } from '@/platform/shareFile';
+import type { ShareReport } from '@/platform/types';
 import { NOW, storeWrapper, testRepos } from '@/test/store';
 import { DebugScreen } from './DebugScreen';
 
+/** expo-sharing under the real Send to developer fallback: counts each call, then opens or rejects. */
+let mockShareFails: Error | null = null;
+let mockShareCalls = 0;
+jest.mock('expo-sharing', () => ({
+  shareAsync: async () => {
+    mockShareCalls++;
+    if (mockShareFails) throw mockShareFails;
+  },
+}));
+jest.mock('expo-file-system', () => ({
+  Paths: { cache: 'CACHE' },
+  File: class {
+    uri = 'file:///CACHE/pitplanner-debug.json';
+    create() {}
+    writeSync() {}
+  },
+}));
+// The native module is not in Jest.
+jest.mock('../../../modules/pit-share', () => ({ pitShare: {} }));
+
 const plan = buildPlan(rules, saturday);
 
-async function show(withCook: boolean) {
+async function show(withCook: boolean, share?: ShareReport) {
   const r = testRepos();
   if (withCook) r.repos.activeCook.save(newCook(saturday, plan, NOW), NOW);
   const alarms = fakeAlarms();
@@ -24,7 +46,7 @@ async function show(withCook: boolean) {
       alarms={alarms}
       permissions={alarms}
       device={fakeDevice}
-      share={report.share}
+      share={share ?? report.share}
       copy={clipboard.copy}
       onClose={onClose}
       now={() => NOW}
@@ -220,6 +242,38 @@ test('what the phone will not say is noted in the file, and the file is still se
   expect(file.alarms).toBeNull();
   expect(file.problems).toEqual(['stored alarms not read: Error: module gone']);
   expect(file.data).not.toBeNull();
+});
+
+// After-readout checklist, "Share plan failed on the phone": the same second-tap rejection on Send to
+// developer's fallback (the native sendFile failed, so the file goes through expo-sharing).
+describe('Send through the real fallback (sendFile fails, expo-sharing faked)', () => {
+  const fallback = reportSharer(async () => {
+    throw new Error('no activity');
+  });
+  beforeEach(() => {
+    mockShareCalls = 0;
+  });
+  afterEach(() => {
+    mockShareFails = null;
+  });
+
+  test('the "another share request is being processed" rejection shows no note', async () => {
+    mockShareFails = Object.assign(new Error('Another share request is being processed now.'), {
+      code: 'ERR_SHARING_IN_PROGRESS',
+    });
+    await show(false, fallback);
+    await fireEvent.press(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => expect(mockShareCalls).toBe(1));
+    await act(async () => {});
+    expect(screen.queryByText(/Could not share the file/)).toBeNull();
+  });
+
+  test('any other error still says so', async () => {
+    mockShareFails = new Error('No Activity found');
+    await show(false, fallback);
+    await fireEvent.press(screen.getByRole('button', { name: 'Send' }));
+    expect(await screen.findByText('Could not share the file. Error: No Activity found')).toBeOnTheScreen();
+  });
 });
 
 test('a share sheet that fails says so on the screen', async () => {

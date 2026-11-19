@@ -731,10 +731,130 @@ test("no griddle: tri-tip names the method that needs none (Jason's words); othe
   const q = buildPlan(rules, saturday({ cookers: smokerOnly, items: [breasts] }));
   assert.deepEqual(
     q.warnings.filter(w => w.code === 'NO_GRIDDLE').map(w => w.message),
-    ['Chicken breasts needs a griddle. Add one in Gear or move it to the smoker.'],
+    ['Chicken breasts need a griddle. Add one in Gear or move them to the smoker.'],
   );
   // The smoker sear needs no griddle at all.
   assert.ok(!buildPlan(rules, tritipSear({ cookers: smokerOnly })).warnings.some(w => w.code.startsWith('NO_')));
+});
+
+// ---- Agreement with a plural food name (Jason, 2026-11-17) ----
+// "Chicken breasts needs a griddle. Add one in Gear or move it to the smoker." The verb and the pronoun agree
+// with the food: its `plural` flag in data/foods.json. Singular foods keep their sentences byte for byte.
+const msgs = (p: Plan, code: string) => p.warnings.filter(w => w.code === code).map(w => w.message);
+const one = (foodId: string, methodId: string, quantity = 2, extra: object = {}) => ({
+  id: foodId,
+  foodId,
+  methodId,
+  quantity,
+  ...extra,
+});
+
+test('plural food: no griddle reads "need a griddle ... move them"; brisket-like singular lines unchanged', () => {
+  const smokerOnly = { smoker: pitBoss };
+  const at = (items: PlanInput['items']) => buildPlan(rules, saturday({ cookers: smokerOnly, items }));
+  assert.deepEqual(msgs(at([one('breasts', 'griddle', 4)]), 'NO_GRIDDLE'), [
+    'Chicken breasts need a griddle. Add one in Gear or move them to the smoker.',
+  ]);
+  assert.deepEqual(msgs(at([one('wings', 'griddle')]), 'NO_GRIDDLE'), [
+    'Chicken wings need a griddle. Add one in Gear or move them to the smoker.',
+  ]);
+  // Pinned: the singular fallback line (tri-tip with nothing set up) and the tri-tip possessive line.
+  const nothing = buildPlan(rules, saturday({ cookers: {}, items: [one('tritip', 'reverse', 2.5)] }));
+  assert.deepEqual(msgs(nothing, 'NO_GRIDDLE'), ['Tri-tip needs a griddle. Add one in Gear or move it to the smoker.']);
+  assert.deepEqual(msgs(at([one('tritip', 'reverse', 2.5)]), 'NO_GRIDDLE'), [
+    'Tri-tip\'s sear needs a griddle. Add one in Gear, or pick "Smoke, then sear on the smoker" in Food details.',
+  ]);
+});
+
+test('plural food: no smoker reads "need a smoker" for wings and both ribs; brisket and tri-tip unchanged', () => {
+  const none = (foodId: string, methodId: string) =>
+    msgs(buildPlan(rules, saturday({ cookers: {}, items: [one(foodId, methodId)] })), 'NO_SMOKER');
+  assert.deepEqual(none('wings', 'smokeCrisp'), ['Chicken wings need a smoker. Add one in Gear.']);
+  assert.deepEqual(none('stlribs', '221'), ['St. Louis ribs need a smoker. Add one in Gear.']);
+  assert.deepEqual(none('bbribs', 'wrap'), ['Baby back ribs need a smoker. Add one in Gear.']);
+  assert.deepEqual(none('breasts', 'smoker'), ['Chicken breasts need a smoker. Add one in Gear.']);
+  assert.deepEqual(none('brisket', 'smoked'), ['Brisket needs a smoker. Add one in Gear.']);
+  assert.deepEqual(none('tritip', 'smokerSear'), ['Tri-tip needs a smoker. Add one in Gear.']);
+});
+
+test('plural food: two of the same read by their labels, plural or not', () => {
+  const two = (foodId: string, methodId: string, a: number, b: number) =>
+    msgs(
+      buildPlan(
+        rules,
+        saturday({
+          cookers: {},
+          items: [
+            { ...one(foodId, methodId, a), id: 'x' },
+            { ...one(foodId, methodId, b), id: 'y' },
+          ],
+        }),
+      ),
+      'NO_SMOKER',
+    );
+  assert.deepEqual(two('wings', 'smokeCrisp', 2, 3), [
+    '2 lb chicken wings need a smoker. Add one in Gear.',
+    '3 lb chicken wings need a smoker. Add one in Gear.',
+  ]);
+  assert.deepEqual(two('stlribs', '221', 2, 3), [
+    '2 racks St. Louis ribs need a smoker. Add one in Gear.',
+    '3 racks St. Louis ribs need a smoker. Add one in Gear.',
+  ]);
+  assert.deepEqual(two('brisket', 'smoked', 11.5, 14), [
+    '11.5 lb brisket needs a smoker. Add one in Gear.',
+    '14 lb brisket needs a smoker. Add one in Gear.',
+  ]);
+});
+
+/** The rules with one method of one food changed: a temp floor or a size note on a plural food. */
+const withMethod = (foodId: string, methodId: string, over: object): Rules => {
+  const r = structuredClone(rules) as Rules;
+  const m = r.foods.find(f => f.id === foodId)!.methods.find(x => x.id === methodId)!;
+  Object.assign(m, over);
+  return r;
+};
+
+test('plural food: the temp floor and size note lines agree (no plural food has one in the data today)', () => {
+  const floor = withMethod('wings', 'smokeCrisp', { minPitTempF: 250 });
+  assert.deepEqual(msgs(buildPlan(floor, saturday({ items: [one('wings', 'smokeCrisp')] })), 'TEMP_BELOW_FOOD_MIN'), [
+    'Chicken wings need the smoker at 250F or hotter. It is set to 225F.',
+  ]);
+  const size = withMethod('wings', 'smokeCrisp', { sizeNote: { aboveLb: 1, text: 'Smoke them in two batches.' } });
+  assert.deepEqual(msgs(buildPlan(size, saturday({ items: [one('wings', 'smokeCrisp')] })), 'SIZE_OVER_RECOMMENDED'), [
+    'Chicken wings are 2 lb. Smoke them in two batches.',
+  ]);
+});
+
+test('plural food: a short rest reads "only get"; brisket keeps "only gets"', () => {
+  const short = (foodId: string, methodId: string, quantity: number) => {
+    const input = saturday({ rateOverrides: {}, items: [one(foodId, methodId, quantity)] });
+    const built = buildPlan(rules, input);
+    const it = built.items[0];
+    // Off the heat 3 min before slicing: under any rest floor here.
+    it.finish = built.serveAt - it.sliceMin * MIN - 3 * MIN;
+    return msgs(derive(rules, input, built.items, built.serveAt), 'REST_SHORT');
+  };
+  assert.deepEqual(short('stlribs', '221', 3), ['St. Louis ribs only get 3 min of rest, under the 10 min minimum.']);
+  assert.deepEqual(short('brisket', 'smoked', 12), ['Brisket only gets 3 min of rest, under the 30 min minimum.']);
+});
+
+test('plural food: a long hold of a food that holds poorly says "move them"; a singular one would say "it"', () => {
+  const breasts = { id: 'c', foodId: 'breasts', methodId: 'smoker', quantity: 4, options: { thickness: 'pounded' } };
+  const wings = { id: 'w', foodId: 'wings', methodId: 'smokeCrisp', quantity: 2 };
+  const [held] = msgs(buildPlan(rules, saturday({ items: [breasts, wings] })), 'HOLD_TOO_LONG');
+  assert.match(held!, /^Long hold: chicken breasts .*, limit 20 min\. Move them to the griddle or start them later\.$/);
+  // Pinned: a singular food that holds poorly keeps "it" (only breasts hold poorly in the data today).
+  const poor = structuredClone(rules) as Rules;
+  poor.foods.find(f => f.id === 'tritip')!.holdsPoorly = true;
+  const tri = { id: 't', foodId: 'tritip', methodId: 'reverse', quantity: 2.5 };
+  const p = buildPlan(poor, saturday({ items: [tri, wings] }));
+  const input = saturday({ items: [tri, wings] });
+  const it = p.items.find(i => i.input.id === 't')!;
+  it.finish = p.serveAt - it.sliceMin * MIN - (it.holdLimitMin + 30) * MIN;
+  const w = derive(poor, input, p.items, p.serveAt).warnings.find(
+    x => x.code === 'HOLD_TOO_LONG' && x.itemIds?.[0] === 't',
+  );
+  assert.match(w!.message, /^Long hold: tri-tip .*\. Move it to the griddle or start it later\.$/);
 });
 
 // Jason, 2026-11-17: the sentence as it is, pinned. A griddle-sear tri-tip, no griddle, a smoker that tops out at
@@ -834,4 +954,22 @@ test('smoker under 450F: the warning is once per food, and only for a method who
     { id: 'b', foodId: 'tritip', methodId: 'brisketStyle', quantity: 2.5 },
   ];
   assert.deepEqual(tooCool(coolSear(425, others)), []);
+});
+
+// Jason, 2026-11-17: the slice step (and its alarm) lower-cased the whole name: "Slice or plate the st. louis
+// ribs." A food name keeps its own capitals mid-sentence (labels.ts inSentence); every other food is as it was.
+test('slice step: a food name keeps its own capitals; brisket, baby back ribs and tri-tip are unchanged', () => {
+  const slice = (foodId: string, methodId: string, quantity: number) =>
+    ev(
+      buildPlan(rules, saturday({ rateOverrides: {}, items: [{ id: 'x', foodId, methodId, quantity }] })),
+      'slice',
+      'x',
+    ).label;
+  assert.equal(slice('stlribs', '221', 3), 'Slice or plate the St. Louis ribs.');
+  assert.equal(slice('brisket', 'smoked', 12), 'Slice or plate the brisket.');
+  assert.equal(slice('bbribs', 'wrap', 2), 'Slice or plate the baby back ribs.');
+  assert.equal(slice('tritip', 'reverse', 2.5), 'Slice or plate the tri-tip.');
+  // Wings and breasts are not sliced: no such step.
+  const p = buildPlan(rules, saturday());
+  assert.ok(!p.events.some(e => e.kind === 'slice' && (e.itemId === 'w' || e.itemId === 'c')));
 });

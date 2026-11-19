@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Gear: smoker row opens a smoker sheet with the question</title>
+<style>
+body{margin:0;background:#131211}
+*{box-sizing:border-box}
+.screen{position:relative;width:390px;height:844px;background:#131211;color:#F1EBE5;font-family:Roboto,system-ui,sans-serif;font-size:14px;line-height:1.25;overflow:hidden;display:flex;flex-direction:column}
+.avatar{width:40px;height:40px;border-radius:20px;display:flex;align-items:center;justify-content:center;flex:none}
+.t2{color:#B5ABA2}
+.label{font-size:13px;color:#B5ABA2}
+.caption{font-size:12px;color:#B5ABA2;line-height:1.4}
+.field{display:flex;flex-direction:column;gap:8px;min-width:0}
+.input{min-height:52px;border-radius:16px;border:1px solid #4A4541;padding:0 16px;display:flex;align-items:center;font-size:18px;font-variant-numeric:tabular-nums}
+.input.ph{color:#8A8079}
+.select{min-height:60px;border-radius:16px;border:1px solid #4A4541;padding:8px 16px;display:flex;align-items:center;gap:10px}
+.select .v{font-size:18px;font-weight:500}
+.seg{min-height:48px;display:flex;border-radius:24px;border:1px solid #4A4541;overflow:hidden}
+.seg span{flex:1 1 0;display:flex;align-items:center;justify-content:center;padding:4px 8px;font-size:14px;color:#B5ABA2;text-align:center;white-space:nowrap}
+.seg span+span{border-left:1px solid #4A4541}
+.seg span.on{background:#FF8F4A;color:#23130A;font-weight:500}
+.row2{display:flex;gap:12px;align-items:flex-start}
+.row2>*{flex:1 1 0}
+.card{background:#1F1D1B;border-radius:20px;flex:none}
+.div{height:1px;background:#3A3633;margin:0 16px}
+.primary{height:56px;border-radius:28px;background:#FF8F4A;color:#23130A;font-size:16px;font-weight:500;display:flex;align-items:center;justify-content:center}
+.primary.off{background:#2A2725;color:#8A8079}
+.outline{height:56px;border-radius:28px;border:1px solid #4A4541;font-size:16px;font-weight:500;display:flex;align-items:center;justify-content:center}
+.scrim{position:absolute;inset:0;background:rgba(10,9,9,.6)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#1F1D1B;border-radius:28px 28px 0 0;display:flex;flex-direction:column}
+.sheet .grab{width:36px;height:4px;border-radius:2px;background:#5A544F;margin:10px auto 4px}
+.sheet .head{display:flex;align-items:center;justify-content:space-between;padding:4px 8px 8px 20px}
+.sheet .head b{font-size:20px;font-weight:500}
+.sheet .x{width:48px;height:48px;display:flex;align-items:center;justify-content:center}
+.sheet .body{display:flex;flex-direction:column;gap:16px;padding:4px 16px 0}
+.sheet .foot{padding:16px 16px 28px;margin-top:auto}
+.chips{display:flex;gap:8px;margin-right:-16px;overflow:hidden}
+.chip{min-height:40px;border-radius:20px;border:1px solid #4A4541;padding:0 14px;display:flex;align-items:center;font-size:14px;color:#D8CFC7;flex:none;margin:4px 0}
+.chip.on{background:#4A2E1C;border-color:transparent;color:#FFD3B5;font-weight:500}
+.grow{display:flex;align-items:center;gap:14px;min-height:64px;padding:8px 16px}
+.grow .tt{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.grow .tt b{font-size:16px;font-weight:400}
+.grow .tt span{font-size:13px;color:#B5ABA2}
+h2{margin:6px 0 0;padding:0 4px;font-size:16px;font-weight:500;color:#B5ABA2}
+</style>
+</head>
+<body>
+<div class="screen">
+<div style="height:64px;display:flex;align-items:center;padding:0 20px;flex:none"><h1 style="margin:0;font-size:22px;font-weight:500">Gear</h1></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:10px;padding:0 16px;min-height:0;overflow:hidden">
+<h2>Cookers</h2>
+<div class="card"><div class="grow"><span class="avatar" style="background:#3A2619"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF8F4A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22c4 0 7-2.7 7-6.5 0-3.3-2.2-5.5-3.6-7.2-.4 1.6-1.3 2.7-2.4 3.2C13 8 12 5 9 2c0 4-4 6.7-4 11.5C5 19.3 8 22 12 22z"/></svg></span><span class="tt"><b>Pit Boss Sportsman 850</b><span>Pellet smoker, 21 lb hopper</span></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B5ABA2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M9 6l6 6-6 6"/></svg></div><div class="div"></div>
+<div class="grow"><span class="avatar" style="background:#1C2B38"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8EC2F0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="8" rx="2"/><path d="M6 16v3M18 16v3"/></svg></span><span class="tt"><b>Griddle</b><span>36 in, 4 burners</span></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B5ABA2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M9 6l6 6-6 6"/></svg></div><div class="div"></div>
+<div class="grow"><span class="avatar" style="background:#2A2725"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D8CFC7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M7 13h10"/></svg></span><span class="tt"><b>Oven</b><span>Holding at 170F</span></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B5ABA2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M9 6l6 6-6 6"/></svg></div></div>
+<h2>Your numbers</h2>
+<div class="card"><div class="grow"><span class="avatar" style="background:#1F2A1C"><span style="font-size:14px;font-weight:700;color:#9BD18B">hr</span></span><span class="tt"><b>Cook rates</b><span>Brisket 0.75 hr/lb, your setting</span></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B5ABA2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M9 6l6 6-6 6"/></svg></div></div>
+<h2>App</h2>
+<div class="card">
+<div class="grow"><span class="avatar" style="background:#1F2A1C"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9BD18B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg></span><span class="tt"><b>Alerts</b><span>All set: exact alarms on, battery saver off</span></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B5ABA2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M9 6l6 6-6 6"/></svg></div><div class="div"></div>
+<div class="grow"><span class="avatar" style="background:#2A2725"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D8CFC7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 14.8V4a2 2 0 0 0-4 0v10.8a4 4 0 1 0 4 0z"/></svg></span><span class="tt"><b>Units</b><span>Fahrenheit, pounds</span></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B5ABA2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M9 6l6 6-6 6"/></svg></div><div class="div"></div>
+<div class="grow"><span class="avatar" style="background:#2A2725"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B5ABA2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8v10H3z"/><path d="M9 21v-6h6v6"/></svg></span><span class="tt"><b>Home Assistant</b><span>Coming later</span></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B5ABA2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M9 6l6 6-6 6"/></svg></div><div class="div"></div>
+<div class="grow"><span class="avatar" style="background:#3A3018"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD27A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM17 10h1.5a2.5 2.5 0 0 1 0 5H17M8 2v3M12 2v3"/></svg></span><span class="tt"><b>Buy me a bag of pellets</b><span>If the app saved your brisket</span></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B5ABA2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M9 6l6 6-6 6"/></svg></div></div>
+</div>
+<nav style="height:80px;flex:none;background:#1B1917;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))">
+<span style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;color:#B5ABA2;font-weight:400"><span style="width:64px;height:32px;border-radius:16px;background:transparent;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg></span>Plan</span>
+<span style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;color:#B5ABA2;font-weight:400"><span style="width:64px;height:32px;border-radius:16px;background:transparent;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg></span>Cook</span>
+<span style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;color:#F1EBE5;font-weight:500"><span style="width:64px;height:32px;border-radius:16px;background:#4A2E1C;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FFB07F" stroke-width="2" stroke-linecap="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg></span>Gear</span>
+</nav>
+<div class="scrim"></div><div class="sheet" style=""><div class="grab"></div><div class="head"><b>Smoker</b><span class="x"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F1EBE5" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span></div><div class="body"><div class="select"><span style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0"><span class="caption" style="line-height:1.25">Model</span><span class="v">Pit Boss Sportsman 850</span></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B5ABA2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M9 6l6 6-6 6"/></svg></div><div class="field"><span class="label">What steps does your smoker set in?</span><div class="seg" role="radiogroup"><span class="on">5F</span><span class="">10F</span><span class="">15F</span><span class="">25F</span><span class="">Other</span></div></div></div><div class="foot"><div class="primary">Save smoker</div></div></div>
+</div>
+</body>
+</html>

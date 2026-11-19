@@ -6,8 +6,9 @@
 - **0.3.x:** reserved for bug fixes.
 - **0.4.0:** Home Assistant phase 1, T-042 to T-050 (mockups, the client_id page, sign-in, the WebSocket
   client, discovery, Gear, a probe per food, live probe temps).
-- **0.5.0:** fish (T-071), the receiver picks cookers (T-070). The alarm log on the Android side (T-068) was
-  moved into 0.3.0 and is done (merged 2026-11-16).
+- **0.5.0:** fish (T-071), the receiver picks cookers (T-070), Chef iQ probes direct over Bluetooth (T-080;
+  Jason, 2026-11-17). The alarm log on the Android side (T-068) was moved into 0.3.0 and is done (merged
+  2026-11-16).
 - **0.5.0 or later:** T-051 to T-055 (Home Assistant phases 2 to 4).
 - Nothing from 0.4.0 or later is started before 0.3.0 ships.
 
@@ -1622,6 +1623,75 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   create a README once we get done with everything and create screenshots for everything").
 - **Goal:** how to use the app, screen by screen, with screenshots (status bar cropped), including where the
   cook history is and how to reach the debug screen.
+- **Text audit against `main`, Wed 2026-11-18 (Opus agent, read-only; Jason asked for a start and a plan).**
+  Fixed in the guide the same day, each checked in the code by the main session: the chart has one lane
+  per food, not per cooker (`cookView.ts:107`); no note shows after Apply on Keep or Move (the notice is set
+  only for taps on an alert, `cook.ts:282`); Done on the alert never asks about serve (keeps it if it can,
+  else moves it later, never earlier) and the Live cook banner says what the tap did; the Conflicts sheet
+  on a shared plan opens only when a food that changed cooker causes one (`sharedPlan.ts:228`).
+  **Still open, the agent's findings, not checked by the main session, wording for Jason:**
+  1. End cook "turns off all the alerts" (the app's own words, `CookOptions.tsx:226`): the alarms are
+     cleared at Save to history or Discard, not at End cook (`CookFlow.tsx`).
+  2. "Done ... five minutes or more early or late, a sheet asks": only for a food going on and steps like
+     the wrap, not for pull, fire or serve, and not when early and serve cannot move sooner (`cook.ts:124-141`).
+  3. Missing: Plan edits do not change a running cook (T-084); Done takes the tap time and the rates learn
+     from it (T-085); brine choices add no step and no alert (the guide promises none, but says nothing).
+  4. Section 11: no warning that the debug screen's Cancel all alarms silences a running cook and Read and
+     clear drops queued alert taps (`DebugScreen.tsx:256-289`); the file also holds when each alert rang.
+  5. Smaller: the four other "cannot open this plan" messages (`sharedPlan.ts:85-119`); temp menu rows show
+     "ready {time}" in Start at mode (`TempMenu.tsx:107`); Restore also replaces units and settings
+     (`restore.ts:30`); the rate hint reads "Published estimate...", not "a guess" (`FoodEdit.tsx:559`); chip
+     order; Oven for holding starts on; when Remove griddle and Remove oven show (`CookerSheets.tsx:45,54`);
+     at 130% "scroll down for Use and Keep"; INSTALL: the "Oven hold raised to 140F" import line.
+  6. Share double tap: no guide line if the share guard ships in 0.3.0.
+- **Picture plan, same agent (22 slots; 5 filled on `worktree-agent-af96b15db6f617be3`: setup-alerts,
+  cook-banner, cook-options, cook-finished, gear-griddle).** The rig (`tools/device/run.sh`) already takes
+  16 of the other 17 at 115% from seeds: setup-welcome, setup-cookers, setup-picker (`setup` test, empty
+  database); plan-empty (seed=empty); plan-food-details (seed=empty&add=brisket); plan-main, plan-add-food,
+  plan-temp-menu (seed=mockup); plan-conflicts (seed=clash); gear-main; history-main, history-cook
+  (seed=history); shared-plan (`shared` test); start-check (seed=tomorrow, one permission off); cook-live
+  (seed=cooking; grant every alert permission first or the red banner shows); debug-send (`followups`
+  test; shows the app's address). Not possible today: lock-screen-alert (the rig refuses non-app windows;
+  needs a new step: lock, wait for a step, screencap, crop the status bar; a release build, since the dev
+  build's alert says "Pit Planner dev"). Do not reuse the 2026-11-15 fidelity PNGs: they show "Pit Boss
+  820", the seed is now the Sportsman 850, and most are labelled composites. Gear's version line: build with
+  the release version or crop it. The README's 4 (branch `worktree-agent-a6d5ad9a3b663d00e`): plan (same as
+  plan-main), live cook (same as cook-live), lock-screen alert (same slot), Cook finished rate card
+  (seed=finished-blend, or reuse the parked one). Order: setup; empty; mockup, clash; gear; history; shared;
+  tomorrow; cooking, followups; finished-blend; the lock-screen step last.
+- **16 pictures shot and in the guide, Wed 2026-11-18 (Jason: "shoot the 16 today between rings").** In
+  `docs/guide/`, named by slot, shown 320 px wide. Emulator, dev build, 115%, seeded data only, status bar
+  cropped, each looked at before the commit. From the rig run (`setup,plan,plan-sheets,food-details,cook,
+  gear,history,shared,followups`, all PASS at 115%): setup-welcome, setup-cookers, setup-picker, plan-empty,
+  plan-add-food, plan-food-details, plan-temp-menu, plan-conflicts, history-main, history-cook, shared-plan,
+  debug-send. Retaken by hand with the rig's helpers: plan-main (seed=tomorrow, so Start cook is live; the
+  mockup seed's Sat Nov 14 is past and greys it out), start-check, cook-live (every alert permission on, no
+  red banner), gear-main as two pictures (top, and the end with the version line). **The version line reads
+  0.3.0 because Metro was started with `APP_VERSION=0.3.0` for these pictures; the build is the dev build.**
+  The battery allowlist entry was taken off the emulator again afterwards. `docs/fidelity/rn-debug-send.png`
+  is replaced with the same new picture (the app's address). **Left:** lock-screen-alert (needs the new
+  rig step and a release build); the 5 slots on `worktree-agent-af96b15db6f617be3` (they point at the
+  2026-11-15/16 fidelity PNGs; today's run also made fresh `setup-alerts`, `cook-options`,
+  `cook-finished-rate` and `gear-griddle`, cook-banner needs the `live-warnings` test); the README's 4.
+  **Seen in the pictures, for Jason (not fixed, the freeze holds):** (1) in the smoker picker at 115% the
+  chip reads "Kamad", the last letter of Kamado is cut off (**fixed on `beta3` Thu 2026-11-19, `a3313b9`;
+  Jason's decision: no type chip label is ever cut off at any font scale.** Cause: the chip was sized by an
+  unseen medium-weight copy of its label, and in Roboto the regular "Kamado" is 1 px wider than the medium
+  one at 115% and at 130%, so the label that shows broke onto a second, hidden line. Chips are now sized by
+  unseen copies in both weights (`src/components/kit/controls.tsx`, every `Chips` row); regression test in
+  `controls.test.tsx`; seen on the test emulator at 115% and 130%, all seven labels whole. The row still
+  scrolls sideways, so a chip can be part way off the screen's edge until it is scrolled to); (2) with the Alerts may not ring sheet open, a
+  24 px sliver of Plan's Start cook button shows at the right edge of the screen beside Start anyway, and
+  it is tappable (`cook-start.xml`: "Start cook" at x 1056 to 1080).
+  **Correction, same day:** (2) is not new. It is the sheet's own second button pushed off the right edge
+  at 115%, already fixed on parked branch `a8c0f87e3e0ab96ed` (HANDOFF, parked branches, row 2). Retake
+  `docs/guide/start-check.png` after that branch is merged.
+- **The lock-screen alert picture, Wed 2026-11-18, 2:20 PM:** `docs/guide/lock-screen-alert.png`, in the
+  guide. Emulator, the 0.3.0-beta.2 release app, a real cook started at 2:17 PM (wings, Start at): the
+  alerts for Fire the smoker and Wings on, opened in the notification panel of the locked emulator, the
+  smoker alert expanded to show Done and +15 min; cropped to the alert card. The test emulator has its lock
+  screen switched off, so it was switched on for the picture and off again; the cook was discarded
+  (no alarm of the app left pending). Left for the guide: the branch's 5 slots, the README's 4.
 - **Depends on:** the 0.3.0 screens, T-065.
 
 ### T-022 Cook options (13) and keep or move serve
@@ -2114,6 +2184,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** see T-031.
 
 ### T-031 Share between two phones (Gmail, Drive)
+- **Moved to 0.3.1 (Jason, Wed 2026-11-18 evening): "No other phones are tested for 0.3.0."** The two-phone
+  test, his wife's phone to his and back (`docs/after-readout-checklist.md`, Part 2), is not run before
+  0.3.0. SPEC's definition of done still lists "Share plan round-trips between two phones"; his to settle.
+  What 0.3.0 has: the single-phone stand-in below, the emulator `shared` test, and the share guard on a
+  parked branch for beta.3.
 - **Single-phone stand-in (2026-11-16, Jason's phone, dev build):** a plan shared from the dev build and
   emailed to himself opened the Shared plan sheet when the dev build was already running. On a cold start
   it said "Could not read that file.": the Expo dev launcher takes the intent first and the read permission
@@ -2127,6 +2202,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   two-phone share test, Gmail and Drive. One list: `docs/after-readout-checklist.md`. Where the sources are
   silent it says "to confirm with Jason" (the way the beta.1 file reaches her phone; whether her phone to his
   is part of the test).
+- **Jason (2026-11-18):** her phone to his is part of the test; she sends a one-food plan of her own. The
+  two-phone test runs after the share guard is merged in Sunday's fix window (two fast taps on Share plan
+  show a false "Couldn't share" behind the open sheet: cause and fix in `docs/after-readout-checklist.md`);
+  single taps only until then. Single taps to Drive and to email work on his phone on beta.2 (his word).
 - **Status:** todo (Jason, hands-on), rescheduled to after Sunday's readout. Remains: the checklist ticked.
 - **Goal:** SPEC definition of done: a plan round-trips between two phones through Gmail and through Drive.
 - **Files:** fixes only if a route fails; `docs/HANDOFF.md`.
@@ -2171,6 +2250,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   - The dev build ("Pit Planner dev") checks too, once a day, as built (Jason, 2026-11-15). Nothing to change.
 
 ### T-033 Release docs: notes, install guide, releasing checklist
+- **Changed (Jason, Wed 2026-11-18 evening):** INSTALL.md is not followed on his wife's phone before the
+  release; she gets 0.3.0 when he sends it, not beta.2. INSTALL.md wording fixes still go in before Monday
+  2026-11-23 (known so far: the "Oven hold raised to 140F, the safe minimum." import line is missing; which
+  others he has in mind is to ask). The Samsung tester's locked-reboot request moves to 0.3.1; whether the
+  0.3.0 notes say alarms after a locked restart were not tested on a Samsung, and in what words, is his call.
 - **Answers put in (2026-11-15, eighteenth session):** INSTALL.md has the contact address (the one the debug
   screen uses) and a line on betas; RELEASING.md says testers get betas, describes the update check as built
   (T-032) in place of the "Not built yet" note, and names where the contact address lives. TECH-DESIGN now
@@ -2185,6 +2269,8 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Jason (2026-11-17):** INSTALL.md is followed on his wife's phone on Sunday afternoon 2026-11-22, after the
   readout passes, together with T-031: 0.3.0-beta.1 as an upgrade over her 0.2.0, with his yes. Part 1 of
   `docs/after-readout-checklist.md`. T-038 (the release, Monday 2026-11-23) waits for it.
+- **Jason (2026-11-18):** 0.3.0-beta.2 reaches her phone by a Drive link to the APK. Wording fixes from her
+  run go into INSTALL.md before Monday; anything that needs an app change goes to 0.3.1.
 - **Status:** written, merged onto `main` and gate-complete 2026-11-15. Not done until INSTALL.md has been
   followed once on his wife's phone (after Sunday's readout; the review and the six questions are answered).
 - **Goal:** friends can install or upgrade; Claude can release by checklist.
@@ -2211,7 +2297,11 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   needs you" in Robolectric. P3 run on the phone. P4 at T-037 on the tester's Samsung. No parity decision
   is waiting on him.
 - **Status:** review written 2026-11-15 (nineteenth session), `docs/parity.md`; open rows wait for Jason's
-  decisions (section 1a), the full device pass at 115% and 130% is not run
+  decisions (section 1a). **The full device pass at 115% and 130% was run on Tue 2026-11-17** (HANDOFF,
+  "The full device pass (T-034)"): 23 of 25 tests finished before the computer ran low on memory; 17 pass at
+  both sizes, 6 fail on test rig faults (no app regression), `followups` and `turkey` did not get a result.
+  The reruns wait for the rig fixes; `turkey` runs with beta.3. As first written here: the full device pass
+  at 115% and 130% is not run
 - **Goal:** every SPEC screen and failure mode that 0.2.0 handled works in the Expo build.
 - **Files:** `docs/parity.md` (checklist: SPEC 3 screens, SPEC 5 live rules, SPEC 7 failure modes 1-15, mockups
   01-20 with fidelity PNG links).
@@ -2429,11 +2519,32 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Real phone:** no (Jason, 2026-11-15: emulator only).
 
 ### T-037 Saturday cook on the Expo build (SPEC definition of done)
+- **Done on the rehearsal of Wed 2026-11-18 (Jason, that evening: "T-037 closes on today's rehearsal; I
+  don't load Saturday's plan"), with the overnight check added when it is read.** On his phone,
+  0.3.0-beta.2: 14 alerts, each rang once and within 1.6 seconds of its time; the alert after the locked
+  reboot was posted before the first unlock (the phone itself stays silent until unlocked, his judgment,
+  now shown by the ring log); 8 of the 14 fired with the phone in deep idle; taps made with the app swiped
+  away were applied with their own times; after Discard no alarm was left and history and rates were
+  untouched. Not run on a phone, with where each is covered by tests: `docs/t037-checklist.md`, "What today
+  did not test". The overnight check (first ring 5:30 AM Thu 2026-11-19 out of a night of deep idle) is in
+  the same file. Readout Thursday 2026-11-19. No Saturday cook.
+- **Overnight check: PASS (Jason, Thu 2026-11-19). Readout done the same day; T-037 passes for 0.3.0 and
+  the freeze on `main` ends.** Pass line as reworded by Jason: "ring within 1 min after the phone spent
+  hours in deep idle overnight." Alarms set the evening before came through about 7 hours of deep idle (4
+  hours unbroken, 1:11:25 to 5:11:26 AM); the 5:30 AM alert rang at 5:30:01.085 AM, 1.085 seconds late; the
+  other three first rings and the six repeats were each under 0.06 seconds late; no alarm of the app left
+  after Discard. The first wording ("while the phone was in deep idle") could not be met on this phone:
+  `min_time_to_alarm=+1h0m0s0ms`, so Android leaves deep idle when a `setAlarmClock` alarm is under 1 hour
+  away (idling history "normal ... (alarm)" at 5:11:27 and 5:59:28 AM; the phone was in light idle at the
+  ring). The phone was unplugged at 6:51 PM; the cook was restarted at 7:18 PM with the same plan (Jason
+  showing a friend). Table, evidence and the readout: `docs/t037-checklist.md`, "Overnight check" and
+  "Readout".
 - **Checklist:** `docs/t037-checklist.md` (the plan to load, Friday's upgrade over 0.2.0 with T-038's phone
   check, Saturday's taps with fixture times, the +15 pass line, Sunday's readout). Brisket 10 lb so the
   first ring is 7:50 AM (Jason: nothing before 7:30 AM).
 - **Plan change (Jason, 2026-11-16): Saturday is a staged cook, no food.** The full-length real timeline
-  (brisket, wings, breasts) on his phone, on 0.3.0-beta.1; the phone locked, unplugged and idle between
+  (brisket, wings, breasts) on his phone, on 0.3.0-beta.2 (beta.1 until 2026-11-17; beta.2 has the Start
+  cook fix); the phone locked, unplugged and idle between
   steps. Used on purpose during it: Adjust, Pit went out (and Back up to temp), Not yet, one Undo, and one
   reboot mid-cook. It ends with Discard, so the cook rates are not touched. This replaces "a real cook with
   food" as the 0.3.0 gate; the acceptance below (each alarm within 1 min of plan, none lost on the reboot,
@@ -2452,7 +2563,13 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   screen's test alert rings and leaves the stored list. Two rig fixes, none in the app: the test read the
   stored list where it was before Send to developer (T-065) went above it; a fresh image has no font scale
   to put back. The real cook is still Jason's.
-- **Status:** todo (Jason, hands-on)
+- **Ready for Saturday (Wed 2026-11-18, moved from Friday by Jason):** the checklist's table is done to step
+  15 on his phone (0.3.0-beta.2 / 300302). Saturday's cook is started and sits on the phone three nights:
+  13 alarms pending, each time once, the first Fire the smoker Sat 8:50 AM, then Brisket on the smoker
+  9:10 AM, the last 5:00 PM; nothing before 8:30 AM; nothing left from a 250F cook he started and discarded
+  first. The times column of `docs/t037-checklist.md` is filled from that read. One tap only on Share plan
+  and Export my data until the share guard is merged.
+- **Status:** **done** on the rehearsal of 2026-11-18 (Jason); the overnight check of 2026-11-19 is added to `docs/t037-checklist.md` when read; readout Thursday 2026-11-19. Was: todo (Jason, hands-on): Saturday's cook, then Sunday's readout.
 - **Goal:** a full cook (brisket, wings, breasts) on the dev build with every alarm on time with the screen off,
   including after a reboot mid-cook; Adjust, Pit went out, Not yet and End cook leave no duplicate alarms.
 - **Files:** `docs/alarm-testing.md`, `docs/HANDOFF.md`.
@@ -2479,6 +2596,35 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   proven by the unit tests only); the debug screen opens with 5 taps on the version line and a
   `pitplanner://debug` link is refused in the release build. Not read: the Send to developer file itself
   (the share sheet is never captured); it takes its version from the same source as Gear's line.
+- **beta.2 (2026-11-17, afternoon):** beta.1 had a bug Jason found on his phone: Start cook did nothing
+  after a cook had ended, until the app was reopened (fixed in `d2fdccc`, regression test
+  `src/screens/plan/StartCook.test.tsx`). 0.3.0-beta.2 built by Jason (300302, SHA-256
+  `e27ea9b350ee9ddb04cd876acdcde6fe1c0fce31170de072df83df6f0958b242`). His first try stopped in the gate, in a
+  terminal only: forced colour ended up in the release script's versionCode (fixed in `1cecd97`, tooling
+  only, a freeze exception he approved). On the emulator, all PASS: verify (cert, 300302, production; the
+  permissions are beta.1's, no storage permissions, no SYSTEM_ALERT_WINDOW); upgrade from the real 0.2.0;
+  start, end, start on the release build after Discard and after Save to history, in one app process;
+  locked-reboot 6 of 6 (second run; the first stopped at the rig's 20 minute guard, a rig timing fault
+  listed in `docs/after-readout-checklist.md`). On his phone, each adb line after his yes: beta.2 over
+  beta.1 (300301 to 300302); 16 seconds later, the app not opened, the running cook's 18 alarms were
+  registered again (`RestoreReceiver` on `MY_PACKAGE_REPLACED`); he then saw the cook with Start cook greyed.
+- **Correction to the bullet above (debug file from his phone, 2026-11-17 4:24 PM):** no 0.2.0 cook came
+  across. The import's report on the phone reads running cook: no; the cook in Sunday's copy had been ended
+  in 0.2.0 before the upgrade. The cook on the phone was started on beta.1 at 2:53 PM that day and fires the
+  smoker at 8:55 AM Saturday, not the copy's 6:30 AM: the Plan's five foods carry ids only 0.2.0 makes
+  (`crypto.randomUUID()`; 0.3.0 ids start with "i", `src/lib/itemId.ts`) and differ from the copy's, so the
+  menu was made again in 0.2.0 after Sunday's copy (Add food, Cook again or Open shared plan), and food
+  added that way has no rate of its own: the briskets plan at the saved 0.65 hr/lb, not the 0.9 each had in
+  the copy. The saved rates were not touched after the import. Sunday's copy through the real import and
+  plan path (a local test, not committed) gives 6:30 AM, so the import does not lose a food's own rate. A
+  normal user path, not a defect (Jason's rule for it, 2026-11-17); no code change. The 11-17 check against
+  the copy compared the smoker, griddle, oven, the two saved rates, the past cook and the plan's date, temp
+  and foods as Jason saw them; it did not compare any food's own rate, any fire or step time, the running
+  cook or the alarms. So the import of a running 0.2.0 cook is not proven on his phone; it is proven on the
+  emulator (2026-11-17, `tools/device/upgrade020.sh setup`, `live`, `check`, `alarms`, PASS): a 0.2.0 cook left running with steps still ahead (2 lb of wings, six alarms from 4:45 PM) was upgraded to beta.2 on the test emulator: the import kept it (running cook: yes, nothing lost), the app set its six alarms (its log: "set 6, exact"), Cook showed it with Start cook greyed, AlarmManager held each of the six once at 0.2.0's times, and the first carried-over step rang on time (4:45:00 PM, "Fire the smoker to 225F." posted, its repeat set for 4:55 PM, no crash). One limit of the rig: `check` force-stops the app after
+  the notice, which makes Android drop its alarms, so the app was opened once more, as a user would, before
+  the alarms were read; the alarms set at the import itself were seen in the app's log only. Friday's steps
+  9 to 11 use the cook now running.
 - **Jason (2026-11-17, second answer; replaces "release on the day the readout passes"):** the release
   waits. Order: Sunday 2026-11-22 the readout passes; Sunday afternoon T-033 and T-031 on his wife's phone
   (`docs/after-readout-checklist.md`); Monday 2026-11-23 the 0.3.0 release. T-038 keeps depending on T-033. If
@@ -2492,6 +2638,12 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   normal release (not a prerelease) so 0.2.0's update check (`/releases/latest`) sees it.
 - **Added to the acceptance by Jason, 2026-11-16 (from T-016):** a locked reboot on his phone with the release
   build: a step that comes due while the phone is still locked rings before unlock.
+  **Checked off by Jason, Wed 2026-11-18 (T-037 rehearsal, 0.3.0-beta.2):** rebooted 12:29 PM and left locked;
+  the 12:40 PM step alarm was back and delivered at 12:40:01 PM while still locked (Android's alarm
+  statistics, read 12:50 PM); no crash of the release app. Nothing was heard until he unlocked at 12:43 PM,
+  when every app's notifications sounded: "a device issue not an app issue" (his judgment; on this OnePlus
+  nothing from any app shows or sounds before the first unlock). Not read yet: the ring log's 12:40 PM
+  record (alert posted or not), from that night's debug file. Details: `docs/t037-checklist.md`.
 - **Acceptance:** release `v0.3.0` with APK and SHA-256; `snyk:monitor` ran; Jason's phone upgraded with gear,
   rates and history intact (or the notice says what was not kept).
   The emulator upgrade test checks the imported cookers, rates, plan and history on the actual Gear, Plan and
@@ -2839,6 +2991,11 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   the token with one call; (4) a 401 means signed out; (5) no token reaches a logger. The authorize URL,
   nonce, code exchange, refresh and revoke below are not built.
 - **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
+- **Step 0 done, Wed 2026-11-18:** all six calls of HA-INTEGRATION 8.1 pass with a token of the non-admin
+  `pitplanner` user (both registry lists included); results in `docs/ha-entities.md`, "Token call checks".
+  Not tested: deleting the token at Home Assistant on Disconnect. The logic itself is built on parked branch
+  `a4d0fb0875a099229` (111 tests, seven choices for Jason: the first, "scheme when none typed", decided
+  2026-11-18 as built, see T-045; six open), not merged.
 - **Status:** todo
 - **Goal:** address normalize, authorize URL with a state nonce, callback check, token exchange, refresh on 401,
   revoke, all with an injected `fetch`.
@@ -2855,9 +3012,42 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   the app can). The LAN cleartext rule and the non-admin registry-read record stay. Depends on T-042 and
   T-044 only. The help text presents the dedicated user as an audit trail and a one-step cutoff, never as
   restricted access (HA-INTEGRATION 4.1).
+- **Jason, Wed 2026-11-18 (after step 0, where his private file held a bare host name and the check script
+  stopped on it): "didn't know that you needed the entire http or https, we need to make sure that it checks
+  for that. before the connect button is clicked."** So the connect screen checks the address as it is
+  typed, before Connect can be tapped. What is already built for this on branch `a4d0fb0875a099229`
+  (`src/lib/ha/address.ts`, T-044): with no scheme typed the app adds one itself (https for a remote host,
+  http on port 8123 for a host on the home network), and anything it cannot use comes back with a reason
+  (spaces, another scheme, http to a host that is not on the home network, and so on). Only the test script
+  needed the full form, not the app. To build in this task: run that check on every change of the field;
+  Connect stays greyed out until the address is usable; the screen shows what it will connect to or what
+  is wrong. The choice put to him: (a) add the scheme for the user and show the full address under the
+  field (what the built logic does), or (b) refuse an address without http or https.
+- **Decided (Jason, Wed 2026-11-18, about 2:40 PM): (a), as built.** This also settles the first of T-044's
+  seven choices ("scheme when none typed"); six stay open.
+  - **The line under the field, his wording:** "Will connect to https://ha.example.com", with the real
+    address in place of the example. Shown before Connect is tapped; Connect is greyed out until the
+    address is usable.
+  - **What is typed and what the app uses** (the built rule in `src/lib/ha/address.ts`):
+
+    | Typed | The app uses |
+    |---|---|
+    | `ha.example.com` (a name that is not on the home network) | `https://ha.example.com` |
+    | `192.168.1.20` (a home network address) | `http://192.168.1.20:8123` |
+    | `homeassistant.local` (a home network name) | `http://homeassistant.local:8123` |
+    | anything starting with `http://` or `https://` | exactly what was typed, no port added |
+
+    The name stays a name: `homeassistant.local` is never turned into an IP address (the main session's
+    first version of this table had that wrong; Jason corrected it).
+  - **Owed before the screen offers a `.local` address: test one on Jason's phone** (does the phone find
+    `homeassistant.local` from inside the app, on his home network). Not tested anywhere yet.
+  - **When the first connect fails and the app added the scheme:** the error tells the user to type the full
+    address with `http://` or `https://`. **Wording owed to Jason, shown on the mockup first** (the
+    2026-11-17 mockups have "nothing answers at the address" as `ha-22-connect--unreachable.png`; this is
+    a second case of it). Needs the screen to know the scheme was added by the app, not typed.
 - **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
 - **Status:** todo
-- **Goal:** sign in to `ha.glithero.icu` as the `pitplanner` HA user; refresh token in `expo-secure-store`.
+- **Goal:** sign in to `https://ha.example.com` as the `pitplanner` HA user; refresh token in `expo-secure-store`.
 - Requirement added by Jason, 2026-11-16: the HA token store is excluded from backups.
 - **Files:** `src/screens/gear/HaConnect.tsx`, `src/lib/ha/session.ts`, `src/platform/links.ts`,
   `plugins/withNetworkSecurity.js` (LAN cleartext only when chosen), tests.
@@ -3678,6 +3868,10 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing:** re-shoot `docs/fidelity/rn-12-live-warned.png` and `rn-12-live-conflict.png` at 115%.
 
 ### T-082 Temp step question on Setup's smoker card and in Gear
+- **Merged onto branch `beta3` Thu 2026-11-19 (merge 2 for beta.3, with the mockups branch; no conflicts;
+  gate passed: engine 241, Jest 976). Not on `main` yet: `main` waits for Jason's /ultrareview of `beta3`.
+  Still owed: the SPEC lines for the step question, the rig lines in `tools/device/run.sh` (Gear's smoker
+  row now opens a Smoker sheet), the emulator Setup and Gear looks at 115% and 130%, his look.**
 - **Status:** mockups first (a proposal in `docs/proposals/2026-11-17-temp-step/`, Fable agent, 2026-11-17);
   no code before Jason's OK on the PNGs. Built on a branch, merged only after Sunday's readout (the beta.1
   freeze holds), then the emulator Setup run at 115% and his look. Ships in 0.3.0 on Monday 2026-11-23; if
@@ -3732,8 +3926,227 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   the 2C rounding, since they are real dial marks. (4) A Celsius step typed under Other that is not one of
   the choices, and (5) the Cook screen, shared plan sheet and Cook history still rounding to 2C for a C-step
   smoker: both left for the 0.3.x Celsius item.
+- **The main session's read of the branch (2026-11-17, head `86f3063`, 5 commits) and Jason's four
+  decisions on it:** the branch matches the decisions and the approved strings; it merges clean with `main`,
+  with the sheet-buttons branch and with the plural branch (`git merge-tree`; four files are shared with
+  the plural branch, on different lines). (1) A step typed in Celsius that is none of 5C to 25C showed no
+  choice and no line: fixed on the branch, it is Other with "Sets in 20C steps." as in Fahrenheit; only the
+  catalog's own step (5F) shows none in Celsius, as in picture 01c. (2) The comment in `engine/plan.ts` now
+  says the off-both-grids warning is decided. (3) `src/lib/sharedPlan.ts:242` (a shared plan's temp snapped
+  to the nearest setting) and `src/screens/gear/HistoryScreen.tsx:536` (the temps offered when a past cook
+  is edited) read the grid in F only: left for 0.3.1, in the Celsius item below. (4) The Other sheet opens
+  with the saved step or dial settings when Other is what is saved, and blank after one of the four choices
+  (picture 01b). Fixes in `5334d83` (6 commits on the branch now), tests first, 6 seen failing. The
+  branch's own runs at `5334d83`: engine 241, Jest 952 (86 suites); at `86f3063` they were 241 and 949. No
+  gate in the worktree. Known and left: a Celsius step that is not a multiple of 5C reads back converted
+  from whole F ("Sets in 2.2C steps." for a typed 2C), the manual-form bug above. **For the next build
+  (Jason): screen tests are written first too, not only engine tests.** Still owed at merge: SPEC "Units",
+  the emulator Setup and Gear runs at 115% and 130%, his look.
 - **0.3.x Celsius item (not T-082; Jason, 2026-11-17):** store the step's unit so a units switch cannot
-  change its meaning; a real C grid in the engine; the manual-form fix above. With the C grid, Celsius gets
+  change its meaning; a real C grid in the engine; the manual-form fix above; and the two places that still
+  read the grid in F only for a C-step smoker, `src/lib/sharedPlan.ts:242` and
+  `src/screens/gear/HistoryScreen.tsx:536` (Jason, 2026-11-17: 0.3.1). With the C grid, Celsius gets
   its own choices, proposed 1C / 2C / 5C / 10C / Other (1C: Z Grills Australia, sourced; the others to be
   sourced), mockup first. Fahrenheit choices stay 5 / 10 / 15 / 25 / Other.
 
+
+### T-083 New foods: bacon and baked potato on the smoker at 350F
+
+- **Version (Jason, 2026-11-17):** after 0.3.0. Decide alongside the wings proposal (branch
+  `worktree-agent-a00d9697f70d1c24c`, wings on a smoker under 400F). Backlog only: no code, no data yet.
+- **Status:** todo. Recorded from Jason's note of 2026-11-17; nothing is decided.
+- **Bacon (Jason's measured numbers):** smoker at 350F, 20 to 25 min, timer only, done by crispness. No
+  internal temperature: FSIS gives none for bacon; bacon is not ready-to-eat and must be cooked (source named
+  by Jason, to be read and cited before it goes into data). Check alarms at 15, 20 and 25 min: it can finish
+  early depending on where it sits in the smoker (hot spots).
+- **Baked potato:** smoker at 350F, about 1 hr (Jason's measured number), done at 210F on a probe. Source
+  named by Jason, to be read and cited before data: Idaho Potato Commission, "Dr. Potato": 210F; their time
+  is 1 hr at 400F; pull at 185F if the potato is held warm, carryover finishes it.
+- **Design notes (Jason, 2026-11-17):**
+  1. Both cook on the smoker (Jason's "grill" is the Pit Boss). Both are fixed 350F smoker items: the same
+     gap as wings (the wings method "Smoker at 350F" is a fixed 350F phase too). Today nothing warns when the
+     smoker is set lower, for example 225F for a brisket. One rule for all fixed-temp items, not one per
+     food. Placement options to offer or explain: after the brisket comes off to rest; the griddle for
+     bacon; the oven for potatoes.
+  2. Bacon's three checks: does the existing check-step pattern cover several checks on one food? Read on
+     2026-11-17, nothing built or tested: **partly.** The data shape allows it: every phase of a method can
+     be a check (`checkStep` with `fixedMin`, `engine/rules.ts`, `engine/plan.ts`), and the pull can be one
+     too; brisket already has two checks on one food (the wrap check and the pull). So checks at 15 and 20
+     min as phases and 25 min as the pull can be written in `data/foods.json` alone. The behavior needs new
+     work: (a) Not yet is fixed at 30 min for every check (`NOT_YET_MIN`, `src/screens/cook/CookOptions.tsx`),
+     wrong for checks 5 min apart; (b) Done on a phase check means "that phase happened, on to the next
+     one", but at bacon's 15 min check the answer may be "it is done, take it off": whether Live cook can
+     take a food off at an earlier check was not looked at and has to be; (c) a phase's short label is a
+     state on the lane ("Wrapped"), and bacon's checks change no state. The other shape: one check at 15 min
+     with Not yet meaning 5 min for this food, tapped up to twice; it needs a Not yet length per food and
+     nothing else new. Pick one with Jason; new wording or a new button needs his words.
+  3. Potato: a timer estimate with a 210F probe check, the same question as fish (T-071, sources Q5:
+     thickness as a timer, or an estimate with a probe check). Answer them together.
+- **Open for Jason:** bacon regular or thick cut? Potato size, and foil or bare?
+- **Also open (main session, 2026-11-17):** the quantity unit for each (bacon by the pound or the slice,
+  potatoes by count); where they sit in Add food (SPEC lists Beef, Pork, Chicken, Turkey, with Fish after
+  Turkey: a potato fits none, so a new group is new UI and needs his OK); holding (bacon has no rest; the
+  potato's 185F line is its hold rule).
+- **Sources first, as for T-059 and T-071:** nothing goes into `data/foods.json` without a source, and
+  `engine/rules.test.ts` fails a food-safety number with no `sources` entry. Jason's measured times are
+  labelled as his, corrected by learning.
+- **Files (when it is built):** `data/foods.json`, `engine/rules.test.ts`, `engine/plan.test.ts`,
+  `FoodPick.test.tsx`, SPEC sections 3 and 4, plus whatever the fixed-temp rule and the check shape touch.
+
+
+### T-084 Plan edited while a cook runs: say that the cook does not change
+
+- **Found by Jason on his phone, 2026-11-18 (0.3.0-beta.2):** with a cook running at 250F he changed the plan
+  to 225F. The running cook did not change and the app said nothing. He ended and discarded the cook and
+  started again.
+- **What SPEC says:** nothing on this. Its only line about Plan during a cook is "While a cook is running,
+  Start cook on Plan is greyed out." (section 3, the Start cook line). Changes to a running cook are the
+  Cook tab's (Adjust, Not yet, Pit went out, Undo, the alert's +15; section 5), and each of those re-plans
+  and sets the alarms again.
+- **What the app does (read, 2026-11-18):** the Plan tab is the draft and stays fully editable during a
+  cook; only Start cook is disabled (`src/screens/plan/PlanScreen.tsx:220`). The running cook is its own
+  stored copy of the input and the plan (`ActiveCook`, `src/lib/cook.ts`), so a draft edit cannot reach it.
+  That part is as designed; the gap is that nothing tells the user.
+- **Jason's lean (2026-11-18):** a prompt when the plan is edited during a cook, the wording from him, in
+  0.3.1. Nothing is built before his words: it is new UI, and neither SPEC nor the mockups have it.
+- **Version:** 0.3.1. **Status:** todo, after Sunday's readout. Docs only so far.
+- **Open for Jason:** the words; whether the prompt shows on the first edit only or on every edit; whether
+  it is a sheet with OK or a line on Plan while a cook runs; whether any edit should be offered to the
+  running cook (today the smoker temp and the menu of a running cook cannot be changed at all).
+- **Files (when it is built):** `src/screens/plan/PlanTab.tsx`, `src/screens/plan/PlanScreen.tsx`, their
+  tests (screen tests first), SPEC section 3, a mockup or his OK on a picture first.
+
+
+### T-085 Done records the tap, not when the step happened: late taps and learned rates
+
+- **Raised by Jason, 2026-11-18. Backlog: docs only, nothing designed, nothing built.** A Done tapped late
+  (saw the alert, did the step, tapped later) is saved as the time the step happened, and that would skew
+  the learned rate. Target 0.3.1 or later. The answers below are from reading the code that day; nothing
+  was run.
+- **1. What feeds rate learning, and the path.** Two taps per food, nothing else:
+  - Done on the food's first phase step ("Brisket on the smoker") sets `onAt[itemId]` to the tap time
+    (`doneStep`, `src/lib/cook.ts:127`).
+  - Done on the food's pull step (kind `pull`; for brisket "Check tenderness: pull at 200-205F") sets
+    `offAt[itemId]` to the tap time (`src/lib/cook.ts:146`).
+  - The tap time is the phone's clock at the tap: in the app `clock()` in `onDone`
+    (`src/screens/cook/CookScreen.tsx`), from an alert the time Android recorded for the tap
+    (`applyActions`, `src/lib/cook.ts`, `a.at`).
+  - At Cook finished, `summarize` (`src/lib/finish.ts:52`) takes minutes on heat as `offAt - onAt`. With no
+    on tap it uses the planned start; with no pull tap the food is "Not logged" and left out of rates.
+  - Save to history writes that number as `minutesOnHeat` in the food's log (`toRecord`), unless Keep was
+    chosen for that food. `rateFor` (`engine/plan.ts:104`) turns each log into hours per lb, corrected for
+    smoker temp and wrap, and blends it with the prior (`priorWeight` 3; a saved rate is used as-is until
+    3 logged cooks).
+  - Not feeding the rate: the wrap check and every other step in between (they move that food's later
+    steps, not its logged time), and Done on Serve (it gives "served ... late"). Only foods planned by a
+    rate get a rate card; a locked saved rate does not learn.
+  - Size of the effect (arithmetic, not measured): a tap 15 min late on a 6.5 hour brisket changes that
+    cook's observed rate by about 4%, and the blended rate by about 1% after one cook. A late on tap makes
+    the cook look shorter, a late pull tap longer; both late by the same amount cancel.
+- **2. Are ring time and tap time both stored?** Yes while the data is still on the phone; no in the saved
+  cook.
+  - Ring: the ring log (T-068) keeps, per ring, the step keys, the planned time and the actual time, the
+    repeat number and the source (`AlarmRing`, `src/platform/types.ts:78`); the newest 500 rings.
+  - Tap: `done[key]` in the running cook (gone when the cook ends), and a line "done <key> at <time>" in
+    the event log (the newest 300 events).
+  - Both carry the step key, so the gap can be worked out from the debug file after a cook (Sunday's
+    readout can list it for Saturday). Nothing in the app computes it today, and the saved cook keeps only
+    minutes on heat per food, no step times: once the logs roll over the gap is gone.
+- **3. Done tapped before its ring.** Only in the app, on Next up (an alert does not exist before the ring).
+  The tap time is taken as the truth, as for a late tap: a first phase sets `onAt` early and moves that
+  food's later steps earlier (under 5 min silently, serve kept; 5 min or more asks Keep serve or Move
+  serve, T-076); a pull sets `offAt` early. The step's alarm is left out of the next alarm set, so it
+  never rings and the ring log has no ring for it: for an early tap there is no gap to measure, only
+  "done before the planned time".
+- **What exists already:** Keep on the Cook finished rate card (the old rate stays); Undo on the last
+  Done (the new Done is again the tap time); and Cook history's edit sheet, where time on heat can be
+  changed after saving (`src/screens/gear/HistoryScreen.tsx`, "a wrong Done can be hours off").
+- **Proposal to record, not build (Jason):** on the Cook finished card, show the times the rate is based
+  on; flag any rate-feeding step tapped more than about 15 min after it rang; let the user fix that time
+  or Keep the old rate. New UI: a mockup and his wording first.
+- **Open before a design (main session):** the flag needs the first ring's time at Cook finished, so the
+  app has to read the ring log there or keep the ring time with the cook; whether the times shown are
+  the two taps or the minutes; what "fix" edits (the tap time, or minutes on heat as History does); and
+  whether an early tap is flagged too.
+- **Status:** backlog. **Files (when it is built):** `src/lib/finish.ts`, `src/lib/cook.ts`, the Cook
+  finished screen and their tests (screen tests first), SPEC sections 5 and the rates lines, a mockup.
+
+### T-086 Rig tests on the emulator for Not yet, Back up to temp with Move serve, and the Adjust tap
+- **Jason (Wed 2026-11-18): 0.3.1 backlog.** From the T-037 rehearsal's list of what was not tested
+  (`docs/t037-checklist.md`, "What today did not test, and where each is covered already"): these three are
+  covered by Jest only, or only as far as the button being on screen.
+- **Status:** backlog, 0.3.1.
+- **SPEC section 13, as edited by Jason on 2026-11-18,** names this task for the phone check of "Adjust, Pit
+  went out, Not yet and End cook all re-plan and reschedule alarms with no duplicates" ("0.3.0: covered by
+  Jest; phone check in 0.3.1 (T-086)"). So besides the rig tests below, this task ends with those four
+  tapped once on his phone, with the alarm list read after each (his steps, his yes for each read).
+- **Goal:** three additions to the device rig (`tools/device/run.sh`, emulator, the mockup cook at 115% and
+  130%), each ending with a read of the phone's alarm list:
+  1. **Not yet** at a check step (Cook options, "Not yet, check again in 30 min"): Next up reads 30 minutes
+     later, serve is kept, and `dumpsys alarm` shows that food's alarms at the moved times, each once,
+     nothing left at the old times.
+  2. **Back up to temp with Move serve:** Pit went out, Back up to temp, choose Move serve, Apply: the
+     banner goes, serve reads later, the other foods moved with it, and the alarm list matches.
+  3. **The Adjust tap** on the Next up card: it opens Cook options (today the rig only checks the button is
+     there).
+- **Files:** `tools/device/run.sh`, `tools/device/README.md` (the test table), `tools/device/targets.tsv` if
+  a step is a stable-controls target. No app code.
+- **Depends on:** the rig fixes of the full pass of 2026-11-17 (a button scrolled clear of the pinned
+  footer before it is tapped).
+- **Real phone:** yes, for the phone check SPEC names (above); the rig tests themselves are emulator only.
+
+### T-087 Light theme, with a setting that follows the phone
+- **Jason (Wed 2026-11-18): backlog, mockups first.** Asked as a report only; nothing built.
+- **Version, decided by Jason the same evening: "after 0.4.0, as its own small release."**
+- **Status:** backlog. Not before 0.4.0 ships; then no work before his OK on light mockups.
+- **What the code looks like today (counted 2026-11-18, tests left out):** the colours are in one shared
+  palette, not typed into the screens. `src/theme/tokens.ts` holds all 33 hex values (33 distinct) and two
+  `rgba()` scrims; no other file in `src/` or `app/` has a hex colour. `tailwind.config.js` builds the
+  NativeWind classes from that file and `src/theme/navTheme.ts` reads it. The app is dark only by design:
+  no file uses a `dark:` class, and `app.config.ts` sets `userInterfaceStyle: 'dark'`.
+- **What a light theme has to change:**
+  1. **Design first:** a light value for each of the 33 colours and the lane and status colours, with
+     contrast checked, and light mockups of the main screens for his approval (the 20 mockups and their 21
+     sources are dark).
+  2. **The palette becomes two palettes.** Classes can switch without touching the 28 screens and
+     components that use `className`, if Tailwind's colours become variables set once at the root by scheme.
+  3. **Direct uses switch at their call sites:** 22 files import the tokens and use a colour directly 79
+     times (icons, the lane chart, ripples, borders). Those values are fixed when the file loads, so each
+     use moves to a hook. Mechanical, but every one is touched.
+  4. **The setting:** Gear, App group: Follow the phone, Dark, Light. New UI, so a mockup and his wording;
+     stored with the other settings (no schema change expected, to confirm).
+  5. **Outside React:** `userInterfaceStyle` to automatic (a native config change, so a new build), the
+     splash and window background, the navigation theme, the status and navigation bar icons. The alert's
+     accent colour in Kotlin can stay.
+  6. **Checks:** `tokens.test.ts` (it pins the dark values to the 0.2.0 kit), the device rig's fit and
+     fidelity checks at 115% and 130% in both themes, and the user guide pictures.
+- **Rough size (the main session's estimate, not measured):** about four working sessions: one for the
+  palette and mockups with his review, one or two for the palette, variables and the 79 call sites, one for
+  the setting and the native side, one for the device pass in both themes. Most of the risk is in the
+  design and the device checks, not the code.
+- **Files (when built):** `src/theme/tokens.ts`, `tailwind.config.js`, `src/theme/navTheme.ts`, a new theme
+  hook, the 22 files that use a colour directly, `app.config.ts`, Gear's App group, SPEC, mockups.
+
+### T-088 A smoker conflict made mid-cook by Not yet: the banner offers a fix
+- **Jason (Thu 2026-11-19): 0.3.1 backlog. Wording comes later.**
+- **Status:** backlog, 0.3.1. No UI before his wording and a mockup.
+- **What was seen** (the emulator Not yet check after merge 1, 2026-11-19, the mockup cook): "Not yet, check
+  again in 30 min" on Check the brisket moved the brisket's pull from 12:55 to 1:25 PM, past the wings'
+  Turn the smoker up to 400F at 1:20 PM. Live cook showed "Smoker conflict: brisket at 225F and chicken
+  wings at 400F at the same time." with OK only (SPEC section 5, T-069). The banner names the conflict but
+  offers no fix.
+- **Wanted:** the banner offers a way out: pull the first food early into its hold, or turn the smoker up
+  later.
+
+### T-089 Brine options that change nothing you see: prep and brine reminders
+- **Jason (Thu 2026-11-19): 0.3.1. For 0.3.0 the options stay as they are, and the release notes' Cook list
+  says "Brine options don't add reminders yet."**
+- **Status:** backlog, 0.3.1.
+- **What is wrong today** (read 2026-11-18; `docs/after-readout-checklist.md`, the brine item): "Dry brine
+  ahead" on wings and "Wet brine 1-2 hr" on chicken breasts each only add a prep entry to the engine's plan
+  ("Dry brine the wings." 8 hours before they go on, "Brine the chicken breasts." 150 minutes before). A
+  prep entry has no alarm and the app lists only steps that ring, so no time, step or alert changes with
+  the choice. The same holds for every food's "Prep the ..." entry.
+- **The fix:** the brine options, and prep, show up for the user: prep and brine reminders. What a reminder
+  is (a step on the timeline, an alert, or both), its wording and its times are his to decide before any
+  build; cooking times need a source.

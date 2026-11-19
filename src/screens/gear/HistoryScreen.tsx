@@ -10,6 +10,7 @@
 //   height and every control keeps its place when a value changes (T-017 PR-3).
 import { useEffect, useState } from 'react';
 import { View } from 'react-native';
+import { inSentence } from '../../../engine/labels';
 import { rateHintFor } from '../../../engine/plan';
 import { resolveMethod, type RuleFood } from '../../../engine/rules';
 import { settableTemps } from '../../../engine/temps';
@@ -639,7 +640,7 @@ function ItemFields({
   const min = edit.minutes;
   const setMin = (m: number) => onChange({ minutes: Math.min(MIN_MAX, Math.max(MIN_STEP, m)) });
   const hours = Math.floor(Math.round(min) / 60);
-  const name = item.name.toLowerCase();
+  const name = inSentence(item.name);
   return (
     <Field
       label={item.name}

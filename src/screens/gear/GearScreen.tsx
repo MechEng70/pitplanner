@@ -35,6 +35,7 @@ import {
 } from '@/components/kit';
 import { buildDataFile, dataFileName, MAX_CHARS, readDataFile, type DataCheck } from '@/lib/dataFile';
 import { grantDebugPass } from '@/lib/debugPass';
+import { errorText } from '@/lib/eventLog';
 import { fmtMonthDay, fmtTemp, type Units } from '@/lib/format';
 import { hasHopper, smokerTypeInfo } from '@/lib/gear';
 import { rateRows, ratesSummary } from '@/lib/historyView';
@@ -105,7 +106,7 @@ export function GearScreen({
   /** The export's time and the reader's "now"; tests pass a fixed one. */
   now?: () => number;
 }) {
-  const { state, setUnits, restoreData } = useStore();
+  const { state, setUnits, restoreData, logEvent } = useStore();
   const { gear, units } = state;
   const [open, setOpen] = useState<Open>(null);
   const [status, refresh] = useAlarmStatus(permissions, onResume);
@@ -127,11 +128,16 @@ export function GearScreen({
     const at = now();
     const { gear: g, units: u, rates, totalHours, rateLocks, records, flags } = state;
     const text = buildDataFile({ gear: g, units: u, rates, totalHours, rateLocks, records, flags }, at, version);
-    const failed = () => notice(EXPORT_FAILED.title, EXPORT_FAILED.body);
+    // Written to the event log too, so it is not silent in a release build. A second tap while the sheet is
+    // still opening is not a failure: shareTextFile drops that one.
+    const failed = (e: unknown) => {
+      logEvent('error', `data export failed: ${errorText(e)}`);
+      notice(EXPORT_FAILED.title, EXPORT_FAILED.body);
+    };
     try {
       shareDataFile(dataFileName(at), text).catch(failed);
-    } catch {
-      failed();
+    } catch (e) {
+      failed(e);
     }
   };
 
@@ -397,7 +403,7 @@ function alertsSubtitle(s: AlarmStatus | null): string {
 
 /**
  * "Replace your data?" (Jason, 2026-11-16): what the file holds and when it was made, and a line when parts
- * of it were left out. Laid out as Start over? in Cook options: the text, then Cancel and Replace.
+ * of it were left out. Laid out as Start over? in Cook options: the text, then Cancel and Replace side by side.
  */
 function ReplaceSheet({ check, onReplace, onClose }: { check: Checked; onReplace: () => void; onClose: () => void }) {
   const date = check.exportedAt == null ? null : fmtMonthDay(check.exportedAt);
@@ -416,14 +422,21 @@ function ReplaceSheet({ check, onReplace, onClose }: { check: Checked; onReplace
   );
 }
 
+/**
+ * The sheet footer is a row, and `block` alone is `w-full` with React Native's flexShrink 0: two of them are
+ * each as wide as the row and the second starts off screen (T-036, emulator at 115%). As ui.css
+ * `.sheet-foot .btn.block`, the two share the row: width auto, flex 1, free to shrink below their text.
+ */
+const SHARE_ROW = 'w-auto min-w-0 flex-1';
+
 function ReplaceButtons({ onReplace }: { onReplace: () => void }) {
   const sheet = useSheet();
   return (
     <>
-      <Button kind="text" block onPress={() => sheet.close()}>
+      <Button kind="text" block className={SHARE_ROW} onPress={() => sheet.close()}>
         <Text>Cancel</Text>
       </Button>
-      <Button block onPress={() => sheet.close(onReplace)}>
+      <Button block className={SHARE_ROW} onPress={() => sheet.close(onReplace)}>
         <Text>Replace</Text>
       </Button>
     </>
