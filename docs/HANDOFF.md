@@ -186,6 +186,19 @@ him.** After the table above:
   - **New 0.3.1 items:** T-092 (StartCook's two double-tap tests print six "overlapping act() calls" errors
     while passing; not new since merge 1) and T-093 (the gate counts `console.error` lines).
   - **Dashboard:** a "Testing needed from you" section under Today, kept current (rule in CLAUDE.md).
+- **Jason's decision, Thu 2026-11-19, late morning: no pre-release. Release 0.3.0 today from the beta.3
+  code.**
+  - **His phone pass on beta.3 (2026-11-19): steps 1 to 10 passed, nothing wrong at 115%.** Two things he
+    did differently from the list: in step 2 he saved a hand-entered smoker ("fake") and switched back to
+    the Pit Boss 850; in step 6 he tapped Replace, not Cancel ("Restored 3 cookers, 2 cook rates, and 1
+    cook", from the step 5 export). The brisket rate is still 0.65.
+  - **Turkey test:** reviewed by him and passed at 115% and 130%.
+  - **New question, with T-090 (0.5.0):** a hand-entered smoker does not appear in Pick your smoker
+    afterward. Should it, and how does that tie to sending it to the developer? Read the code later; no
+    work now.
+  - **No app code changed since the beta.3 build:** the commits after the pushed `edfbeba` (`8327394`,
+    `ce0eb2d`, `17076d9`) touch `docs/` and CLAUDE.md only. The 0.3.0 commit changes the version in
+    `package.json` and `package-lock.json` and nothing else in the app.
 - **User guide (Jason, 2026-11-19):** the alerts section now says "The other foods' alarms catch up when
   you open the app."
 - **Next:** his review of the findings above; `beta3` onto `main`, then remove the merged

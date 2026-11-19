@@ -7,17 +7,25 @@ how fast your own smoker cooks and uses those rates in the next plan.
 
 <!-- SCREENSHOT: readme-plan | Plan with the Saturday menu, 115% font -->
 
+<img src="docs/guide/plan-main.png" alt="Plan with the menu, the serve time and each food's start time" width="320">
+
 Plan: the menu, the serve time and the steps worked out backward from it.
 
 <!-- SCREENSHOT: readme-live-cook | Live cook with the Saturday menu running, 115% font -->
+
+<img src="docs/guide/cook-live.png" alt="Live cook with the next step, its countdown and a lane for each food" width="320">
 
 Live cook: what is next, how long until it, and the lanes for each food.
 
 <!-- SCREENSHOT: readme-lock-screen-alert | Lock-screen alert for a cook step, status bar cropped -->
 
+<img src="docs/guide/lock-screen-alert.png" alt="A step alert on a locked phone with its Done and +15 min buttons" width="320">
+
 The alert on the lock screen. It rings even when the app is closed.
 
 <!-- SCREENSHOT: readme-cook-finished | Cook finished with the rate card, 115% font -->
+
+<img src="docs/fidelity/rn-15-cook-finished-rate.png" alt="Cook finished with planned and actual times and a rate card" width="320">
 
 Cook finished: the new rate is offered, and you choose whether to use it.
 

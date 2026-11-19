@@ -1416,6 +1416,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
      banner (exact alarms are off).
 
 ### T-064 A cook is never lost without the user choosing it
+- **Status line settled 2026-11-19 (the release notes' check list asked for it): built.** Save and Discard
+  on Cook finished came with T-023 and have their own regression tests (`FinishScreen.test.tsx`: a saved
+  cook is only removed or changed by Remove on Cook history; after Discard the history is exactly what it
+  was). The line below is as first written.
 - **Status:** partly built. Done with T-021 (2026-11-15): Start cook greyed out while a cook runs and never
   replacing it; the Cook tab never starts a cook (regression tests in `PlanScreen.test.tsx`,
   `StartCook.test.tsx`, `CookScreen.test.tsx`). Done with T-022 (2026-11-15): Start over asks first and
@@ -2311,6 +2315,10 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** approve the fidelity sheets.
 
 ### T-035 Security pass before release
+- **Status line brought up to date 2026-11-19: merged onto `main` and gated on 2026-11-16; the emulator
+  checks it left (the `shared` device test, the beta.1 build's version, update offer, backup rules and
+  permissions, the `bmgr` backup and restore) were run on 2026-11-17 (below and under T-038).** The line
+  below is as first written.
 - **Status:** in progress. The review (2026-11-16, read-only, `docs/proposals/2026-11-16-security-pass.md`,
   untracked) found 10 points; Jason approved fixes for 1 to 6, 8 and 10 the same day. The fixes are built on
   an agent branch (2026-11-16), unit-tested where possible, **not gated** (`npm run check` not run). The
@@ -3876,7 +3884,8 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   115% and at 130% (in Gear's sheet it fit). Fixed the same morning on Jason's decision, in the shared
   `Segmented` (`3936c1c`): no segment label ever breaks or is cut; equal widths while every label fits,
   otherwise the long label gets what it needs and the others share the rest. Tests first; the `-fixed`
-  pictures are in the same folder. Still owed: his look.**
+  pictures are in the same folder. **His look: done on his phone, 0.3.0-beta.3, 2026-11-19 (Gear's Smoker
+  sheet, Other, the picker; nothing wrong at 115%); Setup's card from the emulator pictures.**
 - **Status:** mockups first (a proposal in `docs/proposals/2026-11-17-temp-step/`, Fable agent, 2026-11-17);
   no code before Jason's OK on the PNGs. Built on a branch, merged only after Sunday's readout (the beta.1
   freeze holds), then the emulator Setup run at 115% and his look. Ships in 0.3.0 on Monday 2026-11-23; if
@@ -4167,6 +4176,9 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   temp, temp step, hopper, grate. Nothing else from the phone goes into it.
 - **Open questions for Jason:** the button wording; whether to offer it once or keep it in Gear; whether it
   covers griddles and ovens too.
+- **New question (Jason, 2026-11-19, from his phone pass on beta.3):** a hand-entered smoker does not appear
+  in Pick your smoker afterward (he saved one named "fake", then switched back to his Pit Boss). Should it,
+  and how does that tie to sending it to the developer? Read the code first; no work now.
 
 ### T-091 Public roadmap on GitHub, after 0.3.0 ships (Jason, 2026-11-19)
 - **Status:** backlog, docs only, after 0.3.0 ships.
