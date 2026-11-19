@@ -155,7 +155,52 @@ export function Chips({
   );
 }
 
-/** Joined buttons, one selected (ui.css .segmented). */
+/** A segment's side padding (ui.css .segmented: 8 px) and the divider on every segment but the first. */
+const SEG_PAD = 8;
+const SEG_DIVIDER = 1;
+
+/**
+ * Which segments need a width of their own so that every label is whole, and the side padding that goes
+ * with it. `labels` are the labels' own widths (as the phone measured them), `row` the whole control's
+ * width, both in dp. A segment's need is its label, rounded up, plus padding and divider. While every need
+ * fits an equal share, no segment is fixed (`null`: they share the row equally, as ui.css has it). A segment
+ * that needs more than its share is fixed at what it needs, and the others share what is left; that can
+ * leave another one short, which is then fixed too. The padding is the full 8 dp unless the labels with it
+ * are wider than the control; then it gives way, down to none, before any label does.
+ */
+export function segmentFit(labels: number[], row: number): { pad: number; width: (number | null)[] } {
+  const text = labels.map(w => Math.ceil(w));
+  const n = text.length;
+  // Inside the control's own 1 dp border either side.
+  const inner = row - 2;
+  const room = inner - (n - 1) * SEG_DIVIDER - text.reduce((a, w) => a + w, 0);
+  const pad = Math.max(0, Math.min(SEG_PAD, Math.floor(room / (2 * n))));
+  const need = text.map((w, i) => w + 2 * pad + (i > 0 ? SEG_DIVIDER : 0));
+  const width: (number | null)[] = need.map(() => null);
+  let free = inner;
+  let open = n;
+  while (open > 0) {
+    const share = free / open;
+    const short = need.map((w, i) => (width[i] === null && w > share ? i : -1)).filter(i => i >= 0);
+    if (short.length === 0) break;
+    for (const i of short) {
+      width[i] = need[i]!;
+      free -= need[i]!;
+      open -= 1;
+    }
+  }
+  return { pad, width };
+}
+
+/**
+ * Joined buttons, one selected (ui.css .segmented). Segments are equal in width while every label fits.
+ * No label ever breaks or is cut, at any font scale (Jason, 2026-11-19; T-082: "Other" broke onto two lines
+ * on Setup's smoker card at 115%): a label that needs more than an equal share gets a width of its own and
+ * the others share what is left (`segmentFit`). The labels are measured by unseen copies in both weights
+ * (the selected label is medium, and neither weight is always the wider). A minimum width alone does not do
+ * this: React Native's layout adds each segment's minimum to an equal share, so segments with different
+ * labels would never be equal.
+ */
 export function Segmented({
   options,
   value,
@@ -167,14 +212,37 @@ export function Segmented({
   onChange: (id: string) => void;
   label: string;
 }) {
+  const [row, setRow] = React.useState(0);
+  const [sizes, setSizes] = React.useState<Record<string, number>>({});
+  const labels = options.map(o => sizes[o.id]);
+  const fit = row > 0 && labels.every((w): w is number => w != null) ? segmentFit(labels as number[], row) : null;
   return (
     <View
       role="radiogroup"
       aria-label={label}
+      onLayout={e => setRow(e.nativeEvent.layout.width)}
       className="min-h-[48px] flex-row overflow-hidden rounded-pill border border-outline"
     >
+      <View aria-hidden importantForAccessibility="no-hide-descendants" style={styles.measure}>
+        {options.map(o => (
+          <View
+            key={o.id}
+            testID={`segment-size-${o.id}`}
+            onLayout={e => {
+              const w = e.nativeEvent.layout.width;
+              setSizes(old => (old[o.id] === w ? old : { ...old, [o.id]: w }));
+            }}
+          >
+            <Text weight="500">{o.label}</Text>
+            <View style={styles.widthOnly}>
+              <Text weight="400">{o.label}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
       {options.map((o, i) => {
         const on = o.id === value;
+        const own = fit ? fit.width[i] : null;
         return (
           <Pressable
             key={o.id}
@@ -185,11 +253,15 @@ export function Segmented({
             disabled={o.disabled}
             onPress={() => onChange(o.id)}
             android_ripple={RIPPLE}
-            className={cn(
-              'flex-1 basis-0 items-center justify-center px-2 py-1',
-              i > 0 && 'border-l border-outline',
-              on && 'bg-ember',
-            )}
+            className={cn('items-center justify-center py-1', i > 0 && 'border-l border-outline', on && 'bg-ember')}
+            // Sized by `width`, never `flexBasis`: React Native keeps the flex basis it worked out on the first
+            // render, so a basis set after the labels are measured does nothing (seen on the emulator: the
+            // segment with its own width stayed as narrow as its padding).
+            style={StyleSheet.flatten([
+              own == null ? styles.shareRow : styles.ownWidth,
+              own == null ? null : { width: own },
+              { paddingHorizontal: fit ? fit.pad : SEG_PAD },
+            ])}
           >
             <Text center weight={on ? '500' : '400'} tone={o.disabled ? 'tertiary' : on ? 'onAccent' : 'secondary'}>
               {o.label}
@@ -406,6 +478,20 @@ export function Field({ label, note, children }: { label: string; note?: React.R
 const styles = StyleSheet.create({
   unseen: { opacity: 0 },
   widthOnly: { height: 0, overflow: 'hidden' },
+  // A segment shares the row equally with the other free ones (ui.css .segmented button: flex 1 1 0), or has
+  // a width of its own (segmentFit) and neither grows nor shrinks.
+  shareRow: { flexGrow: 1, flexShrink: 1, width: 0 },
+  ownWidth: { flexGrow: 0, flexShrink: 0 },
+  // Off to the side and unseen: its children lie in a row at their own widths, however narrow the control is.
+  measure: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    width: 9999,
+    flexDirection: 'row',
+    opacity: 0,
+    pointerEvents: 'none',
+  },
   // The label's own box is the chip's full width, so its bounds do not change with its weight either.
   over: { ...StyleSheet.absoluteFill, justifyContent: 'center' },
   hint: { fontSize: chipHintSize, lineHeight: Math.round(chipHintSize * lineHeightRatio) },

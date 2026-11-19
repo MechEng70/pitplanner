@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
-import { Chips, ChoiceCards, Field, IconButton, Segmented, SelectField, Stepper } from './controls';
+import { Chips, ChoiceCards, Field, IconButton, Segmented, segmentFit, SelectField, Stepper } from './controls';
 import { Close } from './icons';
 import { Num } from './num';
 import { Text } from '@/components/ui/text';
@@ -118,6 +118,84 @@ test('Field shows its label, control and note', async () => {
   expect(screen.getByText('Name')).toBeOnTheScreen();
   expect(screen.getByText('control')).toBeOnTheScreen();
   expect(screen.getByText('Shown on the plan.')).toBeOnTheScreen();
+});
+
+// Regression (T-082, 2026-11-19): on Setup's smoker card "Other" broke onto two lines at 115% ("Othe" / "r")
+// and at 130%. Five equal segments left about 40 dp for a word that needs about 47 dp. Jason: no segment label
+// ever breaks or is cut at any font scale; segments stay equal when every label fits, otherwise each takes
+// the width its label needs and the others give up their spare room.
+describe('Segmented: no label breaks or is cut', () => {
+  const steps = ['5F', '10F', '15F', '25F', 'Other'].map(label => ({ id: label.toLowerCase(), label }));
+  type Seg = {
+    flexBasis?: number;
+    flexGrow?: number;
+    flexShrink?: number;
+    width?: number;
+    paddingHorizontal?: number;
+    fontWeight?: string;
+  };
+  const styleOf = (node: { props: { style?: unknown } }) =>
+    (StyleSheet.flatten(node.props.style as never) ?? {}) as Seg;
+  const layout = (width: number) => ({ nativeEvent: { layout: { x: 0, y: 0, width, height: 48 } } });
+  /** What the phone reports: the control's width and each label's own width (the wider of its two weights). */
+  const measure = async (row: number, labels: Record<string, number>) => {
+    await fireEvent(screen.getByLabelText('Steps'), 'layout', layout(row));
+    for (const [id, w] of Object.entries(labels)) {
+      await fireEvent(screen.getByTestId(`segment-size-${id}`, { includeHiddenElements: true }), 'layout', layout(w));
+    }
+  };
+  const seg = (label: string) => styleOf(screen.getByRole('radio', { name: label }));
+  /** A segment's own fixed width, or null while it shares the row equally with the other free ones. */
+  const fixed = () => steps.map(o => (seg(o.label).flexGrow === 0 ? seg(o.label).width : null));
+
+  test('every label is measured by unseen copies in both weights; one copy shows', async () => {
+    await render(<Segmented label="Steps" options={steps} value="5f" onChange={() => {}} />);
+    for (const o of steps) {
+      const copies = screen.getAllByText(o.label, { includeHiddenElements: true });
+      expect(copies.map(c => styleOf(c).fontWeight)).toEqual(['500', '400', o.id === '5f' ? '500' : '400']);
+      expect(screen.getAllByText(o.label)).toHaveLength(1);
+    }
+  });
+
+  test('when every label fits an equal share, the segments stay equal (Gear at 115%)', async () => {
+    await render(<Segmented label="Steps" options={steps} value="5f" onChange={() => {}} />);
+    // 326 dp wide: an equal share is 64.8 dp, and Other needs 41 + 16 + 1 = 58.
+    await measure(326, { '5f': 18.7, '10f': 28, '15f': 28, '25f': 28, other: 40.7 });
+    expect(fixed()).toEqual([null, null, null, null, null]);
+  });
+
+  test('a label that needs more than an equal share takes what it needs; the others share the rest (Setup at 115%)', async () => {
+    await render(<Segmented label="Steps" options={steps} value="5f" onChange={() => {}} />);
+    // 282 dp wide: an equal share is 56 dp, and Other needs 41 (rounded up) + 8 either side + the 1 dp divider.
+    await measure(282, { '5f': 18.7, '10f': 28, '15f': 28, '25f': 28, other: 40.7 });
+    expect(fixed()).toEqual([null, null, null, null, 58]);
+    expect(seg('Other')).toMatchObject({ flexGrow: 0, flexShrink: 0, paddingHorizontal: 8 });
+  });
+
+  test('fixing one segment can leave another short of its share: it takes what it needs too', () => {
+    // 250 dp: an equal share is 49.6. The 60 dp label needs 77; the other four then share 171, 42.75 each,
+    // and the 30 dp labels need 47, so they are fixed as well; the two short labels share the last 77.
+    expect(segmentFit([10, 10, 30, 30, 60], 250)).toEqual({ pad: 8, width: [null, null, 47, 47, 77] });
+  });
+
+  test('when the labels and full padding do not fit, the padding gives way, never the label', async () => {
+    await render(<Segmented label="Steps" options={steps} value="5f" onChange={() => {}} />);
+    // 200% on Setup's card: labels 36 + 54 * 3 + 82 = 280 dp; 290 less 2 of border and 4 of dividers leaves 4.
+    await measure(290, { '5f': 36, '10f': 54, '15f': 54, '25f': 54, other: 82 });
+    // No room for padding. Other takes 83; the 54 dp labels need 55 of a 51 dp share, so they are fixed too.
+    expect(fixed()).toEqual([null, 55, 55, 55, 83]);
+    for (const o of steps) expect(seg(o.label).paddingHorizontal).toBe(0);
+  });
+
+  test('before the phone has measured anything, segments are as before: equal, with full padding', async () => {
+    await render(<Segmented label="Steps" options={steps} value="5f" onChange={() => {}} />);
+    expect(fixed()).toEqual([null, null, null, null, null]);
+    for (const o of steps) {
+      expect(seg(o.label)).toMatchObject({ flexGrow: 1, flexShrink: 1, width: 0, paddingHorizontal: 8 });
+      // Never a flex basis: React Native keeps the first one it works out, so a later one would do nothing.
+      expect(seg(o.label).flexBasis).toBeUndefined();
+    }
+  });
 });
 
 describe('Chips keep their width when selected (T-017 PR-3)', () => {
