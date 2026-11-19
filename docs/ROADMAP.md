@@ -95,6 +95,12 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
 - **T-091** Public roadmap on GitHub, after 0.3.0 ships (Jason, 2026-11-19; docs only): a Mermaid timeline
   at the top of this file or the README (he picks), order not dates, only the next release dated. Content
   agreed word for word in TASKS T-091.
+- **T-092** StartCook's double-tap tests await properly (Jason, 2026-11-19; 0.3.1; tests only). Why: they
+  print six "overlapping act() calls" errors while passing. Blocked on: nothing; the tests must keep proving
+  one cook and one alarm set from two quick taps.
+- **T-093** The gate counts console.error lines and shows the count with the totals (Jason, 2026-11-19;
+  0.3.1; tooling). Why: a captured gate log holds no console output from passing suites, so such warnings
+  are never read. A count, not a failure; in the terminal and in a captured log alike.
 - **T-088** A smoker conflict made mid-cook by Not yet: the banner offers a fix, pull early into the hold
   or turn up later (Jason, 2026-11-19; 0.3.1). Why: the banner names the conflict and offers only OK.
   Blocked on: his wording and a mockup.

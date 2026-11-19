@@ -4184,3 +4184,26 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   - Later: Plan changes during a cook update the cook; Home Assistant automations; Low and slow for tough
     cuts; Your own food names; Full screen timeline; Restore your data on a new phone.
 - **Left off on purpose:** brine, app-closed alert taps (T-078) until its spike, iPhone.
+
+### T-092 StartCook's double-tap tests await properly
+- **Jason (Thu 2026-11-19): 0.3.1.** Tests only.
+- **Status:** backlog, 0.3.1.
+- **What:** `src/screens/plan/StartCook.test.tsx` prints "You seem to have overlapping act() calls" six
+  times (the suite passes): three from "two quick taps start one cook and set the alarms once" (the two
+  presses at lines 119 and 120) and three from the last part of "after a cook has ended, Start cook starts
+  the next one without the app being restarted" (lines 107 and 108). Both fire `fireEvent.press(start)`
+  twice inside one `act` without awaiting either; in the test library used (14.1.0) each press is its own
+  async `act`. Not new: written 2026-11-15 (`663357a`) and 2026-11-17 (`d2fdccc`), before the beta.3 merges.
+- **The task:** make the two tests await properly without weakening what they check: the second tap must
+  still land before the first start has finished, so they keep proving one cook and one alarm set. See
+  each fail first with the guard taken out.
+
+### T-093 The gate counts console.error lines and shows the count with the totals
+- **Jason (Thu 2026-11-19): 0.3.1.** Tooling only.
+- **Status:** backlog, 0.3.1.
+- **Why:** when the gate's output is captured to a file, console output from passing suites is not in it,
+  so warnings like the act() messages of T-092 are never read (the main session's 11 gate logs of
+  2026-11-19 held none; Jason's terminal showed them during the beta.3 build's gate).
+- **The task:** `npm run check` counts the `console.error` lines across all suites and reports the count
+  with the totals, in the terminal and in a captured log alike. A count, not a failure.
+
