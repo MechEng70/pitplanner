@@ -151,6 +151,13 @@ him.** After the table above:
   session). Areas reported clean: `saveCook` and `sync()`, the share guard, `GearScreen.tsx`, `Chips`,
   `Segmented` and `segmentFit`, the T-082 arithmetic. His review of these is next; then `beta3` onto
   `main`, he pushes, then the beta.3 build.
+- **`main` is at `beta3` (9:24 AM, Thu 2026-11-19; fast-forward, Jason's go after reading the findings).
+  Not pushed: he pushes from his own terminal. The seven merged branches' worktrees and branches are
+  removed; `beta3` is kept until the beta.3 build is on his phone; the seven parked 0.3.1 and 0.4.0
+  worktrees are untouched. Checked before the push: nothing under `tools/device/out/`, no debug file, no
+  `.env` or `ha.env`, no `dashboard.html`, no signing file in any of the commits; the token in his private
+  Home Assistant file appears nowhere in them. Next: his push, then `npm run snyk:monitor`, then the
+  beta.3 release command.
 - **User guide (Jason, 2026-11-19):** the alerts section now says "The other foods' alarms catch up when
   you open the app."
 - **Next:** his review of the findings above; `beta3` onto `main`, then remove the merged
