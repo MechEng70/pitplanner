@@ -57,6 +57,8 @@ set your own step.
 
 <!-- SCREENSHOT: setup-alerts | Setup step 3, Make sure alerts get through, three rows and the test button, status bar cropped -->
 
+![Setup step 3 with the three permission rows and the test alert button](fidelity/rn-03-setup-alerts.png)
+
 **Make sure alerts get through.** A 6 AM "wrap the brisket" alert has to ring with the phone asleep. Android
 only allows that if you say yes to three things. Tap Allow on each row until it shows as on:
 
@@ -201,6 +203,8 @@ Each choice shows what it does to the hold. Tap Apply. The plan and the serve ti
 
 <!-- SCREENSHOT: cook-banner | Live cook with an amber warning banner and its OK button, status bar cropped -->
 
+![Live cook with an amber smoker conflict banner and its OK button](fidelity/rn-12-live-warned.png)
+
 Banners sit at the top of Live cook.
 
 - A red banner, "Alerts are off. Steps may not ring.", with Fix. Fix opens the permission rows.
@@ -238,6 +242,8 @@ Tap the three dots, or Adjust, on Live cook.
 
 <!-- SCREENSHOT: cook-options | The Cook options sheet with Running behind or ahead and the action rows, status bar cropped -->
 
+![The Cook options sheet](fidelity/rn-13-cook-options.png)
+
 - **Running behind or ahead.** Use the stepper to move every step after now earlier or later, 15 minutes at a
   time. Then choose Keep serve or Move serve. The app shows what each does to the hold. Tap Apply.
 - **Undo.** After you mark a step Done, a row that names it, such as "Undo: Brisket off the smoker", puts it
@@ -256,6 +262,8 @@ Tap the three dots, or Adjust, on Live cook.
 ## 5. Cook finished
 
 <!-- SCREENSHOT: cook-finished | Cook finished with planned and actual times, a rate card and notes, status bar cropped -->
+
+![Cook finished with planned and actual times, a rate card and notes](fidelity/rn-15-cook-finished-rate.png)
 
 When you mark the last step, Serve, as Done, or choose End cook, the Cook finished screen opens.
 
@@ -286,6 +294,8 @@ Gear is the third tab. It holds your cookers and settings.
 **Cookers.** Your smoker, griddle and oven. Tap one to edit it.
 
 <!-- SCREENSHOT: gear-griddle | The Griddle sheet with name, size, burners and dome, status bar cropped -->
+
+![The Griddle sheet with size, burners and dome choices](fidelity/rn-18-griddle.png)
 
 - Griddle: name, cooking surface size, burners and whether you have a dome or cover. Save griddle, or Remove
   griddle.
