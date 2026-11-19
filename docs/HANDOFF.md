@@ -156,8 +156,9 @@ him.** After the table above:
   removed; `beta3` is kept until the beta.3 build is on his phone; the seven parked 0.3.1 and 0.4.0
   worktrees are untouched. Checked before the push: nothing under `tools/device/out/`, no debug file, no
   `.env` or `ha.env`, no `dashboard.html`, no signing file in any of the commits; the token in his private
-  Home Assistant file appears nowhere in them. Next: his push, then `npm run snyk:monitor`, then the
-  beta.3 release command.
+  Home Assistant file appears nowhere in them. Pushed by him the same morning (`origin/main` at `edfbeba`).
+  **`npm run snyk:monitor` was not run for this push: it is held until 2026-12-01 (the monthly limit) and
+  is owed on 2026-12-01.** Next: the beta.3 release command, which he runs.
 - **User guide (Jason, 2026-11-19):** the alerts section now says "The other foods' alarms catch up when
   you open the app."
 - **Next:** his review of the findings above; `beta3` onto `main`, then remove the merged
