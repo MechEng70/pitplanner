@@ -136,7 +136,24 @@ him.** After the table above:
   on Jason (rule in CLAUDE.md). The page from before is at `.claude/dashboard-before-prune-2026-11-19.html`.
 - **The release notes' "Check before release" list** still has an item to add a Gear line for the temp step
   question now that T-082 is merged; not added (wording is his at the release cut).
-- **Next:** his /ultrareview from `beta3`; review the findings; `beta3` onto `main`, then remove the merged
+- **/ultrareview is off on this account (it bills as usage). In its place (Jason, 2026-11-19): one read-only
+  Sonnet agent reviewed the code diffs of merge 1 and `main..beta3` for real bugs, 9:18 to 9:21 AM. Nothing
+  was changed or fixed. No high finding.** (1) Medium-low: `src/lib/sharedPlan.ts:243` (`fitPitTemp`) and
+  `src/screens/gear/HistoryScreen.tsx:537` (`tempsFor`) read the smoker's grid in F only, so in Celsius
+  display with a 5C to 25C step a shared plan's temp is snapped to, and a past cook's temps are offered
+  from, the wrong grid. Already known and put in 0.3.1 by Jason on 2026-11-17 (TASKS T-082, the 0.3.x
+  Celsius item). (2) Low: plural food names still take singular verbs in the overlap note and the keep or
+  move subtitles (`src/lib/cookView.ts:213`, `:64`): "Chicken wings comes off ...", "Chicken wings holds
+  ...". Already in ROADMAP for 0.3.1 ("Plural food names, the rest"). (3) Low, not a regression: the
+  overlap note's second line uses the full food name where its first uses the short one
+  (`cookView.ts:213`). Its unconfirmed item, a double tap on the check sheet's Start buttons, is not a
+  bug: the sheet's `close` runs its callback once (`src/components/kit/sheet.tsx:241`, read by the main
+  session). Areas reported clean: `saveCook` and `sync()`, the share guard, `GearScreen.tsx`, `Chips`,
+  `Segmented` and `segmentFit`, the T-082 arithmetic. His review of these is next; then `beta3` onto
+  `main`, he pushes, then the beta.3 build.
+- **User guide (Jason, 2026-11-19):** the alerts section now says "The other foods' alarms catch up when
+  you open the app."
+- **Next:** his review of the findings above; `beta3` onto `main`, then remove the merged
   worktrees and branches; then the beta.3 build (he runs the release command), the emulator locked reboot,
   the `turkey` test at 115% and 130%, beta.3 on his phone. Cutoff Friday noon.
 

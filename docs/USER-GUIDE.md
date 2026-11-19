@@ -228,9 +228,9 @@ Each step rings as a real alarm, even with the phone asleep or locked. The alert
 - +15 min: pushes that step back 15 minutes.
 
 Tap the alert itself to open the app. The buttons work with the app closed. When you next open the app, a
-banner on Live cook says what your tap did. If you do not answer, the alert
-rings again every 10 minutes, up to six more times, and then sends a last "Cook needs you" alert. The Live
-cook screen shows the step as overdue.
+banner on Live cook says what your tap did. The other foods' alarms catch up when you open the app. If you
+do not answer, the alert rings again every 10 minutes, up to six more times, and then sends a last "Cook
+needs you" alert. The Live cook screen shows the step as overdue.
 
 **If the phone restarts during a cook, unlock it once.** Pit Planner puts its alarms back by itself after a
 restart. But on some phones (seen on a OnePlus) no app's alert sounds until the first unlock after a restart.
