@@ -5,6 +5,7 @@ import { Pressable, Text } from 'react-native';
 import { SHEET_OUT_MS } from '@/components/kit/sheet';
 import { fakeAlarms, fakeResume } from '@/platform/fakes';
 import { AT_1023, cookAt, cookGear, cookMenu } from '@/test/cook';
+import { EVENT_LOG_KEY, parseEventLog } from '@/lib/eventLog';
 import { useStore } from '@/lib/store';
 import { storeWrapper, testRepos } from '@/test/store';
 import { PlanTab } from './PlanTab';
@@ -121,6 +122,53 @@ test('two quick taps start one cook and set the alarms once', async () => {
   await flush();
   expect(replaced(alarms.calls)).toBe(1);
   expect(onCookStarted).toHaveBeenCalledTimes(1);
+});
+
+// Regression (after-readout checklist, "A start that fails shows nothing"): when saving the new cook threw,
+// no cook existed but the double-tap guard stayed set, so Start cook did nothing until the app was restarted;
+// and the event log said "cook started" for a cook that was never saved.
+describe('a start whose save fails', () => {
+  const started = (repos: Awaited<ReturnType<typeof show>>['repos']) =>
+    (repos.kv.get(EVENT_LOG_KEY, parseEventLog) ?? []).filter(e => e.text.startsWith('cook started'));
+  async function failedStart() {
+    const r = await show();
+    const save = jest.spyOn(r.repos.activeCook, 'save').mockImplementationOnce(() => {
+      throw new Error('disk full');
+    });
+    await fireEvent.press(button('Start cook'));
+    await flush();
+    expect(save).toHaveBeenCalledTimes(1);
+    return r;
+  }
+  afterEach(() => jest.restoreAllMocks());
+
+  test('no cook, no alarms, no Cook tab, and the next tap on Start cook starts it without a restart', async () => {
+    const { repos, alarms, onCookStarted } = await failedStart();
+    expect(repos.activeCook.load()).toBeNull();
+    expect(replaced(alarms.calls)).toBe(0);
+    expect(onCookStarted).not.toHaveBeenCalled();
+    expect(button('Start cook')).toBeEnabled();
+
+    await fireEvent.press(button('Start cook'));
+    await flush();
+    expect(repos.activeCook.load()!.startedAt).toBe(NOW);
+    expect(replaced(alarms.calls)).toBe(1);
+    expect(onCookStarted).toHaveBeenCalledTimes(1);
+  });
+
+  test('the event log has no "cook started" line for it, and the error is written there instead', async () => {
+    const { repos } = await failedStart();
+    expect(started(repos)).toEqual([]);
+    const errors = (repos.kv.get(EVENT_LOG_KEY, parseEventLog) ?? []).filter(e => e.kind === 'error');
+    expect(errors.map(e => e.text)).toEqual(['cook not started: Error: disk full']);
+  });
+
+  test('a start that is saved is logged as started once', async () => {
+    const { repos } = await failedStart();
+    await fireEvent.press(button('Start cook'));
+    await flush();
+    expect(started(repos)).toHaveLength(1);
+  });
 });
 
 describe('an alert permission is missing (failure mode 9)', () => {
