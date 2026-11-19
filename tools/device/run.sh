@@ -1270,6 +1270,13 @@ test_setup() {
       for want in "Pellet smoker" "Hopper and grate filled from the model" "Model" "Pit Boss Sportsman 850" "Hopper (lb)" "Main grate (sq in)" 'text="21"' 'text="593"'; do
         says "$dir/setup-smoker.xml" "$want" || plan_miss "$want (smoker card after the pick)"
       done
+      # T-082: the temp step question under the model, the catalog's 5F chosen.
+      says "$dir/setup-smoker.xml" "What steps does your smoker set in?" || plan_miss "the temp step question (smoker card after the pick)"
+      for want in 5F 10F 15F 25F Other; do
+        has_label "$dir/setup-smoker.xml" "$want" || plan_miss "the $want choice (smoker card after the pick)"
+      done
+      grep -q 'content-desc="5F"[^>]*checked="true"' "$dir/setup-smoker.xml" || plan_miss "5F chosen on the smoker card (the catalog's step)"
+      shot "$dir/setup-smoker.png"
       grep -q 'content-desc="Continue"[^>]*enabled="true"' "$dir/setup-smoker.xml" || plan_miss "Continue on once a smoker is chosen"
     else plan_miss "the cookers step after the pick"; fi
     # At 115% the button is half behind the pinned Back and Continue (it fades out there): scroll it clear.
@@ -1430,7 +1437,8 @@ test_cook_finished() {
 # Emulator only (it changes the cookers and the units; the seed puts them back).
 # The rows; Griddle: a change shows on its row only after Save; Oven: the stepper moves nothing, Save shows the
 # new setting, Remove takes the oven away and Add a cooker offers only the oven, which comes back; the smoker
-# row opens the picker with the model marked; Alerts with the test alert (nothing moves when its line
+# row opens the Smoker sheet (T-082: Model and the temp step question), whose Model field opens the picker
+# with the model marked, and Save smoker goes back to Gear; Alerts with the test alert (nothing moves when its line
 # appears); Units in Celsius changes the rows; Cook rates opens Cook history and back returns.
 test_gear() {
   local s="$1" dir="$2" ok=1 want
@@ -1515,21 +1523,42 @@ test_gear() {
   else plan_miss "the Oven sheet"; fi
 
   # The seed's smoker is the catalog's Sportsman 850, the one verified Pit Boss (the 820 is not verified since
-  # 2026-11-17 and opens the fill-in form): the row opens the picker with that model marked; picking it again
-  # goes back to Gear with the row as it was.
+  # 2026-11-17 and opens the fill-in form). T-082: the row opens the Smoker sheet (Model, the temp step
+  # question with the saved 5F chosen, Save smoker; no hopper or grate); its Model field opens the picker
+  # with that model marked; picking it again goes back to the sheet, and Save smoker to Gear with the row as
+  # it was.
   on_screen "Pit Boss Sportsman 850" UP
   tap "Pit Boss Sportsman 850" 1 | tee -a "$REPORT"
   sleep 1
-  if look "$dir/gear-smoker.xml" && says "$dir/gear-smoker.xml" "Pick your smoker" && says "$dir/gear-smoker.xml" "Not listed? Enter it yourself"; then
-    if grep -q 'content-desc="Pit Boss Sportsman 850"[^>]*selected="true"' "$dir/gear-smoker.xml"; then
-      log "    the smoker row opens the picker with the saved model marked"
-    else plan_miss "the saved model marked in the picker"; fi
+  if look "$dir/gear-smoker.xml" && has_text "$dir/gear-smoker.xml" "Smoker" && has_label "$dir/gear-smoker.xml" "Save smoker"; then
+    for want in "Model" "Pit Boss Sportsman 850" "What steps does your smoker set in?"; do
+      says "$dir/gear-smoker.xml" "$want" || plan_miss "$want (Smoker sheet)"
+    done
+    for want in 5F 10F 15F 25F Other; do
+      has_label "$dir/gear-smoker.xml" "$want" || plan_miss "the $want choice (Smoker sheet)"
+    done
+    grep -q 'content-desc="5F"[^>]*checked="true"' "$dir/gear-smoker.xml" || plan_miss "5F chosen in the Smoker sheet (the saved step)"
+    for want in "Hopper (lb)" "Main grate (sq in)" "Remove"; do
+      says "$dir/gear-smoker.xml" "$want" && plan_miss "no $want in the Smoker sheet"
+    done
     shot "$dir/gear-smoker.png"
-    tap "Pit Boss Sportsman 850" 1 | tee -a "$REPORT"
+    tap "Model" 1 | tee -a "$REPORT"
     sleep 1
-    look "$dir/gear-smoker-back.xml" && says "$dir/gear-smoker-back.xml" "Pellet smoker, 21 lb hopper" && has_text "$dir/gear-smoker-back.xml" "Pit Boss Sportsman 850" && ! says "$dir/gear-smoker-back.xml" "Pick your smoker" ||
-      plan_miss "Pit Boss Sportsman 850 back on the smoker row"
-  else plan_miss "the smoker picker from the smoker row"; fi
+    if look "$dir/gear-smoker-picker.xml" && says "$dir/gear-smoker-picker.xml" "Pick your smoker" && says "$dir/gear-smoker-picker.xml" "Not listed? Enter it yourself"; then
+      if grep -q 'content-desc="Pit Boss Sportsman 850"[^>]*selected="true"' "$dir/gear-smoker-picker.xml"; then
+        log "    the smoker row opens the Smoker sheet; its Model field opens the picker with the saved model marked"
+      else plan_miss "the saved model marked in the picker"; fi
+      shot "$dir/gear-smoker-picker.png"
+      tap "Pit Boss Sportsman 850" 1 | tee -a "$REPORT"
+      sleep 1
+      look "$dir/gear-smoker-picked.xml" && has_label "$dir/gear-smoker-picked.xml" "Save smoker" && ! says "$dir/gear-smoker-picked.xml" "Pick your smoker" ||
+        plan_miss "the Smoker sheet again after the pick"
+    else plan_miss "the smoker picker from the Smoker sheet's Model field"; fi
+    tap "Save smoker" 1 | tee -a "$REPORT"
+    sleep 1
+    look "$dir/gear-smoker-back.xml" && says "$dir/gear-smoker-back.xml" "Pellet smoker, 21 lb hopper" && has_text "$dir/gear-smoker-back.xml" "Pit Boss Sportsman 850" && ! has_label "$dir/gear-smoker-back.xml" "Save smoker" ||
+      plan_miss "Pit Boss Sportsman 850 back on the smoker row after Save smoker"
+  else plan_miss "the Smoker sheet from the smoker row"; fi
 
   on_screen "Alerts"
   tap "Alerts" 1 | tee -a "$REPORT"
