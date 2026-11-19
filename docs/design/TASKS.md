@@ -1674,7 +1674,13 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   2026-11-15/16 fidelity PNGs; today's run also made fresh `setup-alerts`, `cook-options`,
   `cook-finished-rate` and `gear-griddle`, cook-banner needs the `live-warnings` test); the README's 4.
   **Seen in the pictures, for Jason (not fixed, the freeze holds):** (1) in the smoker picker at 115% the
-  chip reads "Kamad", the last letter of Kamado is cut off; (2) with the Alerts may not ring sheet open, a
+  chip reads "Kamad", the last letter of Kamado is cut off (**fixed on `beta3` Thu 2026-11-19, `a3313b9`;
+  Jason's decision: no type chip label is ever cut off at any font scale.** Cause: the chip was sized by an
+  unseen medium-weight copy of its label, and in Roboto the regular "Kamado" is 1 px wider than the medium
+  one at 115% and at 130%, so the label that shows broke onto a second, hidden line. Chips are now sized by
+  unseen copies in both weights (`src/components/kit/controls.tsx`, every `Chips` row); regression test in
+  `controls.test.tsx`; seen on the test emulator at 115% and 130%, all seven labels whole. The row still
+  scrolls sideways, so a chip can be part way off the screen's edge until it is scrolled to); (2) with the Alerts may not ring sheet open, a
   24 px sliver of Plan's Start cook button shows at the right edge of the screen beside Start anyway, and
   it is tappable (`cook-start.xml`: "Start cook" at x 1056 to 1080).
   **Correction, same day:** (2) is not new. It is the sheet's own second button pushed off the right edge
@@ -3862,6 +3868,10 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device testing:** re-shoot `docs/fidelity/rn-12-live-warned.png` and `rn-12-live-conflict.png` at 115%.
 
 ### T-082 Temp step question on Setup's smoker card and in Gear
+- **Merged onto branch `beta3` Thu 2026-11-19 (merge 2 for beta.3, with the mockups branch; no conflicts;
+  gate passed: engine 241, Jest 976). Not on `main` yet: `main` waits for Jason's /ultrareview of `beta3`.
+  Still owed: the SPEC lines for the step question, the rig lines in `tools/device/run.sh` (Gear's smoker
+  row now opens a Smoker sheet), the emulator Setup and Gear looks at 115% and 130%, his look.**
 - **Status:** mockups first (a proposal in `docs/proposals/2026-11-17-temp-step/`, Fable agent, 2026-11-17);
   no code before Jason's OK on the PNGs. Built on a branch, merged only after Sunday's readout (the beta.1
   freeze holds), then the emulator Setup run at 115% and his look. Ships in 0.3.0 on Monday 2026-11-23; if
@@ -4117,3 +4127,13 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Files (when built):** `src/theme/tokens.ts`, `tailwind.config.js`, `src/theme/navTheme.ts`, a new theme
   hook, the 22 files that use a colour directly, `app.config.ts`, Gear's App group, SPEC, mockups.
 
+### T-088 A smoker conflict made mid-cook by Not yet: the banner offers a fix
+- **Jason (Thu 2026-11-19): 0.3.1 backlog. Wording comes later.**
+- **Status:** backlog, 0.3.1. No UI before his wording and a mockup.
+- **What was seen** (the emulator Not yet check after merge 1, 2026-11-19, the mockup cook): "Not yet, check
+  again in 30 min" on Check the brisket moved the brisket's pull from 12:55 to 1:25 PM, past the wings'
+  Turn the smoker up to 400F at 1:20 PM. Live cook showed "Smoker conflict: brisket at 225F and chicken
+  wings at 400F at the same time." with OK only (SPEC section 5, T-069). The banner names the conflict but
+  offers no fix.
+- **Wanted:** the banner offers a way out: pull the first food early into its hold, or turn the smoker up
+  later.

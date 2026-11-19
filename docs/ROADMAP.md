@@ -88,6 +88,9 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
 - **T-086** Rig tests on the emulator for Not yet, Back up to temp with Move serve, and the Adjust tap
   (Jason, 2026-11-18; 0.3.1). Why: the rehearsal did not tap them and only Jest covers them. Blocked on: the
   rig fixes of the 2026-11-17 full pass.
+- **T-088** A smoker conflict made mid-cook by Not yet: the banner offers a fix, pull early into the hold
+  or turn up later (Jason, 2026-11-19; 0.3.1). Why: the banner names the conflict and offers only OK.
+  Blocked on: his wording and a mockup.
 - **T-031** (the two-phone part) Share between his wife's phone and his, both ways (Jason, 2026-11-18; moved
   from 0.3.0 to 0.3.1: no other phones are tested for 0.3.0). Blocked on: 0.3.0 on her phone.
 - **The Samsung tester's locked-reboot check** (parity P4, T-072; Jason, 2026-11-18; moved to 0.3.1). Why:

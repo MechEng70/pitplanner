@@ -61,7 +61,40 @@ eight where they were; nothing left at 8:50 AM, 12:40 or 12:55 PM; serve stays 2
 "plan changed: 18 events" then one "set 11, exact". The app also showed "Smoker conflict: brisket at 225F
 and chicken wings at 400F at the same time." (the pull is now after the wings' turn-up at 1:20 PM). The
 emulator shows "Alerts are off. Steps may not ring." on Cook; not looked into. Emulator and Metro are
-stopped. Next: his review, then merge 2 (`a0ce7915c8c901c69`, T-082).
+stopped.
+
+**Branch `beta3` (Jason, Thu 2026-11-19): merges 2 to 7 go onto `beta3`, cut from `main` at `fae644a`, not
+onto `main`. `main` stays at `fae644a` until Jason has run /ultrareview from `beta3` and the findings are
+reviewed.** Same order, the full gate alone after each, counts reported, every conflict listed with how it
+was resolved; a conflict that needs a choice about behavior or wording stops the merge and he sees the
+hunks. Commits on `beta3` are local, not pushed. The merged branches' worktrees are kept until `beta3` is
+on `main`. When merge 7 is merged and gated: tell him in one line that `beta3` is ready for /ultrareview,
+with `beta3` checked out and the tree clean (only `.claude/` and `dashboard.html` untracked), and wait.
+
+**On `beta3` at 7:56 AM, Thu 2026-11-19, stopped for his review after merge 3:**
+
+| Step | Commit | Conflicts | Gate (all six steps pass) |
+|---|---|---|---|
+| Merge 2: T-082 (`a0ce7915c8c901c69`) with its mockups (`a1211e2e2ed4313e1`) | `cf59767`, `4b4211f` | none | engine 241, gate self-test 154, Jest 976 in 86 suites, Kotlin 117 |
+| Kamado chip fix (T-066) | `a3313b9` | not a merge | engine 241, self-test 154, Jest 977, Kotlin 117 |
+| Merge 3: sheet buttons (`a8c0f87e3e0ab96ed`) | `11cbcbe` | none (`GearScreen.tsx`, `StartCook.test.tsx` and `GearData.test.tsx`, also changed by merge 1, merged by git with both sides kept) | engine 241, self-test 154, Jest 981, Kotlin 117 |
+
+- **Chip fix:** pictures at 115% and 130% in `tools/device/out/chips-2026-11-19/` (`picker-chips-after-1.15.png`,
+  `picker-chips-after-1.3.png`; the `before` pair shows "Kamad"). Detail in TASKS T-066.
+- **"Alerts are off. Steps may not ring." on the emulator's dev build (read only, nothing changed):** the
+  dev build (`io.github.mecheng70.pitplanner.debug`) is not on the battery allowlist, so
+  `batteryUnrestricted` is false and the banner shows. Notifications are on (`POST_NOTIFICATIONS` granted,
+  channel `steps_v1` importance high), exact alarms are allowed (`USE_EXACT_ALARM` granted). Alerts post
+  all the same; only "No battery limits" is off. The rig's `alarm` test takes the dev build off the
+  allowlist for its Doze step (`run.sh` line 588) and puts it back only if it was on. The release build on
+  the emulator (`io.github.mecheng70.pitplanner`) is on the allowlist; the locked-reboot test uses the
+  release build.
+- **Owed for T-082 after merge 2:** the SPEC lines for the step question, the rig lines for Gear's smoker
+  row, the emulator Setup and Gear looks at 115% and 130%, his look. `start-check.png` for the guide is
+  retaken after merge 3 (merge 7's note).
+- **New backlog:** T-088 (0.3.1), the smoker conflict banner after Not yet offers a fix.
+- Next, on his word: merge 4 (`a162a9d40e02d7402`, plural names and capitals; known conflicts with T-082
+  in `TempMenu.tsx`, `engine/plan.ts` and `CookerSheets.test.tsx`), then 5, 6, 7.
 
 **Jason's decisions, 5:45 PM: "beta.3, and no Saturday cook. T-037 closes on today's rehearsal; I don't load
 Saturday's plan."**
@@ -85,8 +118,8 @@ Saturday's plan."**
    | # | Branch | Holds | pit-alarms | Restore code | `cook.ts` |
    |---|---|---|---|---|---|
    | 1, **merged Thu 2026-11-19, `eb490f8`** | `a8775a2ca28f2344f` (3 commits) | Share guard and start guard | no | no | no (it changes `saveCook` in `src/lib/store.tsx`, the save every cook change goes through, plus `shareFile.ts`, `PlanTab.tsx`, `GearScreen.tsx` export only) |
-   | 2 | `a0ce7915c8c901c69` (6 commits) | T-082 temp step question, with its mockups branch `a1211e2e2ed4313e1`, the SPEC Units text, and the emulator Setup and Gear looks at 115% and 130% | no | no | no (it changes `engine/plan.ts`, `engine/temps.ts`, `engine/units.ts`, `src/lib/gear.ts`, Setup, the picker, `TempMenu`, `CookerSheets`) |
-   | 3 | `a8c0f87e3e0ab96ed` (3 commits) | Sheet buttons off the right edge at 115% | no | no (it changes the "Replace your data?" sheet's buttons in `GearScreen.tsx`, not `src/db/restore.ts`) | no (`CookOptions.tsx`, `StartCheckSheet.tsx`) |
+   | 2, **merged onto `beta3` Thu 2026-11-19** | `a0ce7915c8c901c69` (6 commits) | T-082 temp step question, with its mockups branch `a1211e2e2ed4313e1`, the SPEC Units text, and the emulator Setup and Gear looks at 115% and 130% | no | no | no (it changes `engine/plan.ts`, `engine/temps.ts`, `engine/units.ts`, `src/lib/gear.ts`, Setup, the picker, `TempMenu`, `CookerSheets`) |
+   | 3, **merged onto `beta3` Thu 2026-11-19** | `a8c0f87e3e0ab96ed` (3 commits) | Sheet buttons off the right edge at 115% | no | no (it changes the "Replace your data?" sheet's buttons in `GearScreen.tsx`, not `src/db/restore.ts`) | no (`CookOptions.tsx`, `StartCheckSheet.tsx`) |
    | 4 | `a162a9d40e02d7402` (7 commits) | Plural food names and capitals | no | no | no (`src/lib/cookView.ts`, not `cook.ts`; also `data/foods.json`, `engine/labels.ts`, `engine/plan.ts`, `engine/rules.ts`, `sharedPlan.ts`, six screens) |
    | 5 | `a9b7f7e3f7806b35c` | Release notes | no | no | no (docs only) |
    | 6 | `a6d5ad9a3b663d00e` | README (create `docs/DEVELOPING.md` at merge) | no | no | no (docs only) |
