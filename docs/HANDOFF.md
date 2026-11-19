@@ -159,6 +159,33 @@ him.** After the table above:
   Home Assistant file appears nowhere in them. Pushed by him the same morning (`origin/main` at `edfbeba`).
   **`npm run snyk:monitor` was not run for this push: it is held until 2026-12-01 (the monthly limit) and
   is owed on 2026-12-01.** Next: the beta.3 release command, which he runs.
+- **beta.3 is built, tested on the emulator and on his phone (10:13 AM, Thu 2026-11-19).**
+  `release/pitplanner-0.3.0-beta.3.apk`, version code 300303, SHA-256
+  `14eb570d4294b3f2c30a53f93e79712ef165708c3642eb109ce452a2ff8b8e45`, cert and app config verified by the
+  release script; its gate passed (Snyk needed one retry after a Snyk 500). He ran the build.
+  - **Locked reboot on the APK** (`tools/device/locked-reboot.sh`, emulator `pitplanner-lock`, 115%): PASS 6
+    of 6 on the first run; the step due at 10:05:00 rang while still locked; `tools/device/out/locked-reboot.txt`.
+  - **`turkey` at 115% and 130%:** PASS at both (dev build with `main`'s code: the rig drives dev links,
+    which a release APK does not have). 12.0 lb, rest 30 min, 0.50 hr/lb "published estimate", fire 9:55 AM,
+    off heat 4:15 PM, serve 5:00 PM; at 220F Conflicts reads 1 and the sheet says "Whole turkey needs the
+    smoker at 225F or hotter. It is set to 220F." Pictures: `tools/device/out/turkey-2026-11-19/turkey-115.png`
+    and `turkey-130.png` (six screens each; the single screens are in `1.15/` and `1.3/` beside them).
+  - **On his phone:** he installed beta.3 himself over beta.2; the version line reads 0.3.0-beta.3 and his
+    settings are there (Jason, about 10:08 AM). Nothing was done to the phone by the session. Branch `beta3`
+    is deleted (it was to stay only until the build was on his phone).
+  - **Owed by him:** the layout pass on beta.3 (the ten steps are on the dashboard under "Testing needed
+    from you", and in the session's report). Friday, if he wants: beta.3 as a GitHub pre-release for one
+    friend, with `--prerelease`. Why that mark matters: the 0.2.0 app asks GitHub for `/releases/latest`,
+    which leaves pre-releases out, and it drops the "-beta.3" part when it compares, so a beta posted as a
+    normal release would be offered to every 0.2.0 user. The 0.3.0 app reads the release list and goes by
+    the tag name. No release is published on GitHub today (the list is empty; `/releases/latest` is 404).
+  - **Snyk's "Ignored: 1 HIGH"** in the gate's summary is not SE-001 / T-057 (that is a scope flag and never
+    shows as ignored). It is in the npm project and comes from the `.snyk` ignore list, SE-003 (Metro and
+    dev-server tooling): `SNYK-JS-BRACES-19963945` or `SNYK-JS-OPEN-22112123`. The summary does not say
+    which; `snyk test --include-ignores` would, and was not run (the monthly limit).
+  - **New 0.3.1 items:** T-092 (StartCook's two double-tap tests print six "overlapping act() calls" errors
+    while passing; not new since merge 1) and T-093 (the gate counts `console.error` lines).
+  - **Dashboard:** a "Testing needed from you" section under Today, kept current (rule in CLAUDE.md).
 - **User guide (Jason, 2026-11-19):** the alerts section now says "The other foods' alarms catch up when
   you open the app."
 - **Next:** his review of the findings above; `beta3` onto `main`, then remove the merged

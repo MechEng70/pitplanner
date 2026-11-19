@@ -37,6 +37,9 @@
   "Today" (today's to-dos in order, `D.today`), "Waiting on Jason". Below, collapsed: Agents, the roads,
   Time and tokens, Now in detail. No lists of found items, device results, sessions or all tasks. The
   keeper removes an item as soon as it is done or settled; the record stays in TASKS, HANDOFF and git.
+  Right under "Today": "Testing needed from you" (`D.testing`), every hands-on test Jason owes, in detail and
+  kept current (Jason, 2026-11-19): how many minutes it needs him, what to do step by step, what he judges
+  and against which picture or text, and what is not his to test. A test is removed when he reports it.
   At every update the keeper also reads each release's next steps (`D.roads.list[].next`, `D.road`) and
   each task row's status against what is done, and fixes what is stale (Jason, 2026-11-19: "Tonight" was
   still shown the morning after).
