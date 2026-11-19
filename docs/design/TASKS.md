@@ -2591,6 +2591,16 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device testing (Jason):** the cook.
 
 ### T-038 Upgrade test and cut 0.3.0
+- **0.3.0 is released: Thu 2026-11-19, 11:01 AM** (published by Jason:
+  https://github.com/MechEng70/pitplanner/releases/tag/v0.3.0). A normal release, not a pre-release, marked
+  Latest; one file, `pitplanner-0.3.0.apk`, version code 300999, SHA-256
+  `cf2641b68a232ce09a490d05caa0b7adb700f050f5dfeeee7b5cef84049cc9c2` (GitHub's own digest of the uploaded
+  file is the same); tag `v0.3.0` on `53566f8`, the commit he built. Before publishing, on the release file:
+  the upgrade from the real 0.2.0 on the test emulator (`PASS  upgrade from 0.2.0`) and the locked reboot
+  (PASS 6 of 6); on his phone, installed over beta.3, Gear shows 0.3.0 and the brisket rate is still 0.65.
+  **One check left (RELEASING section 8), his:** on his wife's phone, still on 0.2.0, Gear shows Update
+  available for 0.3.0 and it opens the download. It is the first real check of the update offer.
+  `npm run snyk:monitor` is owed on 2026-12-01, not before.
 - **Phone check, first half done early (2026-11-17, Jason's yes to each adb line):** beta.1 installed over
   0.2.0 on his phone (0.2.0 / 200 before, 0.3.0-beta.1 / 300301 after, same signing key); the full-import
   notice showed; he checked Gear, Cook rates, Cook history and Plan against the 2026-11-15 copy of his 0.2.0

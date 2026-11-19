@@ -209,6 +209,15 @@ him.** After the table above:
   - **No app code changed since the beta.3 build:** the commits after the pushed `edfbeba` (`8327394`,
     `ce0eb2d`, `17076d9`) touch `docs/` and CLAUDE.md only. The 0.3.0 commit changes the version in
     `package.json` and `package-lock.json` and nothing else in the app.
+- **0.3.0 IS RELEASED: Thu 2026-11-19, 11:01 AM, published by Jason.**
+  https://github.com/MechEng70/pitplanner/releases/tag/v0.3.0 . Checked from GitHub right after: not a
+  pre-release, not a draft, the only release and so Latest (`/releases/latest`, what the 0.2.0 app asks,
+  answers `v0.3.0`); exactly one file, `pitplanner-0.3.0.apk`, 106,098,517 bytes, GitHub's digest equal to
+  the build's SHA-256; the release text is the notes file with the SHA line and the full INSTALL link; tag
+  `v0.3.0` on `53566f8`. `main` was pushed first (`83b2bd9`). His first paste of the publish command broke
+  across two lines at `--notes-file` and published nothing; the command was then given as three short lines.
+  **Left, his:** the update offer on his wife's phone (0.2.0). **Owed 2026-12-01:** `npm run snyk:monitor`.
+  **Next work is 0.3.1** (ROADMAP, 0.3.x; start with "Carried from 0.3.0").
 - **0.3.0 is built and tested (10:55 AM, Thu 2026-11-19); publishing is his, one command at a time.**
   `release/pitplanner-0.3.0.apk`, version code 300999, SHA-256
   `cf2641b68a232ce09a490d05caa0b7adb700f050f5dfeeee7b5cef84049cc9c2` (checked again by the session), cert
