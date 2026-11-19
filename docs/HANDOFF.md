@@ -38,14 +38,15 @@ it in headless Chrome and report the page error count, which must be 0 (CLAUDE.m
 4. **The readout,** from the rehearsal's reads and the overnight check; then the freeze on `main` ends.
 5. **The beta.3 merges,** item 4 below, one at a time.
 
-**Thursday 7:30 AM: steps 1 to 3 are done; stopped for Jason's review (his order: no readout and no merges
-until he has reviewed the result).** Overnight check: the 5:30 AM alert rang 1.085 seconds late, but in
-light idle, not deep idle, so the pass line is not met as written; deep idle ran 1:11:25 to 5:11:26 AM.
-All four alerts rang within 1.1 seconds, six repeats, nothing of the app's left. Detail:
-`docs/t037-checklist.md`, "Overnight check", "Result". Reads: `tools/device/out/t037-overnight-2026-11-19/`.
-The debug file is at the repo root, untracked (`pitplanner-debug-2026-11-19-1111.json`): never commit it,
-delete it when he says. The phone is plugged in; nothing more on it without a list and his yes. Next:
-his review, then step 4.
+**Thursday morning: steps 1 to 4 are done. Overnight check: PASS (Jason). The readout is done, T-037
+passes for 0.3.0, and the freeze on `main` has ended (Jason, Thu 2026-11-19).** The 5:30 AM alert rang
+1.085 seconds late after about 7 hours of deep idle (4 hours unbroken, 1:11:25 to 5:11:26 AM); the phone
+was in light idle at the ring because Android leaves deep idle when an alarm clock is under 1 hour away
+(`min_time_to_alarm=+1h`). Pass line reworded by Jason for any future check: "ring within 1 min after the
+phone spent hours in deep idle overnight." Detail and the readout table: `docs/t037-checklist.md`,
+"Overnight check" and "Readout". Reads: `tools/device/out/t037-overnight-2026-11-19/`. The debug file was
+deleted at his word. Nothing more on the phone without a list and his yes. Next: step 5, the beta.3
+merges, one at a time; he reviews after merge 1.
 
 **Jason's decisions, 5:45 PM: "beta.3, and no Saturday cook. T-037 closes on today's rehearsal; I don't load
 Saturday's plan."**

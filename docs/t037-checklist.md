@@ -446,6 +446,12 @@ phone is unplugged until morning; he discards by 7:30 AM and does Send to develo
 `dumpsys deviceidle` are read, after his yes. **Pass: the 5:30 AM ring within 1 minute while the phone was
 in deep idle.** It answers the limit in the rehearsal's reads: no ring there came out of hours of deep idle.
 
+**Pass line reworded (Jason, Thu 2026-11-19), for this check and any future one: "ring within 1 min after
+the phone spent hours in deep idle overnight."** The first wording could not be met on this phone: its
+`dumpsys deviceidle` has `min_time_to_alarm=+1h0m0s0ms`, so Android leaves deep idle when a `setAlarmClock`
+alarm is under 1 hour away (the same rule the emulator showed in T-016, TASKS). "Result" below has the
+night's evidence.
+
 **The plan** (from the engine with the phone's own gear and rates, 2026-11-18 5:30 PM): one food, **Chicken
 breasts, 4, on the griddle, pounded, no brine**; **Start at Thursday Nov 19, 5:30 AM**. Four alerts:
 
@@ -475,12 +481,21 @@ that alert only. The phone must be unplugged all night: a phone on a charger doe
 | 4 | Jason | By 7:30 AM: End cook, Discard this cook. Gear, 5 taps on the version line, Send to developer | Thu: discarded and sent (Jason, that morning). The debug file's event log: Done tapped on the four alerts 6:08:58 to 6:09:10 AM, cook ended 6:10:56 AM, file made 6:11:04 AM; no cook stored, no alarm listed, history still its one earlier row, `problems` empty |
 | 5 | Claude | After his yes: read the ring log from the debug file, `dumpsys deviceidle` and the battery history (read only) | Thu 7:17:22 AM, after his yes: `dumpsys alarm`, `dumpsys deviceidle`, `dumpsys batterystats --history`, read only, saved in `tools/device/out/t037-overnight-2026-11-19/` (git-ignored). Ring log read from the debug file in place (not copied, not committed) |
 
-**Result (read Thursday 2026-11-19, 7:17 AM): the pass line is not met as written.** The 5:30 AM alert rang
-at 5:30:01.085 AM, 1.085 seconds late, so it is inside the 1 minute. But the phone was in light idle at
-that moment, not deep idle: the ring log's `idle` flag is false and the battery history shows
-`device_idle=light` from 5:29:51 AM. The two agree, on this ring and on all 10 records of the night. The
-phone had been in deep idle for 4 hours straight (1:11:25 to 5:11:26 AM) and left it 18 minutes 34 seconds
-before the ring. Whether that counts is Jason's call at the readout.
+**Result: PASS (Jason, Thursday 2026-11-19, after reviewing the 7:17 AM reads).** Against the reworded
+line, "ring within 1 min after the phone spent hours in deep idle overnight": the alarms set the evening
+before came through about 7 hours of deep idle (4 hours unbroken, 1:11:25 to 5:11:26 AM), Android left deep
+idle for them as designed, the first ring was 1.085 seconds late, every later first ring and repeat was
+under 0.06 seconds late, and nothing was left behind.
+
+Against the first wording ("while the phone was in deep idle") it was not met, and could not be: the 5:30
+AM alert rang at 5:30:01.085 AM with the phone in light idle (the ring log's `idle` flag is false and the
+battery history shows `device_idle=light` from 5:29:51 AM; the two agree on all 10 records of the night),
+18 minutes 34 seconds after the phone left deep idle. Android left deep idle because the alarm was under 1
+hour away: `min_time_to_alarm=+1h0m0s0ms` in `dumpsys deviceidle`; its idling history has "normal ...
+(alarm)" at 5:11:27 and 5:59:28 AM; the battery history at 5:11:26 AM has the `DeviceIdleController.deep`
+wakeup with `active=1000:"alarm"`. Note (Claude): the rehearsal's 8 rings with `device_idle=full` came
+after deep idle stretches of 6 minutes or less, entered inside the hour before an alarm, so on this phone
+the rule shows when a long stretch ends, as here, not at every entry. It does not change the result.
 
 All times Thursday AM, from the ring log (`rings.records` in the debug file); "Late" for a repeat is
 against its own time, 10 minutes after the ring before it. `idle` is Android's deep idle flag
@@ -510,16 +525,39 @@ against its own time, 10 minutes after the ring before it. `idle` is Android's d
   7:34:34 to 7:36:36 PM, 7:59:38 to 8:01:49 PM, 8:39:35 to 8:50:56 PM, then 10:09:38 to 11:09:39 PM (1 hour),
   11:10:29 PM to 1:10:29 AM (2 hours), 1:11:25 to 5:11:26 AM (4 hours). The 4-hour stretch ended on the idle
   controller's own timer (`DeviceIdleController.deep`). From 5:11:26 to 6:08:58 AM the phone was only ever
-  in light idle or out of idle; it next reached deep idle at 6:59:37 AM. Why it did not go back to deep
-  idle before 5:30 is not known from these reads. Battery 100% to 74%.
+  in light idle or out of idle; it next reached deep idle at 6:59:37 AM. It left and stayed out of deep
+  idle for the alarms (reason "alarm" in the idling history at 5:11:27 and 5:59:28 AM). Battery 100% to 74%.
 - **What it does show:** the four alarms set at 7:18 PM came through about 7 hours of deep idle, the last 4
   hours unbroken and ending 18.5 minutes before the first ring, and all four rang within 1.1 seconds.
   **What it does not show:** a ring fired while `device_idle=full`. The rehearsal has 8 of those, none
   out of hours of deep idle.
-- **Two things differ from rows 1 to 3 above.** (1) The battery history shows the phone on a charger
+- **Two things differ from rows 1 to 3 above; neither matters (Jason, Thu 2026-11-19).** The unplug time
+  was 6:51 PM. The restart at 7:18 PM was Jason showing a friend; he entered the same plan again, and the
+  rings matched it. From the reads: (1) The battery history shows the phone on a charger
   (`plug=ac`) from its first line at Wed 6:05:05 PM, full at 6:14:44 PM, unplugged at 6:51:11 PM, then off
   the charger until Thu 7:12:03 AM. Before 6:05 PM is not in this history. (2) The event log shows the cook
   of the 5:36 PM read was ended at 7:17:40 PM; a 19-event cook (14 alarms, serve Thu 3:00 PM) was started
   at 7:17:56 PM and ended at 7:18:29 PM; the overnight cook was started again at 7:18:37 PM (5 events, serve
   6:05 AM, "set 4, exact"). So the cook that rang is the 7:18 PM one, and its alarm list was not read over
   adb; the ring log shows its four alarms at 5:30, 5:45, 5:57 and 6:05 AM.
+
+## Readout, Thursday 2026-11-19 (from the rehearsal's reads and the overnight check)
+
+**T-037 passes for 0.3.0, on 0.3.0-beta.2 on Jason's phone (a OnePlus, Android 16). The freeze on `main`
+ends (Jason, Thu 2026-11-19); the beta.3 merges start, one at a time, the full gate alone after each.**
+
+| Line | Result | From |
+|---|---|---|
+| Every ring within 1 minute of its time | Yes. 18 alerts (14 on the rehearsal, 4 overnight), the latest 1.6 seconds; the 6 overnight repeats each under 0.06 seconds | Both ring logs |
+| Nothing lost at the reboot | Yes. The 12:40 PM alert was posted 10.6 minutes after the locked reboot, before the first unlock | Rehearsal |
+| Nothing twice | Yes. Each alert rang first once. Repeats came only overnight, where nobody answered for 10 minutes, as designed | Both ring logs |
+| Ring within 1 min after the phone spent hours in deep idle overnight | Yes. 5:30:01.085 AM, 1.085 seconds late, after about 7 hours of deep idle, 4 hours unbroken | Overnight ring log, battery history, idling history |
+| Taps with the app swiped away | Yes. Three Done taps kept and applied with their own times | Rehearsal |
+| After Discard | Yes, both days: no alarm of the app pending. Rehearsal: history, rates and cookers identical before and after. Overnight: no cook stored, history still its one earlier row | `dumpsys alarm`, debug files |
+| Permissions | All four on, both days | Debug files |
+
+**Not shown on a phone, unchanged:** the list under "What today did not test" (+15 min with the app closed;
+Not yet, Undo, Pit went out, Back up to temp with Move serve, Adjust; two alerts answered at once). They
+are covered by Jest, Kotlin and emulator tests as listed there; the phone check is T-086 in 0.3.1. One
+phone only, a OnePlus with Android 16. No ring fired after hours of deep idle with the phone still in deep
+idle: Android leaves deep idle ahead of an alarm clock.

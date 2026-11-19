@@ -2522,15 +2522,17 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   untouched. Not run on a phone, with where each is covered by tests: `docs/t037-checklist.md`, "What today
   did not test". The overnight check (first ring 5:30 AM Thu 2026-11-19 out of a night of deep idle) is in
   the same file. Readout Thursday 2026-11-19. No Saturday cook.
-- **Overnight check, read Thu 2026-11-19 7:17 AM: its pass line is not met as written; Jason reviews it
-  before the readout.** The 5:30 AM alert rang at 5:30:01.085 AM, 1.085 seconds late (inside the 1 minute),
-  but the phone was in light idle then, not deep idle (ring log `idle` false; battery history
-  `device_idle=light` from 5:29:51 AM; the two agree on all 10 records). It had been in deep idle for 4
-  hours straight, 1:11:25 to 5:11:26 AM, and about 7 hours in all since 10:09 PM. All four alerts rang
-  first within 1.1 seconds, each once; six repeats 10 minutes apart until Done; no alarm of the app left
-  after Discard. The evening differs from the plan in two ways (on a charger 6:05 to 6:51 PM; the cook
-  ended and started again at 7:18 PM). Table and detail: `docs/t037-checklist.md`, "Overnight check",
-  "Result".
+- **Overnight check: PASS (Jason, Thu 2026-11-19). Readout done the same day; T-037 passes for 0.3.0 and
+  the freeze on `main` ends.** Pass line as reworded by Jason: "ring within 1 min after the phone spent
+  hours in deep idle overnight." Alarms set the evening before came through about 7 hours of deep idle (4
+  hours unbroken, 1:11:25 to 5:11:26 AM); the 5:30 AM alert rang at 5:30:01.085 AM, 1.085 seconds late; the
+  other three first rings and the six repeats were each under 0.06 seconds late; no alarm of the app left
+  after Discard. The first wording ("while the phone was in deep idle") could not be met on this phone:
+  `min_time_to_alarm=+1h0m0s0ms`, so Android leaves deep idle when a `setAlarmClock` alarm is under 1 hour
+  away (idling history "normal ... (alarm)" at 5:11:27 and 5:59:28 AM; the phone was in light idle at the
+  ring). The phone was unplugged at 6:51 PM; the cook was restarted at 7:18 PM with the same plan (Jason
+  showing a friend). Table, evidence and the readout: `docs/t037-checklist.md`, "Overnight check" and
+  "Readout".
 - **Checklist:** `docs/t037-checklist.md` (the plan to load, Friday's upgrade over 0.2.0 with T-038's phone
   check, Saturday's taps with fixture times, the +15 pass line, Sunday's readout). Brisket 10 lb so the
   first ring is 7:50 AM (Jason: nothing before 7:30 AM).
