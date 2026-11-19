@@ -88,6 +88,9 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
 - **T-086** Rig tests on the emulator for Not yet, Back up to temp with Move serve, and the Adjust tap
   (Jason, 2026-11-18; 0.3.1). Why: the rehearsal did not tap them and only Jest covers them. Blocked on: the
   rig fixes of the 2026-11-17 full pass.
+- **T-089** Brine options that change nothing you see: prep and brine reminders (Jason, 2026-11-19; 0.3.1).
+  Why: "Dry brine ahead" and "Wet brine 1-2 hr" add no time, step or alert today; the 0.3.0 notes say "Brine
+  options don't add reminders yet." Blocked on: his decisions on what a reminder is, its wording and times.
 - **T-088** A smoker conflict made mid-cook by Not yet: the banner offers a fix, pull early into the hold
   or turn up later (Jason, 2026-11-19; 0.3.1). Why: the banner names the conflict and offers only OK.
   Blocked on: his wording and a mockup.

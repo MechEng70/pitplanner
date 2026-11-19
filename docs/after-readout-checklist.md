@@ -244,7 +244,9 @@ Branches only until the readout passes; then merge one at a time, the gate after
 - [ ] **Plan edited while a cook runs (found by Jason on his phone, 2026-11-18):** the running cook does not
       change and nothing says so. SPEC is silent on it. His lean: a prompt, his wording, 0.3.1. Task T-084
       in `docs/design/TASKS.md`.
-- [ ] **"Dry brine ahead" on wings and "Wet brine 1-2 hr" on chicken breasts change nothing the user sees
+- [x] **Decided by Jason, Thu 2026-11-19: leave the brine options as they are for 0.3.0; the release notes'
+      Cook list says "Brine options don't add reminders yet."; the real fix is T-089 in 0.3.1.** As read:
+      **"Dry brine ahead" on wings and "Wet brine 1-2 hr" on chicken breasts change nothing the user sees
       (read 2026-11-18, after Jason's correction that prep and brine reminders are not in the app's
       timeline, on purpose: prep is on the user).** In `data/foods.json` each of the two choices only adds
       a prep entry to the engine's plan ("Dry brine the wings." 8 hours before they go on, "Brine the

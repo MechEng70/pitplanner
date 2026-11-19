@@ -4137,3 +4137,16 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   offers no fix.
 - **Wanted:** the banner offers a way out: pull the first food early into its hold, or turn the smoker up
   later.
+
+### T-089 Brine options that change nothing you see: prep and brine reminders
+- **Jason (Thu 2026-11-19): 0.3.1. For 0.3.0 the options stay as they are, and the release notes' Cook list
+  says "Brine options don't add reminders yet."**
+- **Status:** backlog, 0.3.1.
+- **What is wrong today** (read 2026-11-18; `docs/after-readout-checklist.md`, the brine item): "Dry brine
+  ahead" on wings and "Wet brine 1-2 hr" on chicken breasts each only add a prep entry to the engine's plan
+  ("Dry brine the wings." 8 hours before they go on, "Brine the chicken breasts." 150 minutes before). A
+  prep entry has no alarm and the app lists only steps that ring, so no time, step or alert changes with
+  the choice. The same holds for every food's "Prep the ..." entry.
+- **The fix:** the brine options, and prep, show up for the user: prep and brine reminders. What a reminder
+  is (a step on the timeline, an alert, or both), its wording and its times are his to decide before any
+  build; cooking times need a source.
