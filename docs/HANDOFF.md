@@ -92,9 +92,12 @@ with `beta3` checked out and the tree clean (only `.claude/` and `dashboard.html
 - **Owed for T-082 after merge 2:** the SPEC lines for the step question, the rig lines for Gear's smoker
   row, the emulator Setup and Gear looks at 115% and 130%, his look. `start-check.png` for the guide is
   retaken after merge 3 (merge 7's note).
-- **New backlog:** T-088 (0.3.1), the smoker conflict banner after Not yet offers a fix.
+- **New backlog:** T-088 (0.3.1), the smoker conflict banner after Not yet offers a fix; T-089 (0.3.1),
+  remove the brine options; T-090 (0.5.0), request a catalog addition, mockup first.
+- **After 0.3.0 ships (Jason, 2026-11-19):** T-091, the public roadmap on GitHub: a Mermaid timeline at the
+  top of `docs/ROADMAP.md` or the README (he picks); the content is agreed word for word in TASKS T-091.
 
-**`beta3` is ready for Jason's /ultrareview (8:43 AM, Thu 2026-11-19): merges 1 to 7 are in, each gated;
+**`beta3` is ready for Jason's /ultrareview (9:10 AM, Thu 2026-11-19, after the "Other" fix `3936c1c`): merges 1 to 7 are in, each gated;
 `beta3` is checked out and the tree is clean; `main` is still at `fae644a`; nothing is pushed. Wait for
 him.** After the table above:
 
@@ -108,15 +111,24 @@ him.** After the table above:
 
 - **Also on `beta3`:** SPEC and the user guide give the picker's chips in the app's order; the chip row
   keeps scrolling (Jason). Brine options stay as they are for 0.3.0, the release notes' Cook list says
-  "Brine options don't add reminders yet.", the fix is T-089 in 0.3.1 (Jason). `docs/guide/start-check.png`
+  "Brine options don't change the plan. They'll be removed in the next update.", and T-089 in 0.3.1 removes
+  them; no brine or prep reminders are planned, prep stays out of the app (Jason). `docs/guide/start-check.png`
   retaken after merge 3 (`e8204c8`): both buttons on screen.
 - **T-082 pictures** (test emulator, 115% and 130%): `tools/device/out/t082-2026-11-19/`,
   `setup-step-question-1.15.png`, `setup-step-question-1.3.png`, `gear-smoker-sheet-1.15.png`,
   `gear-smoker-sheet-1.3.png`. **Found, for Jason: on Setup's smoker card the "Other" choice breaks onto two
   lines at 115% ("Othe" / "r") and at 130% ("Oth" / "er").** In Gear's Smoker sheet it fits at both. Cause:
-  the card is narrower than the sheet and each segment has 8 dp of padding either side (`Segmented`,
-  `px-2`), leaving about 40 dp for a word that needs about 47 dp at 115%. Not fixed: the way to fix it is
-  his call (less padding in the segments, a narrower card margin, or a shorter word).
+  the card is narrower than the sheet: an equal share is 56 dp and "Other" with its padding needs 59 dp at
+  115%. **Fixed the same morning on his decision (`3936c1c`), in the shared `Segmented`: no segment label
+  ever breaks or is cut; segments stay equal while every label fits, otherwise a long label gets the width
+  it needs and the others share the rest; the padding gives way before a label does.** Tests first (seen
+  failing); gate passed (Jest 997, engine 253, Kotlin 117). Pictures after the fix, same folder:
+  `setup-step-question-1.15-fixed.png`, `setup-step-question-1.3-fixed.png`,
+  `gear-smoker-sheet-1.15-fixed.png`, `gear-smoker-sheet-1.3-fixed.png` (Setup: Other 59 dp at 115%, 64 dp
+  at 130%, the four numbers equal; Gear: all five equal, as before). **Two traps found on the emulator, not
+  by Jest:** React Native adds a segment's `minWidth` to an equal share (so a minimum alone makes the
+  segments unequal), and it keeps the first `flexBasis` it works out (a basis set after measuring does
+  nothing). The control is sized by `width`.
 - **Rig:** `setup` and `gear` pass at 115% with the new T-082 lines. At 130% both fail on the two rig faults
   known since 2026-11-17 (the full device pass's table: Alerts below the first screen on Gear; the test
   alert button under the pinned buttons on Setup); the T-082 lines pass there too.

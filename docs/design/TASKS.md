@@ -3872,9 +3872,11 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   gate passed: engine 241, Jest 976). Not on `main` yet: `main` waits for Jason's /ultrareview of `beta3`.
   Done the same day on `beta3`: the SPEC lines (`0eb5c31`), the rig lines (`a2e1b40`; `setup` and `gear`
   pass at 115%), and pictures of Setup's card and Gear's Smoker sheet at 115% and 130%
-  (`tools/device/out/t082-2026-11-19/`). Found in them: on Setup's card "Other" breaks onto two lines at
-  115% and at 130% (in Gear's sheet it fits); not fixed, the way to fix it is Jason's call. Still owed:
-  his look.**
+  (`tools/device/out/t082-2026-11-19/`). Found in them: on Setup's card "Other" broke onto two lines at
+  115% and at 130% (in Gear's sheet it fit). Fixed the same morning on Jason's decision, in the shared
+  `Segmented` (`3936c1c`): no segment label ever breaks or is cut; equal widths while every label fits,
+  otherwise the long label gets what it needs and the others share the rest. Tests first; the `-fixed`
+  pictures are in the same folder. Still owed: his look.**
 - **Status:** mockups first (a proposal in `docs/proposals/2026-11-17-temp-step/`, Fable agent, 2026-11-17);
   no code before Jason's OK on the PNGs. Built on a branch, merged only after Sunday's readout (the beta.1
   freeze holds), then the emulator Setup run at 115% and his look. Ships in 0.3.0 on Monday 2026-11-23; if
@@ -4141,15 +4143,44 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Wanted:** the banner offers a way out: pull the first food early into its hold, or turn the smoker up
   later.
 
-### T-089 Brine options that change nothing you see: prep and brine reminders
+### T-089 Remove the brine options that change nothing
 - **Jason (Thu 2026-11-19): 0.3.1. For 0.3.0 the options stay as they are, and the release notes' Cook list
-  says "Brine options don't add reminders yet."**
+  says "Brine options don't change the plan. They'll be removed in the next update."**
+- **Corrected by Jason the same morning: no brine or prep reminders are planned. Prep stays out of the app.**
+  (This task first read "prep and brine reminders"; that was wrong.)
 - **Status:** backlog, 0.3.1.
-- **What is wrong today** (read 2026-11-18; `docs/after-readout-checklist.md`, the brine item): "Dry brine
+- **What is there today** (read 2026-11-18; `docs/after-readout-checklist.md`, the brine item): "Dry brine
   ahead" on wings and "Wet brine 1-2 hr" on chicken breasts each only add a prep entry to the engine's plan
   ("Dry brine the wings." 8 hours before they go on, "Brine the chicken breasts." 150 minutes before). A
   prep entry has no alarm and the app lists only steps that ring, so no time, step or alert changes with
-  the choice. The same holds for every food's "Prep the ..." entry.
-- **The fix:** the brine options, and prep, show up for the user: prep and brine reminders. What a reminder
-  is (a step on the timeline, an alert, or both), its wording and its times are his to decide before any
-  build; cooking times need a source.
+  the choice.
+- **The task:** take the two options out of Food details. To settle with him before the build: what happens
+  to a saved plan, a shared plan file or a saved cook that carries one of the options, and whether the
+  engine's prep entries go as well (data and engine tests change with them).
+
+### T-090 Request a catalog addition: "Send this model to the developer"
+- **Jason (Thu 2026-11-19): backlog, 0.5.0. Mockup first.**
+- **Status:** backlog, 0.5.0. No UI before his OK on a mockup.
+- **What:** after a user saves a smoker or other cooker entered by hand ("Not listed? Enter it yourself"),
+  offer "Send this model to the developer". It opens the share sheet through `openShareSheet`
+  (`src/platform/shareFile.ts`) with only that cooker's fields: brand and model as typed, type, min and max
+  temp, temp step, hopper, grate. Nothing else from the phone goes into it.
+- **Open questions for Jason:** the button wording; whether to offer it once or keep it in Gear; whether it
+  covers griddles and ovens too.
+
+### T-091 Public roadmap on GitHub, after 0.3.0 ships (Jason, 2026-11-19)
+- **Status:** backlog, docs only, after 0.3.0 ships.
+- **What:** a Mermaid timeline at the top of `docs/ROADMAP.md` (or the README; Jason picks) showing order,
+  not dates, with only the next release dated.
+- **Content as agreed, word for word:**
+  - 0.3.0: Alarms that ring after a restart; Done and +15 min right from the alert; Turkey; Pick your
+    smoker's temp steps.
+  - 0.3.x: Share a plan between two phones; Celsius smokers done right; Smaller download; Fixes for large
+    font sizes; Better cook rates from late taps.
+  - 0.4.0: Connect to Home Assistant; Live probe temps on the Cook screen; A probe for each food.
+  - Next: Light theme that follows your phone.
+  - 0.5.0: Fish (salmon, sea bass, catfish); Chef iQ probes over Bluetooth, no Home Assistant needed; Pick
+    your own cookers when you open a shared plan; Ask for your smoker to be added.
+  - Later: Plan changes during a cook update the cook; Home Assistant automations; Low and slow for tough
+    cuts; Your own food names; Full screen timeline; Restore your data on a new phone.
+- **Left off on purpose:** brine, app-closed alert taps (T-078) until its spike, iPhone.

@@ -245,7 +245,8 @@ Branches only until the readout passes; then merge one at a time, the gate after
       change and nothing says so. SPEC is silent on it. His lean: a prompt, his wording, 0.3.1. Task T-084
       in `docs/design/TASKS.md`.
 - [x] **Decided by Jason, Thu 2026-11-19: leave the brine options as they are for 0.3.0; the release notes'
-      Cook list says "Brine options don't add reminders yet."; the real fix is T-089 in 0.3.1.** As read:
+      Cook list says "Brine options don't change the plan. They'll be removed in the next update."; T-089
+      in 0.3.1 removes them. No brine or prep reminders are planned: prep stays out of the app.** As read:
       **"Dry brine ahead" on wings and "Wet brine 1-2 hr" on chicken breasts change nothing the user sees
       (read 2026-11-18, after Jason's correction that prep and brine reminders are not in the app's
       timeline, on purpose: prep is on the user).** In `data/foods.json` each of the two choices only adds

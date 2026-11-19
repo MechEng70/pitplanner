@@ -88,9 +88,13 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
 - **T-086** Rig tests on the emulator for Not yet, Back up to temp with Move serve, and the Adjust tap
   (Jason, 2026-11-18; 0.3.1). Why: the rehearsal did not tap them and only Jest covers them. Blocked on: the
   rig fixes of the 2026-11-17 full pass.
-- **T-089** Brine options that change nothing you see: prep and brine reminders (Jason, 2026-11-19; 0.3.1).
-  Why: "Dry brine ahead" and "Wet brine 1-2 hr" add no time, step or alert today; the 0.3.0 notes say "Brine
-  options don't add reminders yet." Blocked on: his decisions on what a reminder is, its wording and times.
+- **T-089** Remove the brine options that change nothing (Jason, 2026-11-19; 0.3.1). Why: "Dry brine
+  ahead" and "Wet brine 1-2 hr" add no time, step or alert, and no brine or prep reminders are planned (prep
+  stays out of the app); the 0.3.0 notes say they will be removed in the next update. Blocked on: what
+  happens to saved and shared plans that carry an option, and whether the engine's prep entries go too.
+- **T-091** Public roadmap on GitHub, after 0.3.0 ships (Jason, 2026-11-19; docs only): a Mermaid timeline
+  at the top of this file or the README (he picks), order not dates, only the next release dated. Content
+  agreed word for word in TASKS T-091.
 - **T-088** A smoker conflict made mid-cook by Not yet: the banner offers a fix, pull early into the hold
   or turn up later (Jason, 2026-11-19; 0.3.1). Why: the banner names the conflict and offers only OK.
   Blocked on: his wording and a mockup.
@@ -138,6 +142,9 @@ Home Assistant phase 1: read-only, a pasted token. Nothing here starts before 0.
 - **T-080** Chef iQ probes direct over Bluetooth, no Home Assistant.
   Why: probe temps without Home Assistant. Blocked on: an approved mockup (the scan permission row in Setup
   alerts), T-050, T-049, and a real probe.
+- **T-090** Request a catalog addition (Jason, 2026-11-19; 0.5.0): after a cooker entered by hand is saved,
+  "Send this model to the developer" opens the share sheet with only that cooker's fields. Blocked on: a
+  mockup first; his wording; once or kept in Gear; griddles and ovens too or not.
 
 ## Later
 
