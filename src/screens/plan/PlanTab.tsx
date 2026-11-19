@@ -1,12 +1,13 @@
 // The Plan tab with what opens from it: the smoker temp menu, Add food and the Conflicts sheet (T-018) and
 // food details (T-019), Start cook with its alert check (T-021), the share icon (T-029) and a shared plan
 // opened from another app (T-030). Past plans (T-028) join with their task.
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { HostInstance } from 'react-native';
 import { buildPlan } from '../../../engine/plan';
 import type { ItemInput, Plan, PlanInput } from '../../../engine/types';
 import type { Anchor } from '@/components/kit';
 import { newCook } from '@/lib/cook';
+import { errorText } from '@/lib/eventLog';
 import { newItemId } from '@/lib/itemId';
 import { method, newItem, rules } from '@/lib/rules';
 import { importConflicts, parsePitPlan, type ImportedPlan, type SharedPlan } from '@/lib/sharedPlan';
@@ -87,7 +88,7 @@ export function PlanTab({
   now = Date.now,
   open,
 }: PlanTabProps) {
-  const { state, setDraft, setCook, ui } = useStore();
+  const { state, setDraft, setCook, ui, logEvent } = useStore();
   const { draft, gear, units } = state;
   const fresh = (foodId: string): ItemInput =>
     newItem(
@@ -162,10 +163,26 @@ export function PlanTab({
   // moment the permissions are being read and the time until the store's new state is drawn.
   const starting = useRef(false);
   const cooking = state.cook != null;
+  // The guard is for one start only. It is cleared when no cook is running any more (the cook ended, was
+  // saved or discarded, or Start over): before this, it stayed set after the first start and Start cook did
+  // nothing for the rest of the app's run (found on the phone, 0.3.0-beta.1). While a start is under way
+  // `cooking` does not change, so the guard holds against a second tap.
+  useEffect(() => {
+    if (!cooking) starting.current = false;
+  }, [cooking]);
+  // A start whose save throws did not go through: no cook exists, so the guard is cleared and the next tap
+  // tries again (before this, Start cook did nothing until a restart). Only then, never after a start that
+  // worked: that would reopen the double-tap window. The error goes to the event log; the screen shows nothing.
   const begin = (input: PlanInput, plan: Plan) => {
     if (cooking) return;
     starting.current = true;
-    setCook(newCook(input, plan, now()));
+    try {
+      setCook(newCook(input, plan, now()));
+    } catch (e) {
+      starting.current = false;
+      logEvent('error', `cook not started: ${errorText(e)}`);
+      return;
+    }
     onCookStarted();
   };
   const startCook = async (plan: Plan) => {
@@ -180,15 +197,19 @@ export function PlanTab({
   };
 
   // Share (SPEC section 3): the menu, serve time and smoker temp as a .pitplan file. A share that fails says so
-  // (Jason, 2026-11-15; 0.2.0 showed nothing).
+  // (Jason, 2026-11-15; 0.2.0 showed nothing) and is written to the event log, so it is not silent in a release
+  // build. A second tap while the sheet is still opening is not a failure: shareTextFile drops that one.
   const share = (plan: Plan) => {
     if (!sharePlanFile) return;
     const text = pitPlanText(toPitPlan(plan.serveAt, input.pitTempF, input.items));
-    const failed = () => setLayer({ kind: 'shareFailed' });
+    const failed = (e: unknown) => {
+      logEvent('error', `plan share failed: ${errorText(e)}`);
+      setLayer({ kind: 'shareFailed' });
+    };
     try {
       sharePlanFile(PLAN_FILE_NAME, text).catch(failed);
-    } catch {
-      failed();
+    } catch (e) {
+      failed(e);
     }
   };
 

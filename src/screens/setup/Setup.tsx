@@ -22,11 +22,20 @@ import {
   SetupPage,
 } from '@/components/kit';
 import { fmtTemp, type Units } from '@/lib/format';
-import { catalogSmokers, defaultGriddle, defaultOven, hasHopper, smokerTypeInfo } from '@/lib/gear';
+import {
+  catalogSmokers,
+  defaultGriddle,
+  defaultOven,
+  hasHopper,
+  hasTempStep,
+  positiveNum,
+  smokerTypeInfo,
+} from '@/lib/gear';
 import { useStore } from '@/lib/store';
 import { AddCooker } from '@/screens/shared/AddCooker';
 import { colors } from '@/theme/tokens';
 import { SmokerPicker } from './SmokerPicker';
+import { StepQuestion } from './StepQuestion';
 
 export const SETUP_STEPS = 3;
 
@@ -173,14 +182,11 @@ export function Setup({
   );
 }
 
-const positive = (v: string) => {
-  const n = parseFloat(v.replace(',', '.'));
-  return Number.isFinite(n) && n > 0 ? n : null;
-};
 const fieldText = (n: number | null) => (n == null ? '' : String(Math.round(n * 10) / 10));
 
 /**
- * Smoker card (mockup 01): the model field opens the picker; hopper and grate stay editable. The fields show
+ * Smoker card (mockup 01): the model field opens the picker; under it the temp step question (T-082, not for
+ * kamado, drum and offset), then hopper and grate, which stay editable. The fields show
  * what the smoker has (a checked model's specs, or what the user typed), blank when it has none. A new pick
  * remounts the card (its key), so the fields start from the new smoker.
  */
@@ -224,6 +230,7 @@ function SmokerCard({
             onPress={onPick}
             trailing={<ChevronRight color={colors.text2} />}
           />
+          {hasTempStep(smoker.type) ? <StepQuestion smoker={smoker} units={units} onChange={onChange} /> : null}
           <Row gap={12} align="start">
             {hasHopper(smoker.type) ? (
               <Fill>
@@ -233,7 +240,7 @@ function SmokerCard({
                   value={hopper}
                   onInput={v => {
                     setHopper(v);
-                    const n = positive(v);
+                    const n = positiveNum(v);
                     onChange({ ...smoker, hopperLb: n == null ? null : kg ? kgToLb(n) : n });
                   }}
                 />
@@ -246,7 +253,7 @@ function SmokerCard({
                 value={grate}
                 onInput={v => {
                   setGrate(v);
-                  onChange({ ...smoker, mainGrateSqIn: positive(v) });
+                  onChange({ ...smoker, mainGrateSqIn: positiveNum(v) });
                 }}
               />
             </Fill>

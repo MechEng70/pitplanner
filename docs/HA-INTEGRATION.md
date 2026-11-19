@@ -33,7 +33,7 @@ Handoff for Claude Code. Put this file at `docs/HA-INTEGRATION.md` and treat it 
 | | What | Why |
 |---|---|---|
 | **A. Dev-time** | Claude Code talks to Jason's Home Assistant through HA's built-in MCP Server | Lets Claude Code find the real entity IDs, read live values while building, and check the blueprint against real data. Nothing ships to users. |
-| **B. Runtime** | The Pit Planner app signs in to the user's HA (e.g. https://ha.glithero.icu) with an HA username and password through HA's own login page, then uses HA's REST and WebSocket APIs | Live probe and pit temps in the app, and temperature-triggered alerts from HA. Optional per user; off by default. Friends without HA lose nothing. |
+| **B. Runtime** | The Pit Planner app signs in to the user's HA (e.g. https://ha.example.com) with an HA username and password through HA's own login page, then uses HA's REST and WebSocket APIs | Live probe and pit temps in the app, and temperature-triggered alerts from HA. Optional per user; off by default. Friends without HA lose nothing. |
 
 Keep them separate. The app never uses MCP, and Claude Code never needs the app's login.
 
@@ -121,7 +121,7 @@ Thresholds come from the published sensor attributes, so the blueprint needs no 
 > section is kept as the design for the HA login (OAuth), which can be added later behind the same auth
 > interface. It is not built in 0.4.0.
 
-1. Screen: "Your Home Assistant address" with one field, e.g. `ha.glithero.icu`. The app adds `https://` and checks `/api/` responds.
+1. Screen: "Your Home Assistant address" with one field, e.g. `ha.example.com`. The app adds `https://` and checks `/api/` responds.
 2. The app opens HA's own login page in an Android Custom Tab: `/auth/authorize?client_id=...&redirect_uri=...&state=...`. The user types the HA username and password there (and MFA if enabled). The app never sees the password.
 3. HA redirects back to the app with a code; the app exchanges it at `/auth/token` (`grant_type=authorization_code`) for an access token (about 30 min) and a refresh token.
 4. The app refreshes the access token with `grant_type=refresh_token` whenever it expires or a call returns 401. If refresh fails, the connection shows "Signed out" and asks to sign in again.
@@ -186,7 +186,7 @@ Engine stays pure: add `engine/probe.ts` with functions like `nextTempEvent(plan
 
 ## 7. Open items for Jason
 
-- HA address for Claude Code's MCP connection and for testing the app: https://ha.glithero.icu.
+- HA address for Claude Code's MCP connection and for testing the app: https://ha.example.com.
 - The `pitplanner` HA user (4.1) exists (done 2026-11-12, credentials kept by Jason, never in the repo).
 - ha-pitboss connection mode on the Sportsman 850 (`wss`, `local` or `ble`).
 - Which phone(s) have the HA Companion app (notify service names).

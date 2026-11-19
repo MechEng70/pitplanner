@@ -12,6 +12,7 @@ import { Pressable, View, type HostInstance } from 'react-native';
 import { itemLabels } from '../../../engine/labels';
 import { buildPlan, onHeatSpan } from '../../../engine/plan';
 import type { ItemInput, Plan, SmokerProfile } from '../../../engine/types';
+import { showSetPoint } from '../../../engine/units';
 import {
   Avatar,
   Button,
@@ -34,7 +35,7 @@ import {
   Tile,
   Tiles,
 } from '@/components/kit';
-import { fmtDay, fmtDuration, fmtPellets, fmtTemp, fmtTime, fmtWeight, tx, type Units } from '@/lib/format';
+import { fmtDay, fmtDuration, fmtPellets, fmtTime, fmtWeight, tx, type Units } from '@/lib/format';
 import { countText, food, itemSummary, method, rules } from '@/lib/rules';
 import { planInput, useStore } from '@/lib/store';
 import type { PickDateTime } from '@/platform/types';
@@ -228,7 +229,7 @@ export function PlanScreen({
         <View ref={tempFieldRef} collapsable={false}>
           <SelectField
             label="Smoker temp"
-            value={<Num>{fmtTemp(draft.pitTempF, units, true)}</Num>}
+            value={<Num>{showSetPoint(draft.pitTempF, units.temp, gear.smoker.tempStepF)}</Num>}
             onPress={() => onOpenTemp?.()}
             trailing={
               <Row gap={10}>
