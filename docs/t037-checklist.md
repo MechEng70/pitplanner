@@ -472,7 +472,54 @@ that alert only. The phone must be unplugged all night: a phone on a charger doe
 | 1 | Jason | Enter the plan above and tap Start cook once. Say what Plan and Cook show | Wed 5:35 PM: brisket and wings removed, breasts as they were, Start at Thu 5:30 AM; Plan showed the breasts at 5:45 AM and serve at 6:05 AM; Start cook tapped once (Jason) |
 | 2 | Claude | After his yes: `adb -s <phone> shell dumpsys alarm` (read only). Expect four alarms of the app, Thursday 5:30, 5:45, 5:57 and 6:05 AM, each once, nothing else | Wed 5:36:07 PM, after his yes: four alarms of the app pending, Thu 5:30:00, 5:45:00, 5:57:00 and 6:05:00 AM, each once; nothing else of the app's, nothing of the dev build's; Android's next alarm clock for the phone is Thu 5:30:00 AM |
 | 3 | Jason | Unplug. Phone locked, not on a charger, until morning | Wed about 5:50 PM: unplugged for the night (Jason) |
-| 4 | Jason | By 7:30 AM: End cook, Discard this cook. Gear, 5 taps on the version line, Send to developer | |
-| 5 | Claude | After his yes: read the ring log from the debug file, `dumpsys deviceidle` and the battery history (read only) | |
+| 4 | Jason | By 7:30 AM: End cook, Discard this cook. Gear, 5 taps on the version line, Send to developer | Thu: discarded and sent (Jason, that morning). The debug file's event log: Done tapped on the four alerts 6:08:58 to 6:09:10 AM, cook ended 6:10:56 AM, file made 6:11:04 AM; no cook stored, no alarm listed, history still its one earlier row, `problems` empty |
+| 5 | Claude | After his yes: read the ring log from the debug file, `dumpsys deviceidle` and the battery history (read only) | Thu 7:17:22 AM, after his yes: `dumpsys alarm`, `dumpsys deviceidle`, `dumpsys batterystats --history`, read only, saved in `tools/device/out/t037-overnight-2026-11-19/` (git-ignored). Ring log read from the debug file in place (not copied, not committed) |
 
-**Result:** not run yet.
+**Result (read Thursday 2026-11-19, 7:17 AM): the pass line is not met as written.** The 5:30 AM alert rang
+at 5:30:01.085 AM, 1.085 seconds late, so it is inside the 1 minute. But the phone was in light idle at
+that moment, not deep idle: the ring log's `idle` flag is false and the battery history shows
+`device_idle=light` from 5:29:51 AM. The two agree, on this ring and on all 10 records of the night. The
+phone had been in deep idle for 4 hours straight (1:11:25 to 5:11:26 AM) and left it 18 minutes 34 seconds
+before the ring. Whether that counts is Jason's call at the readout.
+
+All times Thursday AM, from the ring log (`rings.records` in the debug file); "Late" for a repeat is
+against its own time, 10 minutes after the ring before it. `idle` is Android's deep idle flag
+(`PowerManager.isDeviceIdleMode`) read just before the alert is posted.
+
+| Alert | Ring | Planned | Rang | Late | `idle` flag | Battery history then | Screen |
+|---|---|---|---|---|---|---|---|
+| Fire the griddle | first | 5:30:00 | 5:30:01.085 | 1.085 s | false | light, since 5:29:51 | off |
+| Fire the griddle | repeat 1 | 5:40:01 | 5:40:01.135 | 0.050 s | false | light | off |
+| Chicken breasts on the griddle | first | 5:45:00 | 5:45:00.057 | 0.057 s | false | off, 5:44:27 to 5:45:32 | off |
+| Fire the griddle | repeat 2 | 5:50:01 | 5:50:01.164 | 0.029 s | false | light | off |
+| Chicken breasts on the griddle | repeat 1 | 5:55:00 | 5:55:00.097 | 0.040 s | false | light | off |
+| Pull chicken breasts | first | 5:57:00 | 5:57:00.056 | 0.056 s | false | light | off |
+| Fire the griddle | repeat 3 | 6:00:01 | 6:00:01.176 | 0.012 s | false | off, since 5:59:27 | on |
+| Serve | first | 6:05:00 | 6:05:00.052 | 0.052 s | false | light, since 6:04:27 | off |
+| Chicken breasts on the griddle | repeat 2 | 6:05:00 | 6:05:00.118 | 0.021 s | false | light | off |
+| Pull chicken breasts | repeat 1 | 6:07:00 | 6:07:00.089 | 0.033 s | false | light | off |
+
+- **Four alerts, each rang first at its time, once; six repeats, each 10 minutes after the ring before it,**
+  until Done was tapped on all four (6:08:58 to 6:09:10 AM). Every record says `posted: true`. Android's
+  own count for the app since Wednesday's 12:29 PM reboot agrees: 16 first rings (12 on the rehearsal after
+  the reboot, 4 here) and 6 repeats.
+- **Nothing of the app's is left** (`dumpsys alarm`, 7:17:22 AM): none of its alarms among the 193 pending;
+  it appears only in the removal history (cancelled 6:08:58 to 6:09:10 AM) and the counts. The phone's
+  next alarm clock is another app's, Fri 6:00 AM. The debug file agrees (`alarms` empty, no stored cook).
+- **The night in the battery history** (it starts Wed 6:05:05 PM): deep idle 6:59:34 to 7:02:13 PM,
+  7:34:34 to 7:36:36 PM, 7:59:38 to 8:01:49 PM, 8:39:35 to 8:50:56 PM, then 10:09:38 to 11:09:39 PM (1 hour),
+  11:10:29 PM to 1:10:29 AM (2 hours), 1:11:25 to 5:11:26 AM (4 hours). The 4-hour stretch ended on the idle
+  controller's own timer (`DeviceIdleController.deep`). From 5:11:26 to 6:08:58 AM the phone was only ever
+  in light idle or out of idle; it next reached deep idle at 6:59:37 AM. Why it did not go back to deep
+  idle before 5:30 is not known from these reads. Battery 100% to 74%.
+- **What it does show:** the four alarms set at 7:18 PM came through about 7 hours of deep idle, the last 4
+  hours unbroken and ending 18.5 minutes before the first ring, and all four rang within 1.1 seconds.
+  **What it does not show:** a ring fired while `device_idle=full`. The rehearsal has 8 of those, none
+  out of hours of deep idle.
+- **Two things differ from rows 1 to 3 above.** (1) The battery history shows the phone on a charger
+  (`plug=ac`) from its first line at Wed 6:05:05 PM, full at 6:14:44 PM, unplugged at 6:51:11 PM, then off
+  the charger until Thu 7:12:03 AM. Before 6:05 PM is not in this history. (2) The event log shows the cook
+  of the 5:36 PM read was ended at 7:17:40 PM; a 19-event cook (14 alarms, serve Thu 3:00 PM) was started
+  at 7:17:56 PM and ended at 7:18:29 PM; the overnight cook was started again at 7:18:37 PM (5 events, serve
+  6:05 AM, "set 4, exact"). So the cook that rang is the 7:18 PM one, and its alarm list was not read over
+  adb; the ring log shows its four alarms at 5:30, 5:45, 5:57 and 6:05 AM.
