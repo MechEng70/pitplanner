@@ -3870,8 +3870,11 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 ### T-082 Temp step question on Setup's smoker card and in Gear
 - **Merged onto branch `beta3` Thu 2026-11-19 (merge 2 for beta.3, with the mockups branch; no conflicts;
   gate passed: engine 241, Jest 976). Not on `main` yet: `main` waits for Jason's /ultrareview of `beta3`.
-  Still owed: the SPEC lines for the step question, the rig lines in `tools/device/run.sh` (Gear's smoker
-  row now opens a Smoker sheet), the emulator Setup and Gear looks at 115% and 130%, his look.**
+  Done the same day on `beta3`: the SPEC lines (`0eb5c31`), the rig lines (`a2e1b40`; `setup` and `gear`
+  pass at 115%), and pictures of Setup's card and Gear's Smoker sheet at 115% and 130%
+  (`tools/device/out/t082-2026-11-19/`). Found in them: on Setup's card "Other" breaks onto two lines at
+  115% and at 130% (in Gear's sheet it fits); not fixed, the way to fix it is Jason's call. Still owed:
+  his look.**
 - **Status:** mockups first (a proposal in `docs/proposals/2026-11-17-temp-step/`, Fable agent, 2026-11-17);
   no code before Jason's OK on the PNGs. Built on a branch, merged only after Sunday's readout (the beta.1
   freeze holds), then the emulator Setup run at 115% and his look. Ships in 0.3.0 on Monday 2026-11-23; if

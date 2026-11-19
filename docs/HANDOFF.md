@@ -93,8 +93,40 @@ with `beta3` checked out and the tree clean (only `.claude/` and `dashboard.html
   row, the emulator Setup and Gear looks at 115% and 130%, his look. `start-check.png` for the guide is
   retaken after merge 3 (merge 7's note).
 - **New backlog:** T-088 (0.3.1), the smoker conflict banner after Not yet offers a fix.
-- Next, on his word: merge 4 (`a162a9d40e02d7402`, plural names and capitals; known conflicts with T-082
-  in `TempMenu.tsx`, `engine/plan.ts` and `CookerSheets.test.tsx`), then 5, 6, 7.
+
+**`beta3` is ready for Jason's /ultrareview (8:43 AM, Thu 2026-11-19): merges 1 to 7 are in, each gated;
+`beta3` is checked out and the tree is clean; `main` is still at `fae644a`; nothing is pushed. Wait for
+him.** After the table above:
+
+| Step | Commit | Conflicts and how resolved | Gate (all six steps pass) |
+|---|---|---|---|
+| Merge 4: plural names and capitals (`a162a9d40e02d7402`) | `4086d3a` | none: `engine/plan.ts`, `TempMenu.tsx`, `TempMenu.test.tsx` and `CookerSheets.test.tsx` merged by git, different lines | engine 253, gate self-test 154, Jest 991 in 86 suites, Kotlin 117 |
+| T-082 follow-ups: SPEC lines, rig lines | `0eb5c31`, `a2e1b40` | not a merge | same counts |
+| Merge 5: release notes (`a9b7f7e3f7806b35c`) | `b68bc2d` | `docs/release-notes/0.3.0.md`, two hunks in "Check before release": the branch's rewritten list kept, main's "A cook that is still running comes over too" item added on top, the branch's "Samsung, if declined" item dropped because main's "The Samsung line is settled" replaces it (kept), the branch's two new items kept. Restart lines (Jason, 2026-11-19): his two lines from main kept word for word, the branch's "After a restart, your alarms come back before you first unlock the phone. A step that comes due while the phone is still locked rings." dropped | same counts |
+| Merge 6: README (`a6d5ad9a3b663d00e`) | `1e131d7` | `README.md`, one hunk: the branch's new README kept; main's "Good to know" paragraph (unlock once after a restart) kept word for word, placed under Install. `docs/DEVELOPING.md` created from the old README's developer content | same counts |
+| Merge 7: guide pictures (`af96b15db6f617be3`) | merge before `e8204c8` | none | same counts |
+
+- **Also on `beta3`:** SPEC and the user guide give the picker's chips in the app's order; the chip row
+  keeps scrolling (Jason). Brine options stay as they are for 0.3.0, the release notes' Cook list says
+  "Brine options don't add reminders yet.", the fix is T-089 in 0.3.1 (Jason). `docs/guide/start-check.png`
+  retaken after merge 3 (`e8204c8`): both buttons on screen.
+- **T-082 pictures** (test emulator, 115% and 130%): `tools/device/out/t082-2026-11-19/`,
+  `setup-step-question-1.15.png`, `setup-step-question-1.3.png`, `gear-smoker-sheet-1.15.png`,
+  `gear-smoker-sheet-1.3.png`. **Found, for Jason: on Setup's smoker card the "Other" choice breaks onto two
+  lines at 115% ("Othe" / "r") and at 130% ("Oth" / "er").** In Gear's Smoker sheet it fits at both. Cause:
+  the card is narrower than the sheet and each segment has 8 dp of padding either side (`Segmented`,
+  `px-2`), leaving about 40 dp for a word that needs about 47 dp at 115%. Not fixed: the way to fix it is
+  his call (less padding in the segments, a narrower card margin, or a shorter word).
+- **Rig:** `setup` and `gear` pass at 115% with the new T-082 lines. At 130% both fail on the two rig faults
+  known since 2026-11-17 (the full device pass's table: Alerts below the first screen on Gear; the test
+  alert button under the pinned buttons on Setup); the T-082 lines pass there too.
+- **Dashboard (Jason, 2026-11-19):** what is next, not a tracker: status, the release bars, Today, Waiting
+  on Jason (rule in CLAUDE.md). The page from before is at `.claude/dashboard-before-prune-2026-11-19.html`.
+- **The release notes' "Check before release" list** still has an item to add a Gear line for the temp step
+  question now that T-082 is merged; not added (wording is his at the release cut).
+- **Next:** his /ultrareview from `beta3`; review the findings; `beta3` onto `main`, then remove the merged
+  worktrees and branches; then the beta.3 build (he runs the release command), the emulator locked reboot,
+  the `turkey` test at 115% and 130%, beta.3 on his phone. Cutoff Friday noon.
 
 **Jason's decisions, 5:45 PM: "beta.3, and no Saturday cook. T-037 closes on today's rehearsal; I don't load
 Saturday's plan."**
@@ -169,7 +201,7 @@ Assistant address is replaced by an example in the tracked docs. User guide: tex
   call would end the token in use, so step 0 did not try it; `docs/ha-entities.md`).
 - A `.local` address tested on his phone before the connect screen offers one (T-045).
 - The bug report card in Claude Code, still to review and send.
-- After the readout: the "Kamad" chip cut off at 115%; the brine options that change nothing the user sees;
+- After the readout (the "Kamad" chip is fixed on `beta3` and the brine options are settled, T-089, both 2026-11-19):
   wording for T-084 and T-085; the open user guide wording (TASKS T-066); the disk cleanup list.
 
 **Settled the same evening, already in the docs:** the light theme (T-087) comes after 0.4.0 as its own
