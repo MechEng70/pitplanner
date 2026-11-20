@@ -4304,8 +4304,20 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   2026-11-20 built fine; its merged manifest held three restricted permissions, all from
   `modules/pit-alarms`: `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, `USE_EXACT_ALARM` (with
   `SCHEDULE_EXACT_ALARM` up to API 32) and `USE_FULL_SCREEN_INTENT`.
-- **Status:** in progress (2026-11-20). Ships as 0.3.1-beta.1, an APK and a bundle. Stop before tagging or
-  publishing.
+- **Status:** done (2026-11-20). Shipped as 0.3.1-beta.1: tag `v0.3.1-beta.1` on `87cce25`, the APK
+  published on GitHub as a prerelease on his yes
+  (https://github.com/MechEng70/pitplanner/releases/tag/v0.3.1-beta.1, SHA-256
+  `8cd827048f430c4a17f05dc0f60e1c179ead87c3d42890b5204de69246a591f9`). The bundle, built by him from the
+  same commit, is `release/pitplanner-0.3.1-beta.1.aab` (SHA-256
+  `cb18b34cc75eca2237be9d8373f63ed10b5efb6eb8e0dd62aabad6ab1a258f9a`) with its mapping file; uploading it
+  to Play Console is his step.
+- **What passed:** the gate (engine 253, gate self-test 159, Jest 1002 in 86 suites, Kotlin 127, Semgrep
+  and Snyk clean); the rig's `alarm` and `gear` at 115%; the locked-reboot test on the release APK, 6 of 6;
+  his look at the pictures (`tools/device/out/t102-alerts-115-2026-11-20/`); his own check of the battery
+  path on his OnePlus. The rig's `setup` fails at 115% with the final battery text: "Send a test alert in
+  10 sec" sits under the pinned footer (button top 2057 px, footer top 2088 px) and the rig's tap hits
+  Finish setup. His call: fine for beta.1, it is the known 0.3.1 footer item (ROADMAP, "Buttons hidden
+  under the pinned footer"; T-100 for the rig). No migration changed, so no upgrade test was run.
 - **His decisions (2026-11-20; 1 and 3 as he changed them the same morning, after the first look):**
   1. `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` is removed: Play allows it for a few app types only. Allow on
      "No battery limits" opens Pit Planner's own App info (`Settings.ACTION_APPLICATION_DETAILS_SETTINGS`

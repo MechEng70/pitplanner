@@ -1,9 +1,104 @@
-# Handoff (2026-11-19: 0.3.0 is released and nothing of 0.3.0 is open; owed: snyk monitor on 2026-12-01, the public roadmap T-091, then the 0.3.1 backlog)
+# Handoff (2026-11-20: 0.3.1-beta.1 is published as a GitHub prerelease (T-102, Google Play readiness); the bundle is built and waits on Jason's Play upload; until Tuesday 2026-11-24 nothing else is worked on)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
-## Restart, twenty-eighth session (written Thursday 2026-11-19, 11:08 AM; read this first)
+## Restart, twenty-ninth session (written Friday 2026-11-20, 12:17 PM; read this first)
+
+**Pit Planner 0.3.1-beta.1 was published today, Friday 2026-11-20, 12:16 PM,** as a GitHub prerelease, on
+Jason's yes: https://github.com/MechEng70/pitplanner/releases/tag/v0.3.1-beta.1 . Tag `v0.3.1-beta.1` on
+`87cce25`. One file, `pitplanner-0.3.1-beta.1.apk`, version code 301301, 106,098,733 bytes, SHA-256
+`8cd827048f430c4a17f05dc0f60e1c179ead87c3d42890b5204de69246a591f9` (GitHub's digest is the same). `Latest`
+is still 0.3.0. It is T-102, Google Play readiness, and nothing else.
+
+**The bundle for Google Play** was built by Jason himself from the same commit
+(`npm run release -- --version 0.3.1-beta.1 --bundle`): `release/pitplanner-0.3.1-beta.1.aab`, SHA-256
+`cb18b34cc75eca2237be9d8373f63ed10b5efb6eb8e0dd62aabad6ab1a258f9a`, with
+`release/pitplanner-0.3.1-beta.1-mapping.txt` and `release/pitplanner-0.3.1-beta.1-manifest-merger-report.txt`.
+**Uploading it to Play Console (closed test, US only) is his step and is not done.** Its permissions:
+`INTERNET`, `VIBRATE`, `POST_NOTIFICATIONS`, `USE_EXACT_ALARM`, `SCHEDULE_EXACT_ALARM` (API 32 and lower),
+`RECEIVE_BOOT_COMPLETED`, `USE_FULL_SCREEN_INTENT`, and androidx's own
+`DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`.
+
+**What T-102 changed** (TASKS T-102 has his decisions as they ended up):
+
+- `modules/pit-alarms` no longer asks for `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`. Allow on "No battery
+  limits" opens Pit Planner's App info (`SettingsScreens.kt`). While the row is off it reads: "Tap Allow,
+  open the app's battery setting and pick no restrictions (Unrestricted or Allow background activity,
+  depending on your phone)". SPEC section 3 has the stock Android path and the OxygenOS path.
+- Full-screen alerts off is a row only, never a fault. Alone, Gear's Alerts row reads "Ready (full-screen
+  alerts off)". Setup step 3 says "a few permissions".
+- `tools/release.sh --bundle` builds the bundle; `--verify` reads a bundle, lists its permissions and
+  refuses one that asks for the battery permission. `docs/RELEASING.md` section 3b.
+
+**What passed.** The gate, four times (engine 253, gate self-test 159, Jest 1002 in 86 suites, Kotlin 127,
+Semgrep and Snyk clean). The rig's `alarm` and `gear` at 115%. The locked-reboot test on the release APK,
+PASS 6 of 6 (the 12:15:00 step rang while still locked). Jason's look at the pictures
+(`tools/device/out/t102-alerts-115-2026-11-20/`): the battery walk on the Android 16 and Android 15
+emulators with the release build, and the final text in Setup and Gear. His own check of the battery path
+on his OnePlus, by hand. **Not a pass:** the rig's `setup` at 115% with the final battery text ("Send a test
+alert in 10 sec" is under the pinned footer; his call: fine for beta.1, the known 0.3.1 footer item).
+**Not run:** the upgrade from 0.2.0 or from 0.3.0 (no migration changed).
+
+**State.** `main` is pushed through `9cc1b57`; this close-out commit is not pushed. No branch but `main` and
+the seven parked worktree branches (the list in the section below is unchanged). No agent is running;
+emulators and Metro are stopped. `dashboard.html` has a "0.3.1-beta.1 (Play closed test)" row fed by
+`D.beta1`. **The phone was not touched. `tools/device/PHONE-BLOCKED` is back (it had been gone since
+2026-11-15) and only Jason lifts it.**
+
+What is on the emulators (test data only): `pitplanner` (Android 16) has the dev build and 0.3.1-beta.1's
+first build, set to Unrestricted with notifications allowed; `pitplanner-api35` no longer has the real
+0.2.0: 0.3.1-beta.1's first build was installed over it for the pictures. **The real 0.2.0 has to go back
+on it before the final 0.3.1, and that uninstall needs Jason's yes.** `pitplanner-lock` has 0.3.1-beta.1
+with the locked-reboot test's cook. Both hold a temp file `/sdcard/w.xml`.
+
+In `release/` (git-ignored): `superseded/0.3.1-beta.1-first-build-3ee20f4/` is the first build of the
+morning, before the text change, given to nobody; `manual-bundle-2026-11-20/` is the bundle Jason built by
+hand before T-102 (it still asks for the battery permission).
+
+**Owed, in this order.**
+
+1. **Jason: upload the bundle to Play Console.** Then the dashboard's beta.1 row is done (its last step).
+2. **Until Tuesday 2026-11-24: nothing else.** Fable is at 85% and resets Tuesday (Jason, 2026-11-20): only
+   T-102 and the 0.3.1-beta.1 release until then, new agents on Opus or cheaper, no optional extras.
+3. **2026-12-01: `npm run snyk:monitor`, once.** Claude's hold, not a Jason item.
+4. **T-091**, then **the 0.3.1 backlog** as listed in the section below, with **T-103** (alerts survive
+   "Manage app if unused", and a one-time message when a permission that was on is off) right after T-102:
+   a spike first, a report before anything is built.
+5. **Dashboard, asked and then put off the same day:** split "Waiting on Jason" into Now, This release and
+   Later, with the Snyk date under Later as "Claude, 12-01". Ask after Tuesday whether he still wants it.
+   The beta.1 row's long label sits in a 52 px column and may look cramped; not restyled.
+
+**Waiting on Jason:** the Play upload; the uninstall on `pitplanner-api35` (later); everything in the list
+of the section below, unchanged.
+
+**Rules and traps from today.**
+
+- **A release build stops whatever emulator is running** (`tools/release.sh` starts with `avd.sh stop`,
+  which takes the first emulator it finds, whatever its name). Jason's bundle build ended a locked-reboot
+  run that way. Never have an emulator test running when a release build may start, his or yours.
+- **A release build needs about 14 GB available at the start.** A launch line that refuses below that must
+  end the command: today's printed NOT STARTED and then waited 20 minutes on a log that was never written.
+- **The locked-reboot test's 20 minute guard** stopped one start (the first step was 21 minutes out). Start
+  it again, unchanged (T-100).
+- **`expo prebuild --clean` in a terminal asks before going on with uncommitted changes.** Commit or say so
+  before Jason starts a build.
+- **Battery setting names differ by phone.** Stock Android 15 and 16: App info, "App battery usage", the
+  words "Allow background usage" (its switch turns background use off), "Unrestricted". OxygenOS on
+  Android 16: App info, "Battery usage", "Power consumption control", "Allow background activity".
+- **Tapping an emulator by hand:** `tr '>' '>\n'` does not add line breaks; a helper built on it tapped the
+  centre of the screen every time and switched "Allow background usage" off (put back). Use `sed`, and
+  try a new tap helper on a harmless screen first.
+- **A safety check refuses a shell script that contains `rm`.** Leave the removal to Jason and say what was
+  left: today a duplicate picture (`api36-release-1-gear-row.png`) and `/sdcard/w.xml` on the emulators.
+- **Times come from `date`,** in status lines too: a typed "11:35" was ten minutes ahead of the clock.
+- **Installing the release app fresh on the `pitplanner` emulator showed "Pit Planner has a new look" with
+  the full-import line.** Old data had stayed behind there. Not looked into.
+
+**To start the next session,** Jason clears the conversation and says: "Read CLAUDE.md, then
+docs/HANDOFF.md and follow its top section, 'Restart, twenty-ninth session'."
+
+## Restart, twenty-eighth session (written Thursday 2026-11-19, 11:08 AM; superseded by the section above)
 
 **Pit Planner 0.3.0 was released today, Thursday 2026-11-19, 11:01 AM.** Published by Jason as a normal
 GitHub release (not a pre-release), marked Latest: https://github.com/MechEng70/pitplanner/releases/tag/v0.3.0 .
