@@ -4357,3 +4357,9 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   `PackageManagerCompat.getUnusedAppRestrictionsStatus` and
   `IntentCompat.createManageUnusedAppRestrictionsIntent`. Treat it like full-screen alerts: a row only, no
   banner, Start cook not stopped. It is new UI: a SPEC line and a mockup for him first.
+- **Added by Jason the same day: a permission that was on and is now off.** Store the last-known state of
+  each alert permission (notifications, exact alarms, battery, full-screen). On app open, if one that was
+  on is now off, show a one-time message with the fix buttons. The wording is his; his draft: "Android
+  turned off some permissions while Pit Planner wasn't used. Turn them back on so alerts ring." It covers
+  hibernation and anything else that turns them off. New UI: a mockup and a SPEC line first. Still 0.3.x,
+  not in beta.1.
