@@ -16,10 +16,10 @@ Bug fixes, plus the two exceptions Jason set (T-078 and the Celsius work).
 Not on this page: T-066 (the user guide) is 0.3.0 (Jason, 2026-11-17). Its text is merged; the screenshots come
 from the fidelity PNGs after the device checks. If they are not ready for Monday's release they go to 0.3.1.
 
-- **T-102** Google Play readiness (Jason, 2026-11-20; first in the 0.3.1 order): the battery permission
-  Play restricts is removed and "No battery limits" opens Android's list of apps; full-screen alerts are part
-  of the alerts check; `tools/release.sh --bundle` builds the bundle Play takes. Ships as 0.3.1-beta.1.
-  Why: the app goes to a closed test on Google Play (US only). Blocked on: nothing.
+- **T-102** Google Play readiness: **done, shipped as 0.3.1-beta.1 on 2026-11-20** (a GitHub prerelease, and
+  on Google Play's closed track, US only, in Google's review). The battery permission Play restricts is
+  removed and "No battery limits" opens Pit Planner's App info; full-screen alerts off is a row only, never
+  a fault; `tools/release.sh --bundle` builds the bundle Play takes. Details: TASKS T-102.
 - **T-103** Alerts survive "Manage app if unused" (Android app hibernation) (Jason, 2026-11-20; 0.3.x,
   after T-102; not in 0.3.1-beta.1). A spike first: do alarms firing or notifications count as use, or only
   opening the app? Then, only if needed, a row in the Alerts sheet with a button to the setting (a row only,
