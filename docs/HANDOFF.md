@@ -40,7 +40,8 @@ on his OnePlus, by hand. **Not a pass:** the rig's `setup` at 115% with the fina
 alert in 10 sec" is under the pinned footer; his call: fine for beta.1, the known 0.3.1 footer item).
 **Not run:** the upgrade from 0.2.0 or from 0.3.0 (no migration changed).
 
-**State.** `main` is pushed through `9cc1b57`; this close-out commit is not pushed. No branch but `main` and
+**State.** `main` is pushed through `0c85a92` (the close-out, pushed on Jason's word the same afternoon);
+the T-104 docs commits after it are not pushed. No branch but `main` and
 the seven parked worktree branches (the list in the section below is unchanged). No agent is running;
 emulators and Metro are stopped. `dashboard.html` has a "0.3.1-beta.1 (Play closed test)" row fed by
 `D.beta1`. **The phone was not touched. `tools/device/PHONE-BLOCKED` is back (it had been gone since
@@ -62,7 +63,10 @@ hand before T-102 (it still asks for the battery permission).
 2. **Until Tuesday 2026-11-24: nothing else.** Fable is at 85% and resets Tuesday (Jason, 2026-11-20): only
    T-102 and the 0.3.1-beta.1 release until then, new agents on Opus or cheaper, no optional extras.
 3. **2026-12-01: `npm run snyk:monitor`, once.** Claude's hold, not a Jason item.
-4. **T-091**, then **the 0.3.1 backlog** as listed in the section below, with **T-103** (alerts survive
+4. **T-104** (Jason, 2026-11-20; small, for 0.3.1-beta.2, not before Tuesday): Play warns that
+   `android.hardware.screen.portrait` is a required feature; a config plugin adds the `uses-feature` line
+   with `required="false"`, the app stays portrait, a regression test first.
+   Then **T-091**, then **the 0.3.1 backlog** as listed in the section below, with **T-103** (alerts survive
    "Manage app if unused", and a one-time message when a permission that was on is off) right after T-102:
    a spike first, a report before anything is built.
 5. **Dashboard, asked and then put off the same day:** split "Waiting on Jason" into Now, This release and
