@@ -27,6 +27,11 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
   once when one that was on is now off, with the fix buttons. Why: the setting is on by default on his OnePlus and on the emulators, and a
   smoker app can sit unused all winter. Blocked on: the spike's report; then a SPEC line, a mockup and his
   wording.
+- **T-104** Google Play: portrait is not a required feature (Jason, 2026-11-20; 0.3.1, small; not before
+  Tuesday 2026-11-24; goes into 0.3.1-beta.2). A config plugin adds `uses-feature
+  android.hardware.screen.portrait` with `required="false"`; the app stays portrait; a regression test.
+  Why: Play warns that the feature is required (from `orientation: 'portrait'`), which blocks
+  landscape-only devices. Blocked on: nothing.
 - **No task.** Celsius step: store the smoker temp step's unit so a units switch cannot change its meaning,
   and give the engine a real Celsius grid.
   With it (Jason, 2026-11-17, left out of T-082): a Celsius user who types a step such as 20C under Other

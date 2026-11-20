@@ -4375,3 +4375,19 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   turned off some permissions while Pit Planner wasn't used. Turn them back on so alerts ring." It covers
   hibernation and anything else that turns them off. New UI: a mockup and a SPEC line first. Still 0.3.x,
   not in beta.1.
+
+### T-104 Google Play: portrait is not a required feature
+- **Jason (Fri 2026-11-20): 0.3.1, small. Not to be built until after Tuesday 2026-11-24.** Goes into
+  0.3.1-beta.2.
+- **Status:** backlog, 0.3.1.
+- **Why:** Play Console warns that `android.hardware.screen.portrait` is a required feature, which keeps the
+  app from landscape-only devices. It comes from `orientation: 'portrait'` in `app.config.ts`: the activity
+  gets `android:screenOrientation="portrait"`, and Play reads a required feature out of that. The merged
+  manifest holds no `uses-feature` line for it today (0.3.1-beta.1's manifest merger report has none).
+- **The task:** add `<uses-feature android:name="android.hardware.screen.portrait"
+  android:required="false"/>` to the app manifest through a config plugin in `plugins/` (applied in
+  `app.config.ts`, like the others). The app stays portrait: `orientation: 'portrait'` does not change.
+- **Tests:** a regression test, written failing first: the plugin's own test (as
+  `plugins/fontScaleConfigChange.test.ts`), and in `tools/manifest.test.mjs` that both variants' manifests
+  hold the line with `required="false"` and the activity is still portrait. After the bundle is built,
+  `aapt2 dump badging` on it must not list the feature as required.
