@@ -1,4 +1,4 @@
-# Handoff (2026-11-20: 0.3.1-beta.1 is published as a GitHub prerelease (T-102, Google Play readiness); the bundle is built and waits on Jason's Play upload; until Tuesday 2026-11-24 nothing else is worked on)
+# Handoff (2026-11-20: 0.3.1-beta.1 is published as a GitHub prerelease and is on Google Play's closed track, in Google's review (T-102); until Tuesday 2026-11-24 nothing else is worked on)
 
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
@@ -15,7 +15,9 @@ is still 0.3.0. It is T-102, Google Play readiness, and nothing else.
 (`npm run release -- --version 0.3.1-beta.1 --bundle`): `release/pitplanner-0.3.1-beta.1.aab`, SHA-256
 `cb18b34cc75eca2237be9d8373f63ed10b5efb6eb8e0dd62aabad6ab1a258f9a`, with
 `release/pitplanner-0.3.1-beta.1-mapping.txt` and `release/pitplanner-0.3.1-beta.1-manifest-merger-report.txt`.
-**Uploading it to Play Console (closed test, US only) is his step and is not done.** Its permissions:
+**He uploaded it the same day:** 0.3.1-beta.1 (301301) is on Play's closed track (US only) and was submitted
+for review at about 12:30 PM, with 15 changes. **It waits on Google's review.** Play's portrait warning was
+acknowledged and set to be fixed in beta.2 (T-104). Its permissions:
 `INTERNET`, `VIBRATE`, `POST_NOTIFICATIONS`, `USE_EXACT_ALARM`, `SCHEDULE_EXACT_ALARM` (API 32 and lower),
 `RECEIVE_BOOT_COMPLETED`, `USE_FULL_SCREEN_INTENT`, and androidx's own
 `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`.
@@ -40,8 +42,7 @@ on his OnePlus, by hand. **Not a pass:** the rig's `setup` at 115% with the fina
 alert in 10 sec" is under the pinned footer; his call: fine for beta.1, the known 0.3.1 footer item).
 **Not run:** the upgrade from 0.2.0 or from 0.3.0 (no migration changed).
 
-**State.** `main` is pushed through `0c85a92` (the close-out, pushed on Jason's word the same afternoon);
-the T-104 docs commits after it are not pushed. No branch but `main` and
+**State.** `main` is pushed through `506419a`; the commit that records the Play upload is not pushed. No branch but `main` and
 the seven parked worktree branches (the list in the section below is unchanged). No agent is running;
 emulators and Metro are stopped. `dashboard.html` has a "0.3.1-beta.1 (Play closed test)" row fed by
 `D.beta1`. **The phone was not touched. `tools/device/PHONE-BLOCKED` is back (it had been gone since
@@ -59,7 +60,8 @@ hand before T-102 (it still asks for the battery permission).
 
 **Owed, in this order.**
 
-1. **Jason: upload the bundle to Play Console.** Then the dashboard's beta.1 row is done (its last step).
+1. **Google's review of 0.3.1-beta.1** (closed test). Nothing to do until Google answers; Jason says what
+   it said.
 2. **Until Tuesday 2026-11-24: nothing else.** Fable is at 85% and resets Tuesday (Jason, 2026-11-20): only
    T-102 and the 0.3.1-beta.1 release until then, new agents on Opus or cheaper, no optional extras.
 3. **2026-12-01: `npm run snyk:monitor`, once.** Claude's hold, not a Jason item.
@@ -73,7 +75,7 @@ hand before T-102 (it still asks for the battery permission).
    Later, with the Snyk date under Later as "Claude, 12-01". Ask after Tuesday whether he still wants it.
    The beta.1 row's long label sits in a 52 px column and may look cramped; not restyled.
 
-**Waiting on Jason:** the Play upload; the uninstall on `pitplanner-api35` (later); everything in the list
+**Waiting on Jason:** what Google's review says; the uninstall on `pitplanner-api35` (later); everything in the list
 of the section below, unchanged.
 
 **Rules and traps from today.**

@@ -4309,8 +4309,9 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   (https://github.com/MechEng70/pitplanner/releases/tag/v0.3.1-beta.1, SHA-256
   `8cd827048f430c4a17f05dc0f60e1c179ead87c3d42890b5204de69246a591f9`). The bundle, built by him from the
   same commit, is `release/pitplanner-0.3.1-beta.1.aab` (SHA-256
-  `cb18b34cc75eca2237be9d8373f63ed10b5efb6eb8e0dd62aabad6ab1a258f9a`) with its mapping file; uploading it
-  to Play Console is his step.
+  `cb18b34cc75eca2237be9d8373f63ed10b5efb6eb8e0dd62aabad6ab1a258f9a`) with its mapping file. He uploaded it
+  the same day: on Play's closed track, submitted for review at about 12:30 PM (15 changes), waiting on
+  Google's review. Play's portrait warning was acknowledged and goes to beta.2 (T-104).
 - **What passed:** the gate (engine 253, gate self-test 159, Jest 1002 in 86 suites, Kotlin 127, Semgrep
   and Snyk clean); the rig's `alarm` and `gear` at 115%; the locked-reboot test on the release APK, 6 of 6;
   his look at the pictures (`tools/device/out/t102-alerts-115-2026-11-20/`); his own check of the battery
