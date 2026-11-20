@@ -4298,3 +4298,37 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   0.2.0 window: install over a running 0.2.0 cook, do not open the app, and a step must ring before the
   first open; that ring has never been run.
 
+### T-102 Google Play readiness: the battery permission out, full-screen in the alerts check, a bundle from release.sh
+- **Jason (Fri 2026-11-20): first in the 0.3.1 order.** Play Console is set up (app
+  `io.github.mecheng70.pitplanner`, US only, a closed test next). A `./gradlew bundleRelease` run by hand on
+  2026-11-20 built fine; its merged manifest held three restricted permissions, all from
+  `modules/pit-alarms`: `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, `USE_EXACT_ALARM` (with
+  `SCHEDULE_EXACT_ALARM` up to API 32) and `USE_FULL_SCREEN_INTENT`.
+- **Status:** in progress (2026-11-20). Ships as 0.3.1-beta.1, an APK and a bundle. Stop before tagging or
+  publishing.
+- **His decisions (2026-11-20; 1 and 3 as he changed them the same morning, after the first look):**
+  1. `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` is removed: Play allows it for a few app types only. Allow on
+     "No battery limits" opens Pit Planner's own App info (`Settings.ACTION_APPLICATION_DETAILS_SETTINGS`
+     with the app's package; needs no permission) in place of the one-tap question. First asked for:
+     Android's list of apps (`ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS`); changed to App info. The check
+     itself stays (`isIgnoringBatteryOptimizations` needs no permission). The row's text while off, his
+     words: "Tap Allow, then App battery usage, then the words Allow background usage (not the switch),
+     then Unrestricted". While on it stays "Keeps overnight alerts from being delayed". The names are the
+     ones the Android 15 and Android 16 emulators show (pictures:
+     `tools/device/out/t102-battery-path-2026-11-20/`); App info has no row called Battery there.
+  2. `USE_EXACT_ALARM`, and `SCHEDULE_EXACT_ALARM` up to API 32, stay exactly as they are.
+  3. `USE_FULL_SCREEN_INTENT` stays. The check was already there (`Notifications.canFullScreen`: on API 34
+     and up `NotificationManager.canUseFullScreenIntent()`; `status().fullScreen`), and so was the row
+     "Full-screen alerts" with Allow, which opens `ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT` for the app.
+     His call: the row only, as it was. Full-screen off is not a fault: no banner on Live cook, Start cook
+     is not stopped. New: when it is the only thing off, Gear's Alerts row reads "Ready (full-screen alerts
+     off)" in the usual color, not "Needs a fix". With full-screen denied an alert still posts as a
+     high-priority notification (`Notifications.kt`, `show`; `FullScreenTest.kt`).
+  4. `tools/release.sh --bundle`: the same pipeline, checks and signing with `bundleRelease`; writes
+     `release/pitplanner-<version>.aab`, copies `mapping.txt` to `release/pitplanner-<version>-mapping.txt`
+     and prints the SHA-256. `--verify` works on an `.aab`. The APK path is unchanged. `docs/RELEASING.md`
+     says how.
+- **Tests:** the full gate; Kotlin tests for the new checks; the rig's `alarm` test; the locked-reboot test
+  on the emulator with the release build. The phone is not used.
+- **Owed, Jason's phone (2026-11-20):** on his next phone pass, before 0.3.1 ships, the same battery path
+  on his OnePlus: OxygenOS may name the rows differently. If it does, the row's text is his to change.

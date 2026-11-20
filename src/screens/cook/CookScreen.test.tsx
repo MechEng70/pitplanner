@@ -279,6 +279,15 @@ describe('alert permissions (SPEC section 6)', () => {
     expect(screen.queryByText(ALERTS_OFF)).toBeNull();
   });
 
+  // Jason, 2026-11-20 (T-102): no banner for full-screen alerts. A step still rings without them.
+  test('full-screen alerts turned off mid-cook: no banner', async () => {
+    const { alarms, resume } = await show(cookAt(AT_1023));
+    alarms.granted = { ...alarms.granted, fullScreen: false };
+    await act(() => resume.resume());
+    expect(screen.queryByText(ALERTS_OFF)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Fix' })).toBeNull();
+  });
+
   test('a permission taken away mid-cook shows the red banner when the app comes back; Fix lists what is off', async () => {
     const { alarms, resume } = await show(cookAt(AT_1023));
     alarms.granted = { ...alarms.granted, exactAlarms: false };

@@ -56,6 +56,27 @@ describe('Setup step 3: alerts (mockup 03)', () => {
     expect(alarms.calls).toEqual(['openSettings exactAlarm', 'openSettings battery']);
   });
 
+  // T-102 (Google Play): Allow opens Pit Planner's App info, no longer Android's one-tap question, so the row
+  // says where to go from there. Jason's words, 2026-11-20, from the Android 15 and 16 screens.
+  test('No battery limits says the taps to make while it is off, and what it is for once it is on', async () => {
+    const steps =
+      'Tap Allow, then App battery usage, then the words Allow background usage (not the switch), then Unrestricted';
+    const why = 'Keeps overnight alerts from being delayed';
+    const alarms = fakeAlarms();
+    alarms.granted = { notifications: true, exactAlarms: true, batteryUnrestricted: false, fullScreen: true };
+    const { app } = await show(alarms);
+    expect(screen.getByText(steps)).toBeOnTheScreen();
+    expect(screen.queryByText(why)).toBeNull();
+    await fireEvent.press(button('Allow no battery limits'));
+    await flush();
+    expect(alarms.calls).toEqual(['openSettings battery']);
+
+    alarms.granted = { ...alarms.granted, batteryUnrestricted: true };
+    await act(async () => app.resume());
+    expect(screen.getByText(why)).toBeOnTheScreen();
+    expect(screen.queryByText(steps)).toBeNull();
+  });
+
   test('the rows are read again when the app comes back from Settings', async () => {
     const alarms = fakeAlarms();
     alarms.granted = { ...OFF };

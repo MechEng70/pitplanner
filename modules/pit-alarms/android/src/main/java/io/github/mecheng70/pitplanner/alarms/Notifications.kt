@@ -82,7 +82,8 @@ object Notifications {
             .addAction(0, "Done", action(ActionReceiver.DONE))
             .addAction(0, "+15 min", action(ActionReceiver.SNOOZE))
 
-        // Overnight steps and critical ones take over the screen (sideloaded app; Play restricts this).
+        // Overnight steps and critical ones take over the screen. Android 14+ has a switch for it, which
+        // Google Play can leave off; without it the alert above still rings, heads-up, on the alarm channel.
         if ((critical || overnight()) && canFullScreen(ctx)) b.setFullScreenIntent(open, true)
 
         return runCatching { NotificationManagerCompat.from(ctx).notify(alarmId.hashCode(), b.build()) }.isSuccess

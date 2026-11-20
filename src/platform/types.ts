@@ -201,5 +201,8 @@ export type CopyText = (text: string) => Promise<void>;
 /** Errors nothing caught (the app is about to show its crash). The handler that was there still runs. */
 export type OnUncaughtError = (fn: (error: unknown, fatal: boolean) => void) => Unsubscribe;
 
-/** Everything Start cook needs. Missing items block it until fixed or acknowledged (failure mode 9). */
+/**
+ * Everything Start cook needs. Missing items block it until fixed or acknowledged (failure mode 9).
+ * `fullScreen` is left out on purpose (Jason, 2026-11-20): with it off a step still rings.
+ */
 export const allGranted = (s: AlarmStatus) => s.notifications && s.exactAlarms && s.batteryUnrestricted;

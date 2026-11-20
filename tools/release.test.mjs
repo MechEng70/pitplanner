@@ -146,6 +146,121 @@ test('--verify refuses an APK without an app config', () => {
   assert.match(r.stderr, /WRONG APP CONFIG: no assets\/app.config/);
 });
 
+// T-102 (Google Play): --bundle builds the Android App Bundle Play takes, through the same pipeline.
+
+test('--bundle: the same steps with bundleRelease; the bundle and its mapping file go to release/', () => {
+  const r = run('--version', '9.8.7-alpha.1', '--bundle');
+  assert.equal(r.status, 0, r.stderr);
+  const steps = stepsOf(r);
+  const at = s =>
+    s.startsWith('npx expo prebuild') ? steps.findLastIndex(x => x === s) : steps.findIndex(x => x.includes(s));
+  const aab = 'android/app/build/outputs/bundle/release/app-release.aab';
+  const order = [
+    'tools/device/avd.sh stop',
+    'npm run check',
+    'APP_VARIANT=production APP_VERSION=9.8.7-alpha.1 npx expo prebuild --platform android --clean',
+    'APP_VARIANT=production APP_VERSION=9.8.7-alpha.1 MALLOC_ARENA_MAX=2 ./gradlew -q bundleRelease',
+    `keytool -printcert -jarfile ${aab}`,
+    `unzip -p ${aab} base/assets/app.config | node tools/release-app-config.mjs 9.8.7-alpha.1 90807001 io.github.mecheng70.pitplanner`,
+    `cp ${aab} release/pitplanner-9.8.7-alpha.1.aab`,
+    'cp android/app/build/outputs/mapping/release/mapping.txt release/pitplanner-9.8.7-alpha.1-mapping.txt',
+    'cp android/app/build/outputs/logs/manifest-merger-release-report.txt release/pitplanner-9.8.7-alpha.1-manifest-merger-report.txt',
+    'npx expo prebuild --platform android --clean --no-install',
+  ];
+  for (const s of order) assert.ok(at(s) >= 0, `missing step: ${s}\n${steps.join('\n')}`);
+  for (let i = 1; i < order.length; i++)
+    assert.ok(at(order[i - 1]) < at(order[i]), `${order[i - 1]} before ${order[i]}`);
+  assert.match(
+    r.stdout,
+    /^release 9\.8\.7-alpha\.1, versionCode 90807001, .* -> release\/pitplanner-9\.8\.7-alpha\.1\.aab$/m,
+  );
+  // A bundle run builds no APK and copies none.
+  assert.equal(steps.filter(s => s.includes('assembleRelease') || s.includes('.apk')).length, 0, steps.join('\n'));
+});
+
+test('without --bundle nothing of the bundle is built or copied (the APK run is unchanged)', () => {
+  const steps = stepsOf(run('--version', '9.8.7-alpha.1'));
+  assert.equal(steps.filter(s => /bundleRelease|\.aab|mapping|merger/.test(s)).length, 0, steps.join('\n'));
+});
+
+const PERMISSIONS = [
+  "uses-permission: name='android.permission.INTERNET'",
+  "uses-permission: name='android.permission.USE_EXACT_ALARM'",
+  "uses-permission: name='android.permission.SCHEDULE_EXACT_ALARM' maxSdkVersion='32'",
+  "uses-permission: name='android.permission.USE_FULL_SCREEN_INTENT'",
+];
+/** Stub aapt2 (badging and permissions of the bundle's manifest), keytool and jarsigner, as JAVA_HOME/bin. */
+function stubBundleTools({ digest = GOOD, badging = BADGING, permissions = PERMISSIONS, signed = true } = {}) {
+  const bt = mkdtempSync(join(tmpdir(), 'bt-'));
+  const java = mkdtempSync(join(tmpdir(), 'java-'));
+  mkdirSync(join(java, 'bin'));
+  const sh = (file, body) => {
+    writeFileSync(file, `#!/bin/bash\n${body}\n`);
+    chmodSync(file, 0o755);
+  };
+  // The manifest must be handed over as an APK made from the bundle's base module.
+  const lines = permissions.map(p => `echo "${p}"`).join('; ');
+  sh(
+    join(bt, 'aapt2'),
+    `unzip -l "$3" | grep -q AndroidManifest.xml || { echo "no manifest in $3" >&2; exit 1; }
+if [ "$2" = permissions ]; then echo "package: io.github.mecheng70.pitplanner"; ${lines}
+else echo "${badging}"; for i in $(seq 20000); do echo "uses-permission: name='x.$i'"; done; fi`,
+  );
+  const colons = digest.toUpperCase().replace(/(..)(?=.)/g, '$1:');
+  sh(join(java, 'bin', 'keytool'), `echo "Signer #1:"; echo "Owner: CN=PitPlanner"; echo "	 SHA256: ${colons}"`);
+  sh(join(java, 'bin', 'jarsigner'), signed ? 'echo "jar verified."' : 'echo "jar is unsigned."');
+  return { RELEASE_BUILD_TOOLS: bt, JAVA_HOME: java };
+}
+/** A zip standing in for the bundle: the base module's manifest, resource table and app config. */
+function aabWith(config) {
+  const dir = mkdtempSync(join(tmpdir(), 'aab-'));
+  mkdirSync(join(dir, 'base', 'manifest'), { recursive: true });
+  mkdirSync(join(dir, 'base', 'assets'));
+  writeFileSync(join(dir, 'base', 'manifest', 'AndroidManifest.xml'), 'manifest');
+  writeFileSync(join(dir, 'base', 'resources.pb'), 'resources');
+  if (config !== null) writeFileSync(join(dir, 'base', 'assets', 'app.config'), config);
+  const z = spawnSync('zip', ['-qr', 'app.aab', 'base'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(z.status, 0, z.stderr);
+  return join(dir, 'app.aab');
+}
+const verifyAab = (tools, aab = aabWith(appConfig())) =>
+  spawnSync('tools/release.sh', ['--verify', aab, '--version', '0.3.0-alpha.1'], {
+    encoding: 'utf8',
+    env: { ...process.env, ...tools },
+  });
+
+test('--verify on a bundle: signature, certificate, app ID, version, app config, and its permissions listed', () => {
+  const r = verifyAab(stubBundleTools());
+  assert.equal(r.status, 0, r.stdout + r.stderr);
+  assert.match(r.stdout, /cert ok; package: name='io.github.mecheng70.pitplanner' versionCode='300001'/);
+  assert.match(r.stdout, /app config ok: version 0.3.0-alpha.1, versionCode 300001/);
+  assert.match(r.stdout, /^permission: android\.permission\.SCHEDULE_EXACT_ALARM maxSdkVersion='32'$/m);
+  assert.match(r.stdout, /^permission: android\.permission\.USE_FULL_SCREEN_INTENT$/m);
+  assert.equal(r.stdout.match(/^permission: /gm).length, PERMISSIONS.length);
+});
+
+test('--verify fails on a bundle that is unsigned, has the wrong certificate, version or app config', () => {
+  assert.match(verifyAab(stubBundleTools({ signed: false })).stderr, /NOT SIGNED/);
+  assert.match(verifyAab(stubBundleTools({ digest: '00'.repeat(32) })).stderr, /WRONG CERT/);
+  const badging = BADGING.replace("'300001'", "'300'");
+  assert.match(verifyAab(stubBundleTools({ badging })).stderr, /WRONG PACKAGE OR VERSION/);
+  const dev = appConfig({ extra: { variant: 'development' } });
+  assert.match(verifyAab(stubBundleTools(), aabWith(dev)).stderr, /WRONG APP CONFIG .*must be "production"/);
+  assert.match(verifyAab(stubBundleTools(), aabWith(null)).stderr, /WRONG APP CONFIG: no base\/assets\/app.config/);
+});
+
+// Regression (2026-11-20): the first bundle, built by hand, asked for REQUEST_IGNORE_BATTERY_OPTIMIZATIONS
+// (from modules/pit-alarms), which Google Play allows for a few app types only.
+test('regression: --verify refuses a bundle that asks for the battery permission Play restricts', () => {
+  const permissions = [
+    ...PERMISSIONS,
+    "uses-permission: name='android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS'",
+  ];
+  const r = verifyAab(stubBundleTools({ permissions }));
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /WRONG PERMISSIONS: .*REQUEST_IGNORE_BATTERY_OPTIMIZATIONS/);
+});
+
 /** The VAR=value words in front of the Gradle command of a dry run, which runs in android/. */
 function gradleEnv(version) {
   const r = run('--version', version);

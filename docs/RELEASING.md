@@ -12,7 +12,8 @@ Releases are built on Jason's machine (no EAS, no CI) and go out as GitHub Relea
 - The keystore (`*.jks`, `*.keystore`) and `keystore.properties`. All three are git-ignored. Keep it that way.
 - Keystore passwords, the key alias value, Snyk and GitHub tokens, the Snyk org ID. Snyk and `gh` read their
   own CLI config.
-- APKs. `release/` is git-ignored; APKs live there on the build machine and on GitHub Releases.
+- APKs, bundles (`.aab`) and their mapping files. `release/` is git-ignored; they live there on the build
+  machine. APKs go to GitHub Releases, bundles to Google Play.
 
 Add files to a commit by path. Never `git add -A` or `git add .`.
 
@@ -72,6 +73,7 @@ npm run release                                # the version in package.json; ne
 npm run release -- --version 0.3.0-alpha.4     # internal prerelease; any branch state
 npm run release -- --dry-run                   # print the steps and checks, run nothing
 npm run release -- --verify release/<apk>      # only check an APK's cert, app ID, version and app config
+npm run release -- --bundle                    # the bundle for Google Play instead of the APK (section 3b)
 ```
 
 - `--version` only takes a prerelease (`x.y.z-alpha.N`, `-beta.N`, `-rc.N`). For a release, bump
@@ -104,6 +106,47 @@ A run takes about 20 minutes.
 
 - [ ] The run ended with `cert ok; package: name='io.github.mecheng70.pitplanner' versionCode=... `,
       `app config ok: version <version>, versionCode <code>, ...` and a SHA-256 line.
+
+## 3b. The bundle for Google Play: `npm run release -- --bundle`
+
+Google Play takes an Android App Bundle (`.aab`), not an APK. `--bundle` builds it (T-102). It is a second
+run: one run builds the APK, another the bundle, from the same commit and version.
+
+```
+npm run release -- --bundle                             # the version in package.json; needs clean main
+npm run release -- --version 0.3.1-beta.1 --bundle      # a prerelease
+npm run release -- --verify release/<aab>               # only check a bundle (add --version for a prerelease)
+```
+
+The same pipeline as the APK: the emulator stopped, `npm run check`, the production prebuild, the same
+variable pair and signing, the development `android/` generated again on exit. What differs:
+
+1. Gradle runs `bundleRelease`.
+2. The bundle is verified: `jarsigner -verify` (a bundle is signed as a JAR; `apksigner` does not read one),
+   the certificate SHA-256 from `keytool -printcert -jarfile`, then the app ID, versionCode and versionName
+   from the base module's manifest, and the embedded `base/assets/app.config`.
+3. Every permission the bundle asks for is printed, one `permission:` line each. This list is what Play
+   Console's permission declarations have to cover. A bundle that asks for
+   `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` is refused (`WRONG PERMISSIONS`): Play allows it for a few app
+   types only (`PLAY_REFUSED` in `tools/release.sh`).
+4. It writes three files and prints the bundle's SHA-256:
+   - `release/pitplanner-<version>.aab`: upload this to Play Console.
+   - `release/pitplanner-<version>-mapping.txt`: the R8 mapping file. Keep it with the bundle; Play uses it
+     to make crash reports readable (the bundle carries a copy too).
+   - `release/pitplanner-<version>-manifest-merger-report.txt`: Gradle's record of where each manifest
+     line, permissions included, came from.
+
+It stops before building when any of the three files already exists.
+
+The bundle is signed with the same key as the APK. In Play Console that key is the upload key (and, if Play
+App Signing was set up with it, the app signing key too). Play gives every upload its own check: a
+versionCode can be uploaded once, so a bundle and the next bundle never share a version.
+
+The emulator tests in sections 5 and 5b run on the APK. A bundle cannot be installed directly.
+
+- [ ] The run ended with `cert ok; package: ...`, the `permission:` lines, `app config ok: ...` and a
+      SHA-256 line.
+- [ ] The `permission:` lines are the ones declared in Play Console.
 
 ## 4. Signing certificate
 
@@ -219,6 +262,11 @@ A Google Drive copy of the APK is optional.
 - `WRONG CERT`: the keystore in `keystore.properties` is not the release key. Stop. Do not publish.
 - `WRONG PACKAGE OR VERSION`: the build did not pick up the version or the production variant. Stop and
   read the line it prints.
+- `NOT SIGNED` (a bundle): Gradle did not sign it. Check `keystore.properties`. Stop. Do not upload.
+- `WRONG PERMISSIONS` (a bundle): a library or a module added a permission Google Play restricts. The failed
+  run prints each permission with the manifest it came from (from Gradle's manifest merger report, read
+  before `android/` is deleted). Remove it at its source or block it in `app.config.ts`
+  (`blockedPermissions`), and build again. Do not take the permission off the refused list to get a pass.
 - `WRONG APP CONFIG`: the manifest is right but the app config inside the APK is not (the Gradle build ran
   without the production variant or the version). The app would show the wrong version and miss updates.
   Stop. Do not publish.

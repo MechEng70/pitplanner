@@ -392,7 +392,9 @@ function smokerSubtitle(gear: Cookers, units: Units): string {
 
 function alertsSubtitle(s: AlarmStatus | null): string {
   if (!s) return 'Checking';
-  if (allGranted(s)) return 'All set: exact alarms on, battery saver off';
+  // Full-screen alerts off is not a fault (Jason, 2026-11-20): alerts ring without it. Said, in the usual color.
+  if (allGranted(s))
+    return s.fullScreen ? 'All set: exact alarms on, battery saver off' : 'Ready (full-screen alerts off)';
   const off = [
     !s.notifications && 'notifications',
     !s.exactAlarms && 'exact alarms',

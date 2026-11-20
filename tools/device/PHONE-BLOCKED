@@ -1,0 +1,1 @@
+Jason, 2026-11-20: the phone stays blocked during T-102 (Google Play readiness, 0.3.1-beta.1). No adb commands to the phone, no installs, no reads. Emulators only. Delete this file only when he says so.

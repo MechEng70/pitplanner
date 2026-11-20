@@ -16,6 +16,10 @@ Bug fixes, plus the two exceptions Jason set (T-078 and the Celsius work).
 Not on this page: T-066 (the user guide) is 0.3.0 (Jason, 2026-11-17). Its text is merged; the screenshots come
 from the fidelity PNGs after the device checks. If they are not ready for Monday's release they go to 0.3.1.
 
+- **T-102** Google Play readiness (Jason, 2026-11-20; first in the 0.3.1 order): the battery permission
+  Play restricts is removed and "No battery limits" opens Android's list of apps; full-screen alerts are part
+  of the alerts check; `tools/release.sh --bundle` builds the bundle Play takes. Ships as 0.3.1-beta.1.
+  Why: the app goes to a closed test on Google Play (US only). Blocked on: nothing.
 - **No task.** Celsius step: store the smoker temp step's unit so a units switch cannot change its meaning,
   and give the engine a real Celsius grid.
   With it (Jason, 2026-11-17, left out of T-082): a Celsius user who types a step such as 20C under Other

@@ -1,13 +1,10 @@
 package io.github.mecheng70.pitplanner.alarms
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.os.PowerManager
-import android.provider.Settings
 import androidx.core.app.NotificationManagerCompat
 import expo.modules.kotlin.Promise
 import expo.modules.kotlin.exception.Exceptions
@@ -104,16 +101,8 @@ class PitAlarmsModule : Module() {
         )
     }
 
-    @SuppressLint("BatteryLife") // sideloaded alarm app; SPEC section 6 asks for the exemption
     private fun openSettings(which: String) {
-        val pkg = Uri.parse("package:${context.packageName}")
-        val intent = when (which) {
-            "exactAlarm" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, pkg) else null
-            "battery" -> Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, pkg)
-            "fullScreen" -> if (Build.VERSION.SDK_INT >= 34) Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT, pkg) else null
-            "notifications" -> Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-            else -> throw IllegalArgumentException("unknown settings screen: $which")
-        } ?: return
+        val intent = SettingsScreens.intent(which, context.packageName) ?: return
         (appContext.currentActivity ?: context).startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 

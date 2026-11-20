@@ -172,6 +172,17 @@ describe('a start whose save fails', () => {
 });
 
 describe('an alert permission is missing (failure mode 9)', () => {
+  // Jason, 2026-11-20 (T-102): full-screen alerts off does not stop Start cook.
+  test('full-screen alerts off alone: the cook starts with no check sheet', async () => {
+    const { repos, alarms, onCookStarted } = await show();
+    alarms.granted = { ...alarms.granted, fullScreen: false };
+    await fireEvent.press(button('Start cook'));
+    await flush();
+    expect(screen.queryByLabelText('Alerts may not ring')).toBeNull();
+    expect(repos.activeCook.load()).not.toBeNull();
+    expect(onCookStarted).toHaveBeenCalledTimes(1);
+  });
+
   async function blocked() {
     const r = await show();
     r.alarms.granted = { ...r.alarms.granted, batteryUnrestricted: false };

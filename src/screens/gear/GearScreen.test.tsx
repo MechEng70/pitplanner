@@ -209,6 +209,29 @@ describe('Units sheet', () => {
 });
 
 describe('Alerts', () => {
+  // Jason, 2026-11-20 (T-102): full-screen alerts off is not a fault. Alerts still ring without it.
+  test('full-screen alerts off alone reads Ready, not Needs a fix; the sheet has its row and Allow', async () => {
+    const { alarms, resume } = await show();
+    alarms.granted = { ...alarms.granted, fullScreen: false };
+    await act(async () => resume.resume());
+    expect(within(row(/^Alerts/)).getByText('Ready (full-screen alerts off)')).toBeOnTheScreen();
+    expect(screen.queryByText(/Needs a fix/)).toBeNull();
+
+    await fireEvent.press(row(/^Alerts/));
+    const sheet = within(screen.getByLabelText('Alerts'));
+    expect(sheet.getAllByText('On')).toHaveLength(3);
+    expect(sheet.getByText('Full-screen alerts')).toBeOnTheScreen();
+    await fireEvent.press(sheet.getByRole('button', { name: 'Allow full-screen alerts' }));
+    expect(alarms.calls).toEqual(['openSettings fullScreen']);
+  });
+
+  test('with something else off too, the row names what needs a fix and leaves full-screen out', async () => {
+    const { alarms, resume } = await show();
+    alarms.granted = { ...alarms.granted, batteryUnrestricted: false, fullScreen: false };
+    await act(async () => resume.resume());
+    expect(within(row(/^Alerts/)).getByText('Needs a fix: battery limits')).toBeOnTheScreen();
+  });
+
   test('a permission that is off shows on the row and in the sheet, and clears when the user comes back', async () => {
     const r = testRepos();
     r.repos.cookers.save(cookGear, NOW);

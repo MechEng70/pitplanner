@@ -27,7 +27,19 @@ export function useAlarmStatus(
   return [status, refresh];
 }
 
-/** The three permission rows, plus full-screen alerts when Android has it off. */
+/**
+ * While "No battery limits" is off: Allow opens Pit Planner's App info, and these are the taps from there, as
+ * Android 15 and 16 name them (Jason, 2026-11-20, T-102). The one-tap question the row used to open needs a
+ * permission Google Play allows for a few app types only. Tapping the switch on "Allow background usage"
+ * turns background use off; the words beside it open the choice.
+ */
+export const BATTERY_STEPS =
+  'Tap Allow, then App battery usage, then the words Allow background usage (not the switch), then Unrestricted';
+
+/**
+ * The three permission rows, plus full-screen alerts when Android has it off (Android 14 and up; a step still
+ * rings without it, so it is a row here and never a fault: no banner, and Start cook is not stopped).
+ */
 export function AlertChecks({
   status,
   permissions,
@@ -62,7 +74,7 @@ export function AlertChecks({
       />
       <StatusRow
         title="No battery limits"
-        subtitle="Keeps overnight alerts from being delayed"
+        subtitle={status.batteryUnrestricted ? 'Keeps overnight alerts from being delayed' : BATTERY_STEPS}
         ok={status.batteryUnrestricted}
         action={allow('no battery limits', () => permissions.openSettings('battery'))}
       />

@@ -36,7 +36,9 @@ On the last Setup step, tap Allow on each row until it shows as on:
 
 - **Notifications:** shows each step on your lock screen.
 - **Alarms and reminders:** rings at the exact time, not "around then".
-- **No battery limits:** keeps overnight alerts from being delayed.
+- **No battery limits:** keeps overnight alerts from being delayed. Allow opens Pit Planner's App info.
+  From there tap App battery usage, then the words Allow background usage (not the switch), then
+  Unrestricted. Then go back to Pit Planner. Your phone may name these a little differently.
 
 Some phones show a fourth row, **Full-screen alerts**, which wakes the screen for overnight steps. Allow
 that too.

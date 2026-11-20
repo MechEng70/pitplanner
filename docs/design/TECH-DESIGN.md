@@ -254,9 +254,10 @@ RestoreReceiver: LOCKED_BOOT_COMPLETED, BOOT_COMPLETED, MY_PACKAGE_REPLACED, TIM
 ```
 
 - The module's `AndroidManifest.xml` declares the receivers (`exported=false`, `directBootAware=true`) and
-  permissions exactly as the 0.2.0 manifest had them (`POST_NOTIFICATIONS`, `USE_EXACT_ALARM`,
-  `SCHEDULE_EXACT_ALARM` up to API 32, `RECEIVE_BOOT_COMPLETED`, `USE_FULL_SCREEN_INTENT`,
-  `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, `VIBRATE`); merged at prebuild.
+  permissions as the 0.2.0 manifest had them (`POST_NOTIFICATIONS`, `USE_EXACT_ALARM`,
+  `SCHEDULE_EXACT_ALARM` up to API 32, `RECEIVE_BOOT_COMPLETED`, `USE_FULL_SCREEN_INTENT`, `VIBRATE`), less
+  `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, removed for Google Play in T-102 (`openSettings('battery')` opens
+  the app's own App info, `SettingsScreens.kt`); merged at prebuild.
 - Events to JS (`onFired`, `onAction`) through the module's event emitter.
 - The action queue (T-079). `AlarmStore` holds the Done / +15 taps in device-protected prefs, each with a
   UUID. Receivers queue on the main thread and the module reads on its own, so `queueAction`, `peekActions`
@@ -374,7 +375,7 @@ Plan of record `docs/HA-INTEGRATION.md`, survey `docs/ha-entities.md`. Changes f
 | `.pitplan` import | Untrusted: 256 KB cap, validated by `src/lib/sharedPlan.ts`, numbers clamped (quantity, rest, pit temp 150-700F), serve date 2000-2099 or the file is damaged, unknown foods dropped; the serve date offered is one computation, not a loop (T-035). Only the URI the intent carries is opened, never one inside the app's own storage or providers (`OpenedPlan.ownStorage`, T-035). |
 | Network | HTTPS only for remote HA; anonymous GitHub update check. The update check opens only Pit Planner's own GitHub release links (`releaseLink` in `src/lib/update.ts`: `https://github.com/MechEng70/pitplanner/releases/download/<tag>/<file>.apk`, `.../releases/tag/<tag>`, `.../releases/latest`); any other link from GitHub's answer, or from 0.2.0's saved update, counts as none (T-035). |
 | Exported components | Main activity only (launcher, `.pitplan` VIEW/SEND, `pitplanner://`); receivers `exported=false`. The link filter has the schemes `pitplanner` and `exp+pitplanner` (the second from expo-dev-client's config plugin, in the release too) with categories DEFAULT and BROWSABLE, so a web page can open either. In a release build every route a link reaches is gated or harmless (T-035 security pass, finding 7: left as it is). The `.pitplan` filters (`plugins/pitplanIntents.ts`): VIEW of `content://`/`file://` typed JSON, octet-stream or x-pitplan; VIEW of a path ending `.pitplan`; SEND of those three types. Category DEFAULT only, no BROWSABLE. |
-| Permissions | Release: `INTERNET` (update check), and from `modules/pit-alarms` `POST_NOTIFICATIONS`, `USE_EXACT_ALARM`, `SCHEDULE_EXACT_ALARM` (API 32 and lower), `RECEIVE_BOOT_COMPLETED`, `USE_FULL_SCREEN_INTENT`, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS`, `VIBRATE`; androidx's own signature permission `<app id>.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`. Blocked in `app.config.ts` (`blockedPermissions`, T-035): `READ/WRITE_EXTERNAL_STORAGE` (both variants, never used) and `SYSTEM_ALERT_WINDOW` (release only; React Native's dev tools use it in the dev build). `tools/manifest.test.mjs` checks the app manifest. |
+| Permissions | Release: `INTERNET` (update check), and from `modules/pit-alarms` `POST_NOTIFICATIONS`, `USE_EXACT_ALARM`, `SCHEDULE_EXACT_ALARM` (API 32 and lower), `RECEIVE_BOOT_COMPLETED`, `USE_FULL_SCREEN_INTENT`, `VIBRATE` (`REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` was removed in T-102: Google Play allows it for a few app types only, and `tools/release.sh --verify` refuses a bundle that asks for it); androidx's own signature permission `<app id>.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`. Blocked in `app.config.ts` (`blockedPermissions`, T-035): `READ/WRITE_EXTERNAL_STORAGE` (both variants, never used) and `SYSTEM_ALERT_WINDOW` (release only; React Native's dev tools use it in the dev build). `tools/manifest.test.mjs` checks the app manifest. |
 | Tool tokens | Snyk and GitHub tokens from the user's own CLI config only. |
 | Static checks | Semgrep + Snyk in `npm run check`; exceptions only via `SECURITY-EXCEPTIONS.md`. |
 
