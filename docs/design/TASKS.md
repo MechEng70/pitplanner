@@ -4276,6 +4276,15 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Carried from 0.3.0 (Jason, 2026-11-19): 0.3.1.** The open wording findings are under T-066. Section 11
   says nothing about the alarm ring log on the debug screen (his call: leave for 0.3.1). The guide also
   says twice, a paragraph apart, to use "Not listed? Enter it yourself" for a smoker that is not listed.
+- **Added by Jason, 2026-11-20 (after T-102): the count of permissions.** Setup step 3 now says "Android
+  needs a few permissions for that." (a fourth row, Full-screen alerts, shows while Android has them off).
+  Two places still say three and are fixed here, with the guide wording:
+  - `docs/USER-GUIDE.md`, section on alerts: "Android only allows that if you say yes to three things."
+    (line 62). The same count is in the lines around it: the screenshot note and picture text for Setup
+    step 3 ("three rows", "the three permission rows", lines 57 and 59), the picture text for the Alerts
+    may not ring sheet (line 174), and section 10, "The three rows are ..." (line 402).
+  - Mockup 03's source, `docs/mockups/source/Perms.dc.html` (line 21): "Android needs three permissions
+    for that." The mockup's PNG in `docs/mockups/` shows the same sentence.
 - **Status:** backlog, 0.3.1. His wording.
 
 ### T-100 Device rig fixes: the 2026-11-17 pass, the button rule, the locked-reboot guard
