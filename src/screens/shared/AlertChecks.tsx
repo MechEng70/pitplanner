@@ -28,13 +28,14 @@ export function useAlarmStatus(
 }
 
 /**
- * While "No battery limits" is off: Allow opens Pit Planner's App info, and these are the taps from there, as
- * Android 15 and 16 name them (Jason, 2026-11-20, T-102). The one-tap question the row used to open needs a
- * permission Google Play allows for a few app types only. Tapping the switch on "Allow background usage"
- * turns background use off; the words beside it open the choice.
+ * While "No battery limits" is off: Allow opens Pit Planner's App info, and this says where to go from there
+ * (Jason's words, 2026-11-20, T-102). The names differ by phone, so it names both ends: stock Android 15
+ * and 16 have "App battery usage", then "Allow background usage" (its words, not its switch), then
+ * "Unrestricted"; his OnePlus (OxygenOS, Android 16) has "Battery usage", then "Allow background activity".
+ * The one-tap question the row used to open needs a permission Google Play allows for a few app types only.
  */
 export const BATTERY_STEPS =
-  'Tap Allow, then App battery usage, then the words Allow background usage (not the switch), then Unrestricted';
+  "Tap Allow, open the app's battery setting and pick no restrictions (Unrestricted or Allow background activity, depending on your phone)";
 
 /**
  * The three permission rows, plus full-screen alerts when Android has it off (Android 14 and up; a step still

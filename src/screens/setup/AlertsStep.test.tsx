@@ -29,7 +29,7 @@ describe('Setup step 3: alerts (mockup 03)', () => {
     expect(screen.getByRole('heading', { name: 'Make sure alerts get through' })).toBeOnTheScreen();
     expect(
       screen.getByText(
-        'A 6 AM "wrap the brisket" alert has to ring even with the phone asleep. Android needs three permissions for that.',
+        'A 6 AM "wrap the brisket" alert has to ring even with the phone asleep. Android needs a few permissions for that.',
       ),
     ).toBeOnTheScreen();
     expect(screen.getByLabelText('Step 3 of 3')).toBeOnTheScreen();
@@ -57,10 +57,11 @@ describe('Setup step 3: alerts (mockup 03)', () => {
   });
 
   // T-102 (Google Play): Allow opens Pit Planner's App info, no longer Android's one-tap question, so the row
-  // says where to go from there. Jason's words, 2026-11-20, from the Android 15 and 16 screens.
-  test('No battery limits says the taps to make while it is off, and what it is for once it is on', async () => {
+  // says where to go from there. Jason's words, 2026-11-20, after his OnePlus showed other names than the
+  // Android 15 and 16 emulators (SPEC section 3 has both paths).
+  test('No battery limits says where to go while it is off, and what it is for once it is on', async () => {
     const steps =
-      'Tap Allow, then App battery usage, then the words Allow background usage (not the switch), then Unrestricted';
+      "Tap Allow, open the app's battery setting and pick no restrictions (Unrestricted or Allow background activity, depending on your phone)";
     const why = 'Keeps overnight alerts from being delayed';
     const alarms = fakeAlarms();
     alarms.granted = { notifications: true, exactAlarms: true, batteryUnrestricted: false, fullScreen: true };

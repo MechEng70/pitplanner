@@ -26,7 +26,7 @@ export function AlertsStep({
       steps={SETUP_STEPS}
       title="Make sure alerts get through"
       intro={
-        'A 6 AM "wrap the brisket" alert has to ring even with the phone asleep. Android needs three permissions for that.'
+        'A 6 AM "wrap the brisket" alert has to ring even with the phone asleep. Android needs a few permissions for that.'
       }
       footer={<SetupActions onBack={onBack} next="Finish setup" onNext={onFinish} />}
     >

@@ -20,6 +20,12 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
   Play restricts is removed and "No battery limits" opens Android's list of apps; full-screen alerts are part
   of the alerts check; `tools/release.sh --bundle` builds the bundle Play takes. Ships as 0.3.1-beta.1.
   Why: the app goes to a closed test on Google Play (US only). Blocked on: nothing.
+- **T-103** Alerts survive "Manage app if unused" (Android app hibernation) (Jason, 2026-11-20; 0.3.x,
+  after T-102; not in 0.3.1-beta.1). A spike first: do alarms firing or notifications count as use, or only
+  opening the app? Then, only if needed, a row in the Alerts sheet with a button to the setting (a row only,
+  like full-screen alerts). Why: the setting is on by default on his OnePlus and on the emulators, and a
+  smoker app can sit unused all winter. Blocked on: the spike's report; then a SPEC line, a mockup and his
+  wording.
 - **No task.** Celsius step: store the smoker temp step's unit so a units switch cannot change its meaning,
   and give the engine a real Celsius grid.
   With it (Jason, 2026-11-17, left out of T-082): a Celsius user who types a step such as 20C under Other

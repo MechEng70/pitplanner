@@ -4312,10 +4312,14 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
      with the app's package; needs no permission) in place of the one-tap question. First asked for:
      Android's list of apps (`ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS`); changed to App info. The check
      itself stays (`isIgnoringBatteryOptimizations` needs no permission). The row's text while off, his
-     words: "Tap Allow, then App battery usage, then the words Allow background usage (not the switch),
-     then Unrestricted". While on it stays "Keeps overnight alerts from being delayed". The names are the
-     ones the Android 15 and Android 16 emulators show (pictures:
-     `tools/device/out/t102-battery-path-2026-11-20/`); App info has no row called Battery there.
+     words, final: "Tap Allow, open the app's battery setting and pick no restrictions (Unrestricted or
+     Allow background activity, depending on your phone)". While on it stays "Keeps overnight alerts from
+     being delayed". How it got there: the Android 15 and Android 16 emulators show App info, "App battery
+     usage", "Allow background usage", "Unrestricted" (pictures:
+     `tools/device/out/t102-alerts-115-2026-11-20/`), and the text first named those taps; his own check
+     on his OnePlus (CPH2583, OxygenOS, Android 16) the same morning found other names: App info, "Battery
+     usage", the "Power consumption control" list, "Allow background activity" ("No restrictions on any
+     background activity"), with no switch on that screen. SPEC section 3 has both paths.
   2. `USE_EXACT_ALARM`, and `SCHEDULE_EXACT_ALARM` up to API 32, stay exactly as they are.
   3. `USE_FULL_SCREEN_INTENT` stays. The check was already there (`Notifications.canFullScreen`: on API 34
      and up `NotificationManager.canUseFullScreenIntent()`; `status().fullScreen`), and so was the row
@@ -4328,7 +4332,28 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
      `release/pitplanner-<version>.aab`, copies `mapping.txt` to `release/pitplanner-<version>-mapping.txt`
      and prints the SHA-256. `--verify` works on an `.aab`. The APK path is unchanged. `docs/RELEASING.md`
      says how.
+- **His look (2026-11-20, the Android 16 release-build pictures at 115%): passes.** One fix from it: Setup
+  step 3's intro says "Android needs a few permissions for that." (it said "three"; a fourth row, Full-screen
+  alerts, shows while Android has them off, as on a Play install that Play has not accepted as an alarm
+  app). Mockup 03's text still says three. The "Alerts late or missing?" line stays as it is.
 - **Tests:** the full gate; Kotlin tests for the new checks; the rig's `alarm` test; the locked-reboot test
   on the emulator with the release build. The phone is not used.
-- **Owed, Jason's phone (2026-11-20):** on his next phone pass, before 0.3.1 ships, the same battery path
-  on his OnePlus: OxygenOS may name the rows differently. If it does, the row's text is his to change.
+- **Jason's phone (2026-11-20): done by him, by hand.** The battery path on his OnePlus; the names differ
+  (decision 1 above) and the row's text was changed to cover both. Not checked on his phone: Allow opening
+  App info from the app itself, since 0.3.1-beta.1 is not on it.
+
+### T-103 Alerts survive "Manage app if unused" (Android app hibernation)
+- **Jason (Fri 2026-11-20): 0.3.x backlog, right after T-102. Not in 0.3.1-beta.1. Not built.**
+- **Status:** backlog, 0.3.x. Step 1 (the spike) first; report before building anything.
+- **Why:** his OnePlus shows "Manage app if unused" on by default, and so do the emulators (Android 15 and
+  16: App info, "Unused app settings", "Manage app if unused: Remove permissions, delete temporary files,
+  stop notifications, and archive the app"). A smoker app often sits unused all winter. If Android removes
+  its permissions or archives it, the first spring cook's alarms may not ring.
+- **Step 1, a spike:** find out whether alarms firing (`setAlarmClock`, the receivers) or the notifications
+  count as use, or only opening the app does. Check Android's docs and test on the emulator. Report before
+  building anything.
+- **Step 2, only if it is needed:** a row in the Alerts sheet ("Keep permissions if unused" or similar;
+  the wording is his) with a button to the setting. Use androidx
+  `PackageManagerCompat.getUnusedAppRestrictionsStatus` and
+  `IntentCompat.createManageUnusedAppRestrictionsIntent`. Treat it like full-screen alerts: a row only, no
+  banner, Start cook not stopped. It is new UI: a SPEC line and a mockup for him first.
