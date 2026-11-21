@@ -5,7 +5,7 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
 
 ## Added Saturday 2026-11-21: T-105, step alerts are silent on Jason's OnePlus
 
-A read-only phone check (Jason allowed adb reads for it; `tools/device/PHONE-BLOCKED` stays) found that step
+A read-only phone check (Jason allowed adb reads for that check only; `tools/device/PHONE-BLOCKED` stays and still holds) found that step
 alerts make no sound and buzz once on his OnePlus, in 0.3.1-beta.1 and before. Evidence and fix: TASKS T-105,
 `docs/alarm-testing.md` (2026-11-21). Jason chose ringer volume and a 1 minute ring. **T-105 must be in the
 first build after the 14 days** (his words; read as Google Play's 14-day closed test). T-106 (the choice of
@@ -50,7 +50,7 @@ on his OnePlus, by hand. **Not a pass:** the rig's `setup` at 115% with the fina
 alert in 10 sec" is under the pinned footer; his call: fine for beta.1, the known 0.3.1 footer item).
 **Not run:** the upgrade from 0.2.0 or from 0.3.0 (no migration changed).
 
-**State.** `main` is pushed through `506419a`; the commit that records the Play upload is not pushed. No branch but `main` and
+**State.** `main` is pushed through `a10f362` (Sat 2026-11-21, T-105); `git log origin/main..main` shows anything later. No branch but `main` and
 the seven parked worktree branches (the list in the section below is unchanged). No agent is running;
 emulators and Metro are stopped. `dashboard.html` has a "0.3.1-beta.1 (Play closed test)" row fed by
 `D.beta1`. **The phone was not touched. `tools/device/PHONE-BLOCKED` is back (it had been gone since
