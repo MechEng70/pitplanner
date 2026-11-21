@@ -3,6 +3,14 @@
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
+## Added Saturday 2026-11-21: T-105, step alerts are silent on Jason's OnePlus
+
+A read-only phone check (Jason allowed adb reads for it; `tools/device/PHONE-BLOCKED` stays) found that step
+alerts make no sound and buzz once on his OnePlus, in 0.3.1-beta.1 and before. Evidence and fix: TASKS T-105,
+`docs/alarm-testing.md` (2026-11-21). Jason chose ringer volume and a 1 minute ring. **T-105 must be in the
+first build after the 14 days** (his words; read as Google Play's 14-day closed test). T-106 (the choice of
+volume and ring length on the Alerts sheet) is 0.5.0.
+
 ## Restart, twenty-ninth session (written Friday 2026-11-20, 12:17 PM; read this first)
 
 **Pit Planner 0.3.1-beta.1 was published today, Friday 2026-11-20, 12:16 PM,** as a GitHub prerelease, on

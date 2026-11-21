@@ -32,6 +32,12 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
   android.hardware.screen.portrait` with `required="false"`; the app stays portrait; a regression test.
   Why: Play warns that the feature is required (from `orientation: 'portrait'`), which blocks
   landscape-only devices. Blocked on: nothing.
+- **T-105** Step alerts ring out loud on OxygenOS (Jason, 2026-11-21; **must be in the first build after the
+  14 days**). On his OnePlus a step alert makes no sound (the system alarm tone is unset) and buzzes once
+  (OxygenOS swaps the vibration). Fix: a foreground service while a step rings, a looping bundled tone at
+  ringer volume, a repeating buzz, a silent channel for the text and buttons, 1 minute per ring. Why: the
+  alarm is the part that must not fail. Blocked on: nothing; Play's foreground service declaration checked
+  before the upload.
 - **No task.** Celsius step: store the smoker temp step's unit so a units switch cannot change its meaning,
   and give the engine a real Celsius grid.
   With it (Jason, 2026-11-17, left out of T-082): a Celsius user who types a step such as 20C under Other
@@ -179,6 +185,9 @@ Home Assistant phase 1: read-only, a pasted token. Nothing here starts before 0.
 - **T-090** Request a catalog addition (Jason, 2026-11-19; 0.5.0): after a cooker entered by hand is saved,
   "Send this model to the developer" opens the share sheet with only that cooker's fields. Blocked on: a
   mockup first; his wording; once or kept in Gear; griddles and ovens too or not.
+- **T-106** Alerts sheet: alert volume (ringer or alarm) and how long a step rings (Jason, 2026-11-21;
+  0.5.0). Why: T-105 ships ringer volume and 1 minute as fixed defaults. Blocked on: T-105, a SPEC line, a
+  mockup and his wording.
 
 ## Later
 

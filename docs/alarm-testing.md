@@ -203,3 +203,21 @@ Android 16 emulator.
 | 16 (API 36) | Pass, the same three (the test's debug screen step was changed, so it was run again here). |
 
 Emulator images are not a Samsung phone: its own battery rules are only seen on the tester's phone.
+
+## Sound and vibration on the OnePlus CPH2583, 0.3.1-beta.1 from Play, 2026-11-21 (T-105)
+
+Read-only: `settings get`, `dumpsys`, logcat (recorded live, not cleared). Jason tapped "Send a test alert in
+10 sec" himself. Bee Timer, on the same phone, had the same faults the same day.
+
+| Check | Result |
+|---|---|
+| `settings get system alarm_alert` | `null`: no system alarm tone. |
+| Channel `steps_v1` as the phone holds it | Importance 4, sound `content://settings/system/alarm_alert`, `USAGE_ALARM`, pattern `[0, 600, 300, 600, 300, 600]`, `repeat=-1`. Bypass DND false and lock-screen visibility unset: Android ignored the app's request for both. |
+| Volumes (speaker) | Alarm 4 of 16, ring 7 of 16, ringer mode normal, Do Not Disturb off. |
+| A real step, 11:20 (unlocked) | **No sound, one buzz** (Jason). `notification_alert` buzz 1, beep 1; `dumpsys audio` has no player for it. |
+| Test alert, locked, 11:36 | **No sound, one buzz.** `RingtonePlayer: play uri=content://settings/system/alarm_alert ... looping=false`, then `MediaPlayer: Error setting data source via ContentResolver ... FileNotFoundException: open failed: ENOENT`. The player (USAGE_ALARM) was released 22 ms after it was made, never `event:started`. Vibrator: `OplusVibrationEffectSegment{mEffectId=399} ... repeat=-1 ... mUsage=NOTIFICATION`, not the channel's pattern. |
+| Test alert, unlocked, 11:37 | The same; player released after 8 ms. |
+| Full-screen permission (Play install) | `USE_FULL_SCREEN_INTENT: default`, rejected. |
+
+So the sound fails on any phone with no system alarm tone, and OxygenOS turns the channel's vibration into
+one buzz. The sound never loops (no FLAG_INSISTENT). A step alert repeats only through the 10-minute re-posts.
