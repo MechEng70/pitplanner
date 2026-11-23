@@ -105,3 +105,5 @@ Read: Bee Timer's `scripts/dashboard.py`, `scripts/dashboard-timer.sh`, `scripts
   changes.
 - **Sizes.** TASKS has no sizes; the column fills from USAGE.md for tasks logged from now on.
 - **The "Tonight shown next morning" rule.** Kept by design: Today carries its date and goes empty when stale.
+
+Jason, 2026-11-23, after DASH-7: `dashboard.html` is never committed (the repo is public). This replaces "committed" above.

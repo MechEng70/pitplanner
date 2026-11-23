@@ -35,7 +35,8 @@
 - When it updates: the main session runs it at the end of every task and when an agent starts or stops; a
   15-minute timer (`scripts/dashboard-timer.sh start`) runs it while a session is going. Start the timer at
   the start of a session; stop it as the last step and put `scripts/dashboard-timer.sh status` in the final
-  report. The page stays local (`.git/info/exclude`) until Jason says otherwise.
+  report. The page is never committed (Jason, 2026-11-23: the repo is public); `.git/info/exclude` keeps it
+  local. Commit the docs it is made from, not the page.
 - What it shows, top first: the status line (version, current task, progress, updated time from the clock),
   usage (5-hour and weekly bars, today's budget, throttle state), Waiting on Jason, Testing needed from you,
   Today. Collapsed below: releases at a glance, tasks by phase, gate and device run, agents, usage log.

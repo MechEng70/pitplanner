@@ -84,9 +84,8 @@ Running and finished this session: one row per agent, removed at the next sessio
 Work order: `docs/design/DASHBOARD-USAGE-BRIEF.md` (its DASH-1 findings say where each part of the old page
 went). No app code changed. What is new:
 
-- `scripts/dashboard.py` generates `dashboard.html`; nobody edits it, and no keeper agent. It stays local
-  (`.git/info/exclude`): the brief says "committed", Jason said on 2026-11-15 not to send it to GitHub, so
-  it waits on his call. `scripts/dashboard-timer.sh start | stop | status` (unit `pitplanner-dashboard`).
+- `scripts/dashboard.py` generates `dashboard.html`; nobody edits it, and no keeper agent. It is never
+  committed (Jason, 2026-11-23, replacing the brief's "committed"); `.git/info/exclude` keeps it local. `scripts/dashboard-timer.sh start | stop | status` (unit `pitplanner-dashboard`).
   How to run both: `docs/DEVELOPING.md`, "Dashboard and usage tracking".
 - The page reads this file's "Dashboard" section (above): keep it current. TASKS status lines now start with
   the current state; ROADMAP has a Goal line and Risk bullets per release.
