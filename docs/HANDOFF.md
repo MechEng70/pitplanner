@@ -142,7 +142,7 @@ on his OnePlus, by hand. **Not a pass:** the rig's `setup` at 115% with the fina
 alert in 10 sec" is under the pinned footer; his call: fine for beta.1, the known 0.3.1 footer item).
 **Not run:** the upgrade from 0.2.0 or from 0.3.0 (no migration changed).
 
-**State.** `main` is pushed through `a10f362` (Sat 2026-11-21, T-105); `git log origin/main..main` shows anything later. No branch but `main` and
+**State.** `main` is pushed through the DASH round (Mon 2026-11-23: `9bb9d5e`, then the commit that wrote this line); `git log origin/main..main` shows anything later. No branch but `main` and
 the seven parked worktree branches (the list in the section below is unchanged). No agent is running;
 emulators and Metro are stopped. `dashboard.html` has a "0.3.1-beta.1 (Play closed test)" row fed by
 `D.beta1`. **The phone was not touched. `tools/device/PHONE-BLOCKED` is back (it had been gone since
