@@ -30,16 +30,17 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
   smoker app can sit unused all winter. Blocked on: the spike's report; then a SPEC line, a mockup and his
   wording.
 - **T-104** Google Play: portrait is not a required feature (Jason, 2026-11-20; 0.3.1, small; not before
-  Tuesday 2026-11-24; goes into 0.3.1-beta.2). A config plugin adds `uses-feature
+  Tuesday 2026-11-24; goes into 0.3.1-beta.2, with T-105). A config plugin adds `uses-feature
   android.hardware.screen.portrait` with `required="false"`; the app stays portrait; a regression test.
   Why: Play warns that the feature is required (from `orientation: 'portrait'`), which blocks
   landscape-only devices. Blocked on: nothing.
-- **T-105** Step alerts ring out loud on OxygenOS (Jason, 2026-11-21; **must be in the first build after the
-  14 days**). On his OnePlus a step alert makes no sound (the system alarm tone is unset) and buzzes once
-  (OxygenOS swaps the vibration). Fix: a foreground service while a step rings, a looping bundled tone at
-  ringer volume, a repeating buzz, a silent channel for the text and buttons, 1 minute per ring. Why: the
-  alarm is the part that must not fail. Blocked on: nothing; Play's foreground service declaration checked
-  before the upload.
+- **T-105** Step alerts ring out loud on OxygenOS (Jason, 2026-11-21; **in 0.3.1-beta.2, with T-104**:
+  Jason, 2026-11-23). On his OnePlus a step alert makes no sound (the system alarm tone is unset) and buzzes
+  once (OxygenOS swaps the vibration). Fix: a foreground service while a step rings, a looping bundled tone
+  at alarm volume (rings in silent and Do Not Disturb), a repeating buzz, a silent channel for the text and
+  buttons, 1 minute per ring, and "Alarm volume is low" with Raise once at Start cook when the alarm volume
+  is under half (Jason, 2026-11-23). Why: the alarm is the part that must not fail. Blocked on: Jason's
+  go-ahead on the beta.2 plan (HANDOFF); Play's foreground service declaration filled in before the upload.
 - **No task.** Celsius step: store the smoker temp step's unit so a units switch cannot change its meaning,
   and give the engine a real Celsius grid.
   With it (Jason, 2026-11-17, left out of T-082): a Celsius user who types a step such as 20C under Other
@@ -149,6 +150,10 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
 - **The Samsung tester's locked-reboot check** (parity P4, T-072; Jason, 2026-11-18; moved to 0.3.1). Why:
   alarms after a restart with the phone still locked are proven on a OnePlus and the emulator only.
   Blocked on: asking the tester.
+- **Risk:** Play review may question the `systemExempted` ring service of T-105 (Google calls the type
+  reserved for system apps; alarm apps are allowed it). A different type means a new build.
+- **Risk:** Google's docs do not say what happens to beta.1's review if beta.2 is uploaded while beta.1 is
+  still in review.
 - **Risk:** nothing here has a date. 0.3.x is for fixes; Home Assistant (0.4.0) starts after it by Jason's rule.
 - **Risk:** half of the items wait on Jason's wording or look, so the order depends on when he has time.
 
@@ -200,8 +205,8 @@ without Home Assistant.
 - **T-090** Request a catalog addition (Jason, 2026-11-19; 0.5.0): after a cooker entered by hand is saved,
   "Send this model to the developer" opens the share sheet with only that cooker's fields. Blocked on: a
   mockup first; his wording; once or kept in Gear; griddles and ovens too or not.
-- **T-106** Alerts sheet: alert volume (ringer or alarm) and how long a step rings (Jason, 2026-11-21;
-  0.5.0). Why: T-105 ships ringer volume and 1 minute as fixed defaults. Blocked on: T-105, a SPEC line, a
+- **T-106** Alerts sheet: alert volume (alarm or ringer) and how long a step rings (Jason, 2026-11-21;
+  0.5.0). Why: T-105 ships alarm volume and 1 minute as fixed defaults (Jason, 2026-11-23). Blocked on: T-105, a SPEC line, a
   mockup and his wording.
 - **Risk:** no source for timing fish by thickness has been found. Cooking numbers need a source before they
   go in the data.

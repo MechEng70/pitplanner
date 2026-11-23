@@ -402,14 +402,17 @@ Steps to try, in order:
 1. Open Gear and tap Alerts. Each row should be on. Tap Allow on any that is not. The three rows are
    Notifications, Alarms and reminders, and No battery limits. Allow Full-screen alerts too if it shows.
 2. Tap Send a test alert in 10 sec, then lock the phone. It should ring in about 10 seconds.
-3. Alerts late or missing? Check the battery settings for Pit Planner in your phone's settings. Some phone
+3. Too quiet? Alerts ring at the phone's alarm volume, like an alarm clock, also with the phone on silent
+   or Do Not Disturb. Raise the alarm volume. If it is under half when you start a cook, Pit Planner shows
+   "Alarm volume is low". Tap Raise to open the sound settings.
+4. Alerts late or missing? Check the battery settings for Pit Planner in your phone's settings. Some phone
    makers delay or stop alerts to save battery.
-4. During a cook, check Live cook for a banner. "Alerts are off" means a permission was turned off. Tap Fix.
+5. During a cook, check Live cook for a banner. "Alerts are off" means a permission was turned off. Tap Fix.
    "Alarms could not be set" means the phone refused the alarms. Tap Try again.
-5. Did the phone restart (an update overnight, a dead battery)? Unlock it once. On some phones no alert
+6. Did the phone restart (an update overnight, a dead battery)? Unlock it once. On some phones no alert
    sounds until the first unlock after a restart.
 
-If steps 1 to 3 do not fix it, send a report. See section 11.
+If steps 1 to 4 do not fix it, send a report. See section 11.
 
 ## 11. Help and the debug screen
 

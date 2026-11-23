@@ -16,6 +16,7 @@ the first table and the "Time and tokens" section.
 | DASH-5 | Opus 5.5 | main | 2026-11-23 11:21 | 2026-11-23 11:21 | S | 9 | 9 | 62 | 62 | wide open | USAGE.md; the old page's time and tokens moved here |
 | DASH-6 | Opus 5.5 | main | 2026-11-23 11:23 | 2026-11-23 11:22 | S | 9 | 9 62 | 62 |  | wide open | CLAUDE.md dashboard and usage rules, HANDOFF, DEVELOPING |
 | DASH-7 | Opus 5.5 | main | 2026-11-23 11:23 | 2026-11-23 11:27 | S | 9 | 10 | 62 | 62 | wide open | Gate run twice: first failed on 13 Jest timeouts at load 18 (Jest alone then passed 1002); second passed all six |
+| T-105 replan | Opus 5.5 | main + 1 Sonnet agent | 2026-11-23 18:42 | 2026-11-23 18:55 | S | 7 | 8 | 65 | 65 | wide open (65% vs 100% budget, day 7) | T-105 into beta.2, alarm volume (B); Play rules checked; beta.2 plan; docs only |
 
 ## Time and tokens (counted 2026-11-18; carried from the old dashboard, not recounted)
 

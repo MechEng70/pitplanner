@@ -4389,8 +4389,9 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 
 ### T-104 Google Play: portrait is not a required feature
 - **Jason (Fri 2026-11-20): 0.3.1, small. Not to be built until after Tuesday 2026-11-24.** Goes into
-  0.3.1-beta.2.
-- **Status:** backlog, 0.3.1.
+  0.3.1-beta.2, with T-105 (Jason, 2026-11-23).
+- **Status:** todo, 0.3.1-beta.2 (with T-105). The build plan is in HANDOFF ("0.3.1-beta.2 plan") and waits
+  on Jason's go-ahead.
 - **Why:** Play Console warns that `android.hardware.screen.portrait` is a required feature, which keeps the
   app from landscape-only devices. It comes from `orientation: 'portrait'` in `app.config.ts`: the activity
   gets `android:screenOrientation="portrait"`, and Play reads a required feature out of that. The merged
@@ -4404,11 +4405,13 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   `aapt2 dump badging` on it must not list the feature as required.
 
 ### T-105 Step alerts ring out loud on OxygenOS: our own tone, a repeating buzz, a ringing service
-- **Jason (Sat 2026-11-21): approved, option A (ringer volume) and a 1 minute ring. It must be in the first
-  build after the 14 days** (his words; read as Google Play's 14-day closed test of 0.3.1-beta.1). Found by a
-  read-only phone check the same day (he allowed adb reads for it). Not built.
-- **Status:** backlog, the first build after the 14 days. Options C (a choice of volume) and a ring length
-  setting are T-106, 0.5.0.
+- **Jason (Sat 2026-11-21): approved, with a 1 minute ring.** Found by a read-only phone check the same day
+  (he allowed adb reads for it). Not built.
+- **Jason (Mon 2026-11-23): it goes into 0.3.1-beta.2, the next build, alongside T-104. Not "after the 14
+  days".** The same day he changed the volume to alarm volume, with a low-volume check (decision B below,
+  which replaces A of 2026-11-21).
+- **Status:** todo, 0.3.1-beta.2 (with T-104). The build plan is in HANDOFF ("0.3.1-beta.2 plan") and waits
+  on Jason's go-ahead. A choice of volume and a ring length setting are T-106, 0.5.0.
 - **Why:** on his OnePlus CPH2583 (OxygenOS, Android 16, 0.3.1-beta.1 from Play) step alerts make no sound
   and buzz once. Seen on a real step (11:20) and on two test alerts (11:36 locked, 11:37 unlocked); Jason
   heard nothing and felt one buzz each time. Bee Timer, on the same phone, had the same three faults and the
@@ -4423,8 +4426,8 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
      `VibratorManagerServiceExtImpl: ... OplusVibrationEffectSegment{mEffectId=399} ... repeat=-1 ...
      mUsage=NOTIFICATION ... reason=Notification (io.github.mecheng70.pitplanner 10419)`.
   3. **Alarm volume.** Even with a tone, the channel plays on USAGE_ALARM, so it follows the alarm volume
-     (speaker 4 of 16 on 2026-11-21). Jason keeps that low and wants alerts to follow the ringer volume
-     (speaker 7 of 16). Hidden today by fault 1.
+     (speaker 4 of 16 on 2026-11-21), which Jason keeps low. Hidden today by fault 1. Decision B
+     (2026-11-23) keeps the alarm volume and warns when it is low (below).
   Today a step alert is one notification sound (not looped, no FLAG_INSISTENT), one channel vibration, no
   service, and a re-post every 10 min (6 repeats, then "Cook needs you"). Test alerts post once.
 - **The fix (the Bee Timer pattern):**
@@ -4435,29 +4438,53 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
     they are).
   - Sound: `MediaPlayer` looping a tone bundled in `res/raw` (a free-licensed tone, source and licence noted
     in the repo). The system alarm tone is used only if `alarm_alert` is set and the player actually starts;
-    otherwise the bundled tone. Played at `USAGE_NOTIFICATION_RINGTONE`, so it follows the ringer volume
-    (decision below).
+    otherwise the bundled tone (two 880 Hz beeps, generated, as Bee Timer's `alarm_beep.wav`, so no
+    licence question; how it was made noted in the repo). Played at `USAGE_ALARM`, so it follows the alarm
+    volume and rings in silent mode and Do Not Disturb (decision below).
   - Vibration: a repeating waveform from the service's `Vibrator`, with alarm usage
     (`VibrationAttributes.USAGE_ALARM` on API 33+), so it keeps going in vibrate and silent mode and is not
     swapped for OxygenOS's single notification effect.
   - A new channel `steps_v2`: high importance, no sound, no vibration; it carries the text, Done / +15 min
     and the full-screen intent. `steps_v1` is deleted on upgrade (channel settings cannot be changed in place).
   - The ring log (T-068) records which tone started (bundled, system, none) for each ring.
+  - Low alarm volume (Jason, 2026-11-23, as Bee Timer): on Start cook, if the alarm volume is under 50% of
+    its maximum (muted counts), a snackbar at the bottom reads "Alarm volume is low" with **Raise**, for
+    about 6 seconds, once per cook start. Raise opens the phone's sound settings
+    (`Settings.ACTION_SOUND_SETTINGS`). Coming back from the settings shows nothing; Start cook is never
+    blocked. `pit-alarms` gets `getAlarmVolume()` (`{ volume, max }` of `STREAM_ALARM`) and
+    `openSoundSettings()`, used through `src/platform/`; the check itself is a pure function in `src/lib/`.
+    New UI: there is no snackbar in the app or the mockups yet. Its wording and place are Jason's
+    (2026-11-23); its look (theme tokens, the bottom of Live cook) is shown to him at 115% and 130% before
+    the release.
   - Manifest: `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SYSTEM_EXEMPTED`, the service. TECH-DESIGN's
-    permission row and SPEC section 6 updated. **Google Play:** a foreground service type needs a
-    declaration in Play Console (App content). Check what Play asks for `systemExempted` before the bundle
-    goes up.
-- **Decided: ringer volume (A; Jason, 2026-11-21).** `USAGE_NOTIFICATION_RINGTONE`, as Bee Timer. With the
-  phone on silent or vibrate there is no sound; the buzz still runs (alarm usage). SPEC section 6 says so in
-  plain words, and so does USER-GUIDE section 10. Not chosen: B, alarm volume (`USAGE_ALARM`, rings through
-  silent and Do Not Disturb, quiet on his phone); C, a choice on the Alerts sheet, is 0.5.0 (T-106).
+    permission row and SPEC section 6 updated.
+  - **Google Play (checked 2026-11-23).** Apps targeting Android 14 and up declare each foreground service
+    type in Play Console, Policy > App content > Foreground service permissions: per type, the use case, a
+    description of the feature, the user impact if the system defers or interrupts it, and a video link
+    (developer.android.com, "Foreground service types"; Play Console help 13392821). `systemExempted` is
+    allowed for apps holding `USE_EXACT_ALARM` (same page), but Google calls it "reserved for system
+    applications and specific system integrations", and Play's help page could not be read in full, so
+    whether it asks for a video for this type is not confirmed. Plan: fill in the declaration with a short
+    screen video of a test alert ringing, before the bundle is published. Risk: review could question the
+    type for an alarm app; the fallbacks are `mediaPlayback`, `specialUse`, or `shortService` (about 3
+    minutes at most, an ANR if it overruns; a 1 minute ring fits), each a new build.
+- **Decided: alarm volume (B; Jason, 2026-11-23; replaces A, ringer volume, of 2026-11-21).** `USAGE_ALARM`,
+  as Bee Timer: the tone rings in silent mode and Do Not Disturb, at the alarm volume. The buzz has alarm
+  usage too. When the alarm volume is low, the app says so once at Start cook (above). SPEC section 6 and
+  USER-GUIDE section 10 say so. Not chosen: A, ringer volume (`USAGE_NOTIFICATION_RINGTONE`, no sound on
+  silent or vibrate). A choice between the two is T-106 (0.5.0).
 - **Tests (written failing first):**
   - JUnit: tone choice, a pure function: `alarm_alert` null, or set but the player fails, gives the bundled
     tone (regression for fault 1); set and started gives the system tone.
   - Robolectric: `steps_v2` has no sound and no vibration, `steps_v1` is deleted; FIRE and NAG start the
     service; Done, +15 min, acknowledge from the app, `cancelAll` and the cap stop it; a test alert rings and
     stops at the cap; the waveform repeats and has alarm usage (regression for fault 2); the audio usage
-    is `USAGE_NOTIFICATION_RINGTONE` (regression for fault 3).
+    is `USAGE_ALARM` (regression for fault 3, with the next two).
+  - Jest: the low-volume check, a pure function: 49% warns, 50% does not, 0 warns, a max of 0 does not
+    crash (regression for fault 3). A screen test, failing first: Start cook with the alarm volume low shows
+    "Alarm volume is low" once, Raise calls `openSoundSettings`, normal volume shows nothing, and coming
+    back to the app shows nothing.
+  - Kotlin: `getAlarmVolume` reads `STREAM_ALARM`.
   - `tools/manifest.test.mjs`: both variants hold the two permissions and the service (`systemExempted`,
     not exported, `directBootAware`).
   - `tools/device/locked-reboot.sh` on `pitplanner-lock`: the step due before the first unlock starts the
@@ -4467,20 +4494,24 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   1. Test alert, locked, then unlocked: the tone is heard and loops, the buzz repeats, until he swipes it or
      the cap. Logs: Pit Planner's player reaches `event:started` in `dumpsys audio`; the vibrator log shows
      the app's waveform with alarm usage, not `mEffectId=399`.
-  2. The same with the phone on vibrate: the buzz repeats, no sound (ringer volume).
+  2. The same with the phone on silent, then on Do Not Disturb: the tone and the buzz still ring, at the
+     alarm volume.
   3. A step with its repeat: Done on the lock screen stops sound and buzz at once.
   4. A restart with a step due before the first unlock: it rings. The bundled tone is in the APK, which
      can be read before the first unlock, unlike the system tone. If it rings, README and USER-GUIDE
      section 10 ("no alert until the first unlock") are revised.
+  5. Start cook with the alarm volume under half (as he keeps it): "Alarm volume is low" shows once;
+     Raise opens the sound settings; back in the app nothing shows again.
 
-### T-106 Alerts sheet: alert volume (ringer or alarm) and how long a step rings
-- **Jason (Sat 2026-11-21): 0.5.0.** Follows T-105, which ships ringer volume and a 1 minute ring as fixed
-  defaults.
+### T-106 Alerts sheet: alert volume (alarm or ringer) and how long a step rings
+- **Jason (Sat 2026-11-21): 0.5.0.** Follows T-105, which ships alarm volume (with the low-volume check)
+  and a 1 minute ring as fixed defaults (Jason, 2026-11-23).
 - **Status:** backlog, 0.5.0. Blocked on: T-105, then a SPEC line, a mockup and his wording (new UI).
-- **The task:** two settings on the Alerts sheet. Volume: ringer volume (the T-105 default) or alarm volume
-  (`USAGE_ALARM`, rings through silent mode and Do Not Disturb). Ring length: how long a step rings before it
-  stops (1 minute default; the choices are his). Stored in the alarm store so the receivers read them with
+- **The task:** two settings on the Alerts sheet. Volume: alarm volume (the T-105 default, `USAGE_ALARM`,
+  rings through silent mode and Do Not Disturb) or ringer volume (`USAGE_NOTIFICATION_RINGTONE`, no sound
+  with the phone on silent or vibrate; the low-volume check then reads the ring volume, or is dropped: his
+  call). Ring length: how long a step rings before it stops (1 minute default; the choices are his). Stored in the alarm store so the receivers read them with
   the app closed and before the first unlock.
 - **Tests:** Robolectric: the service uses the stored usage and length, and the defaults when none is
-  stored. A screen test for the two rows, failing first. Phone check: alarm volume rings with the phone on
-  silent.
+  stored. A screen test for the two rows, failing first. Phone check: ringer volume is silent with the
+  phone on silent; alarm volume still rings.
