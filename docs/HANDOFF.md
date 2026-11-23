@@ -3,6 +3,15 @@
 Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task you are given in
 `docs/design/TASKS.md` (phases and order: `docs/design/WBS.md`). This note is what a fresh session needs on top.
 
+## Dashboard (read by `scripts/dashboard.py` and the status line; keep current)
+
+- **Next:** DASH-3 Generator (the dashboard and usage tracking round, `docs/design/DASHBOARD-USAGE-BRIEF.md`).
+- **Status line (2026-11-23, DASH-2):** `~/.claude/settings.json` runs the global `~/.claude/statusline-usage.sh`
+  (backup: `~/.claude/settings.json.bak-2026-11-23-dash2`). It shows the task from the `Next:` line of whatever repo
+  Claude Code runs in and writes `~/.claude/usage-snapshot.json`, plus the same content to
+  `~/.claude/beetimer-usage.json` for now.
+- **Bee Timer:** switch dashboard.py to read ~/.claude/usage-snapshot.json, then the compatibility copy can go.
+
 ## Added Saturday 2026-11-21: T-105, step alerts are silent on Jason's OnePlus
 
 A read-only phone check (Jason allowed adb reads for that check only; `tools/device/PHONE-BLOCKED` stays and still holds) found that step
