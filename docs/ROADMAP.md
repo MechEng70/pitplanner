@@ -13,6 +13,8 @@ Each item: task ID (or "no task"), what, why, blocked on.
 
 Bug fixes, plus the two exceptions Jason set (T-078 and the Celsius work).
 
+**Goal:** bug fixes, and the looks and device checks carried from 0.3.0.
+
 Not on this page: T-066 (the user guide) is 0.3.0 (Jason, 2026-11-17). Its text is merged; the screenshots come
 from the fidelity PNGs after the device checks. If they are not ready for Monday's release they go to 0.3.1.
 
@@ -147,10 +149,15 @@ from the fidelity PNGs after the device checks. If they are not ready for Monday
 - **The Samsung tester's locked-reboot check** (parity P4, T-072; Jason, 2026-11-18; moved to 0.3.1). Why:
   alarms after a restart with the phone still locked are proven on a OnePlus and the emulator only.
   Blocked on: asking the tester.
+- **Risk:** nothing here has a date. 0.3.x is for fixes; Home Assistant (0.4.0) starts after it by Jason's rule.
+- **Risk:** half of the items wait on Jason's wording or look, so the order depends on when he has time.
 
 ## 0.4.0
 
 Home Assistant phase 1: read-only, a pasted token. Nothing here starts before 0.3.0 ships.
+
+**Goal:** the app reads Jason's Home Assistant probes and shows live temperatures on the Cook screen. Read
+only, with a pasted token.
 
 - **T-042** Mock the six Home Assistant screens. Why: new UI needs an approved look. Blocked on: Jason's OK on
   the mockups.
@@ -164,6 +171,11 @@ Home Assistant phase 1: read-only, a pasted token. Nothing here starts before 0.
 - **T-049** A probe per food at Start cook. Why: each food needs its probe. Blocked on: T-047.
 - **T-050** `engine/probe.ts` and live temps on Live cook. Why: the point of the phase. Blocked on: T-046,
   T-049, T-020 (done). Jason's device tests.
+- **Risk:** the pitplanner user is not an admin. If Home Assistant refuses it any call the app needs, the
+  design changes before code is written. Step 0 finds this out.
+- **Risk:** the token is a long-lived secret on the phone. It must stay in secure storage and out of backups
+  and logs.
+- **Risk:** the last task needs a real cook with real probes to test, so it needs a Saturday of Jason's.
 
 ## After 0.4.0: a small release of its own
 
@@ -172,6 +184,9 @@ Home Assistant phase 1: read-only, a pasted token. Nothing here starts before 0.
   Size and counts in its TASKS entry.
 
 ## 0.5.0
+
+**Goal:** fish on the menu, the receiver of a shared plan picks their own cookers, and Chef iQ probes work
+without Home Assistant.
 
 - **T-070** Open shared plan: the receiver picks their cookers.
   Why: parity D1 as 0.2.0 offered it; 0.3.0 handles it in Food details after import.
@@ -188,6 +203,11 @@ Home Assistant phase 1: read-only, a pasted token. Nothing here starts before 0.
 - **T-106** Alerts sheet: alert volume (ringer or alarm) and how long a step rings (Jason, 2026-11-21;
   0.5.0). Why: T-105 ships ringer volume and 1 minute as fixed defaults. Blocked on: T-105, a SPEC line, a
   mockup and his wording.
+- **Risk:** no source for timing fish by thickness has been found. Cooking numbers need a source before they
+  go in the data.
+- **Risk:** the Bluetooth task cannot start until 0.4.0 has the probe screens, so any 0.4.0 slip moves it.
+- **Risk:** it needs a real Chef iQ probe, which only Jason has.
+- **Risk:** the docs say "0.5.0 or later" for five more tasks. The version of those is not decided.
 
 ## Later
 

@@ -5,12 +5,79 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
 
 ## Dashboard (read by `scripts/dashboard.py` and the status line; keep current)
 
-- **Next:** DASH-3 Generator (the dashboard and usage tracking round, `docs/design/DASHBOARD-USAGE-BRIEF.md`).
+- **Next:** DASH-4 Timer (the dashboard and usage tracking round, `docs/design/DASHBOARD-USAGE-BRIEF.md`).
 - **Status line (2026-11-23, DASH-2):** `~/.claude/settings.json` runs the global `~/.claude/statusline-usage.sh`
   (backup: `~/.claude/settings.json.bak-2026-11-23-dash2`). It shows the task from the `Next:` line of whatever repo
   Claude Code runs in and writes `~/.claude/usage-snapshot.json`, plus the same content to
   `~/.claude/beetimer-usage.json` for now.
 - **Bee Timer:** switch dashboard.py to read ~/.claude/usage-snapshot.json, then the compatibility copy can go.
+
+### Waiting on Jason
+
+Most urgent first. The dashboard shows the first five and folds the rest. Remove an item when it is settled.
+
+- **Waiting on Google's review of 0.3.1-beta.1 (closed test, submitted 2026-11-20 about 12:30 PM).**
+  0.3.1-beta.1 (301301) is on the closed track and in Google's review, with 15 changes. Nothing to do until
+  Google answers. Tell Claude what Google says. The portrait warning was acknowledged and is fixed in beta.2
+  (T-104).
+- **Later: the real 0.2.0 back on the Android 15 emulator before the final 0.3.1 (needs your yes to
+  uninstall).** The Android 15 test emulator had the real 0.2.0; 0.3.1-beta.1 was installed over it for today's
+  pictures. Before the final 0.3.1 the real 0.2.0 has to go back, which means an uninstall there. That needs
+  your yes.
+- **2026-12-01: snyk monitor is owed (held for Snyk's monthly limit).** On 2026-12-01: npm run snyk:monitor,
+  once. It is held until then for Snyk's monthly limit.
+- **T-091: where the public roadmap timeline goes (top of ROADMAP, or the README).** T-091, the public roadmap
+  on GitHub: say whether the timeline goes at the top of docs/ROADMAP.md or of the README.
+- **The disk cleanup list to approve.**
+- **0.3.1: your wording for the prompt when the plan is edited during a cook (T-084); T-085 wording and
+  mockup.** 0.3.1: your wording for the prompt when the plan is edited during a cook (T-084). T-084 and T-085
+  (0.3.1 or later): your wording first, and the mockup for T-085; also the open user guide wording (T-066).
+- **0.3.1: your look at the new 130% layout (Cook finished Use / Keep, Setup's test alert).** 0.3.1: your look
+  at the new 130% layout (Cook finished Use / Keep, Setup's test alert), shown to you before it is built in.
+- **After 0.3.0: Home Assistant mockups (15 questions plus 5) and the six T-044 choices.** After 0.3.0: Home
+  Assistant mockups (15 questions plus five kept from the deleted duplicate) and T-044 (six choices; step 0
+  passed 2026-11-18). Also five extra mockup questions kept from the deleted duplicate set, your wording for the
+  connect error, and a .local address test on your phone.
+- **After 0.3.0: fish (sources question 5 first), wings options, T-083 bacon and potato details.** After 0.3.0:
+  fish (sources question 5 first), wings options. T-083: bacon regular or thick cut; potato size, foil or bare
+  (after 0.3.0).
+- **Backlog: a light theme that follows the phone (T-087), mockups first.** Backlog (new, 2026-11-18): a light
+  theme that follows the phone (T-087). Your decision: after 0.4.0, as its own small release. Mockups first.
+- **Your testers' exact smoker models for the catalog.**
+- **iOS: MacBook model and macOS version (backlog).**
+- **Home Assistant: a throwaway token, to test deleting the token on Disconnect.** Home Assistant: make a
+  throwaway token as the pitplanner user so the delete-on-Disconnect call can be tested. Step 0 did not try it,
+  because the call would end the token in use.
+- **The bug report card in Claude Code: review it and send it.** The bug report card in Claude Code is still to
+  review and send.
+
+### Testing needed from you
+
+Every hands-on test Jason owes, kept current; remove a test when he reports it. Per test: `#### Title`, then
+`- **Minutes:**`, `- **When:**`, and `- **Do:**`, `- **Judge:**` (what he judges, against which picture or
+text), `- **Not yours:**`, each with sub-bullets.
+
+- Nothing.
+
+### Today (2026-11-23)
+
+In order. `[x]` done, `[ ]` to do. A list with an older date shows as nothing for today.
+
+- [x] DASH-1: map the old dashboard to the new layout (Claude)
+- [x] DASH-2: the shared status line (Claude)
+- [x] DASH-3: the generator, `scripts/dashboard.py` (Claude)
+- [ ] DASH-4: the dashboard timer (Claude)
+- [ ] DASH-5: the usage log, `docs/design/USAGE.md` (Claude)
+- [ ] DASH-6: CLAUDE.md, HANDOFF and DEVELOPING (Claude)
+- [ ] DASH-7: generate, check, stop the timer (Claude)
+
+### Agents
+
+Running and finished this session: one row per agent, removed at the next session's start.
+
+| Agent | Model | Task | Started | Ended | Status | Files |
+|---|---|---|---|---|---|---|
+
 
 ## Added Saturday 2026-11-21: T-105, step alerts are silent on Jason's OnePlus
 

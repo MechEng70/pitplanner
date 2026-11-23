@@ -859,7 +859,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ## Phase 5: Plan tab (mockups 04-08)
 
 ### T-017 Plan: empty and main (04, 05)
-- **Status:** gate-complete 2026-11-14 (`npm run check` passed with Snyk back up, all six steps; anything below about
+- **Status:** done, shipped in 0.3.0 (released 2026-11-19). Before that: gate-complete 2026-11-14 (`npm run check` passed with Snyk back up, all six steps; anything below about
   Snyk being down is history). done (see `git log --grep T-017`); Jason's review fixes done 2026-11-13 (notes "Review fixes"
   below), new screenshots approved by Jason 2026-11-14 (the Add food fade at 100% included). 115% fit target set by
   Jason 2026-11-14: two cards whole, the third may end in the fade, Add food by scrolling; met (numbers
@@ -1004,7 +1004,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     new target on 2026-11-14 (two cards whole, the third may end in the fade, Add food by scrolling).
 
 ### T-018 Smoker temp menu, Add food, Issues sheet (06, 07)
-- **Status:** gate-complete 2026-11-14 (`npm run check` passed with Snyk back up, all six steps; anything below about
+- **Status:** done, shipped in 0.3.0 (released 2026-11-19). Before that: gate-complete 2026-11-14 (`npm run check` passed with Snyk back up, all six steps; anything below about
   Snyk being down is history). built and tested on the emulator 2026-11-14 (notes below). Jason approved the screenshots and
   answered the three questions on 2026-11-14. Snyk has not run on it (down for maintenance on 2026-11-14,
   delayed to Monday 2026-11-16 by Jason): done once `npm run check` passes.
@@ -1050,7 +1050,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
     by 5 minutes on some rows (215F: 5:40 AM, not 5:45); they are the engine's.
 
 ### T-019 Food details (08, 09, 10)
-- **Status:** gate-complete 2026-11-14 (`npm run check` passed with Snyk back up, all six steps; anything below about
+- **Status:** done, shipped in 0.3.0 (released 2026-11-19). Before that: gate-complete 2026-11-14 (`npm run check` passed with Snyk back up, all six steps; anything below about
   Snyk being down is history). built 2026-11-14, emulator only; Jason approved the screenshots (115% and 130%) the same day:
   "look good. I like the results bar", "T-019 is good to go". Snyk (gate step 6) not run: Snyk was down
   (`SNYK-0099`), steps 1 to 5 pass. Not gate-complete until `npm run check` passes with Snyk. His thumb test
@@ -1215,7 +1215,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   the icon at 100/115/130%; compare with the FSIS quote in `foods.json`.
 
 ### T-061 Tell two of the same food apart (labels on the menu and in the steps)
-- **Status:** built 2026-11-14 (engine, Plan cards, Conflicts buttons). Gate: `npm run check` passes, all six
+- **Status:** done, shipped in 0.3.0 (released 2026-11-19). Before that: built 2026-11-14 (engine, Plan cards, Conflicts buttons). Gate: `npm run check` passes, all six
   steps. Device run (emulator, 2026-11-14): `plan` and `plan-sheets` pass at 115% and 130%; `plan-sheets`
   reads the labelled Conflicts message and buttons on its two-wings seed (run before the summary and
   alarm-title changes, which no device test reads). Not run on the phone (hold). Waits for Jason's read
@@ -1285,7 +1285,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   and read the buttons. Emulator or phone; no mockup shows this, the reference is this entry.
 
 ### T-058 Survive font-size changes and process death
-- **Status:** built 2026-11-14 (emulator: `survive` passes at 115% and 130%). The mid-cook half of the
+- **Status:** done, shipped in 0.3.0 (released 2026-11-19). Before that: built 2026-11-14 (emulator: `survive` passes at 115% and 130%). The mid-cook half of the
   acceptance (on Cook: same Next up and countdown) passes in `survive` at 115% on the emulator (2026-11-15, with T-021). Not run
   on the phone (hold). Gate: `npm run check` passes, all six steps (2026-11-14, Snyk back up).
 - **Built (2026-11-14):**
@@ -1351,7 +1351,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ## Phase 6: Cook tab (mockups 12-15)
 
 ### T-020 `engine/cookState.ts`
-- **Status:** gate-complete 2026-11-14 (`npm run check` passed with Snyk back up, all six steps; anything below about
+- **Status:** done, shipped in 0.3.0 (released 2026-11-19). Before that: gate-complete 2026-11-14 (`npm run check` passed with Snyk back up, all six steps; anything below about
   Snyk being down is history). built 2026-11-14 (13 tests); Snyk (gate step 6) not run, Snyk was down; steps 1 to 5 pass.
 - **Decided (Jason, 2026-11-14):** entering Finishing cancels all alarms, as the table says ("follow the table
   for now"). No longer a question for T-023.
@@ -1706,7 +1706,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Jason (2026-11-17):** the built stepper is kept (option A on the questions page). Closed; mockup 13's two
   buttons are not built. The line under "Jason's answers (2026-11-15)" saying the question was asked again is
   answered by this.
-- **Status:** built 2026-11-15, unit-tested (Prettier, ESLint, typecheck, Jest and the engine tests pass in
+- **Status:** done, shipped in 0.3.0 (released 2026-11-19). Before that: built 2026-11-15, unit-tested (Prettier, ESLint, typecheck, Jest and the engine tests pass in
   the task's worktree). `npm run check` and the device run were NOT run (another session had the emulator):
   run `npm run check`, then look at Cook options on the device and save fidelity PNG 13
   (`docs/fidelity/rn-13-cook-options.png`). Not done until that passes.
@@ -1761,7 +1761,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 - **Device (2026-11-15):** `cook-options` on the emulator at 115%: see the status line.
 
 ### T-023 Notification actions, lock-screen alert, Cook finished (14, 15)
-- **Status:** built 2026-11-15, unit-tested (Prettier, ESLint, typecheck, Jest, the engine tests and the gate
+- **Status:** done, shipped in 0.3.0 (released 2026-11-19). Before that: built 2026-11-15, unit-tested (Prettier, ESLint, typecheck, Jest, the engine tests and the gate
   tests pass in the task's worktree). `npm run check` (Semgrep, Snyk, Android tests) and the device run were
   NOT run (other sessions had the main checkout and the emulator): run `npm run check`, then look at Cook
   finished on the device against mockup 15 and save fidelity PNG 15. No device flow was added
@@ -1837,7 +1837,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   above is answered by the lines below it.
 
 ### T-024 Setup steps and smoker picker
-- **Status:** built 2026-11-15 on branch `t024`, unit-tested (Jest). NOT run on a device or emulator, and
+- **Status:** done, shipped in 0.3.0 (released 2026-11-19). Before that: built 2026-11-15 on branch `t024`, unit-tested (Jest). NOT run on a device or emulator, and
   `npm run check` was NOT run (the session that built it was not allowed to): prettier, ESLint, typecheck,
   Jest, engine and gate tests pass; Android tests, Semgrep and Snyk are still to run. No fidelity PNGs yet
   (01, 02, 17 need the emulator). Not done until the gate passes and Jason has seen the screens.
@@ -1945,7 +1945,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   phone's settings." (`BatteryNote`). `src/lib/maker.ts` and its empty link table are unused now.
 
 ### T-026 Gear screen (16)
-- **Status:** built 2026-11-15 on branch `t026`, unit-tested (Jest). NOT run on a device or emulator, and
+- **Status:** done, shipped in 0.3.0 (released 2026-11-19). Before that: built 2026-11-15 on branch `t026`, unit-tested (Jest). NOT run on a device or emulator, and
   `npm run check` was NOT run (the session that built it was not allowed to): prettier, ESLint, typecheck,
   Jest, engine and gate tests pass; Android tests, Semgrep and Snyk are still to run. No fidelity PNG yet
   (16 needs the emulator). Not done until the gate passes and Jason has seen the screen.
@@ -1988,7 +1988,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   OK (Home Assistant is a later version).
 
 ### T-027 Cooker sheets: griddle, oven, smoker (17-19)
-- **Status:** built 2026-11-15 on branch `t027`, unit-tested (Jest). NOT run on a device or emulator, and
+- **Status:** done, shipped in 0.3.0 (released 2026-11-19). Before that: built 2026-11-15 on branch `t027`, unit-tested (Jest). NOT run on a device or emulator, and
   `npm run check` was NOT run (the session that built it was not allowed to): prettier, ESLint, typecheck,
   Jest, engine and gate tests pass; Android tests, Semgrep and Snyk are still to run. No fidelity PNGs yet
   (18, 19 need the emulator). Not done until the gate passes and Jason has seen the sheets.
@@ -2030,7 +2030,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   he asked for a recommendation; kept hidden (removing it would empty the gear and restart Setup).
 
 ### T-028 History and cook rates (20), with editing
-- **Status:** built and unit-tested on branch `t028` (2026-11-15); not run on a device, and `npm run check`
+- **Status:** done, shipped in 0.3.0 (released 2026-11-19). Before that: built and unit-tested on branch `t028` (2026-11-15); not run on a device, and `npm run check`
   (Android tests, Semgrep, Snyk) not run on it yet. Fidelity PNG 20 not taken.
 - **Device test (2026-11-15):** `history` passes on the emulator at 115% (rate sheet, cook sheet, Edit, Cook
   again, Remove). Fidelity PNG `docs/fidelity/rn-20-cook-history.png`. Noted: the card reads "chicken wings
@@ -2214,7 +2214,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   two-phone test runs after the share guard is merged in Sunday's fix window (two fast taps on Share plan
   show a false "Couldn't share" behind the open sheet: cause and fix in `docs/after-readout-checklist.md`);
   single taps only until then. Single taps to Drive and to email work on his phone on beta.2 (his word).
-- **Status:** todo (Jason, hands-on), rescheduled to after Sunday's readout. Remains: the checklist ticked.
+- **Status:** waiting on Jason (which second phone; 0.3.1). Was: todo (Jason, hands-on), rescheduled to after Sunday's readout. Remains: the checklist ticked.
 - **Goal:** SPEC definition of done: a plan round-trips between two phones through Gmail and through Drive.
 - **Files:** fixes only if a route fails; `docs/HANDOFF.md`.
 - **Depends on:** T-030.
@@ -2228,7 +2228,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
 ## Phase 10: Beta 0.3.0
 
 ### T-032 Update check against GitHub Releases
-- **Status:** built, merged onto `main` and gate-complete 2026-11-15 (`npm run check`, all six steps). Not run on a
+- **Status:** done, shipped in 0.3.0 (released 2026-11-19). Before that: built, merged onto `main` and gate-complete 2026-11-15 (`npm run check`, all six steps). Not run on a
   device; the real check against GitHub is part of T-038.
 - **Goal:** Gear shows "Update available" for a newer release, prereleases included, compared by semver.
 - **Files:** `src/lib/update.ts`, `engine/update.test.ts` (new cases added; existing ones unchanged),
@@ -2325,7 +2325,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   checks it left (the `shared` device test, the beta.1 build's version, update offer, backup rules and
   permissions, the `bmgr` backup and restore) were run on 2026-11-17 (below and under T-038).** The line
   below is as first written.
-- **Status:** in progress. The review (2026-11-16, read-only, `docs/proposals/2026-11-16-security-pass.md`,
+- **Status:** done, shipped in 0.3.0 (released 2026-11-19). Before that: in progress. The review (2026-11-16, read-only, `docs/proposals/2026-11-16-security-pass.md`,
   untracked) found 10 points; Jason approved fixes for 1 to 6, 8 and 10 the same day. The fixes are built on
   an agent branch (2026-11-16), unit-tested where possible, **not gated** (`npm run check` not run). The
   Kotlin tests (pit-share) compile outside Gradle but have **not been run**. The release build and the
@@ -2658,7 +2658,7 @@ Android back closes the top sheet first; copy per CLAUDE.md.
   (`docs/after-readout-checklist.md`); Monday 2026-11-23 the 0.3.0 release. T-038 keeps depending on T-033. If
   the Samsung tester declines the locked-reboot check, the release notes say so (draft "if declined" line in
   `docs/release-notes/0.3.0.md`).
-- **Status:** todo
+- **Status:** done: 0.3.0 was cut and released on 2026-11-19 (HANDOFF, twenty-eighth session). Was: todo
 - **Goal:** 0.3.0 on GitHub Releases; Jason's 0.2.0 install upgraded in place with its data imported.
 - **Files:** `package.json` (0.3.0), `docs/release-notes/0.3.0.md`, `docs/HANDOFF.md`.
 - **Depends on:** T-012, T-033, T-035, T-036, T-037.
@@ -2913,7 +2913,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   Back to the cook on its own line on Cook finished, tapping it shows Live cook on Serve. Fidelity PNGs
   `docs/fidelity/rn-13-cook-options-undo.png`, `rn-15-cook-finished-back.png`. Open: Jason's look at both
   (on a first cook the footer holds Save and three lines, so less of the screen scrolls above it).
-- **Status:** built 2026-11-15, unit-tested on a worktree branch; `npm run check` and device test not run.
+- **Status:** done, shipped in 0.3.0 (released 2026-11-19). Before that: built 2026-11-15, unit-tested on a worktree branch; `npm run check` and device test not run.
   (0.3.0; Jason, 2026-11-14: "there needs to be somewhere to undo it in version 0.3.0. I don't want to wait
   till the next version")
 - **Why:** on his cook of 2026-11-14 the brisket's done step came up at 3:30 PM and he hit Done by accident.
@@ -2988,7 +2988,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Changed (Jason, 2026-11-16):** the connect mockup shows the address, a token field and a short how-to
   (create the token as the `pitplanner` user), not HA's login page.
 - **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
-- **Status:** todo
+- **Status:** waiting on Jason (the Home Assistant mockup questions; 0.4.0). Was: todo
 - **Goal:** six screens in the canvas style, approved before any code.
 - **Files:** `docs/mockups/source/Ha*.dc.html`, `docs/mockups/21-26-*.png`.
 - **Depends on:** none.
@@ -3001,7 +3001,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   no `client_id` page is needed. D-9 is dropped with it. Kept below as written in case the HA login is
   added later.
 - **Version (Jason, 2026-11-16):** 0.4.0, Home Assistant phase 1 (T-042 to T-050). Not started before 0.3.0 ships.
-- **Status:** todo
+- **Status:** dropped (Jason; ROADMAP, Flags). Was: todo
 - **Goal:** `https://mecheng70.github.io/pitplanner/` has `<link rel="redirect_uri" href="pitplanner://auth-callback">`
   in its first 10 kB.
 - **Files:** `site/index.html`, Pages configuration.
@@ -3024,7 +3024,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   Not tested: deleting the token at Home Assistant on Disconnect. The logic itself is built on parked branch
   `a4d0fb0875a099229` (111 tests, seven choices for Jason: the first, "scheme when none typed", decided
   2026-11-18 as built, see T-045; six open), not merged.
-- **Status:** todo
+- **Status:** waiting on Jason (the six choices; step 0 passed 2026-11-18; 0.4.0). Was: todo
 - **Goal:** address normalize, authorize URL with a state nonce, callback check, token exchange, refresh on 401,
   revoke, all with an injected `fetch`.
 - **Files:** `src/lib/ha/auth.ts`, tests.
@@ -3293,7 +3293,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 - **Device check, 2026-11-16:** device test `live-warnings` passes at 115% (the banner with the conflict
   alone, with the conflict and two long holds, OK hides it, the lane chart note); Jason accepted the
   pictures (`docs/fidelity/rn-12-live-*.png`) and asked for three fixes, T-081.
-- **Status:** merged onto `main` 2026-11-16 with the hold note inside the food's entry (`holdNoteInline` in
+- **Status:** done, shipped in 0.3.0 (released 2026-11-19). Before that: merged onto `main` 2026-11-16 with the hold note inside the food's entry (`holdNoteInline` in
   `data/foods.json`); gated; not seen on a device. `tools/device/run.sh` (`plan-sheets`) and `docs/parity.md`
   D8, D9, T16 updated at the merge.
 - **Built:**
@@ -3732,7 +3732,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   (for example ribs not put on): no sheet, serve stays.
 
 ### T-077 Oven hold below 140F is raised to 140F
-- **Status:** merged onto `main` 2026-11-16 and gated. Decided by Jason, 2026-11-16 (parity row T18).
+- **Status:** done, shipped in 0.3.0 (released 2026-11-19). Before that: merged onto `main` 2026-11-16 and gated. Decided by Jason, 2026-11-16 (parity row T18).
 - **Built:** one floor, `OVEN_HOLD_MIN_F` in `src/lib/gear.ts`, with `withSafeHold`, used by the Oven sheet
   stepper, `cookersRepo.load` and `save`, and `importLegacy`. The import report records `ovenRaised`, and
   `importNotice(report, units)` adds the line (60C in Celsius, through `fmtTemp`), on its own line inside
@@ -4036,6 +4036,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 
 ### T-084 Plan edited while a cook runs: say that the cook does not change
 
+- **Status:** waiting on Jason (his wording); 0.3.1. Docs only so far.
 - **Found by Jason on his phone, 2026-11-18 (0.3.0-beta.2):** with a cook running at 250F he changed the plan
   to 225F. The running cook did not change and the app said nothing. He ended and discarded the cook and
   started again.
@@ -4108,7 +4109,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   app has to read the ring log there or keep the ring time with the cook; whether the times shown are
   the two taps or the minutes; what "fix" edits (the tap time, or minutes on heat as History does); and
   whether an early tap is flagged too.
-- **Status:** backlog. **Files (when it is built):** `src/lib/finish.ts`, `src/lib/cook.ts`, the Cook
+- **Status:** waiting on Jason (a mockup and his wording). Was: backlog. **Files (when it is built):** `src/lib/finish.ts`, `src/lib/cook.ts`, the Cook
   finished screen and their tests (screen tests first), SPEC sections 5 and the rates lines, a mockup.
 
 ### T-086 Rig tests on the emulator for Not yet, Back up to temp with Move serve, and the Adjust tap
@@ -4169,7 +4170,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 
 ### T-088 A smoker conflict made mid-cook by Not yet: the banner offers a fix
 - **Jason (Thu 2026-11-19): 0.3.1 backlog. Wording comes later.**
-- **Status:** backlog, 0.3.1. No UI before his wording and a mockup.
+- **Status:** waiting on Jason (his wording and a mockup). Was: backlog, 0.3.1. No UI before his wording and a mockup.
 - **What was seen** (the emulator Not yet check after merge 1, 2026-11-19, the mockup cook): "Not yet, check
   again in 30 min" on Check the brisket moved the brisket's pull from 12:55 to 1:25 PM, past the wings'
   Turn the smoker up to 400F at 1:20 PM. Live cook showed "Smoker conflict: brisket at 225F and chicken
@@ -4183,7 +4184,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   says "Brine options don't change the plan. They'll be removed in the next update."**
 - **Corrected by Jason the same morning: no brine or prep reminders are planned. Prep stays out of the app.**
   (This task first read "prep and brine reminders"; that was wrong.)
-- **Status:** backlog, 0.3.1.
+- **Status:** waiting on Jason (his two decisions). Was: backlog, 0.3.1.
 - **What is there today** (read 2026-11-18; `docs/after-readout-checklist.md`, the brine item): "Dry brine
   ahead" on wings and "Wet brine 1-2 hr" on chicken breasts each only add a prep entry to the engine's plan
   ("Dry brine the wings." 8 hours before they go on, "Brine the chicken breasts." 150 minutes before). A
@@ -4195,7 +4196,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 
 ### T-090 Request a catalog addition: "Send this model to the developer"
 - **Jason (Thu 2026-11-19): backlog, 0.5.0. Mockup first.**
-- **Status:** backlog, 0.5.0. No UI before his OK on a mockup.
+- **Status:** waiting on Jason (a mockup first, and his answers to its questions). Was: backlog, 0.5.0. No UI before his OK on a mockup.
 - **What:** after a user saves a smoker or other cooker entered by hand ("Not listed? Enter it yourself"),
   offer "Send this model to the developer". It opens the share sheet through `openShareSheet`
   (`src/platform/shareFile.ts`) with only that cooker's fields: brand and model as typed, type, min and max
@@ -4207,7 +4208,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
   and how does that tie to sending it to the developer? Read the code first; no work now.
 
 ### T-091 Public roadmap on GitHub, after 0.3.0 ships (Jason, 2026-11-19)
-- **Status:** backlog, docs only, after 0.3.0 ships.
+- **Status:** waiting on Jason (where the timeline goes: top of ROADMAP or the README). Was: backlog, docs only, after 0.3.0 ships.
 - **What:** a Mermaid timeline at the top of `docs/ROADMAP.md` (or the README; Jason picks) showing order,
   not dates, with only the next release dated.
 - **Content as agreed, word for word:**
@@ -4260,12 +4261,12 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
 ### T-096 Jason's look at the two re-shot Live cook pictures (T-081)
 - **Carried from 0.3.0 (Jason, 2026-11-19): 0.3.1.** `docs/fidelity/rn-12-live-warned.png` and
   `rn-12-live-conflict.png`: the header line, the banner's line break, the wings pull wording.
-- **Status:** backlog, 0.3.1. His look only; a change he asks for becomes its own task.
+- **Status:** waiting on Jason (his look). Was: backlog, 0.3.1. His look only; a change he asks for becomes its own task.
 
 ### T-097 Jason's look at the tri-tip "Smoke, then sear on the smoker" pictures (T-075)
 - **Carried from 0.3.0 (Jason, 2026-11-19): 0.3.1.** Seen on the emulator at 115%; the pictures were in his
   stacked review and not answered.
-- **Status:** backlog, 0.3.1. His look only.
+- **Status:** waiting on Jason (his look). Was: backlog, 0.3.1. His look only.
 
 ### T-098 A picture of the "Serve moved" notice, and Jason's look (T-076)
 - **Carried from 0.3.0 (Jason, 2026-11-19): 0.3.1.** The notice was read on the emulator ("Serve moved to
@@ -4285,7 +4286,7 @@ Plan: `docs/HA-INTEGRATION.md` (Phase 0 done: `docs/ha-entities.md`).
     may not ring sheet (line 174), and section 10, "The three rows are ..." (line 402).
   - Mockup 03's source, `docs/mockups/source/Perms.dc.html` (line 21): "Android needs three permissions
     for that." The mockup's PNG in `docs/mockups/` shows the same sentence.
-- **Status:** backlog, 0.3.1. His wording.
+- **Status:** waiting on Jason (his wording). Was: backlog, 0.3.1. His wording.
 
 ### T-100 Device rig fixes: the 2026-11-17 pass, the button rule, the locked-reboot guard
 - **Carried from 0.3.0 (the after-readout checklist's rig items): 0.3.1.** No app change.

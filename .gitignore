@@ -44,3 +44,6 @@ ha.env
 # Agent worktrees (copies of this repo on other branches) and Claude Code's local settings.
 .claude/worktrees/
 .claude/settings.local.json
+
+# Gate output for the dashboard (tools/check.sh writes it, scripts/dashboard.py reads it)
+/build/
