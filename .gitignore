@@ -47,3 +47,4 @@ ha.env
 
 # Gate output for the dashboard (tools/check.sh writes it, scripts/dashboard.py reads it)
 /build/
+__pycache__/

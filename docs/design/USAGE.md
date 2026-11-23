@@ -15,6 +15,7 @@ the first table and the "Time and tokens" section.
 | DASH-4 | Opus 5.5 | main | 2026-11-23 11:19 | 2026-11-23 11:21 | S | 9 | 9 | 61 | 62 | wide open | Timer script; safety net tested |
 | DASH-5 | Opus 5.5 | main | 2026-11-23 11:21 | 2026-11-23 11:21 | S | 9 | 9 | 62 | 62 | wide open | USAGE.md; the old page's time and tokens moved here |
 | DASH-6 | Opus 5.5 | main | 2026-11-23 11:23 | 2026-11-23 11:22 | S | 9 | 9 62 | 62 |  | wide open | CLAUDE.md dashboard and usage rules, HANDOFF, DEVELOPING |
+| DASH-7 | Opus 5.5 | main | 2026-11-23 11:23 | 2026-11-23 11:27 | S | 9 | 10 | 62 | 62 | wide open | Gate run twice: first failed on 13 Jest timeouts at load 18 (Jest alone then passed 1002); second passed all six |
 
 ## Time and tokens (counted 2026-11-18; carried from the old dashboard, not recounted)
 

@@ -446,7 +446,8 @@ def throttle(snap: dict | None, now: float) -> tuple[str, str]:
             why.append(f"weekly {used:.0f}% is {-diff:.0f} points under today's {budget:.0f}% budget")
     h5 = (snap.get("five_hour") or {}).get("used_percentage")
     if h5 is not None:
-        hl = "stop-after" if h5 > 85 else "throttled" if h5 >= 70 else "normal"
+        # Under 70% the 5-hour table sets no limit, so it does not pull "wide open" down to "normal".
+        hl = "stop-after" if h5 > 85 else "throttled" if h5 >= 70 else "open"
         why.append(f"5-hour {h5:.0f}%")
         if LEVELS.index(hl) > LEVELS.index(level):
             level = hl
@@ -512,7 +513,7 @@ ul.items { margin:0; padding-left:20px; } ul.items li { margin:4px 0; }
 table { width:100%; border-collapse:collapse; font-size:13px; }
 th { text-align:left; font-weight:600; color:var(--ink2); font-size:12px; padding:4px 6px; border-bottom:1px solid var(--line); }
 td { padding:5px 6px; border-bottom:1px solid var(--inset); vertical-align:top; }
-tr.doing td, tr.wait td { background:var(--inset); }
+tr.r-doing td, tr.r-wait td { background:var(--inset); }
 .tscroll { overflow-x:auto; }
 table.tasks { table-layout:fixed; min-width:640px; }
 .rel { display:grid; grid-template-columns:110px minmax(120px, 1fr) 210px; gap:4px 14px; align-items:center; padding:8px 0; border-top:1px solid var(--line); }
@@ -765,7 +766,7 @@ def render() -> str:
         for t in p["tasks"]:
             u = by_task.get(t["id"], {})
             commit = commits.get(t["id"]) or next(iter(re.findall(r"`([0-9a-f]{7,})`", t["status_line"])), "")
-            h.append(f'<tr class="{t["status"]}"><td class="num">{esc(t["id"])}</td><td>{inline_md(t["title"])}</td>'
+            h.append(f'<tr class="r-{t["status"]}"><td class="num">{esc(t["id"])}</td><td>{inline_md(t["title"])}</td>'
                      f'<td>{pill(t["status"])}</td><td class="num">{esc(commit)}</td><td>{esc(u.get("Size", ""))}</td>'
                      f'<td>{esc(u.get("Model", ""))}</td><td>{esc(u.get("Agent or main", ""))}</td></tr>')
         h.append("</table></div>")

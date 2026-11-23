@@ -5,7 +5,7 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
 
 ## Dashboard (read by `scripts/dashboard.py` and the status line; keep current)
 
-- **Next:** DASH-7 Check and stop (the dashboard and usage tracking round, `docs/design/DASHBOARD-USAGE-BRIEF.md`).
+- **Next:** T-104 Google Play: portrait is not a required feature (0.3.1-beta.2; not before Tuesday 2026-11-24).
 - **Status line (2026-11-23, DASH-2):** `~/.claude/settings.json` runs the global `~/.claude/statusline-usage.sh`
   (backup: `~/.claude/settings.json.bak-2026-11-23-dash2`). It shows the task from the `Next:` line of whatever repo
   Claude Code runs in and writes `~/.claude/usage-snapshot.json`, plus the same content to
@@ -69,7 +69,7 @@ In order. `[x]` done, `[ ]` to do. A list with an older date shows as nothing fo
 - [x] DASH-4: the dashboard timer (Claude)
 - [x] DASH-5: the usage log, `docs/design/USAGE.md` (Claude)
 - [x] DASH-6: CLAUDE.md, HANDOFF and DEVELOPING (Claude)
-- [ ] DASH-7: generate, check, stop the timer (Claude)
+- [x] DASH-7: generate, check, stop the timer (Claude)
 
 ### Agents
 
