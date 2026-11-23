@@ -11,6 +11,8 @@ Read SPEC.md and CLAUDE.md first, then `docs/design/TECH-DESIGN.md` and the task
   Claude Code runs in and writes `~/.claude/usage-snapshot.json`, plus the same content to
   `~/.claude/beetimer-usage.json` for now.
 - **Bee Timer:** switch dashboard.py to read ~/.claude/usage-snapshot.json, then the compatibility copy can go.
+  Also its throttle: under 70% the 5-hour table sets no limit (Jason, 2026-11-23); its dashboard.py still lets
+  "normal" override "wide open" (Pit Planner's fix: DASH-7, `3832628`).
 
 ### Waiting on Jason
 

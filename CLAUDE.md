@@ -58,7 +58,8 @@
   `~/.claude/usage-snapshot.json`; Jason reports only a model's own weekly bar (Fable) that it cannot see.
   Before every task and every agent launch, check the snapshot (the dashboard shows it) and apply the two
   throttle tables of `docs/PLAYBOOK.md` section 9 (weekly pacing at 20% a working day from the weekly
-  reset, and the 5-hour window); the stricter wins. Log each task in `docs/design/USAGE.md`.
+  reset, and the 5-hour window); the stricter wins. Under 70% the 5-hour table sets no limit, so it never pulls
+  "wide open" down to "normal" (Jason, 2026-11-23). Log each task in `docs/design/USAGE.md`.
 - Fable rules (Jason gives the numbers, or a `/usage` reading he passes on):
   - When Fable is at 80%, new agents start on Opus.
   - When Fable is at 95%, the main session switches to Opus at the next task boundary (never mid-task) and
