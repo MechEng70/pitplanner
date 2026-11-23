@@ -26,25 +26,24 @@
   to Jason.
 - Agents: the cheapest model that can do the job well. Fable for design judgment, tricky native or debugging
   work, security decisions. Opus for implementation from a clear spec, tests, refactors, code review. Sonnet or
-  Haiku for mechanical work (the dashboard keeper, doc edits, log scraping).
-- The dashboard keeper, before reporting done: load `dashboard.html` in headless Chrome and report the page
-  error count, which must be 0. "It parses" (`node --check`) is not enough: a missing comma between two rows
-  parses and then stops the page's script (2026-11-18). One way to count:
-  `google-chrome --headless=new --disable-gpu --virtual-time-budget=4000 --enable-logging=stderr --v=1 --dump-dom "file://$PWD/dashboard.html" 2>&1 >/dev/null | grep -c 'CONSOLE:[0-9]*\] "Uncaught'`.
-  The main session checks the count again before telling Jason the page is updated.
-- The dashboard is about what is next, not a tracker of everything (Jason, 2026-11-19). Top of the page, in
-  order: the status line, "Releases at a glance" (the bars; they count `D.tasks`, so keep every task row),
-  "Today" (today's to-dos in order, `D.today`), "Waiting on Jason". Below, collapsed: Agents, the roads,
-  Time and tokens, Now in detail. No lists of found items, device results, sessions or all tasks. The
-  keeper removes an item as soon as it is done or settled; the record stays in TASKS, HANDOFF and git.
-  Right under "Today": "Testing needed from you" (`D.testing`), every hands-on test Jason owes, in detail and
-  kept current (Jason, 2026-11-19): how many minutes it needs him, what to do step by step, what he judges
-  and against which picture or text, and what is not his to test. A test is removed when he reports it.
-  At every update the keeper also reads each release's next steps (`D.roads.list[].next`, `D.road`) and
-  each task row's status against what is done, and fixes what is stale (Jason, 2026-11-19: "Tonight" was
-  still shown the morning after).
-- Update `dashboard.html` every time an agent starts and every time one stops (Jason, 2026-11-19). Its
-  `updated` time comes from the clock (`date`), never typed.
+  Haiku for mechanical work (doc edits, log scraping).
+- The dashboard (Jason, 2026-11-23; replaces the hand-kept page and its keeper agent):
+  `scripts/dashboard.py` generates `dashboard.html` from TASKS.md, ROADMAP.md, HANDOFF.md (its "Dashboard"
+  section), USAGE.md, the last gate and device runs, and the status line's usage snapshot. Never edit the
+  page by hand; change the docs and run `python3 scripts/dashboard.py`. It checks the page in headless
+  Chrome itself and exits 1 unless the page error count is 0. No keeper agent.
+- When it updates: the main session runs it at the end of every task and when an agent starts or stops; a
+  15-minute timer (`scripts/dashboard-timer.sh start`) runs it while a session is going. Start the timer at
+  the start of a session; stop it as the last step and put `scripts/dashboard-timer.sh status` in the final
+  report. The page stays local (`.git/info/exclude`) until Jason says otherwise.
+- What it shows, top first: the status line (version, current task, progress, updated time from the clock),
+  usage (5-hour and weekly bars, today's budget, throttle state), Waiting on Jason, Testing needed from you,
+  Today. Collapsed below: releases at a glance, tasks by phase, gate and device run, agents, usage log.
+  Keep HANDOFF's "Dashboard" section current: the `- **Next:**` line (the status line shows it too), Waiting
+  on Jason (remove an item when settled), Testing needed from you (every hands-on test Jason owes: the
+  minutes it needs him, the steps, what he judges against which picture or text, what is not his; removed
+  when he reports it), Today with its date (an old date shows as nothing for today), Agents. A task's status
+  is the first words of its status line in TASKS; keep them current.
 - Run independent tasks in parallel, each in its own worktree off local `main`: no emulator, no gate in the
   worktree, stop with a report.
 - Never run two agents that edit the same file; sequence those.
@@ -54,13 +53,15 @@
 - Device work is serial, one emulator job at a time. The main session owns the emulators and the phone.
 - Merge one branch at a time, run the gate after each merge, then delete the worktree and branch.
 - At most 5 agents at once. Stack UI reviews for Jason into one list.
-- If the Fable allowance passes 80%, move agents to Opus first, then the main session.
-- Usage rule (Jason gives the numbers):
-  - When he says Fable is at 80%, new agents start on Opus.
-  - When he says Fable is at 95%, the main session switches to Opus at the next task boundary (never
-    mid-task) and keeps going.
-  - When he says the all-models weekly limit is at 90%, finish the current task, commit, update HANDOFF, and
-    stop for the day.
+- Usage and throttle (Jason, 2026-11-23): the status line captures the 5-hour and weekly use into
+  `~/.claude/usage-snapshot.json`; Jason reports only a model's own weekly bar (Fable) that it cannot see.
+  Before every task and every agent launch, check the snapshot (the dashboard shows it) and apply the two
+  throttle tables of `docs/PLAYBOOK.md` section 9 (weekly pacing at 20% a working day from the weekly
+  reset, and the 5-hour window); the stricter wins. Log each task in `docs/design/USAGE.md`.
+- Fable rules (Jason gives the numbers, or a `/usage` reading he passes on):
+  - When Fable is at 80%, new agents start on Opus.
+  - When Fable is at 95%, the main session switches to Opus at the next task boundary (never mid-task) and
+    keeps going.
 
 # Plan
 
